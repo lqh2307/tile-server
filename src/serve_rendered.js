@@ -42,6 +42,7 @@ import {
   getPMtilesTile,
 } from "./pmtiles_adapter.js";
 import { renderOverlay, renderWatermark, renderAttribution } from "./render.js";
+import clone from "clone";
 
 const FLOAT_PATTERN = "[+-]?(?:\\d+|\\d+.?\\d+)";
 const PATH_PATTERN =
@@ -843,8 +844,9 @@ export const serve_rendered = {
       if (!item) {
         return res.sendStatus(404);
       }
+
       const tileSize = parseInt(req.params.tileSize, 10) || undefined;
-      const info = Object.assign({}, item.tileJSON);
+      const info = clone(item.tileJSON || {});
       info.tiles = getTileUrls(
         req,
         info.tiles,
@@ -1045,7 +1047,7 @@ export const serve_rendered = {
     try {
       styleJSON = JSON.parse(fs.readFileSync(styleJSONPath));
     } catch (e) {
-      logErr(`Error parsing style file: ${e}`);
+      logErr(`Error parsing style file: ${e.message}`);
 
       return false;
     }
@@ -1101,8 +1103,11 @@ export const serve_rendered = {
     if (styleJSON.center && styleJSON.zoom) {
       tileJSON.center = styleJSON.center.concat(Math.round(styleJSON.zoom));
     }
+
     Object.assign(tileJSON, params.tilejson);
+
     tileJSON.tiles = params.domains || options.domains;
+
     fixTileJSONCenter(tileJSON);
 
     const repoobj = {
@@ -1114,6 +1119,7 @@ export const serve_rendered = {
       staticAttributionText:
         params.staticAttributionText || options.staticAttributionText,
     };
+
     repo[id] = repoobj;
 
     const queue = [];
@@ -1170,12 +1176,15 @@ export const serve_rendered = {
           }
 
           const type = source.type;
+
           Object.assign(source, metadata);
+
           source.type = type;
           source.tiles = [
             // meta url which will be detected when requested
             `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || "pbf"}`,
           ];
+
           delete source.scheme;
 
           if (
@@ -1187,6 +1196,7 @@ export const serve_rendered = {
               if (tileJSON.attribution.length > 0) {
                 tileJSON.attribution += " | ";
               }
+
               tileJSON.attribution += source.attribution;
             }
           }
@@ -1198,6 +1208,7 @@ export const serve_rendered = {
               if (!inputFileStats.isFile() || inputFileStats.size === 0) {
                 throw Error(`Invalid MBTiles file: ${inputFile}`);
               }
+
               map.sources[name] = new MBTiles(inputFile + "?mode=ro", (err) => {
                 map.sources[name].getInfo((err, info) => {
                   if (err) {
@@ -1205,6 +1216,7 @@ export const serve_rendered = {
 
                     return;
                   }
+
                   map.sourceTypes[name] = "mbtiles";
 
                   if (!repoobj.dataProjWGStoInternalWGS && info.proj4) {
@@ -1216,12 +1228,15 @@ export const serve_rendered = {
                   }
 
                   const type = source.type;
+
                   Object.assign(source, info);
+
                   source.type = type;
                   source.tiles = [
                     // meta url which will be detected when requested
                     `mbtiles://${name}/{z}/{x}/{y}.${info.format || "pbf"}`,
                   ];
+
                   delete source.scheme;
 
                   if (options.dataDecoratorFunc) {
@@ -1241,9 +1256,11 @@ export const serve_rendered = {
                       if (tileJSON.attribution.length > 0) {
                         tileJSON.attribution += " | ";
                       }
+
                       tileJSON.attribution += source.attribution;
                     }
                   }
+
                   resolve();
                 });
               });
@@ -1282,6 +1299,7 @@ export const serve_rendered = {
         pool.close();
       });
     }
+
     delete repo[id];
   },
 };

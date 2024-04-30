@@ -13,6 +13,7 @@ import {
   getPMtilesInfo,
   getPMtilesTile,
 } from "./pmtiles_adapter.js";
+import clone from "clone";
 
 export const serve_data = {
   init: (options, repo) => {
@@ -165,8 +166,9 @@ export const serve_data = {
       if (!item) {
         return res.sendStatus(404);
       }
+
       const tileSize = undefined;
-      const info = Object.assign({}, item.tileJSON);
+      const info = clone(item.tileJSON || {});
       info.tiles = getTileUrls(
         req,
         info.tiles,
@@ -177,6 +179,7 @@ export const serve_data = {
           pbf: options.pbfAlias,
         }
       );
+
       return res.send(info);
     });
 
@@ -220,19 +223,20 @@ export const serve_data = {
     if (inputType === "pmtiles") {
       source = openPMtiles(inputFile);
       sourceType = "pmtiles";
-      const metadata = await getPMtilesInfo(source);
 
       tileJSON["name"] = id;
       tileJSON["format"] = "pbf";
 
-      Object.assign(tileJSON, metadata);
+      Object.assign(tileJSON, await getPMtilesInfo(source));
 
       tileJSON["tilejson"] = "2.0.0";
+
       delete tileJSON["filesize"];
       delete tileJSON["mtime"];
       delete tileJSON["scheme"];
 
       Object.assign(tileJSON, params.tilejson);
+
       fixTileJSONCenter(tileJSON);
 
       if (options.dataDecoratorFunc) {
@@ -266,6 +270,7 @@ export const serve_data = {
             delete tileJSON["scheme"];
 
             Object.assign(tileJSON, params.tilejson);
+
             fixTileJSONCenter(tileJSON);
 
             if (options.dataDecoratorFunc) {

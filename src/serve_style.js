@@ -5,6 +5,7 @@ import fs from "node:fs";
 import express from "express";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { fixUrl, allowedOptions, logErr } from "./utils.js";
+import clone from "clone";
 
 const httpTester = /^https?:\/\//i;
 const allowedSpriteScales = allowedOptions(["", "@2x", "@3x"]);
@@ -20,7 +21,7 @@ export const serve_style = {
         return res.sendStatus(404);
       }
 
-      const styleJSON_ = Object.assign({}, item.styleJSON);
+      const styleJSON_ = clone(item.styleJSON || {});
       for (const name of Object.keys(styleJSON_.sources)) {
         const source = styleJSON_.sources[name];
         source.url = fixUrl(req, source.url);
@@ -82,22 +83,23 @@ export const serve_style = {
 
     return app;
   },
+
   remove: (repo, id) => {
     delete repo[id];
   },
+
   add: (options, repo, params, id, reportTiles, reportFont) => {
     const styleFile = path.resolve(options.paths.styles, params.style);
 
-    let styleFileData;
+    let styleJSON = {};
     try {
-      styleFileData = fs.readFileSync(styleFile);
+      styleJSON = JSON.parse(fs.readFileSync(styleFile));
     } catch (e) {
       logErr(`Failed to reading style file: ${e.message}`);
 
       return false;
     }
 
-    const styleJSON = JSON.parse(styleFileData);
     const validationErrors = validateStyleMin(styleJSON);
     if (validationErrors.length > 0) {
       let errString = `The file "${params.style}" is not a valid style file:`;
@@ -111,7 +113,7 @@ export const serve_style = {
       return false;
     }
 
-    for (const name of Object.keys(styleJSON.sources)) {
+    for (const name of Object.keys(styleJSON.sources) || {}) {
       const source = styleJSON.sources[name];
       let url = source.url;
       if (

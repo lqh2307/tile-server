@@ -32,7 +32,7 @@ export const serve_font = async (options, allowedFonts) => {
 
         return res.send(concatenated);
       } catch (err) {
-        res.status(400).header("Content-Type", "text/plain").send(err);
+        res.status(400).header("Content-Type", "text/plain").send(err.message);
       }
     }
   );
@@ -44,8 +44,7 @@ export const serve_font = async (options, allowedFonts) => {
     );
   });
 
-  const fonts = await listFonts(options.paths.fonts);
-  Object.assign(existingFonts, fonts);
+  Object.assign(existingFonts, listFonts(options.paths.fonts));
 
   return app;
 };

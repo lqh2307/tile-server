@@ -3,6 +3,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
+import clone from "clone";
 
 /**
  * Restrict user input to an allowed set of options.
@@ -132,7 +133,7 @@ const getFontPbf = (allowedFonts, fontPath, name, range, fallbacks) =>
     if (!allowedFonts || (allowedFonts[name] && fallbacks)) {
       const filename = path.join(fontPath, name, `${range}.pbf`);
       if (!fallbacks) {
-        fallbacks = Object.assign({}, allowedFonts);
+        fallbacks = clone(allowedFonts || {});
       }
 
       delete fallbacks[name];
@@ -194,7 +195,7 @@ export const getFontsPbf = async (
         fontPath,
         font,
         range,
-        Object.assign({}, allowedFonts || fallbacks)
+        clone(allowedFonts || fallbacks || {})
       )
     );
   }

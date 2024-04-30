@@ -21,6 +21,7 @@ import {
   logInfo,
   logErr,
 } from "./utils.js";
+import clone from "clone";
 
 const mercator = new SphericalMercator();
 
@@ -296,7 +297,7 @@ function start(opts) {
 
   const addTileJSONs = (arr, req, type, tileSize) => {
     for (const id of Object.keys(serving[type])) {
-      const info = Object.assign({}, serving[type][id].tileJSON);
+      const info = clone((serving[type][id] || {}).tileJSON || {});
       let path = "";
       if (type === "rendered") {
         path = `styles/${id}`;
@@ -454,7 +455,7 @@ function start(opts) {
 
     let datas = {};
     for (const id of Object.keys(serving.data)) {
-      let data = Object.assign({}, serving.data[id]);
+      let data = clone(serving.data[id] || {});
 
       const { tileJSON } = serving.data[id];
       const { center } = tileJSON;
