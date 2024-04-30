@@ -1,2 +1,6 @@
-node_modules
-data
+*
+!src
+!public
+!package.json
+!docker-entrypoint.sh
+!template
