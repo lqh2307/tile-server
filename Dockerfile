@@ -43,7 +43,7 @@ COPY ./public ./public
 COPY ./src ./src
 COPY ./docker-entrypoint.sh ./docker-entrypoint.sh
 COPY ./package.json ./package.json
-COPY ./template/data ./data
+COPY ./template/data_template ./data
 
 RUN \
   npm install --omit=dev; \

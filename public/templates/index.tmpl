@@ -71,9 +71,9 @@
       {{#each data}}
         <div class="item">
           {{#if thumbnail}}
-            <img src="/data/{{@key}}/{{thumbnail}}{{&../key_query}}" alt="{{name}} preview" />
+            <img src="/data/{{@key}}/{{thumbnail}}{{&../key_query}}" alt="{{tileJSON.name}} preview" />
           {{else}}
-            <img src="/images/placeholder.png{{&key_query}}" alt="{{name}} preview" />
+            <img src="/images/placeholder.png{{&key_query}}" alt="{{tileJSON.name}} preview" />
           {{/if}}
           <div class="details">
             <h3>{{tileJSON.name}}</h3>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{name}} - Tile Server</title>
+  <title>{{tileJSON.name}} - Tile Server</title>
   {{#is_vector}}
   <link rel="stylesheet" type="text/css" href="/maplibre-gl.css{{&key_query}}" />
   <link rel="stylesheet" type="text/css" href="/maplibre-gl-inspect.css{{&key_query}}" />
@@ -41,7 +41,7 @@
 </head>
 <body>
   {{#is_vector}}
-  <h1>{{name}}</h1>
+  <h1>{{tileJSON.name}}</h1>
   <div id="map"></div>
   <div id="layerList"></div>
   <pre id="propertyList"></pre>
@@ -87,7 +87,7 @@
   </script>
   {{/is_vector}}
   {{^is_vector}}
-  <h1 style="display:none;">{{name}}</h1>
+  <h1 style="display:none;">{{tileJSON.name}}</h1>
   <div id='map'></div>
   <script>
   var keyMatch = location.search.match(/[\?\&]key=([^&]+)/i);

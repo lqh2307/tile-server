@@ -1,3 +1,5 @@
+"use strict";
+
 import fs from "node:fs";
 import { PMTiles, FetchSource } from "pmtiles";
 import { isValidHttpUrl } from "./utils.js";

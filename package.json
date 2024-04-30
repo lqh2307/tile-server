@@ -1,13 +1,13 @@
 {
   "name": "tile-server",
-  "version": "0.0.3",
+  "version": "1.0.0",
   "description": "Map tile server",
   "account": "quanghuy2307",
   "main": "src/main.js",
   "bin": "src/main.js",
   "type": "module",
   "scripts": {
-    "start": "./docker-entrypoint.sh",
+    "start": "node src/main.js",
     "build-image": "ACCOUNT=$(grep -oP '(?<=\"account\": \")[^\"]*' package.json) && NAME=$(grep -oP '(?<=\"name\": \")[^\"]*' package.json) && TAG=$(grep -oP '(?<=\"version\": \")[^\"]*' package.json) && docker build -t $ACCOUNT/$NAME:$TAG ."
   },
   "dependencies": {
@@ -37,8 +37,7 @@
     "sharp": "0.33.3"
   },
   "devDependencies": {
-    "prettier": "^3.2.5",
-    "node-addon-api": "^8"
+    "prettier": "^3.2.5"
   },
   "keywords": [
     "maplibre-gl",

@@ -26,6 +26,7 @@ export const serve_data = {
         if (!item) {
           return res.sendStatus(404);
         }
+
         const tileJSONFormat = item.tileJSON.format;
         const z = req.params.z | 0;
         const x = req.params.x | 0;
@@ -182,6 +183,7 @@ export const serve_data = {
 
     return app;
   },
+
   add: async (options, repo, params, id) => {
     let inputFile;
     let inputType;
@@ -223,6 +225,7 @@ export const serve_data = {
 
       tileJSON["name"] = id;
       tileJSON["format"] = "pbf";
+
       Object.assign(tileJSON, metadata);
 
       tileJSON["tilejson"] = "2.0.0";
@@ -245,11 +248,14 @@ export const serve_data = {
 
             return;
           }
+
           source.getInfo((err, info) => {
             if (err) {
               reject(err);
+
               return;
             }
+
             tileJSON["name"] = id;
             tileJSON["format"] = "pbf";
 
