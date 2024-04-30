@@ -19,7 +19,6 @@ import url from "url";
 import util from "util";
 import zlib from "zlib";
 import sharp from "sharp";
-import clone from "clone";
 import Color from "color";
 import express from "express";
 import sanitize from "sanitize-filename";
@@ -845,7 +844,7 @@ export const serve_rendered = {
         return res.sendStatus(404);
       }
       const tileSize = parseInt(req.params.tileSize, 10) || undefined;
-      const info = clone(item.tileJSON);
+      const info = Object.assign({}, item.tileJSON);
       info.tiles = getTileUrls(
         req,
         info.tiles,
@@ -857,10 +856,12 @@ export const serve_rendered = {
       return res.send(info);
     });
 
-    const fonts = await listFonts(options.paths.fonts);
+    const fonts = listFonts(options.paths.fonts);
     Object.assign(existingFonts, fonts);
+
     return app;
   },
+
   add: async (options, repo, params, id, dataResolver) => {
     const map = {
       renderers: [],
@@ -1100,7 +1101,7 @@ export const serve_rendered = {
     if (styleJSON.center && styleJSON.zoom) {
       tileJSON.center = styleJSON.center.concat(Math.round(styleJSON.zoom));
     }
-    Object.assign(tileJSON, params.tilejson || {});
+    Object.assign(tileJSON, params.tilejson);
     tileJSON.tiles = params.domains || options.domains;
     fixTileJSONCenter(tileJSON);
 

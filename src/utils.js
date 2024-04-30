@@ -1,9 +1,7 @@
 "use strict";
 
 import path from "node:path";
-import fsPromises from "fs/promises";
-import fs, { existsSync } from "node:fs";
-import clone from "clone";
+import fs from "node:fs";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
 
 /**
@@ -134,7 +132,7 @@ const getFontPbf = (allowedFonts, fontPath, name, range, fallbacks) =>
     if (!allowedFonts || (allowedFonts[name] && fallbacks)) {
       const filename = path.join(fontPath, name, `${range}.pbf`);
       if (!fallbacks) {
-        fallbacks = clone(allowedFonts || {});
+        fallbacks = Object.assign({}, allowedFonts);
       }
 
       delete fallbacks[name];
@@ -196,7 +194,7 @@ export const getFontsPbf = async (
         fontPath,
         font,
         range,
-        clone(allowedFonts || fallbacks)
+        Object.assign({}, allowedFonts || fallbacks)
       )
     );
   }
@@ -206,15 +204,15 @@ export const getFontsPbf = async (
   return glyphCompose.combine(values);
 };
 
-export const listFonts = async (fontPath) => {
+export const listFonts = (fontPath) => {
   const existingFonts = {};
 
-  const files = await fsPromises.readdir(fontPath);
+  const files = fs.readdirSync(fontPath);
   for (const file of files) {
-    const stats = await fsPromises.stat(path.join(fontPath, file));
+    const stats = fs.statSync(path.join(fontPath, file));
     if (
       stats.isDirectory() &&
-      existsSync(path.join(fontPath, file, "0-255.pbf"))
+      fs.existsSync(path.join(fontPath, file, "0-255.pbf"))
     ) {
       existingFonts[path.basename(file)] = true;
     }
@@ -224,15 +222,13 @@ export const listFonts = async (fontPath) => {
 };
 
 export const isValidHttpUrl = (string) => {
-  let url;
-
   try {
-    url = new URL(string);
+    const url = new URL(string);
+
+    return url.protocol === "http:" || url.protocol === "https:";
   } catch (_) {
     return false;
   }
-
-  return url.protocol === "http:" || url.protocol === "https:";
 };
 
 export const logInfo = (msg) => {

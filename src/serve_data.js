@@ -3,7 +3,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "zlib";
-import clone from "clone";
 import express from "express";
 import MBTiles from "@mapbox/mbtiles";
 import Pbf from "pbf";
@@ -167,7 +166,7 @@ export const serve_data = {
         return res.sendStatus(404);
       }
       const tileSize = undefined;
-      const info = clone(item.tileJSON);
+      const info = Object.assign({}, item.tileJSON);
       info.tiles = getTileUrls(
         req,
         info.tiles,
@@ -233,7 +232,7 @@ export const serve_data = {
       delete tileJSON["mtime"];
       delete tileJSON["scheme"];
 
-      Object.assign(tileJSON, params.tilejson || {});
+      Object.assign(tileJSON, params.tilejson);
       fixTileJSONCenter(tileJSON);
 
       if (options.dataDecoratorFunc) {
@@ -266,7 +265,7 @@ export const serve_data = {
             delete tileJSON["mtime"];
             delete tileJSON["scheme"];
 
-            Object.assign(tileJSON, params.tilejson || {});
+            Object.assign(tileJSON, params.tilejson);
             fixTileJSONCenter(tileJSON);
 
             if (options.dataDecoratorFunc) {

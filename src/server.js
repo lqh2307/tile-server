@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import fnv1a from "@sindresorhus/fnv1a";
 import chokidar from "chokidar";
-import clone from "clone";
+import cors from "cors";
 import enableShutdown from "http-shutdown";
 import express from "express";
 import handlebars from "handlebars";
@@ -35,6 +35,12 @@ function start(opts) {
     .disable("x-powered-by")
     .enable("trust proxy")
     .use(
+      cors({
+        origin: "*",
+        methods: "GET",
+      })
+    )
+    .use(
       morgan(
         ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent"
       )
@@ -51,57 +57,78 @@ function start(opts) {
 
   const configFilePath = path.resolve(opts.configFilePath);
 
+  let rootPath = "";
+
   try {
     logInfo(`Load config file: ${configFilePath}`);
 
     config = JSON.parse(fs.readFileSync(configFilePath, "utf8"));
+
+    config.options = config.options || {};
+    config.options.paths = config.options.paths || {};
+
+    rootPath = config.options.paths.root || "";
+
+    config.options.paths.root = path.resolve(rootPath);
+    config.options.paths.styles = path.resolve(
+      rootPath,
+      config.options.paths.styles || ""
+    );
+    config.options.paths.fonts = path.resolve(
+      rootPath,
+      config.options.paths.fonts || ""
+    );
+    config.options.paths.sprites = path.resolve(
+      rootPath,
+      config.options.paths.sprites || ""
+    );
+    config.options.paths.mbtiles = path.resolve(
+      rootPath,
+      config.options.paths.mbtiles || ""
+    );
+    config.options.paths.pmtiles = path.resolve(
+      rootPath,
+      config.options.paths.pmtiles || ""
+    );
+    config.options.paths.icons = path.resolve(
+      rootPath,
+      config.options.paths.icons || ""
+    );
+
+    const checkPath = (type) => {
+      if (!fs.existsSync(config.options.paths[type])) {
+        logErr(`"${type}" path does not exist: ${config.options.paths[type]}`);
+
+        process.exit(1);
+      }
+    };
+
+    checkPath("styles");
+    checkPath("fonts");
+    checkPath("sprites");
+    checkPath("mbtiles");
+    checkPath("pmtiles");
+    checkPath("icons");
+
+    config.styles = config.styles || {};
+    config.data = config.data || {};
   } catch (err) {
     logErr(`Failed to load config file: ${err.message}`);
 
     process.exit(1);
   }
 
-  const rootPath = config.options.paths.root || "";
-
-  config.options.paths = {
-    root: path.resolve(rootPath, config.options.paths.styles || ""),
-    styles: path.resolve(rootPath, config.options.paths.styles || ""),
-    fonts: path.resolve(rootPath, config.options.paths.fonts || ""),
-    sprites: path.resolve(rootPath, config.options.paths.sprites || ""),
-    mbtiles: path.resolve(rootPath, config.options.paths.mbtiles || ""),
-    pmtiles: path.resolve(rootPath, config.options.paths.pmtiles || ""),
-    icons: path.resolve(rootPath, config.options.paths.icons || ""),
-  };
-
   const startupPromises = [];
-
-  const checkPath = (type) => {
-    if (!fs.existsSync(config.options.paths[type])) {
-      logErr(`"${type}" path does not exist: ${config.options.paths[type]}`);
-
-      process.exit(1);
-    }
-  };
-
-  checkPath("styles");
-  checkPath("fonts");
-  checkPath("sprites");
-  checkPath("mbtiles");
-  checkPath("pmtiles");
-  checkPath("icons");
 
   /**
    * Recursively get all files within a directory.
-   * Inspired by https://stackoverflow.com/a/45130990/10133863
    * @param {string} directory Absolute path to a directory to get files from.
    */
   const getFiles = async (directory) => {
-    // Fetch all entries of the directory and attach type information
     const dirEntries = await fs.promises.readdir(directory, {
       withFileTypes: true,
     });
 
-    // Iterate through entries and return the relative file-path to the icon directory if it is not a directory otherwise initiate a recursive call
     const files = await Promise.all(
       dirEntries.map((dirEntry) => {
         const entryPath = path.resolve(directory, dirEntry.name);
@@ -236,7 +263,7 @@ function start(opts) {
     }
   };
 
-  for (const id of Object.keys(config.styles || {})) {
+  for (const id of Object.keys(config.styles)) {
     const item = config.styles[id];
     if (!item.style || item.style.length === 0) {
       logErr(`Missing "style" property for ${id}`);
@@ -269,16 +296,18 @@ function start(opts) {
 
   const addTileJSONs = (arr, req, type, tileSize) => {
     for (const id of Object.keys(serving[type])) {
-      const info = clone(serving[type][id].tileJSON);
+      const info = Object.assign({}, serving[type][id].tileJSON);
       let path = "";
       if (type === "rendered") {
         path = `styles/${id}`;
       } else {
         path = `${type}/${id}`;
       }
+
       info.tiles = getTileUrls(req, info.tiles, path, tileSize, info.format, {
         pbf: config.options.pbfAlias,
       });
+
       arr.push(info);
     }
 
@@ -373,10 +402,10 @@ function start(opts) {
               }
             }
 
-            data["key_query_part"] = req.query.key
+            data.key_query_part = req.query.key
               ? `key=${encodeURIComponent(req.query.key)}&amp;`
               : "";
-            data["key_query"] = req.query.key
+            data.key_query = req.query.key
               ? `?key=${encodeURIComponent(req.query.key)}`
               : "";
 
@@ -393,7 +422,7 @@ function start(opts) {
 
   serveTemplate("/$", "index", (req) => {
     let styles = {};
-    for (const id of Object.keys(serving.styles || {})) {
+    for (const id of Object.keys(serving.styles)) {
       let style = {
         ...serving.styles[id],
         serving_data: serving.styles[id],
@@ -424,7 +453,7 @@ function start(opts) {
     }
 
     let datas = {};
-    for (const id of Object.keys(serving.data || {})) {
+    for (const id of Object.keys(serving.data)) {
       let data = Object.assign({}, serving.data[id]);
 
       const { tileJSON } = serving.data[id];
@@ -481,7 +510,7 @@ function start(opts) {
 
   serveTemplate("/styles/:id/$", "viewer", (req) => {
     const { id } = req.params;
-    const style = clone(((serving.styles || {})[id] || {}).styleJSON);
+    const style = serving.styles[id]?.styleJSON;
 
     if (!style) {
       return null;
@@ -498,7 +527,7 @@ function start(opts) {
 
   serveTemplate("/styles/:id/wmts.xml", "wmts", (req) => {
     const { id } = req.params;
-    const wmts = clone((serving.styles || {})[id]);
+    const wmts = serving.styles[id];
 
     if (!wmts) {
       return null;
@@ -547,16 +576,14 @@ function start(opts) {
   if (opts.autoRefresh) {
     logInfo("Enable auto refresh server after changing config file");
 
-    newChokidar.on("change", (event, path) => {
-      if (path) {
-        logInfo(`Config file has changed. Refreshing server...`);
+    newChokidar.on("change", () => {
+      logInfo(`Config file has changed. Refreshing server...`);
 
-        newChokidar.close();
+      newChokidar.close();
 
-        server.shutdown((err) => {
-          start(opts);
-        });
-      }
+      server.shutdown((err) => {
+        start(opts);
+      });
     });
   }
 
@@ -602,8 +629,5 @@ function start(opts) {
  * @param opts
  */
 export function server(opts) {
-  process.on("SIGINT", () => process.exit(0));
-  process.on("SIGTERM", () => process.exit(0));
-
   start(opts);
 }

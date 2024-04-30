@@ -2,7 +2,6 @@
 
 import path from "node:path";
 import fs from "node:fs";
-import clone from "clone";
 import express from "express";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { fixUrl, allowedOptions, logErr } from "./utils.js";
@@ -21,7 +20,7 @@ export const serve_style = {
         return res.sendStatus(404);
       }
 
-      const styleJSON_ = clone(item.styleJSON);
+      const styleJSON_ = Object.assign({}, item.styleJSON);
       for (const name of Object.keys(styleJSON_.sources)) {
         const source = styleJSON_.sources[name];
         source.url = fixUrl(req, source.url);

@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { server } from "./server.js";
 import { program } from "commander";
+import { logInfo } from "./utils.js";
 
 const packageJson = JSON.parse(
   fs.readFileSync(path.resolve("package.json"), "utf8")
@@ -29,6 +30,16 @@ program
 program.parse(process.argv);
 
 process.env.UV_THREADPOOL_SIZE = Math.ceil(Math.max(4, os.cpus().length * 1.5)); // For libuv
+process.on("SIGINT", () => {
+  logInfo("Killed server!");
+
+  process.exit(0);
+});
+process.on("SIGTERM", () => {
+  logInfo("Killed server!");
+
+  process.exit(0);
+});
 
 const startServer = (opts) => {
   server({
