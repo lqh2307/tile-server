@@ -1,8 +1,7 @@
-'use strict';
+"use strict";
 
-import { createCanvas, Image } from 'canvas';
-
-import SphericalMercator from '@mapbox/sphericalmercator';
+import { createCanvas, Image } from "canvas";
+import SphericalMercator from "@mapbox/sphericalmercator";
 
 const mercator = new SphericalMercator();
 
@@ -14,6 +13,7 @@ const mercator = new SphericalMercator();
 const precisePx = (ll, zoom) => {
   const px = mercator.px(ll, 20);
   const scale = Math.pow(2, zoom - 20);
+
   return [px[0] * scale, px[1] * scale];
 };
 
@@ -115,7 +115,7 @@ const drawMarkers = async (ctx, markers, z) => {
  * @param {number} z Map zoom level.
  */
 const drawPath = (ctx, path, query, pathQuery, z) => {
-  const splitPaths = pathQuery.split('|');
+  const splitPaths = pathQuery.split("|");
 
   if (!path || path.length < 2) {
     return null;
@@ -138,32 +138,32 @@ const drawPath = (ctx, path, query, pathQuery, z) => {
   }
 
   // Optionally fill drawn shape with a rgba color from query
-  const pathHasFill = splitPaths.filter((x) => x.startsWith('fill')).length > 0;
+  const pathHasFill = splitPaths.filter((x) => x.startsWith("fill")).length > 0;
   if (query.fill !== undefined || pathHasFill) {
-    if ('fill' in query) {
-      ctx.fillStyle = query.fill || 'rgba(255,255,255,0.4)';
+    if ("fill" in query) {
+      ctx.fillStyle = query.fill || "rgba(255,255,255,0.4)";
     }
     if (pathHasFill) {
       ctx.fillStyle = splitPaths
-        .find((x) => x.startsWith('fill:'))
-        .replace('fill:', '');
+        .find((x) => x.startsWith("fill:"))
+        .replace("fill:", "");
     }
     ctx.fill();
   }
 
   // Get line width from query and fall back to 1 if not provided
   const pathHasWidth =
-    splitPaths.filter((x) => x.startsWith('width')).length > 0;
+    splitPaths.filter((x) => x.startsWith("width")).length > 0;
   if (query.width !== undefined || pathHasWidth) {
     let lineWidth = 1;
     // Get line width from query
-    if ('width' in query) {
+    if ("width" in query) {
       lineWidth = Number(query.width);
     }
     // Get line width from path in query
     if (pathHasWidth) {
       lineWidth = Number(
-        splitPaths.find((x) => x.startsWith('width:')).replace('width:', ''),
+        splitPaths.find((x) => x.startsWith("width:")).replace("width:", "")
       );
     }
     // Get border width from query and fall back to 10% of line width
@@ -174,11 +174,11 @@ const drawPath = (ctx, path, query, pathQuery, z) => {
 
     // Set rendering style for the start and end points of the path
     // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineCap
-    ctx.lineCap = query.linecap || 'butt';
+    ctx.lineCap = query.linecap || "butt";
 
     // Set rendering style for overlapping segments of the path with differing directions
     // https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/lineJoin
-    ctx.lineJoin = query.linejoin || 'miter';
+    ctx.lineJoin = query.linejoin || "miter";
 
     // In order to simulate a border we draw the path two times with the first
     // beeing the wider border part.
@@ -194,19 +194,19 @@ const drawPath = (ctx, path, query, pathQuery, z) => {
   }
 
   const pathHasStroke =
-    splitPaths.filter((x) => x.startsWith('stroke')).length > 0;
+    splitPaths.filter((x) => x.startsWith("stroke")).length > 0;
   if (query.stroke !== undefined || pathHasStroke) {
-    if ('stroke' in query) {
+    if ("stroke" in query) {
       ctx.strokeStyle = query.stroke;
     }
     // Path Stroke gets higher priority
     if (pathHasStroke) {
       ctx.strokeStyle = splitPaths
-        .find((x) => x.startsWith('stroke:'))
-        .replace('stroke:', '');
+        .find((x) => x.startsWith("stroke:"))
+        .replace("stroke:", "");
     }
   } else {
-    ctx.strokeStyle = 'rgba(0,64,255,0.7)';
+    ctx.strokeStyle = "rgba(0,64,255,0.7)";
   }
   ctx.stroke();
 };
@@ -222,7 +222,7 @@ export const renderOverlay = async (
   scale,
   paths,
   markers,
-  query,
+  query
 ) => {
   if ((!paths || paths.length === 0) && (!markers || markers.length === 0)) {
     return null;
@@ -240,7 +240,7 @@ export const renderOverlay = async (
   }
 
   const canvas = createCanvas(scale * w, scale * h);
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   ctx.scale(scale, scale);
   if (bearing) {
     ctx.translate(w / 2, h / 2);
@@ -265,14 +265,14 @@ export const renderOverlay = async (
 
 export const renderWatermark = (width, height, scale, text) => {
   const canvas = createCanvas(scale * width, scale * height);
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   ctx.scale(scale, scale);
 
-  ctx.font = '10px sans-serif';
-  ctx.strokeWidth = '1px';
-  ctx.strokeStyle = 'rgba(255,255,255,.4)';
+  ctx.font = "10px sans-serif";
+  ctx.strokeWidth = "1px";
+  ctx.strokeStyle = "rgba(255,255,255,.4)";
   ctx.strokeText(text, 5, height - 5);
-  ctx.fillStyle = 'rgba(0,0,0,.4)';
+  ctx.fillStyle = "rgba(0,0,0,.4)";
   ctx.fillText(text, 5, height - 5);
 
   return canvas;
@@ -280,23 +280,23 @@ export const renderWatermark = (width, height, scale, text) => {
 
 export const renderAttribution = (width, height, scale, text) => {
   const canvas = createCanvas(scale * width, scale * height);
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   ctx.scale(scale, scale);
 
-  ctx.font = '10px sans-serif';
+  ctx.font = "10px sans-serif";
   const textMetrics = ctx.measureText(text);
   const textWidth = textMetrics.width;
   const textHeight = 14;
 
   const padding = 6;
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+  ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
   ctx.fillRect(
     width - textWidth - padding,
     height - textHeight - padding,
     textWidth + padding,
-    textHeight + padding,
+    textHeight + padding
   );
-  ctx.fillStyle = 'rgba(0,0,0,.8)';
+  ctx.fillStyle = "rgba(0,0,0,.8)";
   ctx.fillText(text, width - textWidth - padding / 2, height - textHeight + 8);
 
   return canvas;

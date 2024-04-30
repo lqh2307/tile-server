@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{name}} - TileServer GL</title>
+  <title>{{name}} - Tile Server</title>
   {{#is_vector}}
-  <link rel="stylesheet" type="text/css" href="{{public_url}}maplibre-gl.css{{&key_query}}" />
-  <link rel="stylesheet" type="text/css" href="{{public_url}}maplibre-gl-inspect.css{{&key_query}}" />
-  <script src="{{public_url}}maplibre-gl.js{{&key_query}}"></script>
-  <script src="{{public_url}}maplibre-gl-inspect.js{{&key_query}}"></script>
+  <link rel="stylesheet" type="text/css" href="/maplibre-gl.css{{&key_query}}" />
+  <link rel="stylesheet" type="text/css" href="/maplibre-gl-inspect.css{{&key_query}}" />
+  <script src="/maplibre-gl.js{{&key_query}}"></script>
+  <script src="/maplibre-gl-inspect.js{{&key_query}}"></script>
   <style>
     body {background:#fff;color:#333;font-family:Arial, sans-serif;}
     #map {position:absolute;top:0;left:0;right:250px;bottom:0;}
@@ -18,23 +18,23 @@
   </style>
   {{/is_vector}}
   {{^is_vector}}
-  <link rel="stylesheet" type="text/css" href="{{public_url}}leaflet.css{{&key_query}}" />
-  <script src="{{public_url}}leaflet.js{{&key_query}}"></script>
-  <script src="{{public_url}}leaflet-hash.js{{&key_query}}"></script>
+  <link rel="stylesheet" type="text/css" href="/leaflet.css{{&key_query}}" />
+  <script src="/leaflet.js{{&key_query}}"></script>
+  <script src="/leaflet-hash.js{{&key_query}}"></script>
   <style>
     body { margin:0; padding:0; }
     #map { position:absolute; top:0; bottom:0; width:100%; }
     .leaflet-control-layers-toggle {
-      background-image: url({{public_url}}images/layers.png{{&key_query}});
+      background-image: url(/images/layers.png{{&key_query}});
       width: 36px;
       height: 36px;
     }
     .leaflet-retina .leaflet-control-layers-toggle {
-      background-image: url({{public_url}}images/layers-2x.png{{&key_query}});
+      background-image: url(/images/layers-2x.png{{&key_query}});
       background-size: 26px 26px;
     }
     .leaflet-default-icon-path { /* used only in path-guessing heuristic, see L.Icon.Default */
-      background-image: url({{public_url}}images/marker-icon.png{{&key_query}});
+      background-image: url(/images/marker-icon.png{{&key_query}});
     }
   </style>
   {{/is_vector}}
@@ -58,7 +58,7 @@
       sources: {
         'vector_layer_': {
           type: 'vector',
-          url: '{{public_url}}data/{{id}}.json' + keyParam
+          url: '/data/{{id}}.json' + keyParam
         }
       },
       layers: []
@@ -97,7 +97,7 @@
     new L.Control.Zoom({ position: 'topright' }).addTo(map);
 
     var tile_urls = [], tile_attribution, tile_minzoom, tile_maxzoom;
-    var url = '{{public_url}}data/{{id}}.json' + keyParam;
+    var url = '/data/{{id}}.json' + keyParam;
     var req = new XMLHttpRequest();
     req.overrideMimeType("application/json");
     req.open('GET', url, true);

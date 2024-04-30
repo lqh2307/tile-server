@@ -34,35 +34,18 @@ a {
 a:hover {
   color: #395d73;
 }
-.title {
-  font-weight: bold;
-  font-size: 32px;
-  text-align: center;
-  margin: 90px 0 0 0;
-  position: relative;
-}
-.title.light:after {
-  content: 'light';
-  display: block;
-  position: absolute;
-  left: 50%;
-  bottom: -5px;
-  color: #499dce;
-  font-size: 0.8em;
-}
 section {
   margin: 15px auto;
   width: 930px;
   padding: 30px 0;
 }
-.title img {
-  width: 320px;
-}
-.subtitle {
-  font-size: 26px;
-  font-weight: normal;
+
+.title {
+  font-size: 28px;
+  font-weight: bold;
+  color: #ff6347;
   text-align: center;
-  margin: 10px 0 95px 0;
+  margin: 10px 0 55px 0;
 }
 .box-header {
   text-align: left;
@@ -129,28 +112,6 @@ section {
 .btn:first-child:hover {
   background: #395d73;
 }
-footer {
-  width: 100%;
-  border-top: 1px solid #ededed;
-  text-align: center;
-  color: #d3d3d3;
-  padding-top: 10px;
-  font-size: 12px;
-}
-footer img {
-  width: 113px;
-  height: 31px;
-}
-footer .t {
-  display: none;
-}
-footer p {
-  margin-top: 0;
-}
-footer a {
-  color: #787878;
-  text-decoration: none;
-}
 .details h3,
 .identifier {
   max-width: 550px;
@@ -167,17 +128,11 @@ footer a {
 }
 @media (max-width: 600px) {
   .title {
-    margin: 25px 0 0 0;
-  }
-  .title.light:after {
-    font-size: 0.6em;
-  }
-  .title img {
-    width: 200px;
-  }
-  .subtitle {
+    font-weight: bold;
+    color: #ff6347;
+    text-align: center;
     font-size: 20px;
-    margin: 0 0 35px 0;
+    margin: 10px 0 -5px 0;
   }
   .item {
     height: 245px;

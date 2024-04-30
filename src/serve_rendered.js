@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 // SECTION START
 //
@@ -7,53 +7,54 @@
 // This happens on ARM:
 //  > terminate called after throwing an instance of 'std::runtime_error'
 //  > what():  Cannot read GLX extensions.
-import 'canvas';
-import '@maplibre/maplibre-gl-native';
+import "canvas";
+import "@maplibre/maplibre-gl-native";
 //
 // SECTION END
 
-import advancedPool from 'advanced-pool';
-import fs from 'node:fs';
-import path from 'path';
-import url from 'url';
-import util from 'util';
-import zlib from 'zlib';
-import sharp from 'sharp';
-import clone from 'clone';
-import Color from 'color';
-import express from 'express';
-import sanitize from 'sanitize-filename';
-import SphericalMercator from '@mapbox/sphericalmercator';
-import mlgl from '@maplibre/maplibre-gl-native';
-import MBTiles from '@mapbox/mbtiles';
-import polyline from '@mapbox/polyline';
-import proj4 from 'proj4';
-import axios from 'axios';
+import advancedPool from "advanced-pool";
+import fs from "node:fs";
+import path from "node:path";
+import url from "url";
+import util from "util";
+import zlib from "zlib";
+import sharp from "sharp";
+import clone from "clone";
+import Color from "color";
+import express from "express";
+import sanitize from "sanitize-filename";
+import SphericalMercator from "@mapbox/sphericalmercator";
+import mlgl from "@maplibre/maplibre-gl-native";
+import MBTiles from "@mapbox/mbtiles";
+import polyline from "@mapbox/polyline";
+import proj4 from "proj4";
+import axios from "axios";
 import {
   getFontsPbf,
   listFonts,
   getTileUrls,
   isValidHttpUrl,
   fixTileJSONCenter,
-} from './utils.js';
+  logErr,
+} from "./utils.js";
 import {
   openPMtiles,
   getPMtilesInfo,
   getPMtilesTile,
-} from './pmtiles_adapter.js';
-import { renderOverlay, renderWatermark, renderAttribution } from './render.js';
+} from "./pmtiles_adapter.js";
+import { renderOverlay, renderWatermark, renderAttribution } from "./render.js";
 
-const FLOAT_PATTERN = '[+-]?(?:\\d+|\\d+.?\\d+)';
+const FLOAT_PATTERN = "[+-]?(?:\\d+|\\d+.?\\d+)";
 const PATH_PATTERN =
   /^((fill|stroke|width)\:[^\|]+\|)*(enc:.+|-?\d+(\.\d*)?,-?\d+(\.\d*)?(\|-?\d+(\.\d*)?,-?\d+(\.\d*)?)+)/;
 const httpTester = /^https?:\/\//i;
 
 const mercator = new SphericalMercator();
-const getScale = (scale) => (scale || '@1x').slice(1, 2) | 0;
+const getScale = (scale) => (scale || "@1x").slice(1, 2) | 0;
 
-mlgl.on('message', (e) => {
-  if (e.severity === 'WARNING' || e.severity === 'ERROR') {
-    console.log('mlgl:', e);
+mlgl.on("message", (e) => {
+  if (e.severity === "WARNING" || e.severity === "ERROR") {
+    logErr(`mlgl: ${e}`);
   }
 });
 
@@ -61,10 +62,10 @@ mlgl.on('message', (e) => {
  * Lookup of sharp output formats by file extension.
  */
 const extensionToFormat = {
-  '.jpg': 'jpeg',
-  '.jpeg': 'jpeg',
-  '.png': 'png',
-  '.webp': 'webp',
+  ".jpg": "jpeg",
+  ".jpeg": "jpeg",
+  ".png": "png",
+  ".webp": "webp",
 };
 
 /**
@@ -72,7 +73,7 @@ const extensionToFormat = {
  * string is for unknown or unsupported formats.
  */
 const cachedEmptyResponses = {
-  '': Buffer.alloc(0),
+  "": Buffer.alloc(0),
 };
 
 /**
@@ -82,29 +83,32 @@ const cachedEmptyResponses = {
  * @param {Function} callback The mlgl callback.
  */
 function createEmptyResponse(format, color, callback) {
-  if (!format || format === 'pbf') {
-    callback(null, { data: cachedEmptyResponses[''] });
+  if (!format || format === "pbf") {
+    callback(null, { data: cachedEmptyResponses[""] });
+
     return;
   }
 
-  if (format === 'jpg') {
-    format = 'jpeg';
+  if (format === "jpg") {
+    format = "jpeg";
   }
+
   if (!color) {
-    color = 'rgba(255,255,255,0)';
+    color = "rgba(255,255,255,0)";
   }
 
   const cacheKey = `${format},${color}`;
   const data = cachedEmptyResponses[cacheKey];
   if (data) {
     callback(null, { data: data });
+
     return;
   }
 
   // create an "empty" response image
   color = new Color(color);
   const array = color.array();
-  const channels = array.length === 4 && format !== 'jpeg' ? 4 : 3;
+  const channels = array.length === 4 && format !== "jpeg" ? 4 : 3;
   sharp(Buffer.from(array), {
     raw: {
       width: 1,
@@ -117,6 +121,7 @@ function createEmptyResponse(format, color, callback) {
       if (!err) {
         cachedEmptyResponses[cacheKey] = buffer;
       }
+
       callback(null, { data: buffer });
     });
 }
@@ -139,7 +144,7 @@ const parseCoordinatePair = (coordinates, query) => {
 
   // Check if coordinates have been provided as lat/lng pair instead of the
   // ususal lng/lat pair and ensure resulting pair is lng/lat
-  if (query.latlng === '1' || query.latlng === 'true') {
+  if (query.latlng === "1" || query.latlng === "true") {
     return [secondCoordinate, firstCoordinate];
   }
 
@@ -172,18 +177,18 @@ const extractPathsFromQuery = (query, transformer) => {
   // Initiate paths array
   const paths = [];
   // Return an empty list if no paths have been provided
-  if ('path' in query && !query.path) {
+  if ("path" in query && !query.path) {
     return paths;
   }
   // Parse paths provided via path query argument
-  if ('path' in query) {
+  if ("path" in query) {
     const providedPaths = Array.isArray(query.path) ? query.path : [query.path];
     // Iterate through paths, parse and validate them
     for (const providedPath of providedPaths) {
       // Logic for pushing coords to path when path includes google polyline
-      if (providedPath.includes('enc:') && PATH_PATTERN.test(providedPath)) {
+      if (providedPath.includes("enc:") && PATH_PATTERN.test(providedPath)) {
         // +4 because 'enc:' is 4 characters, everything after 'enc:' is considered to be part of the polyline
-        const encIndex = providedPath.indexOf('enc:') + 4;
+        const encIndex = providedPath.indexOf("enc:") + 4;
         const coords = polyline
           .decode(providedPath.substring(encIndex))
           .map(([lat, lng]) => [lng, lat]);
@@ -193,12 +198,12 @@ const extractPathsFromQuery = (query, transformer) => {
         const currentPath = [];
 
         // Extract coordinate-list from path
-        const pathParts = (providedPath || '').split('|');
+        const pathParts = (providedPath || "").split("|");
 
         // Iterate through coordinate-list, parse the coordinates and validate them
         for (const pair of pathParts) {
           // Extract coordinates from coordinate pair
-          const pairParts = pair.split(',');
+          const pairParts = pair.split(",");
           // Ensure we have two coordinates
           if (pairParts.length === 2) {
             const pair = parseCoordinates(pairParts, query, transformer);
@@ -232,7 +237,7 @@ const extractPathsFromQuery = (query, transformer) => {
  */
 const parseMarkerOptions = (optionsList, marker) => {
   for (const options of optionsList) {
-    const optionParts = options.split(':');
+    const optionParts = options.split(":");
     // Ensure we got an option name and value
     if (optionParts.length < 2) {
       continue;
@@ -240,14 +245,14 @@ const parseMarkerOptions = (optionsList, marker) => {
 
     switch (optionParts[0]) {
       // Scale factor to up- or downscale icon
-      case 'scale':
+      case "scale":
         // Scale factors must not be negative
         marker.scale = Math.abs(parseFloat(optionParts[1]));
         break;
       // Icon offset as positive or negative pixel value in the following
       // format [offsetX],[offsetY] where [offsetY] is optional
-      case 'offset':
-        const providedOffset = optionParts[1].split(',');
+      case "offset":
+        const providedOffset = optionParts[1].split(",");
         // Set X-axis offset
         marker.offsetX = parseFloat(providedOffset[0]);
         // Check if an offset has been provided for Y-axis
@@ -284,13 +289,13 @@ const extractMarkersFromQuery = (query, options, transformer) => {
   // [location]|[pathToFileTelativeToConfiguredIconPath]
   // [location]|[pathToFile...]|[option]|[option]|...
   for (const providedMarker of providedMarkers) {
-    const markerParts = providedMarker.split('|');
+    const markerParts = providedMarker.split("|");
     // Ensure we got at least a location and an icon uri
     if (markerParts.length < 2) {
       continue;
     }
 
-    const locationParts = markerParts[0].split(',');
+    const locationParts = markerParts[0].split(",");
     // Ensure the locationParts contains two items
     if (locationParts.length !== 2) {
       continue;
@@ -300,8 +305,8 @@ const extractMarkersFromQuery = (query, options, transformer) => {
     // Check if icon is served via http otherwise marker icons are expected to
     // be provided as filepaths relative to configured icon path
     const isRemoteURL =
-      iconURI.startsWith('http://') || iconURI.startsWith('https://');
-    const isDataURL = iconURI.startsWith('data:');
+      iconURI.startsWith("http://") || iconURI.startsWith("https://");
+    const isDataURL = iconURI.startsWith("data:");
     if (!(isRemoteURL || isDataURL)) {
       // Sanitize URI with sanitize-filename
       // https://www.npmjs.com/package/sanitize-filename#details
@@ -356,7 +361,7 @@ const calcZForBBox = (bbox, w, h, query) => {
   z -=
     Math.max(
       Math.log((maxCorner[0] - minCorner[0]) / w_),
-      Math.log((maxCorner[1] - minCorner[1]) / h_),
+      Math.log((maxCorner[1] - minCorner[1]) / h_)
     ) / Math.LN2;
 
   z = Math.max(Math.log(Math.max(w, h) / 256) / Math.LN2, Math.min(25, z));
@@ -378,7 +383,7 @@ const respondImage = (
   format,
   res,
   overlay = null,
-  mode = 'tile',
+  mode = "tile"
 ) => {
   if (
     Math.abs(lon) > 180 ||
@@ -386,7 +391,7 @@ const respondImage = (
     lon !== lon ||
     lat !== lat
   ) {
-    return res.status(400).send('Invalid center');
+    return res.status(400).send("Invalid center");
   }
 
   if (
@@ -395,19 +400,19 @@ const respondImage = (
     width !== width ||
     height !== height
   ) {
-    return res.status(400).send('Invalid size');
+    return res.status(400).send("Invalid size");
   }
 
-  if (format === 'png' || format === 'webp') {
-  } else if (format === 'jpg' || format === 'jpeg') {
-    format = 'jpeg';
+  if (format === "png" || format === "webp") {
+  } else if (format === "jpg" || format === "jpeg") {
+    format = "jpeg";
   } else {
-    return res.status(400).send('Invalid format');
+    return res.status(400).send("Invalid format");
   }
 
   const tileMargin = Math.max(options.tileMargin || 0, 0);
   let pool;
-  if (mode === 'tile' && tileMargin === 0) {
+  if (mode === "tile" && tileMargin === 0) {
     pool = item.map.renderers[scale];
   } else {
     pool = item.map.renderersStatic[scale];
@@ -430,7 +435,7 @@ const respondImage = (
       height,
     };
 
-    // HACK(Part 1) 256px tiles are a zoom level lower than maplibre-native default tiles. this hack allows tileserver-gl to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native. Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in Part 2.
+    // HACK(Part 1) 256px tiles are a zoom level lower than maplibre-native default tiles. this hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native. Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in Part 2.
     if (z === 0 && width === 256) {
       params.width *= 2;
       params.height *= 2;
@@ -445,8 +450,9 @@ const respondImage = (
     renderer.render(params, (err, data) => {
       pool.release(renderer);
       if (err) {
-        console.error(err);
-        return res.status(500).header('Content-Type', 'text/plain').send(err);
+        logErr(err);
+
+        return res.status(500).header("Content-Type", "text/plain").send(err);
       }
 
       const image = sharp(data, {
@@ -462,7 +468,7 @@ const respondImage = (
         const y = mercator.px(params.center, z)[1];
         const yoffset = Math.max(
           Math.min(0, y - 128 - tileMargin),
-          y + 128 + tileMargin - Math.pow(2, z + 8),
+          y + 128 + tileMargin - Math.pow(2, z + 8)
         );
         image.extract({
           left: tileMargin * scale,
@@ -472,7 +478,7 @@ const respondImage = (
         });
       }
 
-      // HACK(Part 2) 256px tiles are a zoom level lower than maplibre-native default tiles. this hack allows tileserver-gl to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native. Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
+      // HACK(Part 2) 256px tiles are a zoom level lower than maplibre-native default tiles. this hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native. Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
       if (z === 0 && width === 256) {
         image.resize(width * scale, height * scale);
       }
@@ -488,12 +494,12 @@ const respondImage = (
         composites.push({ input: canvas.toBuffer() });
       }
 
-      if (mode === 'static' && item.staticAttributionText) {
+      if (mode === "static" && item.staticAttributionText) {
         const canvas = renderAttribution(
           width,
           height,
           scale,
-          item.staticAttributionText,
+          item.staticAttributionText
         );
 
         composites.push({ input: canvas.toBuffer() });
@@ -505,21 +511,21 @@ const respondImage = (
 
       const formatQuality = (options.formatQuality || {})[format];
 
-      if (format === 'png') {
+      if (format === "png") {
         image.png({ adaptiveFiltering: false });
-      } else if (format === 'jpeg') {
+      } else if (format === "jpeg") {
         image.jpeg({ quality: formatQuality || 80 });
-      } else if (format === 'webp') {
+      } else if (format === "webp") {
         image.webp({ quality: formatQuality || 90 });
       }
       image.toBuffer((err, buffer, info) => {
         if (!buffer) {
-          return res.status(404).send('Not found');
+          return res.status(404).send("Not found");
         }
 
         res.set({
-          'Last-Modified': item.lastModified,
-          'Content-Type': `image/${format}`,
+          "Last-Modified": item.lastModified,
+          "Content-Type": `image/${format}`,
         });
         return res.status(200).send(buffer);
       });
@@ -533,13 +539,13 @@ let maxScaleFactor = 2;
 export const serve_rendered = {
   init: async (options, repo) => {
     maxScaleFactor = Math.min(Math.floor(options.maxScaleFactor || 3), 9);
-    let scalePattern = '';
+    let scalePattern = "";
     for (let i = 2; i <= maxScaleFactor; i++) {
       scalePattern += i.toFixed();
     }
     scalePattern = `@[${scalePattern}]x`;
 
-    const app = express().disable('x-powered-by');
+    const app = express().disable("x-powered-by");
 
     app.get(
       `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(${scalePattern})?.:format([\\w]+)`,
@@ -549,9 +555,9 @@ export const serve_rendered = {
           return res.sendStatus(404);
         }
 
-        const modifiedSince = req.get('if-modified-since');
-        const cc = req.get('cache-control');
-        if (modifiedSince && (!cc || cc.indexOf('no-cache') === -1)) {
+        const modifiedSince = req.get("if-modified-since");
+        const cc = req.get("cache-control");
+        if (modifiedSince && (!cc || cc.indexOf("no-cache") === -1)) {
           if (new Date(item.lastModified) <= new Date(modifiedSince)) {
             return res.sendStatus(304);
           }
@@ -572,7 +578,7 @@ export const serve_rendered = {
           x >= Math.pow(2, z) ||
           y >= Math.pow(2, z)
         ) {
-          return res.status(404).send('Out of bounds');
+          return res.status(404).send("Out of bounds");
         }
 
         const tileCenter = mercator.ll(
@@ -580,26 +586,26 @@ export const serve_rendered = {
             ((x + 0.5) / (1 << z)) * (256 << z),
             ((y + 0.5) / (1 << z)) * (256 << z),
           ],
-          z,
+          z
         );
 
         // prettier-ignore
         return respondImage(
           options, item, z, tileCenter[0], tileCenter[1], 0, 0, tileSize, tileSize, scale, format, res,
         );
-      },
+      }
     );
 
     if (options.serveStaticMaps !== false) {
       const staticPattern = `/:id/static/:raw(raw)?/%s/:width(\\d+)x:height(\\d+):scale(${scalePattern})?.:format([\\w]+)`;
 
       const centerPattern = util.format(
-        ':x(%s),:y(%s),:z(%s)(@:bearing(%s)(,:pitch(%s))?)?',
+        ":x(%s),:y(%s),:z(%s)(@:bearing(%s)(,:pitch(%s))?)?",
         FLOAT_PATTERN,
         FLOAT_PATTERN,
         FLOAT_PATTERN,
         FLOAT_PATTERN,
-        FLOAT_PATTERN,
+        FLOAT_PATTERN
       );
 
       app.get(
@@ -614,15 +620,15 @@ export const serve_rendered = {
             const z = +req.params.z;
             let x = +req.params.x;
             let y = +req.params.y;
-            const bearing = +(req.params.bearing || '0');
-            const pitch = +(req.params.pitch || '0');
+            const bearing = +(req.params.bearing || "0");
+            const pitch = +(req.params.pitch || "0");
             const w = req.params.width | 0;
             const h = req.params.height | 0;
             const scale = getScale(req.params.scale);
             const format = req.params.format;
 
             if (z < 0) {
-              return res.status(404).send('Invalid zoom');
+              return res.status(404).send("Invalid zoom");
             }
 
             const transformer = raw
@@ -639,7 +645,7 @@ export const serve_rendered = {
             const markers = extractMarkersFromQuery(
               req.query,
               options,
-              transformer,
+              transformer
             );
 
             // prettier-ignore
@@ -654,7 +660,7 @@ export const serve_rendered = {
           } catch (e) {
             next(e);
           }
-        },
+        }
       );
 
       const serveBounds = async (req, res, next) => {
@@ -701,7 +707,7 @@ export const serve_rendered = {
           const markers = extractMarkersFromQuery(
             req.query,
             options,
-            transformer,
+            transformer
           );
 
           // prettier-ignore
@@ -719,28 +725,28 @@ export const serve_rendered = {
       };
 
       const boundsPattern = util.format(
-        ':minx(%s),:miny(%s),:maxx(%s),:maxy(%s)',
+        ":minx(%s),:miny(%s),:maxx(%s),:maxy(%s)",
         FLOAT_PATTERN,
         FLOAT_PATTERN,
         FLOAT_PATTERN,
-        FLOAT_PATTERN,
+        FLOAT_PATTERN
       );
 
       app.get(util.format(staticPattern, boundsPattern), serveBounds);
 
-      app.get('/:id/static/', (req, res, next) => {
+      app.get("/:id/static/", (req, res, next) => {
         for (const key in req.query) {
           req.query[key.toLowerCase()] = req.query[key];
         }
         req.params.raw = true;
-        req.params.format = (req.query.format || 'image/png').split('/').pop();
-        const bbox = (req.query.bbox || '').split(',');
+        req.params.format = (req.query.format || "image/png").split("/").pop();
+        const bbox = (req.query.bbox || "").split(",");
         req.params.minx = bbox[0];
         req.params.miny = bbox[1];
         req.params.maxx = bbox[2];
         req.params.maxy = bbox[3];
-        req.params.width = req.query.width || '256';
-        req.params.height = req.query.height || '256';
+        req.params.width = req.query.width || "256";
+        req.params.height = req.query.height || "256";
         if (req.query.scale) {
           req.params.width /= req.query.scale;
           req.params.height /= req.query.scale;
@@ -750,7 +756,7 @@ export const serve_rendered = {
         return serveBounds(req, res, next);
       });
 
-      const autoPattern = 'auto';
+      const autoPattern = "auto";
 
       app.get(
         util.format(staticPattern, autoPattern),
@@ -776,7 +782,7 @@ export const serve_rendered = {
             const markers = extractMarkersFromQuery(
               req.query,
               options,
-              transformer,
+              transformer
             );
 
             // Extract coordinates from markers
@@ -790,7 +796,7 @@ export const serve_rendered = {
 
             // Check if we have at least one coordinate to calculate a bounding box
             if (coords.length < 1) {
-              return res.status(400).send('No coordinates provided');
+              return res.status(400).send("No coordinates provided");
             }
 
             const bbox = [Infinity, Infinity, -Infinity, -Infinity];
@@ -801,7 +807,7 @@ export const serve_rendered = {
               bbox[3] = Math.max(bbox[3], pair[1]);
             }
 
-            const bbox_ = mercator.convert(bbox, '900913');
+            const bbox_ = mercator.convert(bbox, "900913");
             const center = mercator.inverse([
               (bbox_[0] + bbox_[2]) / 2,
               (bbox_[1] + bbox_[3]) / 2,
@@ -829,11 +835,11 @@ export const serve_rendered = {
           } catch (e) {
             next(e);
           }
-        },
+        }
       );
     }
 
-    app.get('/(:tileSize(256|512)/)?:id.json', (req, res, next) => {
+    app.get("/(:tileSize(256|512)/)?:id.json", (req, res, next) => {
       const item = repo[req.params.id];
       if (!item) {
         return res.sendStatus(404);
@@ -845,9 +851,9 @@ export const serve_rendered = {
         info.tiles,
         `styles/${req.params.id}`,
         tileSize,
-        info.format,
-        item.publicUrl,
+        info.format
       );
+
       return res.send(info);
     });
 
@@ -855,7 +861,7 @@ export const serve_rendered = {
     Object.assign(existingFonts, fonts);
     return app;
   },
-  add: async (options, repo, params, id, publicUrl, dataResolver) => {
+  add: async (options, repo, params, id, dataResolver) => {
     const map = {
       renderers: [],
       renderersStatic: [],
@@ -870,18 +876,17 @@ export const serve_rendered = {
           mode,
           ratio,
           request: async (req, callback) => {
-            const protocol = req.url.split(':')[0];
-            // console.log('Handling request:', req);
-            if (protocol === 'sprites') {
+            const protocol = req.url.split(":")[0];
+            if (protocol === "sprites") {
               const dir = options.paths[protocol];
               const file = unescape(req.url).substring(protocol.length + 3);
               fs.readFile(path.join(dir, file), (err, data) => {
                 callback(err, { data: data });
               });
-            } else if (protocol === 'fonts') {
-              const parts = req.url.split('/');
+            } else if (protocol === "fonts") {
+              const parts = req.url.split("/");
               const fontstack = unescape(parts[2]);
-              const range = parts[3].split('.')[0];
+              const range = parts[3].split(".")[0];
 
               try {
                 const concatenated = await getFontsPbf(
@@ -889,14 +894,14 @@ export const serve_rendered = {
                   options.paths[protocol],
                   fontstack,
                   range,
-                  existingFonts,
+                  existingFonts
                 );
                 callback(null, { data: concatenated });
               } catch (err) {
                 callback(err, { data: null });
               }
-            } else if (protocol === 'mbtiles' || protocol === 'pmtiles') {
-              const parts = req.url.split('/');
+            } else if (protocol === "mbtiles" || protocol === "pmtiles") {
+              const parts = req.url.split("/");
               const sourceId = parts[2];
               const source = map.sources[sourceId];
               const sourceType = map.sourceTypes[sourceId];
@@ -904,82 +909,80 @@ export const serve_rendered = {
 
               const z = parts[3] | 0;
               const x = parts[4] | 0;
-              const y = parts[5].split('.')[0] | 0;
-              const format = parts[5].split('.')[1];
+              const y = parts[5].split(".")[0] | 0;
+              const format = parts[5].split(".")[1];
 
-              if (sourceType === 'pmtiles') {
+              if (sourceType === "pmtiles") {
                 let tileinfo = await getPMtilesTile(source, z, x, y);
                 let data = tileinfo.data;
                 let headers = tileinfo.header;
                 if (data == undefined) {
-                  if (options.verbose)
-                    console.log('MBTiles error, serving empty', err);
+                  logErr(`MBTiles error, serving empty: ${err}`);
+
                   createEmptyResponse(
                     sourceInfo.format,
                     sourceInfo.color,
-                    callback,
+                    callback
                   );
+
                   return;
                 } else {
                   const response = {};
                   response.data = data;
-                  if (headers['Last-Modified']) {
-                    response.modified = new Date(headers['Last-Modified']);
+                  if (headers["Last-Modified"]) {
+                    response.modified = new Date(headers["Last-Modified"]);
                   }
 
-                  if (format === 'pbf') {
+                  if (format === "pbf") {
                     if (options.dataDecoratorFunc) {
                       response.data = options.dataDecoratorFunc(
                         sourceId,
-                        'data',
+                        "data",
                         response.data,
                         z,
                         x,
-                        y,
+                        y
                       );
                     }
                   }
 
                   callback(null, response);
                 }
-              } else if (sourceType === 'mbtiles') {
+              } else if (sourceType === "mbtiles") {
                 source.getTile(z, x, y, (err, data, headers) => {
                   if (err) {
-                    if (options.verbose)
-                      console.log('MBTiles error, serving empty', err);
+                    logErr(`MBTiles error, serving empty: ${err}`);
+
                     createEmptyResponse(
                       sourceInfo.format,
                       sourceInfo.color,
-                      callback,
+                      callback
                     );
+
                     return;
                   }
 
                   const response = {};
-                  if (headers['Last-Modified']) {
-                    response.modified = new Date(headers['Last-Modified']);
+                  if (headers["Last-Modified"]) {
+                    response.modified = new Date(headers["Last-Modified"]);
                   }
 
-                  if (format === 'pbf') {
+                  if (format === "pbf") {
                     try {
                       response.data = zlib.unzipSync(data);
                     } catch (err) {
-                      console.log(
-                        'Skipping incorrect header for tile mbtiles://%s/%s/%s/%s.pbf',
-                        id,
-                        z,
-                        x,
-                        y,
+                      logErr(
+                        `Skipping incorrect header for tile mbtiles://${id}/${z}/${x}/${y}.pbf`
                       );
                     }
                     if (options.dataDecoratorFunc) {
                       response.data = options.dataDecoratorFunc(
                         sourceId,
-                        'data',
+                        "data",
                         response.data,
                         z,
                         x,
-                        y,
+                        y
                       );
                     }
                   } else {
@@ -989,10 +992,10 @@ export const serve_rendered = {
                   callback(null, response);
                 });
               }
-            } else if (protocol === 'http' || protocol === 'https') {
+            } else if (protocol === "http" || protocol === "https") {
               try {
                 const response = await axios.get(req.url, {
-                  responseType: 'arraybuffer', // Get the response as raw buffer
+                  responseType: "arraybuffer", // Get the response as raw buffer
                   // Axios handles gzip by default, so no need for a gzip flag
                 });
 
@@ -1000,9 +1003,9 @@ export const serve_rendered = {
                 const responseData = response.data;
 
                 const parsedResponse = {};
-                if (responseHeaders['last-modified']) {
+                if (responseHeaders["last-modified"]) {
                   parsedResponse.modified = new Date(
-                    responseHeaders['last-modified'],
+                    responseHeaders["last-modified"]
                   );
                 }
                 if (responseHeaders.expires) {
@@ -1017,8 +1020,8 @@ export const serve_rendered = {
               } catch (error) {
                 const parts = url.parse(req.url);
                 const extension = path.extname(parts.pathname).toLowerCase();
-                const format = extensionToFormat[extension] || '';
-                createEmptyResponse(format, '', callback);
+                const format = extensionToFormat[extension] || "";
+                createEmptyResponse(format, "", callback);
               }
             }
           },
@@ -1041,26 +1044,27 @@ export const serve_rendered = {
     try {
       styleJSON = JSON.parse(fs.readFileSync(styleJSONPath));
     } catch (e) {
-      console.log('Error parsing style file');
+      logErr(`Error parsing style file: ${e}`);
+
       return false;
     }
 
     if (styleJSON.sprite) {
       if (!Array.isArray(styleJSON.sprite)) {
-        styleJSON.sprite = [{ id: 'default', url: styleJSON.sprite }];
+        styleJSON.sprite = [{ id: "default", url: styleJSON.sprite }];
       }
       styleJSON.sprite.forEach((spriteItem) => {
         if (!httpTester.test(spriteItem.url)) {
           spriteItem.url =
-            'sprites://' +
+            "sprites://" +
             spriteItem.url
-              .replace('{style}', path.basename(styleFile, '.json'))
+              .replace("{style}", path.basename(styleFile, ".json"))
               .replace(
-                '{styleJsonFolder}',
+                "{styleJsonFolder}",
                 path.relative(
                   options.paths.sprites,
-                  path.dirname(styleJSONPath),
-                ),
+                  path.dirname(styleJSONPath)
+                )
               );
         }
       });
@@ -1073,24 +1077,24 @@ export const serve_rendered = {
     for (const layer of styleJSON.layers || []) {
       if (layer && layer.paint) {
         // Remove (flatten) 3D buildings
-        if (layer.paint['fill-extrusion-height']) {
-          layer.paint['fill-extrusion-height'] = 0;
+        if (layer.paint["fill-extrusion-height"]) {
+          layer.paint["fill-extrusion-height"] = 0;
         }
-        if (layer.paint['fill-extrusion-base']) {
-          layer.paint['fill-extrusion-base'] = 0;
+        if (layer.paint["fill-extrusion-base"]) {
+          layer.paint["fill-extrusion-base"] = 0;
         }
       }
     }
 
     const tileJSON = {
-      tilejson: '2.0.0',
+      tilejson: "2.0.0",
       name: styleJSON.name,
-      attribution: '',
+      attribution: "",
       minzoom: 0,
       maxzoom: 20,
       bounds: [-180, -85.0511, 180, 85.0511],
-      format: 'png',
-      type: 'baselayer',
+      format: "png",
+      type: "baselayer",
     };
     const attributionOverride = params.tilejson && params.tilejson.attribution;
     if (styleJSON.center && styleJSON.zoom) {
@@ -1102,7 +1106,6 @@ export const serve_rendered = {
 
     const repoobj = {
       tileJSON,
-      publicUrl,
       map,
       dataProjWGStoInternalWGS: null,
       lastModified: new Date().toUTCString(),
@@ -1119,13 +1122,13 @@ export const serve_rendered = {
       let url = source.url;
       if (
         url &&
-        (url.startsWith('pmtiles://') || url.startsWith('mbtiles://'))
+        (url.startsWith("pmtiles://") || url.startsWith("mbtiles://"))
       ) {
         // found pmtiles or mbtiles source, replace with info from local file
         delete source.url;
 
-        let dataId = url.replace('pmtiles://', '').replace('mbtiles://', '');
-        if (dataId.startsWith('{') && dataId.endsWith('}')) {
+        let dataId = url.replace("pmtiles://", "").replace("mbtiles://", "");
+        if (dataId.startsWith("{") && dataId.endsWith("}")) {
           dataId = dataId.slice(1, -1);
         }
 
@@ -1140,7 +1143,8 @@ export const serve_rendered = {
           inputFile = dataInfo.inputFile;
           sourceType = dataInfo.fileType;
         } else {
-          console.error(`ERROR: data "${inputFile}" not found!`);
+          logErr(`Data "${inputFile}" is not found`);
+
           process.exit(1);
         }
 
@@ -1151,14 +1155,14 @@ export const serve_rendered = {
           }
         }
 
-        if (sourceType === 'pmtiles') {
+        if (sourceType === "pmtiles") {
           map.sources[name] = openPMtiles(inputFile);
-          map.sourceTypes[name] = 'pmtiles';
+          map.sourceTypes[name] = "pmtiles";
           const metadata = await getPMtilesInfo(map.sources[name]);
 
           if (!repoobj.dataProjWGStoInternalWGS && metadata.proj4) {
             // how to do this for multiple sources with different proj4 defs?
-            const to3857 = proj4('EPSG:3857');
+            const to3857 = proj4("EPSG:3857");
             const toDataProj = proj4(metadata.proj4);
             repoobj.dataProjWGStoInternalWGS = (xy) =>
               to3857.inverse(toDataProj.forward(xy));
@@ -1169,7 +1173,7 @@ export const serve_rendered = {
           source.type = type;
           source.tiles = [
             // meta url which will be detected when requested
-            `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || 'pbf'}`,
+            `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || "pbf"}`,
           ];
           delete source.scheme;
 
@@ -1180,7 +1184,7 @@ export const serve_rendered = {
           ) {
             if (!tileJSON.attribution.includes(source.attribution)) {
               if (tileJSON.attribution.length > 0) {
-                tileJSON.attribution += ' | ';
+                tileJSON.attribution += " | ";
               }
               tileJSON.attribution += source.attribution;
             }
@@ -1191,19 +1195,20 @@ export const serve_rendered = {
               inputFile = path.resolve(options.paths.mbtiles, inputFile);
               const inputFileStats = fs.statSync(inputFile);
               if (!inputFileStats.isFile() || inputFileStats.size === 0) {
-                throw Error(`Not valid MBTiles file: "${inputFile}"`);
+                throw Error(`Invalid MBTiles file: ${inputFile}`);
               }
-              map.sources[name] = new MBTiles(inputFile + '?mode=ro', (err) => {
+              map.sources[name] = new MBTiles(inputFile + "?mode=ro", (err) => {
                 map.sources[name].getInfo((err, info) => {
                   if (err) {
-                    console.error(err);
+                    logErr(err);
+
                     return;
                   }
-                  map.sourceTypes[name] = 'mbtiles';
+                  map.sourceTypes[name] = "mbtiles";
 
                   if (!repoobj.dataProjWGStoInternalWGS && info.proj4) {
                     // how to do this for multiple sources with different proj4 defs?
-                    const to3857 = proj4('EPSG:3857');
+                    const to3857 = proj4("EPSG:3857");
                     const toDataProj = proj4(info.proj4);
                     repoobj.dataProjWGStoInternalWGS = (xy) =>
                       to3857.inverse(toDataProj.forward(xy));
@@ -1214,15 +1219,15 @@ export const serve_rendered = {
                   source.type = type;
                   source.tiles = [
                     // meta url which will be detected when requested
-                    `mbtiles://${name}/{z}/{x}/{y}.${info.format || 'pbf'}`,
+                    `mbtiles://${name}/{z}/{x}/{y}.${info.format || "pbf"}`,
                   ];
                   delete source.scheme;
 
                   if (options.dataDecoratorFunc) {
                     source = options.dataDecoratorFunc(
                       name,
-                      'tilejson',
-                      source,
+                      "tilejson",
+                      source
                     );
                   }
 
@@ -1233,7 +1238,7 @@ export const serve_rendered = {
                   ) {
                     if (!tileJSON.attribution.includes(source.attribution)) {
                       if (tileJSON.attribution.length > 0) {
-                        tileJSON.attribution += ' | ';
+                        tileJSON.attribution += " | ";
                       }
                       tileJSON.attribution += source.attribution;
                     }
@@ -1241,7 +1246,7 @@ export const serve_rendered = {
                   resolve();
                 });
               });
-            }),
+            })
           );
         }
       }
@@ -1257,12 +1262,12 @@ export const serve_rendered = {
       const j = Math.min(maxPoolSizes.length - 1, s - 1);
       const minPoolSize = minPoolSizes[i];
       const maxPoolSize = Math.max(minPoolSize, maxPoolSizes[j]);
-      map.renderers[s] = createPool(s, 'tile', minPoolSize, maxPoolSize);
+      map.renderers[s] = createPool(s, "tile", minPoolSize, maxPoolSize);
       map.renderersStatic[s] = createPool(
         s,
-        'static',
+        "static",
         minPoolSize,
-        maxPoolSize,
+        maxPoolSize
       );
     }
   },

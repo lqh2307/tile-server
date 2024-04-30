@@ -1,46 +1,45 @@
-#!/usr/bin/env node
-'use strict';
+"use strict";
 
-import os from 'os';
-process.env.UV_THREADPOOL_SIZE = Math.ceil(Math.max(4, os.cpus().length * 1.5));
+import fs from "node:fs";
+import path from "node:path";
+import fnv1a from "@sindresorhus/fnv1a";
+import chokidar from "chokidar";
+import clone from "clone";
+import enableShutdown from "http-shutdown";
+import express from "express";
+import handlebars from "handlebars";
+import SphericalMercator from "@mapbox/sphericalmercator";
+import morgan from "morgan";
+import { serve_data } from "./serve_data.js";
+import { serve_style } from "./serve_style.js";
+import { serve_font } from "./serve_font.js";
+import { serve_rendered } from "./serve_rendered.js";
+import {
+  getTileUrls,
+  getUrl,
+  isValidHttpUrl,
+  logInfo,
+  logErr,
+} from "./utils.js";
 
-import fs from 'node:fs';
-import path from 'path';
-import fnv1a from '@sindresorhus/fnv1a';
-import chokidar from 'chokidar';
-import clone from 'clone';
-import cors from 'cors';
-import enableShutdown from 'http-shutdown';
-import express from 'express';
-import handlebars from 'handlebars';
-import SphericalMercator from '@mapbox/sphericalmercator';
 const mercator = new SphericalMercator();
-import morgan from 'morgan';
-import { serve_data } from './serve_data.js';
-import { serve_style } from './serve_style.js';
-import { serve_font } from './serve_font.js';
-import { getTileUrls, getPublicUrl, isValidHttpUrl } from './utils.js';
-
-import { fileURLToPath } from 'url';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const packageJson = JSON.parse(
-  fs.readFileSync(__dirname + '/../package.json', 'utf8'),
-);
-
-const isLight = packageJson.name.slice(-6) === '-light';
-const serve_rendered = (
-  await import(`${!isLight ? `./serve_rendered.js` : `./serve_light.js`}`)
-).serve_rendered;
 
 /**
  *
  * @param opts
  */
 function start(opts) {
-  console.log('Starting server');
+  logInfo("Starting server...");
 
-  const app = express().disable('x-powered-by');
+  const app = express()
+    .disable("x-powered-by")
+    .enable("trust proxy")
+    .use(
+      morgan(
+        ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent"
+      )
+    );
+
   const serving = {
     styles: {},
     rendered: {},
@@ -48,70 +47,48 @@ function start(opts) {
     fonts: {},
   };
 
-  app.enable('trust proxy');
+  let config = {};
 
-  if (process.env.NODE_ENV !== 'test') {
-    const defaultLogFormat =
-      process.env.NODE_ENV === 'production' ? 'tiny' : 'dev';
-    const logFormat = opts.logFormat || defaultLogFormat;
-    app.use(
-      morgan(logFormat, {
-        stream: opts.logFile
-          ? fs.createWriteStream(opts.logFile, { flags: 'a' })
-          : process.stdout,
-        skip: (req, res) =>
-          opts.silent && (res.statusCode === 200 || res.statusCode === 304),
-      }),
-    );
-  }
+  const configFilePath = path.resolve(opts.configFilePath);
 
-  let config = opts.config || null;
-  let configPath = null;
-  if (opts.configPath) {
-    configPath = path.resolve(opts.configPath);
-    try {
-      config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    } catch (e) {
-      console.log('ERROR: Config file not found or invalid!');
-      console.log('       See README.md for instructions and sample data.');
-      process.exit(1);
-    }
-  }
-  if (!config) {
-    console.log('ERROR: No config file not specified!');
+  try {
+    logInfo(`Load config file: ${configFilePath}`);
+
+    config = JSON.parse(fs.readFileSync(configFilePath, "utf8"));
+  } catch (err) {
+    logErr(`Failed to load config file: ${err.message}`);
+
     process.exit(1);
   }
 
-  const options = config.options || {};
-  const paths = options.paths || {};
-  options.paths = paths;
-  paths.root = path.resolve(
-    configPath ? path.dirname(configPath) : process.cwd(),
-    paths.root || '',
-  );
-  paths.styles = path.resolve(paths.root, paths.styles || '');
-  paths.fonts = path.resolve(paths.root, paths.fonts || '');
-  paths.sprites = path.resolve(paths.root, paths.sprites || '');
-  paths.mbtiles = path.resolve(paths.root, paths.mbtiles || '');
-  paths.pmtiles = path.resolve(paths.root, paths.pmtiles || '');
-  paths.icons = path.resolve(paths.root, paths.icons || '');
+  const rootPath = config.options.paths.root || "";
+
+  config.options.paths = {
+    root: path.resolve(rootPath, config.options.paths.styles || ""),
+    styles: path.resolve(rootPath, config.options.paths.styles || ""),
+    fonts: path.resolve(rootPath, config.options.paths.fonts || ""),
+    sprites: path.resolve(rootPath, config.options.paths.sprites || ""),
+    mbtiles: path.resolve(rootPath, config.options.paths.mbtiles || ""),
+    pmtiles: path.resolve(rootPath, config.options.paths.pmtiles || ""),
+    icons: path.resolve(rootPath, config.options.paths.icons || ""),
+  };
 
   const startupPromises = [];
 
   const checkPath = (type) => {
-    if (!fs.existsSync(paths[type])) {
-      console.error(
-        `The specified path for "${type}" does not exist (${paths[type]}).`,
-      );
+    if (!fs.existsSync(config.options.paths[type])) {
+      logErr(`"${type}" path does not exist: ${config.options.paths[type]}`);
+
       process.exit(1);
     }
   };
-  checkPath('styles');
-  checkPath('fonts');
-  checkPath('sprites');
-  checkPath('mbtiles');
-  checkPath('pmtiles');
-  checkPath('icons');
+
+  checkPath("styles");
+  checkPath("fonts");
+  checkPath("sprites");
+  checkPath("mbtiles");
+  checkPath("pmtiles");
+  checkPath("icons");
 
   /**
    * Recursively get all files within a directory.
@@ -124,15 +101,15 @@ function start(opts) {
       withFileTypes: true,
     });
 
-    // Iterate through entries and return the relative file-path to the icon directory if it is not a directory
-    // otherwise initiate a recursive call
+    // Iterate through entries and return the relative file-path to the icon directory if it is not a directory otherwise initiate a recursive call
     const files = await Promise.all(
       dirEntries.map((dirEntry) => {
         const entryPath = path.resolve(directory, dirEntry.name);
+
         return dirEntry.isDirectory()
           ? getFiles(entryPath)
-          : entryPath.replace(paths.icons + path.sep, '');
-      }),
+          : entryPath.replace(config.options.paths.icons + path.sep, "");
+      })
     );
 
     // Flatten the list of files to a single array
@@ -141,53 +118,47 @@ function start(opts) {
 
   // Load all available icons into a settings object
   startupPromises.push(
-    getFiles(paths.icons).then((files) => {
-      paths.availableIcons = files;
-    }),
+    getFiles(config.options.paths.icons).then((files) => {
+      config.options.paths.availableIcons = files;
+    })
   );
 
-  if (options.dataDecorator) {
+  if (config.options.dataDecorator) {
     try {
-      options.dataDecoratorFunc = require(
-        path.resolve(paths.root, options.dataDecorator),
+      config.options.dataDecoratorFunc = require(
+        path.resolve(rootPath, config.options.dataDecorator)
       );
-    } catch (e) {}
+    } catch (err) {
+      logErr(err.message);
+    }
   }
 
-  const data = clone(config.data || {});
+  app.use("/data/", serve_data.init(config.options, serving.data));
+  app.use("/styles/", serve_style.init(config.options, serving.styles));
 
-  if (opts.cors) {
-    app.use(cors());
-  }
-
-  app.use('/data/', serve_data.init(options, serving.data));
-  app.use('/styles/', serve_style.init(options, serving.styles));
-  if (!isLight) {
-    startupPromises.push(
-      serve_rendered.init(options, serving.rendered).then((sub) => {
-        app.use('/styles/', sub);
-      }),
-    );
-  }
+  startupPromises.push(
+    serve_rendered.init(config.options, serving.rendered).then((sub) => {
+      app.use("/styles/", sub);
+    })
+  );
 
   const addStyle = (id, item, allowMoreData, reportFonts) => {
     let success = true;
     if (item.serve_data !== false) {
       success = serve_style.add(
-        options,
+        config.options,
         serving.styles,
         item,
         id,
-        opts.publicUrl,
         (styleSourceId, protocol) => {
           let dataItemId;
-          for (const id of Object.keys(data)) {
+          for (const id of Object.keys(config.data)) {
             if (id === styleSourceId) {
               // Style id was found in data ids, return that id
               dataItemId = id;
             } else {
-              const fileType = Object.keys(data[id])[0];
-              if (data[id][fileType] === styleSourceId) {
+              const fileType = Object.keys(config.data[id])[0];
+              if (config.data[id][fileType] === styleSourceId) {
                 // Style id was found in data filename, return the id that filename belong to
                 dataItemId = id;
               }
@@ -198,21 +169,22 @@ function start(opts) {
             return dataItemId;
           } else {
             if (!allowMoreData) {
-              console.log(
-                `ERROR: style "${item.style}" using unknown file "${styleSourceId}"! Skipping...`,
+              logErr(
+                `Style "${item.style}" using unknown file "${styleSourceId}". Skipping...`
               );
+
               return undefined;
             } else {
               let id =
-                styleSourceId.substr(0, styleSourceId.lastIndexOf('.')) ||
+                styleSourceId.substr(0, styleSourceId.lastIndexOf(".")) ||
                 styleSourceId;
               if (isValidHttpUrl(styleSourceId)) {
                 id =
-                  fnv1a(styleSourceId) + '_' + id.replace(/^.*\/(.*)$/, '$1');
+                  fnv1a(styleSourceId) + "_" + id.replace(/^.*\/(.*)$/, "$1");
               }
-              while (data[id]) id += '_'; //if the data source id already exists, add a "_" untill it doesn't
+              while (config.data[id]) id += "_"; //if the data source id already exists, add a "_" untill it doesn't
               //Add the new data source to the data array.
-              data[id] = {
+              config.data[id] = {
                 [protocol]: styleSourceId,
               };
 
@@ -224,49 +196,51 @@ function start(opts) {
           if (reportFonts) {
             serving.fonts[font] = true;
           }
-        },
+        }
       );
     }
-    if (success && item.serve_rendered !== false) {
-      if (!isLight) {
-        startupPromises.push(
-          serve_rendered.add(
-            options,
-            serving.rendered,
-            item,
-            id,
-            opts.publicUrl,
-            function dataResolver(styleSourceId) {
-              let fileType;
-              let inputFile;
-              for (const id of Object.keys(data)) {
-                fileType = Object.keys(data[id])[0];
-                if (styleSourceId == id) {
-                  inputFile = data[id][fileType];
-                  break;
-                } else if (data[id][fileType] == styleSourceId) {
-                  inputFile = data[id][fileType];
-                  break;
-                }
-              }
-              if (!isValidHttpUrl(inputFile)) {
-                inputFile = path.resolve(options.paths[fileType], inputFile);
-              }
 
-              return { inputFile, fileType };
-            },
-          ),
-        );
-      } else {
-        item.serve_rendered = false;
-      }
+    if (success && item.serve_rendered !== false) {
+      startupPromises.push(
+        serve_rendered.add(
+          config.options,
+          serving.rendered,
+          item,
+          id,
+          function dataResolver(styleSourceId) {
+            let fileType;
+            let inputFile;
+            for (const id of Object.keys(config.data)) {
+              fileType = Object.keys(config.data[id])[0];
+              if (styleSourceId == id) {
+                inputFile = config.data[id][fileType];
+
+                break;
+              } else if (config.data[id][fileType] == styleSourceId) {
+                inputFile = config.data[id][fileType];
+
+                break;
+              }
+            }
+            if (!isValidHttpUrl(inputFile)) {
+              inputFile = path.resolve(
+                config.options.paths[fileType],
+                inputFile
+              );
+            }
+
+            return { inputFile, fileType };
+          }
+        )
+      );
     }
   };
 
   for (const id of Object.keys(config.styles || {})) {
     const item = config.styles[id];
     if (!item.style || item.style.length === 0) {
-      console.log(`Missing "style" property for ${id}`);
+      logErr(`Missing "style" property for ${id}`);
+
       continue;
     }
 
@@ -274,155 +248,120 @@ function start(opts) {
   }
 
   startupPromises.push(
-    serve_font(options, serving.fonts).then((sub) => {
-      app.use('/', sub);
-    }),
+    serve_font(config.options, serving.fonts).then((sub) => {
+      app.use("/", sub);
+    })
   );
 
-  for (const id of Object.keys(data)) {
-    const item = data[id];
-    const fileType = Object.keys(data[id])[0];
-    if (!fileType || !(fileType === 'pmtiles' || fileType === 'mbtiles')) {
-      console.log(
-        `Missing "pmtiles" or "mbtiles" property for ${id} data source`,
-      );
+  for (const id of Object.keys(config.data)) {
+    const item = config.data[id];
+    const fileType = Object.keys(config.data[id])[0];
+    if (!fileType || !(fileType === "pmtiles" || fileType === "mbtiles")) {
+      logErr(`Missing "pmtiles" or "mbtiles" property for ${id} data source`);
+
       continue;
     }
 
     startupPromises.push(
-      serve_data.add(options, serving.data, item, id, opts.publicUrl),
+      serve_data.add(config.options, serving.data, item, id)
     );
   }
 
-  if (options.serveAllStyles) {
-    fs.readdir(options.paths.styles, { withFileTypes: true }, (err, files) => {
-      if (err) {
-        return;
+  const addTileJSONs = (arr, req, type, tileSize) => {
+    for (const id of Object.keys(serving[type])) {
+      const info = clone(serving[type][id].tileJSON);
+      let path = "";
+      if (type === "rendered") {
+        path = `styles/${id}`;
+      } else {
+        path = `${type}/${id}`;
       }
-      for (const file of files) {
-        if (file.isFile() && path.extname(file.name).toLowerCase() == '.json') {
-          const id = path.basename(file.name, '.json');
-          const item = {
-            style: file.name,
-          };
-          addStyle(id, item, false, false);
-        }
-      }
-    });
+      info.tiles = getTileUrls(req, info.tiles, path, tileSize, info.format, {
+        pbf: config.options.pbfAlias,
+      });
+      arr.push(info);
+    }
 
-    const watcher = chokidar.watch(
-      path.join(options.paths.styles, '*.json'),
-      {},
-    );
-    watcher.on('all', (eventType, filename) => {
-      if (filename) {
-        const id = path.basename(filename, '.json');
-        console.log(`Style "${id}" changed, updating...`);
+    return arr;
+  };
 
-        serve_style.remove(serving.styles, id);
-        if (!isLight) {
-          serve_rendered.remove(serving.rendered, id);
-        }
-
-        if (eventType == 'add' || eventType == 'change') {
-          const item = {
-            style: filename,
-          };
-          addStyle(id, item, false, false);
-        }
-      }
-    });
-  }
-
-  app.get('/styles.json', (req, res, next) => {
+  app.get("/styles.json", (req, res, next) => {
     const result = [];
     const query = req.query.key
       ? `?key=${encodeURIComponent(req.query.key)}`
-      : '';
+      : "";
     for (const id of Object.keys(serving.styles)) {
       const styleJSON = serving.styles[id].styleJSON;
       result.push({
         version: styleJSON.version,
         name: styleJSON.name,
         id,
-        url: `${getPublicUrl(
-          opts.publicUrl,
-          req,
-        )}styles/${id}/style.json${query}`,
+        url: `${getUrl(req)}styles/${id}/style.json${query}`,
       });
     }
+
     res.send(result);
   });
 
-  const addTileJSONs = (arr, req, type, tileSize) => {
-    for (const id of Object.keys(serving[type])) {
-      const info = clone(serving[type][id].tileJSON);
-      let path = '';
-      if (type === 'rendered') {
-        path = `styles/${id}`;
-      } else {
-        path = `${type}/${id}`;
-      }
-      info.tiles = getTileUrls(
-        req,
-        info.tiles,
-        path,
-        tileSize,
-        info.format,
-        opts.publicUrl,
-        {
-          pbf: options.pbfAlias,
-        },
-      );
-      arr.push(info);
-    }
-    return arr;
-  };
-
-  app.get('/(:tileSize(256|512)/)?rendered.json', (req, res, next) => {
+  app.get("/(:tileSize(256|512)/)?rendered.json", (req, res, next) => {
     const tileSize = parseInt(req.params.tileSize, 10) || undefined;
-    res.send(addTileJSONs([], req, 'rendered', tileSize));
+
+    res.send(addTileJSONs([], req, "rendered", tileSize));
   });
-  app.get('/data.json', (req, res, next) => {
-    res.send(addTileJSONs([], req, 'data', undefined));
+
+  app.get("/data.json", (req, res, next) => {
+    res.send(addTileJSONs([], req, "data", undefined));
   });
-  app.get('/(:tileSize(256|512)/)?index.json', (req, res, next) => {
+
+  app.get("/(:tileSize(256|512)/)?index.json", (req, res, next) => {
     const tileSize = parseInt(req.params.tileSize, 10) || undefined;
     res.send(
       addTileJSONs(
-        addTileJSONs([], req, 'rendered', tileSize),
+        addTileJSONs([], req, "rendered", tileSize),
         req,
-        'data',
-        undefined,
-      ),
+        "data",
+        undefined
+      )
     );
   });
 
-  // ------------------------------------
-  // serve web presentations
-  app.use('/', express.static(path.join(__dirname, '../public/resources')));
+  let startupComplete = false;
 
-  const templates = path.join(__dirname, '../public/templates');
+  app.get("/health", (req, res, next) => {
+    if (startupComplete) {
+      return res.status(200).send("OK");
+    } else {
+      return res.status(503).send("Starting");
+    }
+  });
+
+  // serve web presentations
+  app.use("/", express.static(path.resolve("public", "resources")));
+
+  const templates = path.resolve("public", "templates");
+
   const serveTemplate = (urlPath, template, dataGetter) => {
     let templateFile = `${templates}/${template}.tmpl`;
-    if (template === 'index') {
-      if (options.frontPage === false) {
+    if (template === "index") {
+      if (config.options.frontPage === false) {
         return;
       } else if (
-        options.frontPage &&
-        options.frontPage.constructor === String
+        config.options.frontPage &&
+        config.options.frontPage.constructor === String
       ) {
-        templateFile = path.resolve(paths.root, options.frontPage);
+        templateFile = path.resolve(rootPath, config.options.frontPage);
       }
     }
+
     startupPromises.push(
       new Promise((resolve, reject) => {
         fs.readFile(templateFile, (err, content) => {
           if (err) {
-            err = new Error(`Template not found: ${err.message}`);
-            reject(err);
+            reject(err.message);
+
             return;
           }
+
           const compiled = handlebars.compile(content.toString());
 
           app.use(urlPath, (req, res, next) => {
@@ -430,29 +369,29 @@ function start(opts) {
             if (dataGetter) {
               data = dataGetter(req);
               if (!data) {
-                return res.status(404).send('Not found');
+                return res.status(404).send("Not found");
               }
             }
-            data['server_version'] =
-              `${packageJson.name} v${packageJson.version}`;
-            data['public_url'] = opts.publicUrl || '/';
-            data['is_light'] = isLight;
-            data['key_query_part'] = req.query.key
+
+            data["key_query_part"] = req.query.key
               ? `key=${encodeURIComponent(req.query.key)}&amp;`
-              : '';
-            data['key_query'] = req.query.key
+              : "";
+            data["key_query"] = req.query.key
               ? `?key=${encodeURIComponent(req.query.key)}`
-              : '';
-            if (template === 'wmts') res.set('Content-Type', 'text/xml');
+              : "";
+
+            if (template === "wmts") res.set("Content-Type", "text/xml");
+
             return res.status(200).send(compiled(data));
           });
+
           resolve();
         });
-      }),
+      })
     );
   };
 
-  serveTemplate('/$', 'index', (req) => {
+  serveTemplate("/$", "index", (req) => {
     let styles = {};
     for (const id of Object.keys(serving.styles || {})) {
       let style = {
@@ -471,14 +410,13 @@ function start(opts) {
           style.thumbnail = `${center[2]}/${Math.floor(centerPx[0] / 256)}/${Math.floor(centerPx[1] / 256)}.png`;
         }
 
-        const tileSize = 512;
+        const tileSize = 256;
         style.xyz_link = getTileUrls(
           req,
           style.serving_rendered.tileJSON.tiles,
           `styles/${id}`,
           tileSize,
-          style.serving_rendered.tileJSON.format,
-          opts.publicUrl,
+          style.serving_rendered.tileJSON.format
         )[0];
       }
 
@@ -494,11 +432,11 @@ function start(opts) {
 
       if (center) {
         data.viewer_hash = `#${center[2]}/${center[1].toFixed(
-          5,
+          5
         )}/${center[0].toFixed(5)}`;
       }
 
-      data.is_vector = tileJSON.format === 'pbf';
+      data.is_vector = tileJSON.format === "pbf";
       if (!data.is_vector) {
         if (center) {
           const centerPx = mercator.px([center[0], center[1]], center[2]);
@@ -513,21 +451,20 @@ function start(opts) {
         `data/${id}`,
         tileSize,
         tileJSON.format,
-        opts.publicUrl,
         {
-          pbf: options.pbfAlias,
-        },
+          pbf: config.options.pbfAlias,
+        }
       )[0];
 
       if (data.filesize) {
-        let suffix = 'kB';
+        let suffix = "kB";
         let size = parseInt(tileJSON.filesize, 10) / 1024;
         if (size > 1024) {
-          suffix = 'MB';
+          suffix = "MB";
           size /= 1024;
         }
         if (size > 1024) {
-          suffix = 'GB';
+          suffix = "GB";
           size /= 1024;
         }
         data.formatted_filesize = `${size.toFixed(2)} ${suffix}`;
@@ -542,7 +479,7 @@ function start(opts) {
     };
   });
 
-  serveTemplate('/styles/:id/$', 'viewer', (req) => {
+  serveTemplate("/styles/:id/$", "viewer", (req) => {
     const { id } = req.params;
     const style = clone(((serving.styles || {})[id] || {}).styleJSON);
 
@@ -559,12 +496,7 @@ function start(opts) {
     };
   });
 
-  /*
-  app.use('/rendered/:id/$', function(req, res, next) {
-    return res.redirect(301, '/styles/' + req.params.id + '/');
-  });
-  */
-  serveTemplate('/styles/:id/wmts.xml', 'wmts', (req) => {
+  serveTemplate("/styles/:id/wmts.xml", "wmts", (req) => {
     const { id } = req.params;
     const wmts = clone((serving.styles || {})[id]);
 
@@ -572,30 +504,19 @@ function start(opts) {
       return null;
     }
 
-    if (wmts.hasOwnProperty('serve_rendered') && !wmts.serve_rendered) {
+    if (wmts.hasOwnProperty("serve_rendered") && !wmts.serve_rendered) {
       return null;
-    }
-
-    let baseUrl;
-    if (opts.publicUrl) {
-      baseUrl = opts.publicUrl;
-    } else {
-      baseUrl = `${
-        req.get('X-Forwarded-Protocol')
-          ? req.get('X-Forwarded-Protocol')
-          : req.protocol
-      }://${req.get('host')}/`;
     }
 
     return {
       ...wmts,
       id,
       name: (serving.styles[id] || serving.rendered[id]).name,
-      baseUrl,
+      baseUrl: `${req.get("X-Forwarded-Protocol") ? req.get("X-Forwarded-Protocol") : req.protocol}://${req.get("host")}/`,
     };
   });
 
-  serveTemplate('/data/:id/$', 'data', (req) => {
+  serveTemplate("/data/:id/$", "data", (req) => {
     const { id } = req.params;
     const data = serving.data[id];
 
@@ -606,53 +527,74 @@ function start(opts) {
     return {
       ...data,
       id,
-      is_vector: data.tileJSON.format === 'pbf',
+      is_vector: data.tileJSON.format === "pbf",
     };
   });
 
-  let startupComplete = false;
-  const startupPromise = Promise.all(startupPromises).then(() => {
-    console.log('Startup complete');
-    startupComplete = true;
+  const server = app.listen(opts.port, function () {
+    logInfo(`Listening in port: ${this.address().port}`);
   });
-
-  app.get('/health', (req, res, next) => {
-    if (startupComplete) {
-      return res.status(200).send('OK');
-    } else {
-      return res.status(503).send('Starting');
-    }
-  });
-
-  const server = app.listen(
-    process.env.PORT || opts.port,
-    process.env.BIND || opts.bind,
-    function () {
-      let address = this.address().address;
-      if (address.indexOf('::') === 0) {
-        address = `[${address}]`; // literal IPv6 address
-      }
-      console.log(`Listening at http://${address}:${this.address().port}/`);
-    },
-  );
 
   // add server.shutdown() to gracefully stop serving
   enableShutdown(server);
 
-  return {
-    app,
-    server,
-    startupPromise,
-  };
-}
+  const newChokidar = chokidar.watch(configFilePath, {
+    persistent: false,
+    usePolling: true,
+    awaitWriteFinish: true,
+    interval: 100,
+  });
+  if (opts.autoRefresh) {
+    logInfo("Enable auto refresh server after changing config file");
 
-/**
- * Stop the server gracefully
- * @param {string} signal Name of the received signal
- */
-function stopGracefully(signal) {
-  console.log(`Caught signal ${signal}, stopping gracefully`);
-  process.exit();
+    newChokidar.on("change", (event, path) => {
+      if (path) {
+        logInfo(`Config file has changed. Refreshing server...`);
+
+        newChokidar.close();
+
+        server.shutdown((err) => {
+          start(opts);
+        });
+      }
+    });
+  }
+
+  app.get("/refresh", (req, res, next) => {
+    logInfo("Refreshing server...");
+
+    if (opts.autoRefresh) {
+      newChokidar.close();
+    }
+
+    server.shutdown((err) => {
+      start(opts);
+    });
+
+    return res.status(200).send("OK");
+  });
+
+  app.get("/kill", (req, res, next) => {
+    logInfo("Killed server!");
+
+    server.shutdown((err) => {
+      process.exit(0);
+    });
+
+    return res.status(200).send("OK");
+  });
+
+  Promise.all(startupPromises)
+    .then(() => {
+      logInfo("Startup complete!");
+
+      startupComplete = true;
+    })
+    .catch((err) => {
+      logErr(`Failed to starting server: ${err.message}`);
+
+      process.exit(1);
+    });
 }
 
 /**
@@ -660,26 +602,8 @@ function stopGracefully(signal) {
  * @param opts
  */
 export function server(opts) {
-  const running = start(opts);
+  process.on("SIGINT", () => process.exit(0));
+  process.on("SIGTERM", () => process.exit(0));
 
-  running.startupPromise.catch((err) => {
-    console.error(err.message);
-    process.exit(1);
-  });
-
-  process.on('SIGINT', stopGracefully);
-  process.on('SIGTERM', stopGracefully);
-
-  process.on('SIGHUP', (signal) => {
-    console.log(`Caught signal ${signal}, refreshing`);
-    console.log('Stopping server and reloading config');
-
-    running.server.shutdown(() => {
-      const restarted = start(opts);
-      running.server = restarted.server;
-      running.app = restarted.app;
-    });
-  });
-
-  return running;
+  start(opts);
 }

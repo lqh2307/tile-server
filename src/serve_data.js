@@ -1,28 +1,26 @@
-'use strict';
+"use strict";
 
-import fs from 'node:fs';
-import path from 'path';
-import zlib from 'zlib';
-
-import clone from 'clone';
-import express from 'express';
-import MBTiles from '@mapbox/mbtiles';
-import Pbf from 'pbf';
-import { VectorTile } from '@mapbox/vector-tile';
-
-import { getTileUrls, isValidHttpUrl, fixTileJSONCenter } from './utils.js';
+import fs from "node:fs";
+import path from "node:path";
+import zlib from "zlib";
+import clone from "clone";
+import express from "express";
+import MBTiles from "@mapbox/mbtiles";
+import Pbf from "pbf";
+import { VectorTile } from "@mapbox/vector-tile";
+import { getTileUrls, isValidHttpUrl, fixTileJSONCenter } from "./utils.js";
 import {
   openPMtiles,
   getPMtilesInfo,
   getPMtilesTile,
-} from './pmtiles_adapter.js';
+} from "./pmtiles_adapter.js";
 
 export const serve_data = {
   init: (options, repo) => {
-    const app = express().disable('x-powered-by');
+    const app = express().disable("x-powered-by");
 
     app.get(
-      '/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format([\\w.]+)',
+      "/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format([\\w.]+)",
       async (req, res, next) => {
         const item = repo[req.params.id];
         if (!item) {
@@ -34,13 +32,13 @@ export const serve_data = {
         const y = req.params.y | 0;
         let format = req.params.format;
         if (format === options.pbfAlias) {
-          format = 'pbf';
+          format = "pbf";
         }
         if (
           format !== tileJSONFormat &&
-          !(format === 'geojson' && tileJSONFormat === 'pbf')
+          !(format === "geojson" && tileJSONFormat === "pbf")
         ) {
-          return res.status(404).send('Invalid format');
+          return res.status(404).send("Invalid format");
         }
         if (
           z < item.tileJSON.minzoom ||
@@ -51,27 +49,27 @@ export const serve_data = {
           x >= Math.pow(2, z) ||
           y >= Math.pow(2, z)
         ) {
-          return res.status(404).send('Out of bounds');
+          return res.status(404).send("Out of bounds");
         }
-        if (item.sourceType === 'pmtiles') {
+        if (item.sourceType === "pmtiles") {
           let tileinfo = await getPMtilesTile(item.source, z, x, y);
           if (tileinfo == undefined || tileinfo.data == undefined) {
-            return res.status(404).send('Not found');
+            return res.status(404).send("Not found");
           } else {
             let data = tileinfo.data;
             let headers = tileinfo.header;
-            if (tileJSONFormat === 'pbf') {
+            if (tileJSONFormat === "pbf") {
               if (options.dataDecoratorFunc) {
-                data = options.dataDecoratorFunc(id, 'data', data, z, x, y);
+                data = options.dataDecoratorFunc(id, "data", data, z, x, y);
               }
             }
-            if (format === 'pbf') {
-              headers['Content-Type'] = 'application/x-protobuf';
-            } else if (format === 'geojson') {
-              headers['Content-Type'] = 'application/json';
+            if (format === "pbf") {
+              headers["Content-Type"] = "application/x-protobuf";
+            } else if (format === "geojson") {
+              headers["Content-Type"] = "application/json";
               const tile = new VectorTile(new Pbf(data));
               const geojson = {
-                type: 'FeatureCollection',
+                type: "FeatureCollection",
                 features: [],
               };
               for (const layerName in tile.layers) {
@@ -85,15 +83,15 @@ export const serve_data = {
               }
               data = JSON.stringify(geojson);
             }
-            delete headers['ETag']; // do not trust the tile ETag -- regenerate
-            headers['Content-Encoding'] = 'gzip';
+            delete headers["ETag"]; // do not trust the tile ETag -- regenerate
+            headers["Content-Encoding"] = "gzip";
             res.set(headers);
 
             data = zlib.gzipSync(data);
 
             return res.status(200).send(data);
           }
-        } else if (item.sourceType === 'mbtiles') {
+        } else if (item.sourceType === "mbtiles") {
           item.source.getTile(z, x, y, (err, data, headers) => {
             let isGzipped;
             if (err) {
@@ -102,14 +100,14 @@ export const serve_data = {
               } else {
                 return res
                   .status(500)
-                  .header('Content-Type', 'text/plain')
+                  .header("Content-Type", "text/plain")
                   .send(err.message);
               }
             } else {
               if (data == null) {
-                return res.status(404).send('Not found');
+                return res.status(404).send("Not found");
               } else {
-                if (tileJSONFormat === 'pbf') {
+                if (tileJSONFormat === "pbf") {
                   isGzipped =
                     data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0;
                   if (options.dataDecoratorFunc) {
@@ -117,13 +115,13 @@ export const serve_data = {
                       data = zlib.unzipSync(data);
                       isGzipped = false;
                     }
-                    data = options.dataDecoratorFunc(id, 'data', data, z, x, y);
+                    data = options.dataDecoratorFunc(id, "data", data, z, x, y);
                   }
                 }
-                if (format === 'pbf') {
-                  headers['Content-Type'] = 'application/x-protobuf';
-                } else if (format === 'geojson') {
-                  headers['Content-Type'] = 'application/json';
+                if (format === "pbf") {
+                  headers["Content-Type"] = "application/x-protobuf";
+                } else if (format === "geojson") {
+                  headers["Content-Type"] = "application/json";
 
                   if (isGzipped) {
                     data = zlib.unzipSync(data);
@@ -132,7 +130,7 @@ export const serve_data = {
 
                   const tile = new VectorTile(new Pbf(data));
                   const geojson = {
-                    type: 'FeatureCollection',
+                    type: "FeatureCollection",
                     features: [],
                   };
                   for (const layerName in tile.layers) {
@@ -146,8 +144,8 @@ export const serve_data = {
                   }
                   data = JSON.stringify(geojson);
                 }
-                delete headers['ETag']; // do not trust the tile ETag -- regenerate
-                headers['Content-Encoding'] = 'gzip';
+                delete headers["ETag"]; // do not trust the tile ETag -- regenerate
+                headers["Content-Encoding"] = "gzip";
                 res.set(headers);
 
                 if (!isGzipped) {
@@ -159,10 +157,10 @@ export const serve_data = {
             }
           });
         }
-      },
+      }
     );
 
-    app.get('/:id.json', (req, res, next) => {
+    app.get("/:id.json", (req, res, next) => {
       const item = repo[req.params.id];
       if (!item) {
         return res.sendStatus(404);
@@ -175,32 +173,30 @@ export const serve_data = {
         `data/${req.params.id}`,
         tileSize,
         info.format,
-        item.publicUrl,
         {
           pbf: options.pbfAlias,
-        },
+        }
       );
       return res.send(info);
     });
 
     return app;
   },
-  add: async (options, repo, params, id, publicUrl) => {
+  add: async (options, repo, params, id) => {
     let inputFile;
     let inputType;
     if (params.pmtiles) {
-      inputType = 'pmtiles';
+      inputType = "pmtiles";
       if (isValidHttpUrl(params.pmtiles)) {
         inputFile = params.pmtiles;
       } else {
         inputFile = path.resolve(options.paths.pmtiles, params.pmtiles);
       }
     } else if (params.mbtiles) {
-      inputType = 'mbtiles';
+      inputType = "mbtiles";
       if (isValidHttpUrl(params.mbtiles)) {
-        console.log(
-          `ERROR: MBTiles does not support web based files. "${params.mbtiles}" is not a valid data file.`,
-        );
+        logErr(`${params.mbtiles} is invalid data file`);
+
         process.exit(1);
       } else {
         inputFile = path.resolve(options.paths.mbtiles, params.mbtiles);
@@ -214,38 +210,39 @@ export const serve_data = {
     if (!isValidHttpUrl(inputFile)) {
       const inputFileStats = fs.statSync(inputFile);
       if (!inputFileStats.isFile() || inputFileStats.size === 0) {
-        throw Error(`Not valid input file: "${inputFile}"`);
+        throw Error(`Invalid input file: "${inputFile}"`);
       }
     }
 
     let source;
     let sourceType;
-    if (inputType === 'pmtiles') {
+    if (inputType === "pmtiles") {
       source = openPMtiles(inputFile);
-      sourceType = 'pmtiles';
+      sourceType = "pmtiles";
       const metadata = await getPMtilesInfo(source);
 
-      tileJSON['name'] = id;
-      tileJSON['format'] = 'pbf';
+      tileJSON["name"] = id;
+      tileJSON["format"] = "pbf";
       Object.assign(tileJSON, metadata);
 
-      tileJSON['tilejson'] = '2.0.0';
-      delete tileJSON['filesize'];
-      delete tileJSON['mtime'];
-      delete tileJSON['scheme'];
+      tileJSON["tilejson"] = "2.0.0";
+      delete tileJSON["filesize"];
+      delete tileJSON["mtime"];
+      delete tileJSON["scheme"];
 
       Object.assign(tileJSON, params.tilejson || {});
       fixTileJSONCenter(tileJSON);
 
       if (options.dataDecoratorFunc) {
-        tileJSON = options.dataDecoratorFunc(id, 'tilejson', tileJSON);
+        tileJSON = options.dataDecoratorFunc(id, "tilejson", tileJSON);
       }
-    } else if (inputType === 'mbtiles') {
-      sourceType = 'mbtiles';
+    } else if (inputType === "mbtiles") {
+      sourceType = "mbtiles";
       const sourceInfoPromise = new Promise((resolve, reject) => {
-        source = new MBTiles(inputFile + '?mode=ro', (err) => {
+        source = new MBTiles(inputFile + "?mode=ro", (err) => {
           if (err) {
             reject(err);
+
             return;
           }
           source.getInfo((err, info) => {
@@ -253,22 +250,23 @@ export const serve_data = {
               reject(err);
               return;
             }
-            tileJSON['name'] = id;
-            tileJSON['format'] = 'pbf';
+            tileJSON["name"] = id;
+            tileJSON["format"] = "pbf";
 
             Object.assign(tileJSON, info);
 
-            tileJSON['tilejson'] = '2.0.0';
-            delete tileJSON['filesize'];
-            delete tileJSON['mtime'];
-            delete tileJSON['scheme'];
+            tileJSON["tilejson"] = "2.0.0";
+            delete tileJSON["filesize"];
+            delete tileJSON["mtime"];
+            delete tileJSON["scheme"];
 
             Object.assign(tileJSON, params.tilejson || {});
             fixTileJSONCenter(tileJSON);
 
             if (options.dataDecoratorFunc) {
-              tileJSON = options.dataDecoratorFunc(id, 'tilejson', tileJSON);
+              tileJSON = options.dataDecoratorFunc(id, "tilejson", tileJSON);
             }
+
             resolve();
           });
         });
@@ -279,7 +277,6 @@ export const serve_data = {
 
     repo[id] = {
       tileJSON,
-      publicUrl,
       source,
       sourceType,
     };

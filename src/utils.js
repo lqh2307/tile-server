@@ -1,10 +1,10 @@
-'use strict';
+"use strict";
 
-import path from 'path';
-import fsPromises from 'fs/promises';
-import fs, { existsSync } from 'node:fs';
-import clone from 'clone';
-import glyphCompose from '@mapbox/glyph-pbf-composite';
+import path from "node:path";
+import fsPromises from "fs/promises";
+import fs, { existsSync } from "node:fs";
+import clone from "clone";
+import glyphCompose from "@mapbox/glyph-pbf-composite";
 
 /**
  * Restrict user input to an allowed set of options.
@@ -14,6 +14,7 @@ import glyphCompose from '@mapbox/glyph-pbf-composite';
  */
 export function allowedOptions(opts, { defaultValue } = {}) {
   const values = Object.fromEntries(opts.map((key) => [key, key]));
+
   return (value) => values[value] || defaultValue;
 }
 
@@ -21,21 +22,23 @@ export function allowedOptions(opts, { defaultValue } = {}) {
  * Replace local:// urls with public http(s):// urls
  * @param req
  * @param url
- * @param publicUrl
  */
-export function fixUrl(req, url, publicUrl) {
-  if (!url || typeof url !== 'string' || url.indexOf('local://') !== 0) {
+export function fixUrl(req, url) {
+  if (!url || typeof url !== "string" || url.indexOf("local://") !== 0) {
     return url;
   }
+
   const queryParams = [];
   if (req.query.key) {
     queryParams.unshift(`key=${encodeURIComponent(req.query.key)}`);
   }
-  let query = '';
+
+  let query = "";
   if (queryParams.length) {
-    query = `?${queryParams.join('&')}`;
+    query = `?${queryParams.join("&")}`;
   }
-  return url.replace('local://', getPublicUrl(publicUrl, req)) + query;
+
+  return url.replace("local://", getUrl(req)) + query;
 }
 
 /**
@@ -48,41 +51,31 @@ const getUrlObject = (req) => {
   const urlObject = new URL(`${req.protocol}://${req.headers.host}/`);
   // support overriding hostname by sending X-Forwarded-Host http header
   urlObject.hostname = req.hostname;
+
   return urlObject;
 };
 
-export const getPublicUrl = (publicUrl, req) => {
-  if (publicUrl) {
-    return publicUrl;
-  }
+export const getUrl = (req) => {
   return getUrlObject(req).toString();
 };
 
-export const getTileUrls = (
-  req,
-  domains,
-  path,
-  tileSize,
-  format,
-  publicUrl,
-  aliases,
-) => {
+export const getTileUrls = (req, domains, path, tileSize, format, aliases) => {
   const urlObject = getUrlObject(req);
   if (domains) {
     if (domains.constructor === String && domains.length > 0) {
-      domains = domains.split(',');
+      domains = domains.split(",");
     }
-    const hostParts = urlObject.host.split('.');
+    const hostParts = urlObject.host.split(".");
     const relativeSubdomainsUsable =
       hostParts.length > 1 &&
       !/^([0-9]{1,3}\.){3}[0-9]{1,3}(\:[0-9]+)?$/.test(urlObject.host);
     const newDomains = [];
     for (const domain of domains) {
-      if (domain.indexOf('*') !== -1) {
+      if (domain.indexOf("*") !== -1) {
         if (relativeSubdomainsUsable) {
           const newParts = hostParts.slice(1);
-          newParts.unshift(domain.replace('*', hostParts[0]));
-          newDomains.push(newParts.join('.'));
+          newParts.unshift(domain.replace("*", hostParts[0]));
+          newDomains.push(newParts.join("."));
         }
       } else {
         newDomains.push(domain);
@@ -101,28 +94,22 @@ export const getTileUrls = (
   if (req.query.style) {
     queryParams.push(`style=${encodeURIComponent(req.query.style)}`);
   }
-  const query = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+  const query = queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
 
   if (aliases && aliases[format]) {
     format = aliases[format];
   }
 
   let tileParams = `{z}/{x}/{y}`;
-  if (tileSize && ['png', 'jpg', 'jpeg', 'webp'].includes(format)) {
+  if (tileSize && ["png", "jpg", "jpeg", "webp"].includes(format)) {
     tileParams = `${tileSize}/{z}/{x}/{y}`;
   }
 
-  const uris = [];
-  if (!publicUrl) {
-    let xForwardedPath = `${req.get('X-Forwarded-Path') ? '/' + req.get('X-Forwarded-Path') : ''}`;
-    for (const domain of domains) {
-      uris.push(
-        `${req.protocol}://${domain}${xForwardedPath}/${path}/${tileParams}.${format}${query}`,
-      );
-    }
-  } else {
-    uris.push(`${publicUrl}${path}/${tileParams}.${format}${query}`);
-  }
+  let xForwardedPath = `${req.get("X-Forwarded-Path") ? "/" + req.get("X-Forwarded-Path") : ""}`;
+  const uris = domains.map(
+    (domain) =>
+      `${req.protocol}://${domain}${xForwardedPath}/${path}/${tileParams}.${format}${query}`
+  );
 
   return uris;
 };
@@ -136,7 +123,7 @@ export const fixTileJSONCenter = (tileJSON) => {
       (tileJSON.bounds[1] + tileJSON.bounds[3]) / 2,
       Math.round(
         -Math.log((tileJSON.bounds[2] - tileJSON.bounds[0]) / 360 / tiles) /
-          Math.LN2,
+          Math.LN2
       ),
     ];
   }
@@ -149,17 +136,21 @@ const getFontPbf = (allowedFonts, fontPath, name, range, fallbacks) =>
       if (!fallbacks) {
         fallbacks = clone(allowedFonts || {});
       }
+
       delete fallbacks[name];
+
       fs.readFile(filename, (err, data) => {
         if (err) {
-          console.error(`ERROR: Font not found: ${name}`);
+          logErr(`Font is not found: ${name}`);
+
           if (fallbacks && Object.keys(fallbacks).length) {
             let fallbackName;
 
-            let fontStyle = name.split(' ').pop();
-            if (['Regular', 'Bold', 'Italic'].indexOf(fontStyle) < 0) {
-              fontStyle = 'Regular';
+            let fontStyle = name.split(" ").pop();
+            if (["Regular", "Bold", "Italic"].indexOf(fontStyle) < 0) {
+              fontStyle = "Regular";
             }
+
             fallbackName = `Noto Sans ${fontStyle}`;
             if (!fallbacks[fallbackName]) {
               fallbackName = `Open Sans ${fontStyle}`;
@@ -168,11 +159,13 @@ const getFontPbf = (allowedFonts, fontPath, name, range, fallbacks) =>
               }
             }
 
-            console.error(`ERROR: Trying to use ${fallbackName} as a fallback`);
+            logInfo(`Trying to use ${fallbackName} as a fallback`);
+
             delete fallbacks[fallbackName];
+
             getFontPbf(null, fontPath, fallbackName, range, fallbacks).then(
               resolve,
-              reject,
+              reject
             );
           } else {
             reject(`Font load error: ${name}`);
@@ -182,7 +175,7 @@ const getFontPbf = (allowedFonts, fontPath, name, range, fallbacks) =>
         }
       });
     } else {
-      reject(`Font not allowed: ${name}`);
+      reject(`Font is not allowed: ${name}`);
     }
   });
 
@@ -191,10 +184,11 @@ export const getFontsPbf = async (
   fontPath,
   names,
   range,
-  fallbacks,
+  fallbacks
 ) => {
-  const fonts = names.split(',');
+  const fonts = names.split(",");
   const queue = [];
+
   for (const font of fonts) {
     queue.push(
       getFontPbf(
@@ -202,12 +196,13 @@ export const getFontsPbf = async (
         fontPath,
         font,
         range,
-        clone(allowedFonts || fallbacks),
-      ),
+        clone(allowedFonts || fallbacks)
+      )
     );
   }
 
   const values = await Promise.all(queue);
+
   return glyphCompose.combine(values);
 };
 
@@ -219,7 +214,7 @@ export const listFonts = async (fontPath) => {
     const stats = await fsPromises.stat(path.join(fontPath, file));
     if (
       stats.isDirectory() &&
-      existsSync(path.join(fontPath, file, '0-255.pbf'))
+      existsSync(path.join(fontPath, file, "0-255.pbf"))
     ) {
       existingFonts[path.basename(file)] = true;
     }
@@ -237,5 +232,13 @@ export const isValidHttpUrl = (string) => {
     return false;
   }
 
-  return url.protocol === 'http:' || url.protocol === 'https:';
+  return url.protocol === "http:" || url.protocol === "https:";
+};
+
+export const logInfo = (msg) => {
+  console.info(`${new Date().toISOString()} [INFO] ${msg}`);
+};
+
+export const logErr = (msg) => {
+  console.error(`${new Date().toISOString()} [ERROR] ${msg}`);
 };
