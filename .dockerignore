@@ -3,4 +3,4 @@
 !public
 !package.json
 !docker-entrypoint.sh
-!template
+!data_template

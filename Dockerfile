@@ -1,16 +1,15 @@
 FROM ubuntu:22.04
 
-WORKDIR /tile-server
-
+# Install native packages
 RUN \
   apt update; \
   apt -y install \
+    pkg-config \
     build-essential \
     ca-certificates \
     curl \
     gnupg \
     xvfb \
-    pkg-config \
     libglfw3-dev \
     libuv1-dev \
     libjpeg-turbo8 \
@@ -27,6 +26,7 @@ RUN \
     libpixman-1-dev \
     libpixman-1-0;
 
+# Install nodejs & free resources
 RUN \
   mkdir -p /etc/apt/keyrings; \
   curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
@@ -39,15 +39,18 @@ RUN \
   apt clean; \
   rm -rf /var/lib/apt/lists/*;
 
-COPY ./public ./public
-COPY ./src ./src
-COPY ./docker-entrypoint.sh ./docker-entrypoint.sh
-COPY ./package.json ./package.json
-COPY ./template/config.json ./data/config.json
+WORKDIR /tile-server
 
+COPY . .
+
+# Install node_modules & create default data
 RUN \
+  npm config set fetch-retries 5; \
+  npm config set fetch-retry-mintimeout 100000; \
+  npm config set fetch-retry-maxtimeout 600000; \
   npm install --omit=dev; \
   npm cache clean --force; \
+  mv ./data_template ./data; \
   mkdir -p \
     ./data/fonts \
     ./data/icons \
