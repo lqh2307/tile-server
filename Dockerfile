@@ -43,11 +43,18 @@ COPY ./public ./public
 COPY ./src ./src
 COPY ./docker-entrypoint.sh ./docker-entrypoint.sh
 COPY ./package.json ./package.json
-COPY ./template/data_template ./data
+COPY ./template/config.json ./data/config.json
 
 RUN \
   npm install --omit=dev; \
   npm cache clean --force; \
+  mkdir -p \
+    ./data/fonts \
+    ./data/icons \
+    ./data/mbtiles \
+    ./data/pmtiles \
+    ./data/sprites \
+    ./data/styles; \
   chmod -R +x .;
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
