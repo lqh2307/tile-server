@@ -3,8 +3,8 @@
     "paths": {
       "root": "data",
       "fonts": "fonts",
-      "sprites": "",
-      "icons": "",
+      "sprites": "sprites",
+      "icons": "icons",
       "styles": "styles",
       "mbtiles": "mbtiles",
       "pmtiles": "pmtiles"
@@ -13,14 +13,11 @@
     "corsOrigins": [],
     "formatQuality": {
       "jpeg": 100,
-      "webp": 100,
-      "png": 100
+      "webp": 100
     },
     "maxScaleFactor": 3,
     "maxSize": 8192,
     "pbfAlias": "pbf",
-    "serveAllFonts": false,
-    "serveAllStyles": false,
     "serveStaticMaps": true,
     "allowRemoteMarkerIcons": true,
     "allowInlineMarkerImages": true,
@@ -28,5 +25,6 @@
     "tileMargin": 0
   },
   "styles": {},
-  "data": {}
+  "data": {},
+  "sprites": {}
 }

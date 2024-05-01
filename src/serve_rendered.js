@@ -54,7 +54,7 @@ const getScale = (scale) => (scale || "@1x").slice(1, 2) | 0;
 
 mlgl.on("message", (e) => {
   if (e.severity === "WARNING" || e.severity === "ERROR") {
-    logErr(`mlgl: ${e}`);
+    logErr(`mlgl: ${JSON.stringify(e)}`);
   }
 });
 
@@ -858,8 +858,7 @@ export const serve_rendered = {
       return res.send(info);
     });
 
-    const fonts = listFonts(options.paths.fonts);
-    Object.assign(existingFonts, fonts);
+    Object.assign(existingFonts, listFonts(options.paths.fonts));
 
     return app;
   },
@@ -936,19 +935,6 @@ export const serve_rendered = {
                     response.modified = new Date(headers["Last-Modified"]);
                   }
 
-                  if (format === "pbf") {
-                    if (options.dataDecoratorFunc) {
-                      response.data = options.dataDecoratorFunc(
-                        sourceId,
-                        "data",
-                        response.data,
-                        z,
-                        x,
-                        y
-                      );
-                    }
-                  }
-
                   callback(null, response);
                 }
               } else if (sourceType === "mbtiles") {
@@ -976,16 +962,6 @@ export const serve_rendered = {
                     } catch (err) {
                       logErr(
                         `Skipping incorrect header for tile mbtiles://${id}/${z}/${x}/${y}.pbf`
-                      );
-                    }
-                    if (options.dataDecoratorFunc) {
-                      response.data = options.dataDecoratorFunc(
-                        sourceId,
-                        "data",
-                        response.data,
-                        z,
-                        x,
-                        y
                       );
                     }
                   } else {
@@ -1239,14 +1215,6 @@ export const serve_rendered = {
 
                   delete source.scheme;
 
-                  if (options.dataDecoratorFunc) {
-                    source = options.dataDecoratorFunc(
-                      name,
-                      "tilejson",
-                      source
-                    );
-                  }
-
                   if (
                     !attributionOverride &&
                     source.attribution &&
@@ -1289,6 +1257,7 @@ export const serve_rendered = {
       );
     }
   },
+
   remove: (repo, id) => {
     const item = repo[id];
     if (item) {

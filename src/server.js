@@ -4,7 +4,6 @@ import fs from "node:fs";
 import path from "node:path";
 import fnv1a from "@sindresorhus/fnv1a";
 import chokidar from "chokidar";
-import cors from "cors";
 import enableShutdown from "http-shutdown";
 import express from "express";
 import handlebars from "handlebars";
@@ -14,10 +13,12 @@ import { serve_data } from "./serve_data.js";
 import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
 import { serve_rendered } from "./serve_rendered.js";
+import { serve_sprite } from "./serve_sprite.js";
 import {
   getTileUrls,
   getUrl,
   isValidHttpUrl,
+  findFiles,
   logInfo,
   logErr,
 } from "./utils.js";
@@ -29,18 +30,12 @@ const mercator = new SphericalMercator();
  *
  * @param opts
  */
-function start(opts) {
+export function newServer(opts) {
   logInfo("Starting server...");
 
   const app = express()
     .disable("x-powered-by")
     .enable("trust proxy")
-    .use(
-      cors({
-        origin: "*",
-        methods: "GET",
-      })
-    )
     .use(
       morgan(
         ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent"
@@ -52,6 +47,7 @@ function start(opts) {
     rendered: {},
     data: {},
     fonts: {},
+    sprites: {},
   };
 
   let config = {};
@@ -60,115 +56,65 @@ function start(opts) {
 
   let rootPath = "";
 
-  try {
-    logInfo(`Load config file: ${configFilePath}`);
+  logInfo(`Load config file: ${configFilePath}`);
 
+  try {
     config = JSON.parse(fs.readFileSync(configFilePath, "utf8"));
 
     config.options = config.options || {};
-    config.options.paths = config.options.paths || {};
 
-    rootPath = config.options.paths.root || "";
+    rootPath = config.options.paths?.root || "";
 
-    config.options.paths.root = path.resolve(rootPath);
-    config.options.paths.styles = path.resolve(
-      rootPath,
-      config.options.paths.styles || ""
-    );
-    config.options.paths.fonts = path.resolve(
-      rootPath,
-      config.options.paths.fonts || ""
-    );
-    config.options.paths.sprites = path.resolve(
-      rootPath,
-      config.options.paths.sprites || ""
-    );
-    config.options.paths.mbtiles = path.resolve(
-      rootPath,
-      config.options.paths.mbtiles || ""
-    );
-    config.options.paths.pmtiles = path.resolve(
-      rootPath,
-      config.options.paths.pmtiles || ""
-    );
-    config.options.paths.icons = path.resolve(
-      rootPath,
-      config.options.paths.icons || ""
-    );
-
-    const checkPath = (type) => {
-      if (!fs.existsSync(config.options.paths[type])) {
-        logErr(`"${type}" path does not exist: ${config.options.paths[type]}`);
-
-        process.exit(1);
-      }
+    config.options.paths = {
+      root: path.resolve(rootPath),
+      styles: path.resolve(rootPath, config.options.paths?.styles || ""),
+      fonts: path.resolve(rootPath, config.options.paths?.fonts || ""),
+      sprites: path.resolve(rootPath, config.options.paths?.sprites || ""),
+      mbtiles: path.resolve(rootPath, config.options.paths?.mbtiles || ""),
+      pmtiles: path.resolve(rootPath, config.options.paths?.pmtiles || ""),
+      icons: path.resolve(rootPath, config.options.paths?.icons || ""),
     };
 
-    checkPath("styles");
-    checkPath("fonts");
-    checkPath("sprites");
-    checkPath("mbtiles");
-    checkPath("pmtiles");
-    checkPath("icons");
+    Object.keys(config.options.paths).forEach((key) => {
+      if (!fs.statSync(config.options.paths[key]).isDirectory()) {
+        throw Error(`Dir does not exist: ${config.options.paths[key]}`);
+      }
+    });
 
     config.styles = config.styles || {};
     config.data = config.data || {};
+    config.sprites = config.sprites || {};
   } catch (err) {
     logErr(`Failed to load config file: ${err.message}`);
 
     process.exit(1);
   }
 
+  app.use("/data/", serve_data.init(config.options, serving.data));
+  app.use("/styles/", serve_style.init(config.options, serving.styles));
+  app.use("/sprites/", serve_sprite.init(config, serving.sprites));
+
   const startupPromises = [];
 
-  /**
-   * Recursively get all files within a directory.
-   * @param {string} directory Absolute path to a directory to get files from.
-   */
-  const getFiles = async (directory) => {
-    const dirEntries = await fs.promises.readdir(directory, {
-      withFileTypes: true,
-    });
-
-    const files = await Promise.all(
-      dirEntries.map((dirEntry) => {
-        const entryPath = path.resolve(directory, dirEntry.name);
-
-        return dirEntry.isDirectory()
-          ? getFiles(entryPath)
-          : entryPath.replace(config.options.paths.icons + path.sep, "");
-      })
-    );
-
-    // Flatten the list of files to a single array
-    return files.flat();
-  };
-
-  // Load all available icons into a settings object
   startupPromises.push(
-    getFiles(config.options.paths.icons).then((files) => {
+    findFiles(config.options.paths.icons, /^.*/).then((files) => {
       config.options.paths.availableIcons = files;
     })
   );
-
-  if (config.options.dataDecorator) {
-    try {
-      config.options.dataDecoratorFunc = require(
-        path.resolve(rootPath, config.options.dataDecorator)
-      );
-    } catch (err) {
-      logErr(err.message);
-    }
-  }
-
-  app.use("/data/", serve_data.init(config.options, serving.data));
-  app.use("/styles/", serve_style.init(config.options, serving.styles));
 
   startupPromises.push(
     serve_rendered.init(config.options, serving.rendered).then((sub) => {
       app.use("/styles/", sub);
     })
   );
+
+  startupPromises.push(
+    serve_font(config.options, serving.fonts).then((sub) => {
+      app.use("/fonts", sub);
+    })
+  );
+
+  startupPromises.push(serve_sprite.add(config, serving.sprites));
 
   const addStyle = (id, item, allowMoreData, reportFonts) => {
     let success = true;
@@ -192,6 +138,7 @@ function start(opts) {
               }
             }
           }
+
           if (dataItemId) {
             // input files exists in the data config, return found id
             return dataItemId;
@@ -274,12 +221,6 @@ function start(opts) {
 
     addStyle(id, item, true, true);
   }
-
-  startupPromises.push(
-    serve_font(config.options, serving.fonts).then((sub) => {
-      app.use("/", sub);
-    })
-  );
 
   for (const id of Object.keys(config.data)) {
     const item = config.data[id];
@@ -583,7 +524,7 @@ function start(opts) {
       newChokidar.close();
 
       server.shutdown((err) => {
-        start(opts);
+        newServer(opts);
       });
     });
   }
@@ -596,7 +537,7 @@ function start(opts) {
     }
 
     server.shutdown((err) => {
-      start(opts);
+      newServer(opts);
     });
 
     return res.status(200).send("OK");
@@ -623,12 +564,4 @@ function start(opts) {
 
       process.exit(1);
     });
-}
-
-/**
- *
- * @param opts
- */
-export function server(opts) {
-  start(opts);
 }

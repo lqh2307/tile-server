@@ -3,7 +3,7 @@
 import os from "os";
 import fs from "node:fs";
 import path from "node:path";
-import { server } from "./server.js";
+import { newServer } from "./server.js";
 import { program } from "commander";
 import { logInfo } from "./utils.js";
 
@@ -42,7 +42,7 @@ process.on("SIGTERM", () => {
 });
 
 const startServer = (opts) => {
-  server({
+  newServer({
     port: opts.port,
     configFilePath: opts.configFilePath,
     autoRefresh: opts.autoRefresh,

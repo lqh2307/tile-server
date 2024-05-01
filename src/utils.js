@@ -232,6 +232,36 @@ export const isValidHttpUrl = (string) => {
   }
 };
 
+export const findFiles = async (dirPath, regex) => {
+  const fileNames = fs.readdirSync(dirPath);
+
+  return fs
+    .readdirSync(dirPath)
+    .filter(
+      (fileName) =>
+        regex.test(fileName) &&
+        fs.statSync(path.join(dirPath, fileName)).isFile()
+    );
+};
+
+export const findDirs = (dirPath, regex) => {
+  const dirNames = fs.readdirSync(dirPath);
+
+  return dirNames.filter(
+    (dirName) =>
+      regex.test(dirName) &&
+      fs.statSync(path.join(dirPath, dirName)).isDirectory()
+  );
+};
+
+export const logDebug = (msg) => {
+  console.debug(`${new Date().toISOString()} [DEBUG] ${msg}`);
+};
+
+export const logWarning = (msg) => {
+  console.warn(`${new Date().toISOString()} [WARNING] ${msg}`);
+};
+
 export const logInfo = (msg) => {
   console.info(`${new Date().toISOString()} [INFO] ${msg}`);
 };

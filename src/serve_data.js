@@ -59,11 +59,7 @@ export const serve_data = {
           } else {
             let data = tileinfo.data;
             let headers = tileinfo.header;
-            if (tileJSONFormat === "pbf") {
-              if (options.dataDecoratorFunc) {
-                data = options.dataDecoratorFunc(id, "data", data, z, x, y);
-              }
-            }
+
             if (format === "pbf") {
               headers["Content-Type"] = "application/x-protobuf";
             } else if (format === "geojson") {
@@ -73,6 +69,7 @@ export const serve_data = {
                 type: "FeatureCollection",
                 features: [],
               };
+
               for (const layerName in tile.layers) {
                 const layer = tile.layers[layerName];
                 for (let i = 0; i < layer.length; i++) {
@@ -82,6 +79,7 @@ export const serve_data = {
                   geojson.features.push(featureGeoJSON);
                 }
               }
+
               data = JSON.stringify(geojson);
             }
             delete headers["ETag"]; // do not trust the tile ETag -- regenerate
@@ -111,13 +109,6 @@ export const serve_data = {
                 if (tileJSONFormat === "pbf") {
                   isGzipped =
                     data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0;
-                  if (options.dataDecoratorFunc) {
-                    if (isGzipped) {
-                      data = zlib.unzipSync(data);
-                      isGzipped = false;
-                    }
-                    data = options.dataDecoratorFunc(id, "data", data, z, x, y);
-                  }
                 }
                 if (format === "pbf") {
                   headers["Content-Type"] = "application/x-protobuf";
@@ -238,10 +229,6 @@ export const serve_data = {
       Object.assign(tileJSON, params.tilejson);
 
       fixTileJSONCenter(tileJSON);
-
-      if (options.dataDecoratorFunc) {
-        tileJSON = options.dataDecoratorFunc(id, "tilejson", tileJSON);
-      }
     } else if (inputType === "mbtiles") {
       sourceType = "mbtiles";
       const sourceInfoPromise = new Promise((resolve, reject) => {
@@ -272,10 +259,6 @@ export const serve_data = {
             Object.assign(tileJSON, params.tilejson);
 
             fixTileJSONCenter(tileJSON);
-
-            if (options.dataDecoratorFunc) {
-              tileJSON = options.dataDecoratorFunc(id, "tilejson", tileJSON);
-            }
 
             resolve();
           });
