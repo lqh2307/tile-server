@@ -85,7 +85,9 @@ RUN \
   apt-get -qq update; \
   apt-get install -y nodejs; \
   apt-get -y remove curl gnupg; \
-  apt-get -y --purge autoremove;
+  apt-get -y --purge autoremove; \
+  apt-get clean; \
+  rm -rf /var/lib/apt/lists/*;
 
 WORKDIR /tile-server
 
