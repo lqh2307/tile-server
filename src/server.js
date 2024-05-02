@@ -16,7 +16,6 @@ import { serve_rendered } from "./serve_rendered.js";
 import { serve_sprite } from "./serve_sprite.js";
 import {
   getTileUrls,
-  getUrl,
   isValidHttpUrl,
   findFiles,
   logInfo,
@@ -48,6 +47,7 @@ export function newServer(opts) {
     data: {},
     fonts: {},
     sprites: {},
+    icons: {},
   };
 
   let config = {};
@@ -84,6 +84,7 @@ export function newServer(opts) {
     config.styles = config.styles || {};
     config.data = config.data || {};
     config.sprites = config.sprites || {};
+    config.icons = config.icons || {};
   } catch (err) {
     logErr(`Failed to load config file: ${err.message}`);
 
@@ -255,24 +256,6 @@ export function newServer(opts) {
 
     return arr;
   };
-
-  app.get("/styles.json", (req, res, next) => {
-    const result = [];
-    const query = req.query.key
-      ? `?key=${encodeURIComponent(req.query.key)}`
-      : "";
-    for (const id of Object.keys(serving.styles)) {
-      const styleJSON = serving.styles[id].styleJSON;
-      result.push({
-        version: styleJSON.version,
-        name: styleJSON.name,
-        id,
-        url: `${getUrl(req)}styles/${id}/style.json${query}`,
-      });
-    }
-
-    res.send(result);
-  });
 
   app.get("/(:tileSize(256|512)/)?rendered.json", (req, res, next) => {
     const tileSize = parseInt(req.params.tileSize, 10) || undefined;

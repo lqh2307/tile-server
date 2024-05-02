@@ -1,9 +1,10 @@
-FROM ubuntu:22.04
+FROM ubuntu:22.04 AS builder
 
-# Install native packages
 RUN \
-  apt update; \
-  apt -y install \
+  set -ex; \
+  export DEBIAN_FRONTEND=noninteractive; \
+  apt-get -qq update; \
+  apt-get -y --no-install-recommends install \
     pkg-config \
     build-essential \
     ca-certificates \
@@ -26,30 +27,18 @@ RUN \
     libpixman-1-dev \
     libpixman-1-0;
 
-# Install nodejs & free resources
 RUN \
   mkdir -p /etc/apt/keyrings; \
   curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
   echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list; \
-  apt update; \
-  apt install -y nodejs; \
-  npm install npm@latest; \
-  apt -y remove curl gnupg; \
-  apt -y --purge autoremove; \
-  apt clean; \
-  rm -rf /var/lib/apt/lists/*;
+  apt-get -qq update; \
+  apt-get install -y nodejs;
 
 WORKDIR /tile-server
 
 COPY . .
 
-# Install node_modules & create default data
 RUN \
-  npm config set fetch-retries 5; \
-  npm config set fetch-retry-mintimeout 100000; \
-  npm config set fetch-retry-maxtimeout 600000; \
-  npm install --omit=dev; \
-  npm cache clean --force; \
   mv ./data_template ./data; \
   mkdir -p \
     ./data/fonts \
@@ -57,7 +46,55 @@ RUN \
     ./data/mbtiles \
     ./data/pmtiles \
     ./data/sprites \
-    ./data/styles; \
-  chmod -R +x .;
+    ./data/styles;
+
+RUN \
+  npm config set fetch-retries 5; \
+  npm config set fetch-retry-mintimeout 100000; \
+  npm config set fetch-retry-maxtimeout 600000; \
+  npm install --omit=dev;
+
+
+FROM ubuntu:22.04 AS final
+
+RUN \
+  set -ex; \
+  export DEBIAN_FRONTEND=noninteractive; \
+  apt-get -qq update; \
+  apt-get -y --no-install-recommends install \
+    ca-certificates \
+    curl \
+    gnupg \
+    xvfb \
+    libglfw3 \
+    libuv1 \
+    libjpeg-turbo8 \
+    libicu70 \
+    libcairo2 \
+    libgif7 \
+    libopengl0 \
+    libpixman-1-0 \
+    libcurl4 \
+    librsvg2-2 \
+    libpango-1.0-0;
+
+RUN \
+  mkdir -p /etc/apt/keyrings; \
+  curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
+  echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list; \
+  apt-get -qq update; \
+  apt-get install -y nodejs; \
+  apt-get -y remove curl gnupg; \
+  apt-get -y --purge autoremove;
+
+WORKDIR /tile-server
+
+COPY --from=builder /tile-server .
+
+RUN chmod -R +x .
+
+VOLUME /tile-server/data
+
+EXPOSE 8080
 
 ENTRYPOINT ["./docker-entrypoint.sh"]

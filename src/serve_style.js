@@ -4,7 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 import express from "express";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
-import { fixUrl, allowedOptions, logErr } from "./utils.js";
+import { fixUrl, allowedOptions, logErr, getUrl } from "./utils.js";
 import clone from "clone";
 
 const httpTester = /^https?:\/\//i;
@@ -80,6 +80,20 @@ export const serve_style = {
         }
       }
     );
+
+    app.get("/styles.json", (req, res, next) => {
+      const result = [];
+      for (const id of Object.keys(repo)) {
+        result.push({
+          version: repo[id].styleJSON.version,
+          name: repo[id].styleJSON.name,
+          id,
+          url: `${getUrl(req)}styles/${id}/style.json`,
+        });
+      }
+
+      res.send(result);
+    });
 
     return app;
   },

@@ -7,10 +7,6 @@ import { newServer } from "./server.js";
 import { program } from "commander";
 import { logInfo } from "./utils.js";
 
-const packageJson = JSON.parse(
-  fs.readFileSync(path.resolve("package.json"), "utf8")
-);
-
 program
   .description("tile-server startup options")
   .usage("tile-server [options]")
@@ -24,7 +20,10 @@ program
     "-a, --auto-refresh",
     "Auto refresh server after changing config file"
   )
-  .version(packageJson.version, "-v, --version")
+  .version(
+    JSON.parse(fs.readFileSync(path.resolve("package.json"), "utf8")).version,
+    "-v, --version"
+  )
   .showHelpAfterError();
 
 program.parse(process.argv);

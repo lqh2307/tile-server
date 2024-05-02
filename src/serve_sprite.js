@@ -3,8 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import express from "express";
-import { fixUrl, logErr, findFiles } from "./utils.js";
-import clone from "clone";
+import { logErr, findFiles, getUrl } from "./utils.js";
 
 export const serve_sprite = {
   init: (config, repo) => {
@@ -43,14 +42,15 @@ export const serve_sprite = {
     );
 
     app.get("/sprites.json", (req, res, next) => {
-      res.header("Content-type", "application/json");
-
-      const sprites = clone(repo || {});
-      for (const key of Object.keys(sprites)) {
-        sprites[key].path = fixUrl(req, `local://sprites/${key}/sprite`);
+      const result = [];
+      for (const id of Object.keys(repo)) {
+        result.push({
+          id: id,
+          url: `${getUrl(req)}sprites/${id}/sprite`,
+        });
       }
 
-      return res.send(sprites);
+      return res.send(result);
     });
 
     return app;
