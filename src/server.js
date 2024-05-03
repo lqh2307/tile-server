@@ -41,29 +41,18 @@ export function newServer(opts) {
       )
     );
 
-  const serving = {
-    styles: {},
-    rendered: {},
-    data: {},
-    fonts: {},
-    sprites: {},
-    icons: {},
-  };
-
   let config = {};
 
-  const configFilePath = path.resolve(opts.configFilePath);
-
-  let rootPath = "";
-
-  logInfo(`Load config file: ${configFilePath}`);
+  const configFilePath = path.resolve(opts.config);
 
   try {
+    logInfo(`Load config file: ${configFilePath}`);
+
     config = JSON.parse(fs.readFileSync(configFilePath, "utf8"));
 
     config.options = config.options || {};
 
-    rootPath = config.options.paths?.root || "";
+    const rootPath = config.options.paths?.root || "";
 
     config.options.paths = {
       root: path.resolve(rootPath),
@@ -90,6 +79,15 @@ export function newServer(opts) {
 
     process.exit(1);
   }
+
+  const serving = {
+    styles: {},
+    rendered: {},
+    data: {},
+    fonts: {},
+    sprites: {},
+    icons: {},
+  };
 
   app.use("/data/", serve_data.init(config.options, serving.data));
   app.use("/styles/", serve_style.init(config.options, serving.styles));
@@ -263,10 +261,6 @@ export function newServer(opts) {
     res.send(addTileJSONs([], req, "rendered", tileSize));
   });
 
-  app.get("/data.json", (req, res, next) => {
-    res.send(addTileJSONs([], req, "data", undefined));
-  });
-
   app.get("/(:tileSize(256|512)/)?index.json", (req, res, next) => {
     const tileSize = parseInt(req.params.tileSize, 10) || undefined;
     res.send(
@@ -277,6 +271,10 @@ export function newServer(opts) {
         undefined
       )
     );
+  });
+
+  app.get("/data.json", (req, res, next) => {
+    res.send(addTileJSONs([], req, "data", undefined));
   });
 
   let startupComplete = false;
@@ -292,24 +290,20 @@ export function newServer(opts) {
   // serve web presentations
   app.use("/", express.static(path.resolve("public", "resources")));
 
-  const templates = path.resolve("public", "templates");
-
   const serveTemplate = (urlPath, template, dataGetter) => {
-    let templateFile = `${templates}/${template}.tmpl`;
-    if (template === "index") {
-      if (config.options.frontPage === false) {
-        return;
-      } else if (
-        config.options.frontPage &&
-        config.options.frontPage.constructor === String
-      ) {
-        templateFile = path.resolve(rootPath, config.options.frontPage);
-      }
+    if (template === "index" && config.options.frontPage === false) {
+      return;
     }
+
+    const templatePath = path.resolve(
+      "public",
+      "templates",
+      `${template}.tmpl`
+    );
 
     startupPromises.push(
       new Promise((resolve, reject) => {
-        fs.readFile(templateFile, (err, content) => {
+        fs.readFile(templatePath, (err, content) => {
           if (err) {
             reject(err.message);
 
@@ -497,9 +491,18 @@ export function newServer(opts) {
     usePolling: true,
     awaitWriteFinish: true,
     interval: 100,
+    binaryInterval: 100,
   });
-  if (opts.autoRefresh) {
-    logInfo("Enable auto refresh server after changing config file");
+  if (opts.kill || (opts.kill && opts.refresh)) {
+    logInfo("Enable kill server after changing config file");
+
+    newChokidar.on("change", () => {
+      logInfo(`Config file has changed. Kill server...`);
+
+      process.exit(0);
+    });
+  } else if (opts.refresh) {
+    logInfo("Enable refresh server after changing config file");
 
     newChokidar.on("change", () => {
       logInfo(`Config file has changed. Refreshing server...`);

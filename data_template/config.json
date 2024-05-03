@@ -10,7 +10,6 @@
       "pmtiles": "pmtiles"
     },
     "domains": [],
-    "corsOrigins": [],
     "formatQuality": {
       "jpeg": 100,
       "webp": 100

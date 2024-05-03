@@ -10,16 +10,10 @@ import { logInfo } from "./utils.js";
 program
   .description("tile-server startup options")
   .usage("tile-server [options]")
-  .option(
-    "-c, --config-file-path <config file path>",
-    "Config file path",
-    "data/config.json"
-  )
+  .option("-c, --config <path>", "Config file path", "data/config.json")
   .option("-p, --port <port>", "Port", 8080, parseInt)
-  .option(
-    "-a, --auto-refresh",
-    "Auto refresh server after changing config file"
-  )
+  .option("-r, --refresh", "Refresh server after changing config file")
+  .option("-k, --kill", "Kill server after changing config file")
   .version(
     JSON.parse(fs.readFileSync(path.resolve("package.json"), "utf8")).version,
     "-v, --version"
@@ -29,6 +23,7 @@ program
 program.parse(process.argv);
 
 process.env.UV_THREADPOOL_SIZE = Math.ceil(Math.max(4, os.cpus().length * 1.5)); // For libuv
+
 process.on("SIGINT", () => {
   logInfo("Killed server!");
 
@@ -43,8 +38,9 @@ process.on("SIGTERM", () => {
 const startServer = (opts) => {
   newServer({
     port: opts.port,
-    configFilePath: opts.configFilePath,
-    autoRefresh: opts.autoRefresh,
+    config: opts.config,
+    refresh: opts.refresh,
+    kill: opts.kill,
   });
 };
 
