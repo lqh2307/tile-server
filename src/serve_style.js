@@ -4,7 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 import express from "express";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
-import { fixUrl, allowedOptions, logErr, getUrl } from "./utils.js";
+import { fixUrl, allowedOptions, printLog, getUrl } from "./utils.js";
 import clone from "clone";
 
 const httpTester = /^https?:\/\//i;
@@ -61,7 +61,7 @@ export const serve_style = {
             const filename = `${sprite.path + scale}.${format}`;
             return fs.readFile(filename, (err, data) => {
               if (err) {
-                logErr(`Sprite load error: ${filename}`);
+                printLog("error", `Sprite load error: ${filename}`);
 
                 return res.sendStatus(404);
               } else {
@@ -109,7 +109,7 @@ export const serve_style = {
     try {
       styleJSON = JSON.parse(fs.readFileSync(styleFile));
     } catch (e) {
-      logErr(`Failed to reading style file: ${e.message}`);
+      printLog("error", `Failed to reading style file: ${e.message}`);
 
       return false;
     }
@@ -122,7 +122,7 @@ export const serve_style = {
         errString += "\n" + `${err.line}: ${err.message}`;
       }
 
-      logErr(errString);
+      printLog("error", errString);
 
       return false;
     }

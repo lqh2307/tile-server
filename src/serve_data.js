@@ -6,6 +6,7 @@ import zlib from "zlib";
 import express from "express";
 import MBTiles from "@mapbox/mbtiles";
 import Pbf from "pbf";
+import clone from "clone";
 import { VectorTile } from "@mapbox/vector-tile";
 import { getTileUrls, isValidHttpUrl, fixTileJSONCenter } from "./utils.js";
 import {
@@ -13,7 +14,6 @@ import {
   getPMtilesInfo,
   getPMtilesTile,
 } from "./pmtiles_adapter.js";
-import clone from "clone";
 
 export const serve_data = {
   init: (options, repo) => {
@@ -190,7 +190,7 @@ export const serve_data = {
     } else if (params.mbtiles) {
       inputType = "mbtiles";
       if (isValidHttpUrl(params.mbtiles)) {
-        logErr(`${params.mbtiles} is invalid data file`);
+        printLog("error", `${params.mbtiles} is invalid data file`);
 
         process.exit(1);
       } else {

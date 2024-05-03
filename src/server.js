@@ -9,19 +9,14 @@ import express from "express";
 import handlebars from "handlebars";
 import SphericalMercator from "@mapbox/sphericalmercator";
 import morgan from "morgan";
+import clone from "clone";
+import chalk from "chalk";
 import { serve_data } from "./serve_data.js";
 import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_sprite } from "./serve_sprite.js";
-import {
-  getTileUrls,
-  isValidHttpUrl,
-  findFiles,
-  logInfo,
-  logErr,
-} from "./utils.js";
-import clone from "clone";
+import { getTileUrls, isValidHttpUrl, findFiles, printLog } from "./utils.js";
 
 const mercator = new SphericalMercator();
 
@@ -30,23 +25,21 @@ const mercator = new SphericalMercator();
  * @param opts
  */
 export function newServer(opts) {
-  logInfo("Starting server...");
+  printLog("info", "Starting server...");
+
+  const logFormat = `${chalk.gray(":date[iso]")} ${chalk.green("[INFO]")} :method :url :status :res[content-length] :response-time :remote-addr :user-agent`;
 
   const app = express()
     .disable("x-powered-by")
     .enable("trust proxy")
-    .use(
-      morgan(
-        ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent"
-      )
-    );
+    .use(morgan(logFormat));
 
   let config = {};
 
   const configFilePath = path.resolve(opts.config);
 
   try {
-    logInfo(`Load config file: ${configFilePath}`);
+    printLog("info", `Load config file: ${configFilePath}`);
 
     config = JSON.parse(fs.readFileSync(configFilePath, "utf8"));
 
@@ -75,7 +68,7 @@ export function newServer(opts) {
     config.sprites = config.sprites || {};
     config.icons = config.icons || {};
   } catch (err) {
-    logErr(`Failed to load config file: ${err.message}`);
+    printLog("error", `Failed to load config file: ${err.message}`);
 
     process.exit(1);
   }
@@ -143,7 +136,8 @@ export function newServer(opts) {
             return dataItemId;
           } else {
             if (!allowMoreData) {
-              logErr(
+              printLog(
+                "error",
                 `Style "${item.style}" using unknown file "${styleSourceId}". Skipping...`
               );
 
@@ -213,7 +207,7 @@ export function newServer(opts) {
   for (const id of Object.keys(config.styles)) {
     const item = config.styles[id];
     if (!item.style || item.style.length === 0) {
-      logErr(`Missing "style" property for ${id}`);
+      printLog("error", `Missing "style" property for ${id}`);
 
       continue;
     }
@@ -225,7 +219,10 @@ export function newServer(opts) {
     const item = config.data[id];
     const fileType = Object.keys(config.data[id])[0];
     if (!fileType || !(fileType === "pmtiles" || fileType === "mbtiles")) {
-      logErr(`Missing "pmtiles" or "mbtiles" property for ${id} data source`);
+      printLog(
+        "error",
+        `Missing "pmtiles" or "mbtiles" property for ${id} data source`
+      );
 
       continue;
     }
@@ -480,7 +477,7 @@ export function newServer(opts) {
   });
 
   const server = app.listen(opts.port, function () {
-    logInfo(`Listening in port: ${this.address().port}`);
+    printLog("info", `Listening in port: ${this.address().port}`);
   });
 
   // add server.shutdown() to gracefully stop serving
@@ -494,18 +491,18 @@ export function newServer(opts) {
     binaryInterval: 100,
   });
   if (opts.kill || (opts.kill && opts.refresh)) {
-    logInfo("Enable kill server after changing config file");
+    printLog("info", "Enable kill server after changing config file");
 
     newChokidar.on("change", () => {
-      logInfo(`Config file has changed. Kill server...`);
+      printLog("info", `Config file has changed. Kill server...`);
 
       process.exit(0);
     });
   } else if (opts.refresh) {
-    logInfo("Enable refresh server after changing config file");
+    printLog("info", "Enable refresh server after changing config file");
 
     newChokidar.on("change", () => {
-      logInfo(`Config file has changed. Refreshing server...`);
+      printLog("info", `Config file has changed. Refreshing server...`);
 
       newChokidar.close();
 
@@ -516,7 +513,7 @@ export function newServer(opts) {
   }
 
   app.get("/refresh", (req, res, next) => {
-    logInfo("Refreshing server...");
+    printLog("info", "Refreshing server...");
 
     if (opts.autoRefresh) {
       newChokidar.close();
@@ -530,7 +527,7 @@ export function newServer(opts) {
   });
 
   app.get("/kill", (req, res, next) => {
-    logInfo("Killed server!");
+    printLog("info", "Killed server!");
 
     server.shutdown((err) => {
       process.exit(0);
@@ -541,12 +538,12 @@ export function newServer(opts) {
 
   Promise.all(startupPromises)
     .then(() => {
-      logInfo("Startup complete!");
+      printLog("info", "Startup complete!");
 
       startupComplete = true;
     })
     .catch((err) => {
-      logErr(`Failed to starting server: ${err.message}`);
+      printLog("error", `Failed to starting server: ${err.message}`);
 
       process.exit(1);
     });

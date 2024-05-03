@@ -5,7 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { newServer } from "./server.js";
 import { program } from "commander";
-import { logInfo } from "./utils.js";
+import { printLog } from "./utils.js";
 
 program
   .description("tile-server startup options")
@@ -25,12 +25,12 @@ program.parse(process.argv);
 process.env.UV_THREADPOOL_SIZE = Math.ceil(Math.max(4, os.cpus().length * 1.5)); // For libuv
 
 process.on("SIGINT", () => {
-  logInfo("Killed server!");
+  printLog("info", "Killed server!");
 
   process.exit(0);
 });
 process.on("SIGTERM", () => {
-  logInfo("Killed server!");
+  printLog("info", "Killed server!");
 
   process.exit(0);
 });

@@ -34,7 +34,7 @@ import {
   getTileUrls,
   isValidHttpUrl,
   fixTileJSONCenter,
-  logErr,
+  printLog,
 } from "./utils.js";
 import {
   openPMtiles,
@@ -54,7 +54,7 @@ const getScale = (scale) => (scale || "@1x").slice(1, 2) | 0;
 
 mlgl.on("message", (e) => {
   if (e.severity === "WARNING" || e.severity === "ERROR") {
-    logErr(`mlgl: ${JSON.stringify(e)}`);
+    printLog("error", `mlgl: ${JSON.stringify(e)}`);
   }
 });
 
@@ -450,7 +450,7 @@ const respondImage = (
     renderer.render(params, (err, data) => {
       pool.release(renderer);
       if (err) {
-        logErr(err);
+        printLog("error", err);
 
         return res.status(500).header("Content-Type", "text/plain").send(err);
       }
@@ -919,7 +919,7 @@ export const serve_rendered = {
                 let data = tileinfo.data;
                 let headers = tileinfo.header;
                 if (data == undefined) {
-                  logErr(`MBTiles error, serving empty: ${err}`);
+                  printLog("error", `MBTiles error, serving empty: ${err}`);
 
                   createEmptyResponse(
                     sourceInfo.format,
@@ -940,7 +940,7 @@ export const serve_rendered = {
               } else if (sourceType === "mbtiles") {
                 source.getTile(z, x, y, (err, data, headers) => {
                   if (err) {
-                    logErr(`MBTiles error, serving empty: ${err}`);
+                    printLog("error", `MBTiles error, serving empty: ${err}`);
 
                     createEmptyResponse(
                       sourceInfo.format,
@@ -960,7 +960,8 @@ export const serve_rendered = {
                     try {
                       response.data = zlib.unzipSync(data);
                     } catch (err) {
-                      logErr(
+                      printLog(
+                        "error",
                         `Skipping incorrect header for tile mbtiles://${id}/${z}/${x}/${y}.pbf`
                       );
                     }
@@ -1023,7 +1024,7 @@ export const serve_rendered = {
     try {
       styleJSON = JSON.parse(fs.readFileSync(styleJSONPath));
     } catch (e) {
-      logErr(`Error parsing style file: ${e.message}`);
+      printLog("error", `Error parsing style file: ${e.message}`);
 
       return false;
     }
@@ -1126,7 +1127,7 @@ export const serve_rendered = {
           inputFile = dataInfo.inputFile;
           sourceType = dataInfo.fileType;
         } else {
-          logErr(`Data "${inputFile}" is not found`);
+          printLog("error", `Data "${inputFile}" is not found`);
 
           process.exit(1);
         }
@@ -1188,7 +1189,7 @@ export const serve_rendered = {
               map.sources[name] = new MBTiles(inputFile + "?mode=ro", (err) => {
                 map.sources[name].getInfo((err, info) => {
                   if (err) {
-                    logErr(err);
+                    printLog("error", err);
 
                     return;
                   }

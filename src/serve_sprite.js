@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import express from "express";
-import { logErr, findFiles, getUrl } from "./utils.js";
+import { printLog, findFiles, getUrl } from "./utils.js";
 
 export const serve_sprite = {
   init: (config, repo) => {
@@ -19,7 +19,10 @@ export const serve_sprite = {
             const filePath = `${path.join(config.options.paths.sprites, id, "sprite")}${scale}.${format}`;
             return fs.readFile(filePath, (err, data) => {
               if (err) {
-                logErr(`Failed to load sprite id ${id}: ${err.message}`);
+                printLog(
+                  "error",
+                  `Failed to load sprite id ${id}: ${err.message}`
+                );
 
                 return res.sendStatus(404);
               } else {
@@ -74,7 +77,7 @@ export const serve_sprite = {
           };
         }
       } catch (err) {
-        logErr(`Failed to find sprite: ${err.message}`);
+        printLog("error", `Failed to find sprite: ${err.message}`);
       }
     }
 
