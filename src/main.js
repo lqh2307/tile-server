@@ -7,6 +7,10 @@ import { newServer } from "./server.js";
 import { program } from "commander";
 import { printLog } from "./utils.js";
 
+const packageJSON = JSON.parse(
+  fs.readFileSync(path.resolve("package.json"), "utf8")
+);
+
 program
   .description("tile-server startup options")
   .usage("tile-server [options]")
@@ -14,10 +18,7 @@ program
   .option("-p, --port <port>", "Port", 8080, parseInt)
   .option("-r, --refresh", "Refresh server after changing config file")
   .option("-k, --kill", "Kill server after changing config file")
-  .version(
-    JSON.parse(fs.readFileSync(path.resolve("package.json"), "utf8")).version,
-    "-v, --version"
-  )
+  .version(packageJSON.version, "-v, --version")
   .showHelpAfterError();
 
 program.parse(process.argv);
@@ -38,7 +39,7 @@ process.on("SIGTERM", () => {
 const startServer = (opts) => {
   newServer({
     port: opts.port,
-    config: opts.config,
+    config: path.resolve(opts.config),
     refresh: opts.refresh,
     kill: opts.kill,
   });

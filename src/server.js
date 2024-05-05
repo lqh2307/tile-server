@@ -20,28 +20,13 @@ import { getTileUrls, isValidHttpUrl, findFiles, printLog } from "./utils.js";
 
 const mercator = new SphericalMercator();
 
-/**
- *
- * @param opts
- */
-export function newServer(opts) {
-  printLog("info", "Starting server...");
+const logFormat = `${chalk.gray(":date[iso]")} ${chalk.green("[INFO]")} :method :url :status :res[content-length] :response-time :remote-addr :user-agent`;
 
-  const logFormat = `${chalk.gray(":date[iso]")} ${chalk.green("[INFO]")} :method :url :status :res[content-length] :response-time :remote-addr :user-agent`;
-
-  const app = express()
-    .disable("x-powered-by")
-    .enable("trust proxy")
-    .use(morgan(logFormat));
-
-  let config = {};
-
-  const configFilePath = path.resolve(opts.config);
+function loadConfigFile(configFilePath) {
+  printLog("info", `Load config file: ${configFilePath}`);
 
   try {
-    printLog("info", `Load config file: ${configFilePath}`);
-
-    config = JSON.parse(fs.readFileSync(configFilePath, "utf8"));
+    const config = JSON.parse(fs.readFileSync(configFilePath, "utf8"));
 
     config.options = config.options || {};
 
@@ -57,6 +42,7 @@ export function newServer(opts) {
       icons: path.resolve(rootPath, config.options.paths?.icons || ""),
     };
 
+    /* Check paths */
     Object.keys(config.options.paths).forEach((key) => {
       if (!fs.statSync(config.options.paths[key]).isDirectory()) {
         throw Error(`Dir does not exist: ${config.options.paths[key]}`);
@@ -67,11 +53,23 @@ export function newServer(opts) {
     config.data = config.data || {};
     config.sprites = config.sprites || {};
     config.icons = config.icons || {};
+
+    return config;
   } catch (err) {
     printLog("error", `Failed to load config file: ${err.message}`);
 
     process.exit(1);
   }
+}
+
+/**
+ *
+ * @param opts
+ */
+export function newServer(opts) {
+  printLog("info", "Starting server...");
+
+  const config = loadConfigFile(opts.config);
 
   const serving = {
     styles: {},
@@ -82,9 +80,13 @@ export function newServer(opts) {
     icons: {},
   };
 
-  app.use("/data/", serve_data.init(config.options, serving.data));
-  app.use("/styles/", serve_style.init(config.options, serving.styles));
-  app.use("/sprites/", serve_sprite.init(config, serving.sprites));
+  const app = express()
+    .disable("x-powered-by")
+    .enable("trust proxy")
+    .use(morgan(logFormat))
+    .use("/data/", serve_data.init(config.options, serving.data))
+    .use("/styles/", serve_style.init(config.options, serving.styles))
+    .use("/sprites/", serve_sprite.init(config, serving.sprites));
 
   const startupPromises = [];
 
@@ -483,7 +485,7 @@ export function newServer(opts) {
   // add server.shutdown() to gracefully stop serving
   enableShutdown(server);
 
-  const newChokidar = chokidar.watch(configFilePath, {
+  const newChokidar = chokidar.watch(opts.config, {
     persistent: false,
     usePolling: true,
     awaitWriteFinish: true,

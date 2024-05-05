@@ -233,16 +233,44 @@ export const isValidHttpUrl = (string) => {
   }
 };
 
-export const findFiles = async (dirPath, regex) => {
-  const fileNames = fs.readdirSync(dirPath);
+export const findFiles = async (
+  dirPath,
+  regex,
+  isRecurse = false,
+  isJustBaseName = false
+) => {
+  if (isRecurse) {
+    const files = fs.readdirSync(dirPath);
+    const results = [];
 
-  return fs
-    .readdirSync(dirPath)
-    .filter(
+    for (const file of files) {
+      const filePath = path.join(dirPath, file);
+
+      if (regex.test(file) && fs.statSync(filePath).isDirectory()) {
+        const subResults = await findFiles(filePath, regex, true);
+
+        results.push(
+          ...subResults.map((subResult) => path.join(file, subResult))
+        );
+      } else if (regex.test(file) && fs.statSync(filePath).isFile()) {
+        results.push(file);
+      }
+    }
+
+    if (isJustBaseName) {
+      return results.map((result) => path.basename(result));
+    }
+
+    return results;
+  } else {
+    const fileNames = fs.readdirSync(dirPath);
+
+    return fileNames.filter(
       (fileName) =>
         regex.test(fileName) &&
         fs.statSync(path.join(dirPath, fileName)).isFile()
     );
+  }
 };
 
 export const findDirs = (dirPath, regex) => {
