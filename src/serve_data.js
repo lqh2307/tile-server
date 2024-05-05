@@ -22,25 +22,26 @@ export const serve_data = {
     app.get(
       "/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format([\\w.]+)",
       async (req, res, next) => {
-        const item = repo[req.params.id];
+        const { id = "", z = 0, x = 0, y = 0 } = req.params;
+        const item = repo[id];
+
         if (!item) {
-          return res.sendStatus(404);
+          return res.status(404).send("Not found");
         }
 
-        const tileJSONFormat = item.tileJSON.format;
-        const z = req.params.z | 0;
-        const x = req.params.x | 0;
-        const y = req.params.y | 0;
         let format = req.params.format;
         if (format === options.pbfAlias) {
           format = "pbf";
         }
+
+        const tileJSONFormat = item.tileJSON.format;
         if (
           format !== tileJSONFormat &&
           !(format === "geojson" && tileJSONFormat === "pbf")
         ) {
-          return res.status(404).send("Invalid format");
+          return res.status(400).send("Invalid format");
         }
+
         if (
           z < item.tileJSON.minzoom ||
           0 ||
@@ -50,8 +51,9 @@ export const serve_data = {
           x >= Math.pow(2, z) ||
           y >= Math.pow(2, z)
         ) {
-          return res.status(404).send("Out of bounds");
+          return res.status(400).send("Out of bounds");
         }
+
         if (item.sourceType === "pmtiles") {
           let tileinfo = await getPMtilesTile(item.source, z, x, y);
           if (tileinfo == undefined || tileinfo.data == undefined) {
@@ -153,9 +155,11 @@ export const serve_data = {
     );
 
     app.get("/:id.json", (req, res, next) => {
-      const item = repo[req.params.id];
+      const { id = "" } = req.params;
+      const item = repo[id];
+
       if (!item) {
-        return res.sendStatus(404);
+        return res.status(404).send("Not found");
       }
 
       const tileSize = undefined;
@@ -171,7 +175,7 @@ export const serve_data = {
         }
       );
 
-      return res.send(info);
+      return res.status(200).send(info);
     });
 
     return app;
