@@ -3,7 +3,6 @@
 import path from "node:path";
 import fs from "node:fs";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
-import clone from "clone";
 import chalk from "chalk";
 
 /**
@@ -129,98 +128,34 @@ export const fixTileJSONCenter = (tileJSON) => {
   }
 };
 
-const getFontPbf = (allowedFonts, fontPath, name, range, fallbacks) =>
+const getFontPbf = (fontPath, name, range) =>
   new Promise((resolve, reject) => {
-    if (!allowedFonts || (allowedFonts[name] && fallbacks)) {
-      const filename = path.join(fontPath, name, `${range}.pbf`);
-      if (!fallbacks) {
-        fallbacks = clone(allowedFonts || {});
+    const filePath = path.join(fontPath, name, `${range}.pbf`);
+
+    fs.readFile(filePath, (err, data) => {
+      if (err) {
+        const fallbackFont = "Open Sans Regular";
+
+        printLog(
+          "error",
+          `${err.message}. Trying to use fallback font ${fallbackFont}`
+        );
+
+        getFontPbf(fontPath, fallbackFont, range).then(resolve, reject);
+      } else {
+        resolve(data);
       }
-
-      delete fallbacks[name];
-
-      fs.readFile(filename, (err, data) => {
-        if (err) {
-          printLog("error", `Font is not found: ${name}`);
-
-          if (fallbacks && Object.keys(fallbacks).length) {
-            let fallbackName;
-
-            let fontStyle = name.split(" ").pop();
-            if (["Regular", "Bold", "Italic"].indexOf(fontStyle) < 0) {
-              fontStyle = "Regular";
-            }
-
-            fallbackName = `Noto Sans ${fontStyle}`;
-            if (!fallbacks[fallbackName]) {
-              fallbackName = `Open Sans ${fontStyle}`;
-              if (!fallbacks[fallbackName]) {
-                fallbackName = Object.keys(fallbacks)[0];
-              }
-            }
-
-            printLog("info", `Trying to use ${fallbackName} as a fallback`);
-
-            delete fallbacks[fallbackName];
-
-            getFontPbf(null, fontPath, fallbackName, range, fallbacks).then(
-              resolve,
-              reject
-            );
-          } else {
-            reject(`Font load error: ${name}`);
-          }
-        } else {
-          resolve(data);
-        }
-      });
-    } else {
-      reject(`Font is not allowed: ${name}`);
-    }
+    });
   });
 
-export const getFontsPbf = async (
-  allowedFonts,
-  fontPath,
-  names,
-  range,
-  fallbacks
-) => {
+export const getFontsPbf = async (fontPath, names, range) => {
   const fonts = names.split(",");
-  const queue = [];
 
-  for (const font of fonts) {
-    queue.push(
-      getFontPbf(
-        allowedFonts,
-        fontPath,
-        font,
-        range,
-        clone(allowedFonts || fallbacks || {})
-      )
-    );
-  }
-
-  const values = await Promise.all(queue);
+  const values = await Promise.all(
+    fonts.map((font) => getFontPbf(fontPath, font, range))
+  );
 
   return glyphCompose.combine(values);
-};
-
-export const listFonts = (fontPath) => {
-  const existingFonts = {};
-
-  const files = fs.readdirSync(fontPath);
-  for (const file of files) {
-    const stats = fs.statSync(path.join(fontPath, file));
-    if (
-      stats.isDirectory() &&
-      fs.existsSync(path.join(fontPath, file, "0-255.pbf"))
-    ) {
-      existingFonts[path.basename(file)] = true;
-    }
-  }
-
-  return existingFonts;
 };
 
 export const isValidHttpUrl = (string) => {

@@ -25,5 +25,9 @@
   },
   "styles": {},
   "data": {},
-  "sprites": {}
+  "sprites": {},
+  "fonts": {
+    "Open Sans Regular": true
+  },
+  "icons": []
 }

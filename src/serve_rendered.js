@@ -30,7 +30,6 @@ import proj4 from "proj4";
 import axios from "axios";
 import {
   getFontsPbf,
-  listFonts,
   getTileUrls,
   isValidHttpUrl,
   fixTileJSONCenter,
@@ -533,7 +532,6 @@ const respondImage = (
   });
 };
 
-const existingFonts = {};
 let maxScaleFactor = 2;
 
 export const serve_rendered = {
@@ -858,8 +856,6 @@ export const serve_rendered = {
       return res.send(info);
     });
 
-    Object.assign(existingFonts, listFonts(options.paths.fonts));
-
     return app;
   },
 
@@ -892,12 +888,11 @@ export const serve_rendered = {
 
               try {
                 const concatenated = await getFontsPbf(
-                  null,
                   options.paths[protocol],
                   fontstack,
-                  range,
-                  existingFonts
+                  range
                 );
+
                 callback(null, { data: concatenated });
               } catch (err) {
                 callback(err, { data: null });

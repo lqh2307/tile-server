@@ -84,6 +84,7 @@ export function newServer(opts) {
     .disable("x-powered-by")
     .enable("trust proxy")
     .use(morgan(logFormat))
+    .use("/fonts", serve_font.init(config, serving.fonts))
     .use("/data/", serve_data.init(config.options, serving.data))
     .use("/styles/", serve_style.init(config.options, serving.styles))
     .use("/sprites/", serve_sprite.init(config, serving.sprites));
@@ -91,7 +92,7 @@ export function newServer(opts) {
   const startupPromises = [];
 
   startupPromises.push(
-    findFiles(config.options.paths.icons, /^.*/).then((files) => {
+    findFiles(config.options.paths.icons, /^.*\.svg$/).then((files) => {
       config.options.paths.availableIcons = files;
     })
   );
@@ -102,12 +103,7 @@ export function newServer(opts) {
     })
   );
 
-  startupPromises.push(
-    serve_font(config.options, serving.fonts).then((sub) => {
-      app.use("/fonts", sub);
-    })
-  );
-
+  startupPromises.push(serve_font.add(config, serving.fonts));
   startupPromises.push(serve_sprite.add(config, serving.sprites));
 
   const addStyle = (id, item, allowMoreData, reportFonts) => {
