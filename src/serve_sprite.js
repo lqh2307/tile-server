@@ -12,7 +12,7 @@ export const serve_sprite = {
     const spritePath = config.options.paths.sprites;
 
     app.get(
-      "/:id/sprite?:scale(@[23]x)?.:format([\\w]+)",
+      "/:id/sprite:scale(@[23]x)?.:format([\\w]+)",
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
         const { scale = "", format = "" } = req.params;
@@ -80,6 +80,7 @@ export const serve_sprite = {
 
     try {
       for (const sprite of sprites) {
+        /* Validate sprite */
         const fileNames = await findFiles(
           path.join(fontPath, sprite),
           /^sprite(@(\d+)x){0,1}\.(json|png){1}$/
