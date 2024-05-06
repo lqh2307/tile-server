@@ -1024,29 +1024,12 @@ export const serve_rendered = {
       return false;
     }
 
-    if (styleJSON.sprite) {
-      if (!Array.isArray(styleJSON.sprite)) {
-        styleJSON.sprite = [{ id: "default", url: styleJSON.sprite }];
-      }
-      styleJSON.sprite.forEach((spriteItem) => {
-        if (!httpTester.test(spriteItem.url)) {
-          spriteItem.url =
-            "sprites://" +
-            spriteItem.url
-              .replace("{style}", path.basename(styleFile, ".json"))
-              .replace(
-                "{styleJsonFolder}",
-                path.relative(
-                  options.paths.sprites,
-                  path.dirname(styleJSONPath)
-                )
-              );
-        }
-      });
+    if (styleJSON.sprite && !httpTester.test(styleJSON.sprite)) {
+      styleJSON.sprite = `sprites://styles/${id}/sprite`;
     }
 
     if (styleJSON.glyphs && !httpTester.test(styleJSON.glyphs)) {
-      styleJSON.glyphs = `fonts://${styleJSON.glyphs}`;
+      styleJSON.glyphs = `fonts://fonts/{fontstack}/{range}.pbf`;
     }
 
     for (const layer of styleJSON.layers || []) {
