@@ -20,13 +20,13 @@ export const serve_sprite = {
         if (format != "png" && format != "json") {
           res.header("Content-Type", "text/plain");
 
-          res.status(404).send("Invalid format");
+          return res.status(404).send("Invalid format");
         }
 
         if (!repo[id]) {
           res.header("Content-Type", "text/plain");
 
-          res.status(404).send("Sprite id or scale is not found");
+          return res.status(404).send("Sprite id or scale is not found");
         }
 
         try {
@@ -46,7 +46,7 @@ export const serve_sprite = {
 
           res.header("Content-Type", "text/plain");
 
-          res.status(400).send("Sprite is not found");
+          return res.status(400).send("Sprite is not found");
         }
       }
     );
