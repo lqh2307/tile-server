@@ -20,7 +20,7 @@ export const serve_sprite = {
         if (format != "png" && format != "json") {
           res.header("Content-Type", "text/plain");
 
-          return res.status(404).send("Invalid format");
+          return res.status(400).send("Invalid format");
         }
 
         if (!repo[id]) {
