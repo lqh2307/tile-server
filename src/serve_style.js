@@ -116,11 +116,11 @@ export const serve_style = {
   },
 
   add: (options, repo, params, id, reportTiles, reportFont) => {
-    const styleFile = path.resolve(options.paths.styles, params.style);
+    const styleFilePath = path.resolve(options.paths.styles, params.style);
 
     let styleJSON = {};
     try {
-      styleJSON = JSON.parse(fs.readFileSync(styleFile));
+      styleJSON = JSON.parse(fs.readFileSync(styleFileFile));
     } catch (e) {
       printLog("error", `Failed to reading style file: ${e.message}`);
 
