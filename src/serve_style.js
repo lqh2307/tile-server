@@ -7,16 +7,13 @@ import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { fixUrl, printLog, getUrl } from "./utils.js";
 import clone from "clone";
 
-const httpTester = /^https?:\/\//i;
-
 export const serve_style = {
   init: (options, repo) => {
     const app = express().disable("x-powered-by");
     const lastModified = new Date().toUTCString();
-    const stylePath = options.paths.styles;
 
     app.get("/:id/style.json", (req, res, next) => {
-      const { id } = req.params
+      const { id } = req.params;
       const item = repo[id];
 
       if (!item) {
@@ -27,7 +24,10 @@ export const serve_style = {
 
       if (styleJSON.sources) {
         for (const name of Object.keys(styleJSON.sources)) {
-          source.url = fixUrl(req, styleJSON.sources[name].url);
+          styleJSON.sources[name].url = fixUrl(
+            req,
+            styleJSON.sources[name].url
+          );
         }
       }
 
@@ -43,7 +43,7 @@ export const serve_style = {
       res.header("Content-Type", "application/json");
       res.header("Last-Modified", lastModified);
 
-      return res.send(styleJSON);
+      return res.status(200).send(styleJSON);
     });
 
     app.get("/styles.json", (req, res, next) => {
@@ -63,46 +63,6 @@ export const serve_style = {
 
       res.status(200).send(result);
     });
-
-    app.get(
-      "/:id/sprite:scale(@[23]x)?.:format([\\w]+)",
-      async (req, res, next) => {
-        const id = decodeURI(req.params.id);
-        const { scale = "", format = "" } = req.params;
-
-        if (format != "png" && format != "json") {
-          res.header("Content-Type", "text/plain");
-
-          return res.status(400).send("Invalid format");
-        }
-
-        if (!repo[id]) {
-          res.header("Content-Type", "text/plain");
-
-          return res.status(404).send("Sprite id or scale is not found");
-        }
-
-        try {
-          const filePath = `${path.join(stylePath, id, "sprites", "sprite")}${scale}.${format}`;
-
-          const data = fs.readFileSync(filePath);
-
-          if (format === "json") {
-            res.header("Content-type", "application/json");
-          } else if (format === "png") {
-            res.header("Content-type", "image/png");
-          }
-
-          return res.status(200).send(data);
-        } catch (err) {
-          printLog("error", `Failed to get sprite: ${err.message}`);
-
-          res.header("Content-Type", "text/plain");
-
-          return res.status(400).send("Sprite is not found");
-        }
-      }
-    );
 
     return app;
   },
@@ -167,12 +127,15 @@ export const serve_style = {
       }
     }
 
-    if (styleJSON.sprite && !httpTester.test(styleJSON.sprite)) {
-      styleJSON.sprite = `local://styles/${id}/sprite`;
+    if (styleJSON.sprite && styleJSON.sprite.startsWith("sprites://")) {
+      styleJSON.sprite = styleJSON.sprite.replace(
+        "sprites://",
+        "local://sprites/"
+      );
     }
 
-    if (styleJSON.glyphs && !httpTester.test(styleJSON.glyphs)) {
-      styleJSON.glyphs = "local://fonts/{fontstack}/{range}.pbf";
+    if (styleJSON.glyphs && styleJSON.glyphs.startsWith("fonts://")) {
+      styleJSON.glyphs = styleJSON.glyphs.replace("fonts://", "local://fonts/");
     }
 
     repo[id] = {

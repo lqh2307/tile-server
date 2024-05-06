@@ -46,7 +46,6 @@ import clone from "clone";
 const FLOAT_PATTERN = "[+-]?(?:\\d+|\\d+.?\\d+)";
 const PATH_PATTERN =
   /^((fill|stroke|width)\:[^\|]+\|)*(enc:.+|-?\d+(\.\d*)?,-?\d+(\.\d*)?(\|-?\d+(\.\d*)?,-?\d+(\.\d*)?)+)/;
-const httpTester = /^https?:\/\//i;
 
 const mercator = new SphericalMercator();
 const getScale = (scale) => (scale || "@1x").slice(1, 2) | 0;
@@ -312,7 +311,7 @@ const extractMarkersFromQuery = (query, options, transformer) => {
       iconURI = sanitize(iconURI);
 
       // If the selected icon is not part of available icons skip it
-      if (!options.paths.availableIcons.includes(iconURI)) {
+      if (!options.icons.includes(iconURI)) {
         continue;
       }
 
@@ -886,6 +885,8 @@ export const serve_rendered = {
               const fontstack = unescape(parts[2]);
               const range = parts[3].split(".")[0];
 
+              console.log("PARTS:", parts);
+
               try {
                 const concatenated = await getFontsPbf(
                   options.paths[protocol],
@@ -1014,22 +1015,15 @@ export const serve_rendered = {
       });
     };
 
-    const styleFile = params.style;
-    const styleJSONPath = path.resolve(options.paths.styles, styleFile);
+    const stylePath = options.paths.styles;
+    const styleJSONPath = path.join(stylePath, params.style);
+
     try {
       styleJSON = JSON.parse(fs.readFileSync(styleJSONPath));
     } catch (e) {
       printLog("error", `Error parsing style file: ${e.message}`);
 
       return false;
-    }
-
-    if (styleJSON.sprite && !httpTester.test(styleJSON.sprite)) {
-      styleJSON.sprite = `sprites://styles/${id}/sprite`;
-    }
-
-    if (styleJSON.glyphs && !httpTester.test(styleJSON.glyphs)) {
-      styleJSON.glyphs = `fonts://fonts/{fontstack}/{range}.pbf`;
     }
 
     for (const layer of styleJSON.layers || []) {

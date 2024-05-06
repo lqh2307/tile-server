@@ -52,7 +52,7 @@ function loadConfigFile(configFilePath) {
     config.styles = config.styles || {};
     config.data = config.data || {};
     config.sprites = config.sprites || {};
-    config.icons = config.icons || {};
+    config.icons = config.icons || [];
 
     return config;
   } catch (err) {
@@ -77,7 +77,7 @@ export function newServer(opts) {
     data: {},
     fonts: {},
     sprites: {},
-    icons: {},
+    icons: [],
   };
 
   const app = express()
@@ -90,12 +90,6 @@ export function newServer(opts) {
     .use("/sprites/", serve_sprite.init(config, serving.sprites));
 
   const startupPromises = [];
-
-  startupPromises.push(
-    findFiles(config.options.paths.icons, /^.*\.svg$/).then((files) => {
-      config.options.paths.availableIcons = files;
-    })
-  );
 
   startupPromises.push(
     serve_rendered.init(config.options, serving.rendered).then((sub) => {

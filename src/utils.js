@@ -5,6 +5,8 @@ import fs from "node:fs";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
 import chalk from "chalk";
 
+export const httpTester = /^https?:\/\//i;
+
 /**
  * Restrict user input to an allowed set of options.
  * @param opts
