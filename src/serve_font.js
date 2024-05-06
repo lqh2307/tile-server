@@ -20,13 +20,13 @@ export const serve_font = {
         res.header("Content-type", "application/x-protobuf");
         res.header("Last-Modified", lastModified);
 
-        return res.send(concatenated);
+        return res.status(200).send(concatenated);
       } catch (err) {
         printLog("error", `Failed to get font: ${err.message}`);
 
         res.header("Content-Type", "text/plain");
 
-        res.status(400).send(err.message);
+        return res.status(400).send(err.message);
       }
     });
 
