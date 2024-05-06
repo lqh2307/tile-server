@@ -14,85 +14,98 @@ const allowedSpriteFormats = allowedOptions(["png", "json"]);
 export const serve_style = {
   init: (options, repo) => {
     const app = express().disable("x-powered-by");
+    const lastModified = new Date().toUTCString();
+    const spritePath = config.options.paths.sprites;
 
     app.get("/:id/style.json", (req, res, next) => {
-      const item = repo[req.params.id];
+      const { id } = req.params
+      const item = repo[id];
+      
       if (!item) {
-        return res.sendStatus(404);
+        return res.status(400).send("Style is not found");
       }
 
-      const styleJSON_ = clone(item.styleJSON || {});
-      for (const name of Object.keys(styleJSON_.sources)) {
-        const source = styleJSON_.sources[name];
-        source.url = fixUrl(req, source.url);
+      const styleJSON = clone(item.styleJSON || {});
+
+      if (styleJSON.sources) {
+        for (const name of Object.keys(styleJSON.sources)) {
+          source.url = fixUrl(req, styleJSON.sources[name].url);
+        }
       }
 
       // mapbox-gl-js viewer cannot handle sprite urls with query
-      if (styleJSON_.sprite) {
-        if (Array.isArray(styleJSON_.sprite)) {
-          styleJSON_.sprite.forEach((spriteItem) => {
+      if (styleJSON.sprite) {
+        if (Array.isArray(styleJSON.sprite)) {
+          styleJSON.sprite.forEach((spriteItem) => {
             spriteItem.url = fixUrl(req, spriteItem.url);
           });
         } else {
-          styleJSON_.sprite = fixUrl(req, styleJSON_.sprite);
+          styleJSON.sprite = fixUrl(req, styleJSON.sprite);
         }
       }
 
-      if (styleJSON_.glyphs) {
-        styleJSON_.glyphs = fixUrl(req, styleJSON_.glyphs);
+      if (styleJSON.glyphs) {
+        styleJSON.glyphs = fixUrl(req, styleJSON.glyphs);
       }
 
-      return res.send(styleJSON_);
+      res.header("Content-Type", "application/json");
+      res.header("Last-Modified", lastModified);
+      
+      return res.send(styleJSON);
     });
 
-    app.get(
-      "/:id/sprite(/:spriteID)?:scale(@[23]x)?.:format([\\w]+)",
-      (req, res, next) => {
-        const { spriteID = "default", id } = req.params;
-        const scale = allowedSpriteScales(req.params.scale) || "";
-        const format = allowedSpriteFormats(req.params.format);
+    // app.get(
+    //   "/:id/sprite(/:spriteID)?:scale(@[23]x)?.:format([\\w]+)",
+    //   (req, res, next) => {
+    //     const { spriteID = "default", id } = req.params;
+    //     const scale = allowedSpriteScales(req.params.scale) || "";
+    //     const format = allowedSpriteFormats(req.params.format);
 
-        if (format) {
-          const item = repo[id];
-          const sprite = item.spritePaths.find(
-            (sprite) => sprite.id === spriteID
-          );
-          if (sprite) {
-            const filename = `${sprite.path + scale}.${format}`;
-            return fs.readFile(filename, (err, data) => {
-              if (err) {
-                printLog("error", `Sprite load error: ${filename}`);
+    //     if (format) {
+    //       const item = repo[id];
+    //       const sprite = item.spritePaths.find(
+    //         (sprite) => sprite.id === spriteID
+    //       );
+    //       if (sprite) {
+    //         const filename = `${sprite.path + scale}.${format}`;
+    //         return fs.readFile(filename, (err, data) => {
+    //           if (err) {
+    //             printLog("error", `Sprite load error: ${filename}`);
 
-                return res.sendStatus(404);
-              } else {
-                if (format === "json")
-                  res.header("Content-type", "application/json");
-                if (format === "png") res.header("Content-type", "image/png");
+    //             return res.sendStatus(404);
+    //           } else {
+    //             if (format === "json")
+    //               res.header("Content-type", "application/json");
+    //             if (format === "png") res.header("Content-type", "image/png");
 
-                return res.send(data);
-              }
-            });
-          } else {
-            return res.status(400).send("Bad Sprite ID or Scale");
-          }
-        } else {
-          return res.status(400).send("Bad Sprite Format");
-        }
-      }
-    );
+    //             return res.send(data);
+    //           }
+    //         });
+    //       } else {
+    //         return res.status(400).send("Bad Sprite ID or Scale");
+    //       }
+    //     } else {
+    //       return res.status(400).send("Bad Sprite Format");
+    //     }
+    //   }
+    // );
 
     app.get("/styles.json", (req, res, next) => {
       const result = [];
+      
       for (const id of Object.keys(repo)) {
         result.push({
+          id: id,
           version: repo[id].styleJSON.version,
           name: repo[id].styleJSON.name,
-          id,
           url: `${getUrl(req)}styles/${id}/style.json`,
         });
       }
 
-      res.send(result);
+      res.header("Content-Type", "text/plain");
+      res.header("Last-Modified", lastModified);
+      
+      res.status(200).send(result);
     });
 
     return app;
