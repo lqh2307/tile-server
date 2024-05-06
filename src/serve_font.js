@@ -64,6 +64,7 @@ export const serve_font = {
       }
 
       for (const fontstack of fontstacks) {
+        /* Validate font */
         const fileNames = await findFiles(
           path.join(fontPath, fontstack),
           /^\d{1,5}-\d{1,5}\.pbf{1}$/
