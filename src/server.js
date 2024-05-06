@@ -16,7 +16,7 @@ import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_sprite } from "./serve_sprite.js";
-import { getTileUrls, isValidHttpUrl, findFiles, printLog } from "./utils.js";
+import { getTileUrls, isValidHttpUrl, printLog } from "./utils.js";
 
 const mercator = new SphericalMercator();
 
@@ -85,8 +85,8 @@ export function newServer(opts) {
     .enable("trust proxy")
     .use(morgan(logFormat))
     .use("/fonts", serve_font.init(config, serving.fonts))
-    .use("/data/", serve_data.init(config.options, serving.data))
-    .use("/styles/", serve_style.init(config.options, serving.styles))
+    .use("/data/", serve_data.init(config, serving.data))
+    .use("/styles/", serve_style.init(config, serving.styles))
     .use("/sprites/", serve_sprite.init(config, serving.sprites));
 
   const startupPromises = [];
@@ -104,7 +104,7 @@ export function newServer(opts) {
     let success = true;
     if (item.serve_data !== false) {
       success = serve_style.add(
-        config.options,
+        config,
         serving.styles,
         item,
         id,
@@ -178,10 +178,7 @@ export function newServer(opts) {
               }
             }
             if (!isValidHttpUrl(inputFile)) {
-              inputFile = path.resolve(
-                config.options.paths[fileType],
-                inputFile
-              );
+              inputFile = path.join(config.options.paths[fileType], inputFile);
             }
 
             return { inputFile, fileType };
@@ -214,9 +211,7 @@ export function newServer(opts) {
       continue;
     }
 
-    startupPromises.push(
-      serve_data.add(config.options, serving.data, item, id)
-    );
+    startupPromises.push(serve_data.add(config, serving.data, item, id));
   }
 
   const addTileJSONs = (arr, req, type, tileSize) => {
@@ -239,13 +234,13 @@ export function newServer(opts) {
     return arr;
   };
 
-  app.get("/(:tileSize(256|512)/)?rendered.json", (req, res, next) => {
+  app.get("/(:tileSize(256|512)/)?rendered.json", async (req, res, next) => {
     const tileSize = parseInt(req.params.tileSize, 10) || undefined;
 
     res.send(addTileJSONs([], req, "rendered", tileSize));
   });
 
-  app.get("/(:tileSize(256|512)/)?index.json", (req, res, next) => {
+  app.get("/(:tileSize(256|512)/)?index.json", async (req, res, next) => {
     const tileSize = parseInt(req.params.tileSize, 10) || undefined;
     res.send(
       addTileJSONs(
@@ -257,13 +252,13 @@ export function newServer(opts) {
     );
   });
 
-  app.get("/data.json", (req, res, next) => {
+  app.get("/data.json", async (req, res, next) => {
     res.send(addTileJSONs([], req, "data", undefined));
   });
 
   let startupComplete = false;
 
-  app.get("/health", (req, res, next) => {
+  app.get("/health", async (req, res, next) => {
     if (startupComplete) {
       return res.status(200).send("OK");
     } else {
@@ -312,7 +307,9 @@ export function newServer(opts) {
               ? `?key=${encodeURIComponent(req.query.key)}`
               : "";
 
-            if (template === "wmts") res.set("Content-Type", "text/xml");
+            if (template === "wmts") {
+              res.set("Content-Type", "text/xml");
+            }
 
             return res.status(200).send(compiled(data));
           });
@@ -324,9 +321,9 @@ export function newServer(opts) {
   };
 
   serveTemplate("/$", "index", (req) => {
-    let styles = {};
+    const styles = {};
     for (const id of Object.keys(serving.styles)) {
-      let style = {
+      const style = {
         ...serving.styles[id],
         serving_data: serving.styles[id],
         serving_rendered: serving.rendered[id],
@@ -338,16 +335,16 @@ export function newServer(opts) {
           style.viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
 
           const centerPx = mercator.px([center[0], center[1]], center[2]);
+
           // Set thumbnail default size to be 256px x 256px
           style.thumbnail = `${center[2]}/${Math.floor(centerPx[0] / 256)}/${Math.floor(centerPx[1] / 256)}.png`;
         }
 
-        const tileSize = 256;
         style.xyz_link = getTileUrls(
           req,
           style.serving_rendered.tileJSON.tiles,
           `styles/${id}`,
-          tileSize,
+          256,
           style.serving_rendered.tileJSON.format
         )[0];
       }
@@ -355,10 +352,9 @@ export function newServer(opts) {
       styles[id] = style;
     }
 
-    let datas = {};
+    const datas = {};
     for (const id of Object.keys(serving.data)) {
-      let data = clone(serving.data[id] || {});
-
+      const data = clone(serving.data[id] || {});
       const { tileJSON } = serving.data[id];
       const { center } = tileJSON;
 
@@ -376,12 +372,11 @@ export function newServer(opts) {
         }
       }
 
-      const tileSize = undefined;
       data.xyz_link = getTileUrls(
         req,
         tileJSON.tiles,
         `data/${id}`,
-        tileSize,
+        undefined,
         tileJSON.format,
         {
           pbf: config.options.pbfAlias,
@@ -391,14 +386,17 @@ export function newServer(opts) {
       if (data.filesize) {
         let suffix = "kB";
         let size = parseInt(tileJSON.filesize, 10) / 1024;
+
         if (size > 1024) {
           suffix = "MB";
           size /= 1024;
         }
+
         if (size > 1024) {
           suffix = "GB";
           size /= 1024;
         }
+
         data.formatted_filesize = `${size.toFixed(2)} ${suffix}`;
       }
 
@@ -478,15 +476,15 @@ export function newServer(opts) {
     binaryInterval: 100,
   });
   if (opts.kill || (opts.kill && opts.refresh)) {
-    printLog("info", "Enable kill server after changing config file");
+    printLog("info", "Enable killing server after changing config file");
 
     newChokidar.on("change", () => {
-      printLog("info", `Config file has changed. Kill server...`);
+      printLog("info", `Config file has changed. Killed server!`);
 
       process.exit(0);
     });
   } else if (opts.refresh) {
-    printLog("info", "Enable refresh server after changing config file");
+    printLog("info", "Enable refreshing server after changing config file");
 
     newChokidar.on("change", () => {
       printLog("info", `Config file has changed. Refreshing server...`);
@@ -499,7 +497,7 @@ export function newServer(opts) {
     });
   }
 
-  app.get("/refresh", (req, res, next) => {
+  app.get("/refresh", async (req, res, next) => {
     printLog("info", "Refreshing server...");
 
     if (opts.autoRefresh) {
@@ -513,7 +511,7 @@ export function newServer(opts) {
     return res.status(200).send("OK");
   });
 
-  app.get("/kill", (req, res, next) => {
+  app.get("/kill", async (req, res, next) => {
     printLog("info", "Killed server!");
 
     server.shutdown((err) => {

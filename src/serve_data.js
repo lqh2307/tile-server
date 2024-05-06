@@ -16,7 +16,7 @@ import {
 } from "./pmtiles_adapter.js";
 
 export const serve_data = {
-  init: (options, repo) => {
+  init: (config, repo) => {
     const app = express().disable("x-powered-by");
 
     app.get(
@@ -30,7 +30,7 @@ export const serve_data = {
         }
 
         let format = req.params.format;
-        if (format === options.pbfAlias) {
+        if (format === config.options.pbfAlias) {
           format = "pbf";
         }
 
@@ -84,8 +84,11 @@ export const serve_data = {
 
               data = JSON.stringify(geojson);
             }
+
             delete headers["ETag"]; // do not trust the tile ETag -- regenerate
+
             headers["Content-Encoding"] = "gzip";
+
             res.set(headers);
 
             data = zlib.gzipSync(data);
@@ -99,10 +102,9 @@ export const serve_data = {
               if (/does not exist/.test(err.message)) {
                 return res.status(204).send();
               } else {
-                return res
-                  .status(500)
-                  .header("Content-Type", "text/plain")
-                  .send(err.message);
+                res.header("Content-Type", "text/plain");
+
+                return res.status(500).send(err.message);
               }
             } else {
               if (data == null) {
@@ -138,8 +140,11 @@ export const serve_data = {
                   }
                   data = JSON.stringify(geojson);
                 }
+
                 delete headers["ETag"]; // do not trust the tile ETag -- regenerate
+
                 headers["Content-Encoding"] = "gzip";
+
                 res.set(headers);
 
                 if (!isGzipped) {
@@ -154,7 +159,7 @@ export const serve_data = {
       }
     );
 
-    app.get("/:id.json", (req, res, next) => {
+    app.get("/:id.json", async (req, res, next) => {
       const { id = "" } = req.params;
       const item = repo[id];
 
@@ -171,7 +176,7 @@ export const serve_data = {
         tileSize,
         info.format,
         {
-          pbf: options.pbfAlias,
+          pbf: config.options.pbfAlias,
         }
       );
 
@@ -181,15 +186,18 @@ export const serve_data = {
     return app;
   },
 
-  add: async (options, repo, params, id) => {
-    let inputFile;
-    let inputType;
+  add: async (config, repo, params, id) => {
+    let inputFile = "";
+    let inputType = "";
+
     if (params.pmtiles) {
       inputType = "pmtiles";
       if (isValidHttpUrl(params.pmtiles)) {
         inputFile = params.pmtiles;
       } else {
-        inputFile = path.resolve(options.paths.pmtiles, params.pmtiles);
+        const pmtilePath = config.options.paths.pmtiles;
+
+        inputFile = path.join(pmtilePath, params.pmtiles);
       }
     } else if (params.mbtiles) {
       inputType = "mbtiles";
@@ -198,12 +206,14 @@ export const serve_data = {
 
         process.exit(1);
       } else {
-        inputFile = path.resolve(options.paths.mbtiles, params.mbtiles);
+        const mbtilesPath = config.options.paths.mbtiles;
+
+        inputFile = path.join(mbtilesPath, params.mbtiles);
       }
     }
 
     let tileJSON = {
-      tiles: params.domains || options.domains,
+      tiles: params.domains || config.options.domains,
     };
 
     if (!isValidHttpUrl(inputFile)) {

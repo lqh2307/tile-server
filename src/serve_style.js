@@ -8,11 +8,11 @@ import { fixUrl, printLog, getUrl } from "./utils.js";
 import clone from "clone";
 
 export const serve_style = {
-  init: (options, repo) => {
+  init: (config, repo) => {
     const app = express().disable("x-powered-by");
     const lastModified = new Date().toUTCString();
 
-    app.get("/:id/style.json", (req, res, next) => {
+    app.get("/:id/style.json", async (req, res, next) => {
       const { id } = req.params;
       const item = repo[id];
 
@@ -46,7 +46,7 @@ export const serve_style = {
       return res.status(200).send(styleJSON);
     });
 
-    app.get("/styles.json", (req, res, next) => {
+    app.get("/styles.json", async (req, res, next) => {
       const result = [];
 
       for (const id of Object.keys(repo)) {
@@ -71,8 +71,8 @@ export const serve_style = {
     delete repo[id];
   },
 
-  add: (options, repo, params, id, reportTiles) => {
-    const stylePath = options.paths.styles;
+  add: (config, repo, params, id, reportTiles) => {
+    const stylePath = config.options.paths.styles;
     const styleFilePath = path.resolve(stylePath, params.style);
 
     let styleJSON = {};

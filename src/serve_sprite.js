@@ -51,7 +51,7 @@ export const serve_sprite = {
       }
     );
 
-    app.get("/sprites.json", (req, res, next) => {
+    app.get("/sprites.json", async (req, res, next) => {
       const result = [];
 
       for (const sprite of Object.keys(repo)) {

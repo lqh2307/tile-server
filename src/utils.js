@@ -8,18 +8,6 @@ import chalk from "chalk";
 export const httpTester = /^https?:\/\//i;
 
 /**
- * Restrict user input to an allowed set of options.
- * @param opts
- * @param root0
- * @param root0.defaultValue
- */
-export function allowedOptions(opts, { defaultValue } = {}) {
-  const values = Object.fromEntries(opts.map((key) => [key, key]));
-
-  return (value) => values[value] || defaultValue;
-}
-
-/**
  * Replace local:// urls with public http(s):// urls
  * @param req
  * @param url
@@ -50,8 +38,15 @@ export function fixUrl(req, url) {
  */
 const getUrlObject = (req) => {
   const urlObject = new URL(`${req.protocol}://${req.headers.host}/`);
+
   // support overriding hostname by sending X-Forwarded-Host http header
   urlObject.hostname = req.hostname;
+
+  // support add url prefix by sending X-Forwarded-Path http header
+  const xForwardedPath = req.get("X-Forwarded-Path");
+  if (xForwardedPath) {
+    urlObject.pathname = path.posix.join(xForwardedPath, urlObject.pathname);
+  }
 
   return urlObject;
 };
@@ -117,8 +112,7 @@ export const getTileUrls = (req, domains, path, tileSize, format, aliases) => {
 
 export const fixTileJSONCenter = (tileJSON) => {
   if (tileJSON.bounds && !tileJSON.center) {
-    const fitWidth = 1024;
-    const tiles = fitWidth / 256;
+    const tiles = 4;
     tileJSON.center = [
       (tileJSON.bounds[0] + tileJSON.bounds[2]) / 2,
       (tileJSON.bounds[1] + tileJSON.bounds[3]) / 2,

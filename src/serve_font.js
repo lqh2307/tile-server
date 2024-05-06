@@ -30,7 +30,7 @@ export const serve_font = {
       }
     });
 
-    app.get("/fonts.json", (req, res, next) => {
+    app.get("/fonts.json", async (req, res, next) => {
       const results = [];
 
       for (const fontstack of Object.keys(repo)) {

@@ -546,7 +546,7 @@ export const serve_rendered = {
 
     app.get(
       `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(${scalePattern})?.:format([\\w]+)`,
-      (req, res, next) => {
+      async (req, res, next) => {
         const item = repo[req.params.id];
         if (!item) {
           return res.sendStatus(404);
@@ -836,7 +836,7 @@ export const serve_rendered = {
       );
     }
 
-    app.get("/(:tileSize(256|512)/)?:id.json", (req, res, next) => {
+    app.get("/(:tileSize(256|512)/)?:id.json", async (req, res, next) => {
       const item = repo[req.params.id];
       if (!item) {
         return res.sendStatus(404);
@@ -875,17 +875,18 @@ export const serve_rendered = {
           request: async (req, callback) => {
             const protocol = req.url.split(":")[0];
             if (protocol === "sprites") {
-              const dir = options.paths[protocol];
-              const file = unescape(req.url).substring(protocol.length + 3);
-              fs.readFile(path.join(dir, file), (err, data) => {
-                callback(err, { data: data });
-              });
+              const file = decodeURI(req.url).substring(protocol.length + 3);
+
+              fs.readFile(
+                path.join(options.paths[protocol], file),
+                (err, data) => {
+                  callback(err, { data: data });
+                }
+              );
             } else if (protocol === "fonts") {
               const parts = req.url.split("/");
-              const fontstack = unescape(parts[2]);
+              const fontstack = decodeURI(parts[2]);
               const range = parts[3].split(".")[0];
-
-              console.log("PARTS:", parts);
 
               try {
                 const concatenated = await getFontsPbf(
