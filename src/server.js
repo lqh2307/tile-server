@@ -106,7 +106,7 @@ export function newServer(opts) {
   startupPromises.push(serve_font.add(config, serving.fonts));
   startupPromises.push(serve_sprite.add(config, serving.sprites));
 
-  const addStyle = (id, item, allowMoreData, reportFonts) => {
+  const addStyle = (id, item, allowMoreData) => {
     let success = true;
     if (item.serve_data !== false) {
       success = serve_style.add(
@@ -157,11 +157,6 @@ export function newServer(opts) {
               return id;
             }
           }
-        },
-        (font) => {
-          if (reportFonts) {
-            serving.fonts[font] = true;
-          }
         }
       );
     }
@@ -210,7 +205,7 @@ export function newServer(opts) {
       continue;
     }
 
-    addStyle(id, item, true, true);
+    addStyle(id, item, true);
   }
 
   for (const id of Object.keys(config.data)) {
