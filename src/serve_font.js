@@ -10,40 +10,41 @@ export const serve_font = {
     const lastModified = new Date().toUTCString();
     const fontPath = config.options.paths.fonts;
 
-    app.get("/:fontstack/:range([\\d]+-[\\d]+).pbf", async (req, res, next) => {
-      const fontstack = decodeURI(req.params.fontstack);
-      const { range = "" } = req.params;
+    app.get(
+      "/:fontstack/:range(\\d{1,5}-\\d{1,5}).pbf",
+      async (req, res, next) => {
+        const fontstack = decodeURI(req.params.fontstack);
+        const { range = "" } = req.params;
 
-      try {
-        const concatenated = await getFontsPbf(fontPath, fontstack, range);
+        try {
+          const concatenated = await getFontsPbf(fontPath, fontstack, range);
 
-        res.header("Content-type", "application/x-protobuf");
-        res.header("Last-Modified", lastModified);
+          res.header("Content-type", "application/x-protobuf");
+          res.header("Last-Modified", lastModified);
 
-        return res.status(200).send(concatenated);
-      } catch (err) {
-        printLog("error", `Failed to get font: ${err.message}`);
+          return res.status(200).send(concatenated);
+        } catch (err) {
+          printLog("error", `Failed to get font: ${err.message}`);
 
-        res.header("Content-Type", "text/plain");
+          res.header("Content-Type", "text/plain");
 
-        return res.status(400).send(err.message);
+          return res.status(404).send(err.message);
+        }
       }
-    });
+    );
 
     app.get("/fonts.json", async (req, res, next) => {
-      const results = [];
-
-      for (const fontstack of Object.keys(repo)) {
-        results.push({
-          name: fontstack,
-          url: `${getUrl(req)}fonts/${fontstack}/{range}.pbf`,
-        });
-      }
+      const result = Object.keys(repo).map((font) => {
+        return {
+          name: font,
+          url: `${getUrl(req)}fonts/${font}/{range}.pbf`,
+        };
+      });
 
       res.header("Content-Type", "text/plain");
       res.header("Last-Modified", lastModified);
 
-      return res.status(200).send(results);
+      return res.status(200).send(result);
     });
 
     return app;
@@ -58,29 +59,26 @@ export const serve_font = {
     const fontstacks = Object.keys(config.fonts);
     const fallbackFont = "Open Sans Regular";
 
-    try {
-      if (!fontstacks.includes(fallbackFont)) {
-        throw Error(`Fallback font "${fallbackFont}" is not found`);
-      }
+    if (!fontstacks.includes(fallbackFont)) {
+      throw Error(`Fallback font "${fallbackFont}" is not found`);
+    }
 
-      for (const fontstack of fontstacks) {
+    fontstacks.forEach(async (font) => {
+      try {
         /* Validate font */
-        const fileNames = await findFiles(
-          path.join(fontPath, fontstack),
-          /^\d{1,5}-\d{1,5}\.pbf{1}$/
-        );
+        const dirPath = path.join(fontPath, font);
+
+        const fileNames = await findFiles(dirPath, /^\d{1,5}-\d{1,5}\.pbf{1}$/);
 
         if (fileNames.length == 256) {
-          repo[fontstack] = true;
+          repo[font] = true;
         } else {
-          throw Error(`Font "${fontstack}" is invalid`);
+          throw Error(`Font "${font}" is invalid`);
         }
+      } catch (error) {
+        printLog("error", `Failed to load fonts: ${error.message}`);
       }
-    } catch (err) {
-      printLog("error", `Failed to load fonts: ${err.message}`);
-
-      process.exit(1);
-    }
+    });
 
     return true;
   },

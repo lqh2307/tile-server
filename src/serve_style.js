@@ -13,25 +13,27 @@ export const serve_style = {
     const lastModified = new Date().toUTCString();
 
     app.get("/:id/style.json", async (req, res, next) => {
-      const { id } = req.params;
+      const id = decodeURI(req.params.id);
       const item = repo[id];
 
       if (!item) {
-        return res.status(400).send("Style is not found");
+        res.header("Content-Type", "text/plain");
+
+        return res.status(404).send("Style is not found");
       }
 
       const styleJSON = clone(item.styleJSON || {});
 
       if (styleJSON.sources) {
-        for (const name of Object.keys(styleJSON.sources)) {
-          styleJSON.sources[name].url = fixUrl(
-            req,
-            styleJSON.sources[name].url
-          );
-        }
+        Object.keys(styleJSON.sources).forEach(
+          (source) =>
+            (styleJSON.sources[source].url = fixUrl(
+              req,
+              styleJSON.sources[source].url
+            ))
+        );
       }
 
-      // mapbox-gl-js viewer cannot handle sprite urls with query
       if (styleJSON.sprite) {
         styleJSON.sprite = fixUrl(req, styleJSON.sprite);
       }
@@ -47,16 +49,13 @@ export const serve_style = {
     });
 
     app.get("/styles.json", async (req, res, next) => {
-      const result = [];
-
-      for (const id of Object.keys(repo)) {
-        result.push({
+      const result = Object.keys(repo).map((id) => {
+        return {
           id: id,
-          version: repo[id].styleJSON.version,
           name: repo[id].styleJSON.name,
           url: `${getUrl(req)}styles/${id}/style.json`,
-        });
-      }
+        };
+      });
 
       res.header("Content-Type", "text/plain");
       res.header("Last-Modified", lastModified);
@@ -79,8 +78,8 @@ export const serve_style = {
 
     try {
       styleJSON = JSON.parse(fs.readFileSync(styleFilePath));
-    } catch (e) {
-      printLog("error", `Failed to reading style file: ${e.message}`);
+    } catch (error) {
+      printLog("error", `Failed to load style file: ${error.message}`);
 
       return false;
     }
@@ -88,7 +87,7 @@ export const serve_style = {
     /* Validate style */
     const validationErrors = validateStyleMin(styleJSON);
     if (validationErrors.length > 0) {
-      let errString = `The file "${params.style}" is not a valid style file:`;
+      let errString = `Style "${params.style}" is invalid:`;
 
       for (const err of validationErrors) {
         errString += "\n" + `${err.line}: ${err.message}`;

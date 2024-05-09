@@ -472,8 +472,8 @@ export function newServer(opts) {
     persistent: false,
     usePolling: true,
     awaitWriteFinish: true,
-    interval: 100,
-    binaryInterval: 100,
+    interval: 1000,
+    binaryInterval: 1000,
   });
   if (opts.kill || (opts.kill && opts.refresh)) {
     printLog("info", "Enable killing server after changing config file");

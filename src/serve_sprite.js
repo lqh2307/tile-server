@@ -12,27 +12,19 @@ export const serve_sprite = {
     const spritePath = config.options.paths.sprites;
 
     app.get(
-      "/:id/sprite:scale(@[23]x)?.:format([\\w]+)",
+      "/:id/sprite:scale(@\\d+x)?.:format((png|json){1})",
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
         const { scale = "", format = "" } = req.params;
 
-        if (format != "png" && format != "json") {
-          res.header("Content-Type", "text/plain");
-
-          return res.status(400).send("Invalid format");
-        }
-
-        if (!repo[id]) {
-          res.header("Content-Type", "text/plain");
-
-          return res.status(404).send("Sprite id or scale is not found");
-        }
-
         try {
+          if (!repo[id]) {
+            throw Error("Sprite is not found");
+          }
+
           const filePath = `${path.join(spritePath, id, "sprite")}${scale}.${format}`;
 
-          const data = fs.readFileSync(filePath);
+          const data = await fs.promises.readFile(filePath);
 
           if (format === "json") {
             res.header("Content-type", "application/json");
@@ -40,26 +32,26 @@ export const serve_sprite = {
             res.header("Content-type", "image/png");
           }
 
+          res.header("Last-Modified", lastModified);
+
           return res.status(200).send(data);
         } catch (err) {
           printLog("error", `Failed to get sprite: ${err.message}`);
 
           res.header("Content-Type", "text/plain");
 
-          return res.status(400).send("Sprite is not found");
+          return res.status(404).send("Sprite is not found");
         }
       }
     );
 
     app.get("/sprites.json", async (req, res, next) => {
-      const result = [];
-
-      for (const sprite of Object.keys(repo)) {
-        result.push({
+      const result = Object.keys(repo).map((sprite) => {
+        return {
           name: sprite,
           url: `${getUrl(req)}sprites/${sprite}/sprite`,
-        });
-      }
+        };
+      });
 
       res.header("Content-Type", "text/plain");
       res.header("Last-Modified", lastModified);
@@ -75,26 +67,27 @@ export const serve_sprite = {
   },
 
   add: async (config, repo) => {
-    const fontPath = config.options.paths.sprites;
-    const sprites = Object.keys(config.sprites);
+    const spritePath = config.options.paths.sprites;
 
-    try {
-      for (const sprite of sprites) {
+    Object.keys(config.sprites).forEach(async (sprite) => {
+      try {
         /* Validate sprite */
+        const dirPath = path.join(spritePath, sprite);
+
         const fileNames = await findFiles(
-          path.join(fontPath, sprite),
-          /^sprite(@(\d+)x){0,1}\.(json|png){1}$/
+          dirPath,
+          /^sprite(@\d+x)?\.(png|json){1}$/
         );
 
         if (fileNames.length > 0) {
           repo[sprite] = true;
+        } else {
+          throw Error(`Sprite "${sprite}" is invalid`);
         }
+      } catch (error) {
+        printLog("error", `Failed to load sprite: ${error.message}`);
       }
-    } catch (err) {
-      printLog("error", `Failed to load sprite: ${err.message}`);
-
-      process.exit(1);
-    }
+    });
 
     return true;
   },
