@@ -6,7 +6,7 @@ import express from "express";
 import { printLog, findFiles, getUrl } from "./utils.js";
 
 export const serve_sprite = {
-  init: (config, repo) => {
+  init: async (config, repo) => {
     const app = express().disable("x-powered-by");
     const lastModified = new Date().toUTCString();
     const spritePath = config.options.paths.sprites;

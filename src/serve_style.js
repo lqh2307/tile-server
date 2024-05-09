@@ -8,7 +8,7 @@ import { fixUrl, printLog, getUrl } from "./utils.js";
 import clone from "clone";
 
 export const serve_style = {
-  init: (config, repo) => {
+  init: async (config, repo) => {
     const app = express().disable("x-powered-by");
     const lastModified = new Date().toUTCString();
 

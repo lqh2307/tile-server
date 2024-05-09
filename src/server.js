@@ -83,17 +83,37 @@ export function newServer(opts) {
   const app = express()
     .disable("x-powered-by")
     .enable("trust proxy")
-    .use(morgan(logFormat))
-    .use("/fonts", serve_font.init(config, serving.fonts))
-    .use("/data/", serve_data.init(config, serving.data))
-    .use("/styles/", serve_style.init(config, serving.styles))
-    .use("/sprites/", serve_sprite.init(config, serving.sprites));
+    .use(morgan(logFormat));
 
   const startupPromises = [];
 
   startupPromises.push(
+    serve_font.init(config, serving.fonts).then((sub) => {
+      app.use("/fonts", sub);
+    })
+  );
+
+  startupPromises.push(
+    serve_sprite.init(config, serving.sprites).then((sub) => {
+      app.use("/sprites", sub);
+    })
+  );
+
+  startupPromises.push(
+    serve_data.init(config, serving.data).then((sub) => {
+      app.use("/data", sub);
+    })
+  );
+
+  startupPromises.push(
+    serve_style.init(config, serving.styles).then((sub) => {
+      app.use("/styles", sub);
+    })
+  );
+
+  startupPromises.push(
     serve_rendered.init(config.options, serving.rendered).then((sub) => {
-      app.use("/styles/", sub);
+      app.use("/styles", sub);
     })
   );
 
@@ -254,16 +274,6 @@ export function newServer(opts) {
 
   app.get("/data.json", async (req, res, next) => {
     res.send(addTileJSONs([], req, "data", undefined));
-  });
-
-  let startupComplete = false;
-
-  app.get("/health", async (req, res, next) => {
-    if (startupComplete) {
-      return res.status(200).send("OK");
-    } else {
-      return res.status(503).send("Starting");
-    }
   });
 
   // serve web presentations
@@ -461,6 +471,28 @@ export function newServer(opts) {
     };
   });
 
+  let startupComplete = false;
+
+  app.get("/health", async (req, res, next) => {
+    if (startupComplete) {
+      return res.status(200).send("OK");
+    } else {
+      return res.status(503).send("Starting");
+    }
+  });
+
+  Promise.all(startupPromises)
+    .then(() => {
+      printLog("info", "Startup complete!");
+
+      startupComplete = true;
+    })
+    .catch((err) => {
+      printLog("error", `Failed to starting server: ${err.message}`);
+
+      process.exit(1);
+    });
+
   const server = app.listen(opts.port, function () {
     printLog("info", `Listening in port: ${this.address().port}`);
   });
@@ -520,16 +552,4 @@ export function newServer(opts) {
 
     return res.status(200).send("OK");
   });
-
-  Promise.all(startupPromises)
-    .then(() => {
-      printLog("info", "Startup complete!");
-
-      startupComplete = true;
-    })
-    .catch((err) => {
-      printLog("error", `Failed to starting server: ${err.message}`);
-
-      process.exit(1);
-    });
 }

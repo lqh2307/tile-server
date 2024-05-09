@@ -5,7 +5,7 @@ import express from "express";
 import { getFontsPbf, printLog, findFiles, getUrl } from "./utils.js";
 
 export const serve_font = {
-  init: (config, repo) => {
+  init: async (config, repo) => {
     const app = express().disable("x-powered-by");
     const lastModified = new Date().toUTCString();
     const fontPath = config.options.paths.fonts;

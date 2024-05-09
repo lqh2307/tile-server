@@ -16,13 +16,14 @@ import {
 } from "./pmtiles_adapter.js";
 
 export const serve_data = {
-  init: (config, repo) => {
+  init: async (config, repo) => {
     const app = express().disable("x-powered-by");
 
     app.get(
       "/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format([\\w.]+)",
       async (req, res, next) => {
-        const { id = "", z = 0, x = 0, y = 0 } = req.params;
+        const id = decodeURI(req.params.id);
+        const { z = 0, x = 0, y = 0 } = req.params;
         const item = repo[id];
 
         if (!item) {
@@ -160,7 +161,7 @@ export const serve_data = {
     );
 
     app.get("/:id.json", async (req, res, next) => {
-      const { id = "" } = req.params;
+      const id = decodeURI(req.params.id);
       const item = repo[id];
 
       if (!item) {
