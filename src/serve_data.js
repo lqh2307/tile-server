@@ -18,19 +18,21 @@ import {
 export const serve_data = {
   init: async (config, repo) => {
     const app = express().disable("x-powered-by");
+    const lastModified = new Date().toUTCString();
 
     app.get(
       "/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format([\\w.]+)",
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
-        const { z = 0, x = 0, y = 0 } = req.params;
+        let { z = 0, x = 0, y = 0, format = "" } = req.params;
         const item = repo[id];
 
         if (!item) {
-          return res.status(404).send("Not found");
+          res.header("Content-Type", "text/plain");
+
+          return res.status(404).send("Data is not found");
         }
 
-        let format = req.params.format;
         if (format === config.options.pbfAlias) {
           format = "pbf";
         }
@@ -40,7 +42,9 @@ export const serve_data = {
           format !== tileJSONFormat &&
           !(format === "geojson" && tileJSONFormat === "pbf")
         ) {
-          return res.status(400).send("Invalid format");
+          res.header("Content-Type", "text/plain");
+
+          return res.status(400).send("Invalid data format");
         }
 
         if (
@@ -52,13 +56,17 @@ export const serve_data = {
           x >= Math.pow(2, z) ||
           y >= Math.pow(2, z)
         ) {
+          res.header("Content-Type", "text/plain");
+
           return res.status(400).send("Out of bounds");
         }
 
         if (item.sourceType === "pmtiles") {
           let tileinfo = await getPMtilesTile(item.source, z, x, y);
           if (tileinfo == undefined || tileinfo.data == undefined) {
-            return res.status(404).send("Not found");
+            res.header("Content-Type", "text/plain");
+
+            return res.status(404).send("Data is not found");
           } else {
             let data = tileinfo.data;
             let headers = tileinfo.header;
@@ -109,7 +117,9 @@ export const serve_data = {
               }
             } else {
               if (data == null) {
-                return res.status(404).send("Not found");
+                res.header("Content-Type", "text/plain");
+
+                return res.status(404).send("Data is not found");
               } else {
                 if (tileJSONFormat === "pbf") {
                   isGzipped =
@@ -165,21 +175,26 @@ export const serve_data = {
       const item = repo[id];
 
       if (!item) {
-        return res.status(404).send("Not found");
+        res.header("Content-Type", "text/plain");
+
+        return res.status(404).send("Data is not found");
       }
 
-      const tileSize = undefined;
       const info = clone(item.tileJSON || {});
+
       info.tiles = getTileUrls(
         req,
         info.tiles,
         `data/${req.params.id}`,
-        tileSize,
+        undefined,
         info.format,
         {
           pbf: config.options.pbfAlias,
         }
       );
+
+      res.header("Content-type", "application/json");
+      res.header("Last-Modified", lastModified);
 
       return res.status(200).send(info);
     });
@@ -187,106 +202,87 @@ export const serve_data = {
     return app;
   },
 
-  add: async (config, repo, params, id) => {
-    let inputFile = "";
-    let inputType = "";
+  add: async (config, repo) => {
+    const mbtilesPath = config.options.paths.mbtiles
+    const pmtilesPath = config.options.paths.pmtiles
 
-    if (params.pmtiles) {
-      inputType = "pmtiles";
-      if (isValidHttpUrl(params.pmtiles)) {
-        inputFile = params.pmtiles;
-      } else {
-        const pmtilePath = config.options.paths.pmtiles;
+    Object.keys(config.data).forEach(async (id) => {
+      try {
+        const item = config.data[id]
+        let inputDataType = ""
+        let inputDataFile = ""
+        let tileJSON = {
+          tiles: config.options.domains,
+          name: id,
+          tilejson: "2.0.0"
+        };
 
-        inputFile = path.join(pmtilePath, params.pmtiles);
-      }
-    } else if (params.mbtiles) {
-      inputType = "mbtiles";
-      if (isValidHttpUrl(params.mbtiles)) {
-        printLog("error", `${params.mbtiles} is invalid data file`);
+        if (!item.mbtiles && !item.pmtiles) {
+          throw Error(`"pmtiles" or "mbtiles" property for data "${id}" is empty`);
+        } else if (item.mbtiles && item.pmtiles) {
+          throw Error(`"mbtiles" and "pmtiles" properties cannot be used together for data "${id}"`);
+        } else if (item.mbtiles) {
+          inputDataType = "mbtiles"
 
-        process.exit(1);
-      } else {
-        const mbtilesPath = config.options.paths.mbtiles;
+          if (isValidHttpUrl(item.mbtiles)) {
+            throw Error(`MBTiles data "${id}" is invalid`);
+          } else {
+            inputDataFile = path.join(mbtilesPath, item.mbtiles);
 
-        inputFile = path.join(mbtilesPath, params.mbtiles);
-      }
-    }
-
-    let tileJSON = {
-      tiles: params.domains || config.options.domains,
-    };
-
-    if (!isValidHttpUrl(inputFile)) {
-      const inputFileStats = fs.statSync(inputFile);
-      if (!inputFileStats.isFile() || inputFileStats.size === 0) {
-        throw Error(`Invalid input file: "${inputFile}"`);
-      }
-    }
-
-    let source;
-    let sourceType;
-    if (inputType === "pmtiles") {
-      source = openPMtiles(inputFile);
-      sourceType = "pmtiles";
-
-      tileJSON["name"] = id;
-      tileJSON["format"] = "pbf";
-
-      Object.assign(tileJSON, await getPMtilesInfo(source));
-
-      tileJSON["tilejson"] = "2.0.0";
-
-      delete tileJSON["filesize"];
-      delete tileJSON["mtime"];
-      delete tileJSON["scheme"];
-
-      Object.assign(tileJSON, params.tilejson);
-
-      fixTileJSONCenter(tileJSON);
-    } else if (inputType === "mbtiles") {
-      sourceType = "mbtiles";
-      const sourceInfoPromise = new Promise((resolve, reject) => {
-        source = new MBTiles(inputFile + "?mode=ro", (err) => {
-          if (err) {
-            reject(err);
-
-            return;
+            const fileStats = fs.statSync(inputDataFile);
+            if (!fileStats.isFile() || fileStats.size === 0) {
+              throw Error(`MBTiles data "${id}" is invalid`);
+            }
           }
 
-          source.getInfo((err, info) => {
+          new MBTiles(inputDataFile + "?mode=ro", (err, mbtiles) => {
             if (err) {
-              reject(err);
-
-              return;
+              throw err
             }
 
-            tileJSON["name"] = id;
-            tileJSON["format"] = "pbf";
+            mbtiles.getInfo((err, info) => {
+              if (err) {
+                throw err
+              }
 
-            Object.assign(tileJSON, info);
-
-            tileJSON["tilejson"] = "2.0.0";
-            delete tileJSON["filesize"];
-            delete tileJSON["mtime"];
-            delete tileJSON["scheme"];
-
-            Object.assign(tileJSON, params.tilejson);
-
-            fixTileJSONCenter(tileJSON);
-
-            resolve();
+              Object.assign(tileJSON, info);
+            });
           });
-        });
-      });
+        } else if (item.pmtiles) {
+          inputDataType = "pmtiles"
 
-      await sourceInfoPromise;
-    }
+          if (isValidHttpUrl(item.pmtiles)) {
+            inputDataFile = item.pmtiles;
+          } else {
+            inputDataFile = path.join(pmtilesPath, item.pmtiles);
 
-    repo[id] = {
-      tileJSON,
-      source,
-      sourceType,
-    };
+            const fileStats = fs.statSync(inputDataFile);
+            if (!fileStats.isFile() || fileStats.size === 0) {
+              throw Error(`PMTiles data "${id}" is invalid`);
+            }
+          }
+
+          const info = await getPMtilesInfo(openPMtiles(inputDataFile));
+
+          Object.assign(tileJSON, info);
+        }
+
+        fixTileJSONCenter(tileJSON);
+
+        delete tileJSON.filesize;
+        delete tileJSON.mtime;
+        delete tileJSON.scheme;
+
+        repo[id] = {
+          tileJSON,
+          source,
+          sourceType: inputDataType,
+        };
+      } catch (error) {
+        printLog("error", `Failed to load data: ${error.message}`);
+      }
+    })
+
+    return true
   },
 };
