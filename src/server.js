@@ -26,9 +26,15 @@ function loadConfigFile(configFilePath) {
   printLog("info", `Load config file: ${configFilePath}`);
 
   try {
+    /* Read config file */
     const config = JSON.parse(fs.readFileSync(configFilePath, "utf8"));
 
+    /* Add default values */
     config.options = config.options || {};
+    config.styles = config.styles || {};
+    config.data = config.data || {};
+    config.sprites = config.sprites || {};
+    config.icons = config.icons || [];
 
     const rootPath = config.options.paths?.root || "";
 
@@ -45,14 +51,9 @@ function loadConfigFile(configFilePath) {
     /* Check paths */
     Object.keys(config.options.paths).forEach((key) => {
       if (!fs.statSync(config.options.paths[key]).isDirectory()) {
-        throw Error(`Dir does not exist: ${config.options.paths[key]}`);
+        throw Error(`"${key}" dir does not exist`);
       }
     });
-
-    config.styles = config.styles || {};
-    config.data = config.data || {};
-    config.sprites = config.sprites || {};
-    config.icons = config.icons || [];
 
     return config;
   } catch (err) {
@@ -119,6 +120,7 @@ export function newServer(opts) {
 
   startupPromises.push(serve_font.add(config, serving.fonts));
   startupPromises.push(serve_sprite.add(config, serving.sprites));
+  startupPromises.push(serve_data.add(config, serving.data));
 
   const addStyle = (id, item, allowMoreData) => {
     let success = true;
@@ -217,21 +219,6 @@ export function newServer(opts) {
     }
 
     addStyle(id, item, true);
-  }
-
-  for (const id of Object.keys(config.data)) {
-    const item = config.data[id];
-    const fileType = Object.keys(config.data[id])[0];
-    if (!fileType || !(fileType === "pmtiles" || fileType === "mbtiles")) {
-      printLog(
-        "error",
-        `Missing "pmtiles" or "mbtiles" property for ${id} data source`
-      );
-
-      continue;
-    }
-
-    startupPromises.push(serve_data.add(config, serving.data, item, id));
   }
 
   const addTileJSONs = (arr, req, type, tileSize) => {
