@@ -68,8 +68,7 @@ export const serve_data = {
 
             return res.status(404).send("Data is not found");
           } else {
-            let data = tileinfo.data;
-            let headers = tileinfo.header;
+            let { data, headers } = tileinfo.data;
 
             if (format === "pbf") {
               headers["Content-Type"] = "application/x-protobuf";
@@ -203,86 +202,107 @@ export const serve_data = {
   },
 
   add: async (config, repo) => {
-    const mbtilesPath = config.options.paths.mbtiles
-    const pmtilesPath = config.options.paths.pmtiles
+    const mbtilesPath = config.options.paths.mbtiles;
+    const pmtilesPath = config.options.paths.pmtiles;
+    const datas = Object.keys(config.data);
 
-    Object.keys(config.data).forEach(async (id) => {
-      try {
-        const item = config.data[id]
-        let inputDataType = ""
-        let inputDataFile = ""
-        let tileJSON = {
-          tiles: config.options.domains,
-          name: id,
-          tilejson: "2.0.0"
-        };
+    await Promise.all(
+      datas.map(async (id) => {
+        try {
+          const item = config.data[id];
 
-        if (!item.mbtiles && !item.pmtiles) {
-          throw Error(`"pmtiles" or "mbtiles" property for data "${id}" is empty`);
-        } else if (item.mbtiles && item.pmtiles) {
-          throw Error(`"mbtiles" and "pmtiles" properties cannot be used together for data "${id}"`);
-        } else if (item.mbtiles) {
-          inputDataType = "mbtiles"
+          if (!item.mbtiles && !item.pmtiles) {
+            throw Error(
+              `"pmtiles" or "mbtiles" property for data "${id}" is empty`
+            );
+          } else if (item.mbtiles && item.pmtiles) {
+            throw Error(
+              `"mbtiles" and "pmtiles" properties cannot be used together for data "${id}"`
+            );
+          } else if (item.mbtiles) {
+            let inputDataFile = "";
 
-          if (isValidHttpUrl(item.mbtiles)) {
-            throw Error(`MBTiles data "${id}" is invalid`);
-          } else {
-            inputDataFile = path.join(mbtilesPath, item.mbtiles);
-
-            const fileStats = fs.statSync(inputDataFile);
-            if (!fileStats.isFile() || fileStats.size === 0) {
+            if (isValidHttpUrl(item.mbtiles)) {
               throw Error(`MBTiles data "${id}" is invalid`);
-            }
-          }
+            } else {
+              inputDataFile = path.join(mbtilesPath, item.mbtiles);
 
-          new MBTiles(inputDataFile + "?mode=ro", (err, mbtiles) => {
-            if (err) {
-              throw err
-            }
-
-            mbtiles.getInfo((err, info) => {
-              if (err) {
-                throw err
+              const fileStats = fs.statSync(inputDataFile);
+              if (!fileStats.isFile() || fileStats.size === 0) {
+                throw Error(`MBTiles data "${id}" is invalid`);
               }
-
-              Object.assign(tileJSON, info);
-            });
-          });
-        } else if (item.pmtiles) {
-          inputDataType = "pmtiles"
-
-          if (isValidHttpUrl(item.pmtiles)) {
-            inputDataFile = item.pmtiles;
-          } else {
-            inputDataFile = path.join(pmtilesPath, item.pmtiles);
-
-            const fileStats = fs.statSync(inputDataFile);
-            if (!fileStats.isFile() || fileStats.size === 0) {
-              throw Error(`PMTiles data "${id}" is invalid`);
             }
+
+            const source = new MBTiles(
+              inputDataFile + "?mode=ro",
+              (err, mbtiles) => {
+                if (err) {
+                  throw err;
+                }
+
+                mbtiles.getInfo((err, info) => {
+                  if (err) {
+                    throw err;
+                  }
+
+                  const tileJSON = {
+                    tiles: config.options.domains,
+                    name: id,
+                    tilejson: "2.0.0",
+                  };
+
+                  Object.assign(tileJSON, info);
+
+                  fixTileJSONCenter(tileJSON);
+
+                  repo[id] = {
+                    tileJSON,
+                    source,
+                    sourceType: "mbtiles",
+                  };
+                });
+              }
+            );
+          } else if (item.pmtiles) {
+            let inputDataFile = "";
+
+            if (isValidHttpUrl(item.pmtiles)) {
+              inputDataFile = item.pmtiles;
+            } else {
+              inputDataFile = path.join(pmtilesPath, item.pmtiles);
+
+              const fileStats = fs.statSync(inputDataFile);
+              if (!fileStats.isFile() || fileStats.size === 0) {
+                throw Error(`PMTiles data "${id}" is invalid`);
+              }
+            }
+
+            const source = openPMtiles(inputDataFile);
+
+            const info = await getPMtilesInfo(source);
+
+            const tileJSON = {
+              tiles: config.options.domains,
+              name: id,
+              tilejson: "2.0.0",
+            };
+
+            Object.assign(tileJSON, info);
+
+            fixTileJSONCenter(tileJSON);
+
+            repo[id] = {
+              tileJSON,
+              source,
+              sourceType: "pmtiles",
+            };
           }
-
-          const info = await getPMtilesInfo(openPMtiles(inputDataFile));
-
-          Object.assign(tileJSON, info);
+        } catch (error) {
+          throw error;
         }
+      })
+    );
 
-        fixTileJSONCenter(tileJSON);
-
-        delete tileJSON.filesize;
-        delete tileJSON.mtime;
-        delete tileJSON.scheme;
-
-        repo[id] = {
-          tileJSON,
-          source,
-          sourceType: inputDataType,
-        };
-      } catch (error) {
-        printLog("error", `Failed to load data: ${error.message}`);
-      }
-    })
-
-    return true
+    return true;
   },
 };

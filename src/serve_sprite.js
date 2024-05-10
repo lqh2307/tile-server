@@ -24,7 +24,7 @@ export const serve_sprite = {
 
           const filePath = `${path.join(spritePath, id, "sprite")}${scale}.${format}`;
 
-          const data = await fs.promises.readFile(filePath);
+          const data = fs.readFileSync(filePath);
 
           if (format === "json") {
             res.header("Content-type", "application/json");
@@ -68,26 +68,29 @@ export const serve_sprite = {
 
   add: async (config, repo) => {
     const spritePath = config.options.paths.sprites;
+    const sprites = Object.keys(config.sprites);
 
-    Object.keys(config.sprites).forEach(async (sprite) => {
-      try {
-        /* Validate sprite */
-        const dirPath = path.join(spritePath, sprite);
+    await Promise.all(
+      sprites.map(async (sprite) => {
+        try {
+          /* Validate sprite */
+          const dirPath = path.join(spritePath, sprite);
 
-        const fileNames = await findFiles(
-          dirPath,
-          /^sprite(@\d+x)?\.(png|json){1}$/
-        );
+          const fileNames = await findFiles(
+            dirPath,
+            /^sprite(@\d+x)?\.(png|json){1}$/
+          );
 
-        if (fileNames.length > 0) {
-          repo[sprite] = true;
-        } else {
-          throw Error(`Sprite "${sprite}" is invalid`);
+          if (fileNames.length > 0) {
+            repo[sprite] = true;
+          } else {
+            throw Error(`Sprite "${sprite}" is invalid`);
+          }
+        } catch (error) {
+          printLog("error", `Failed to load sprite: ${error.message}`);
         }
-      } catch (error) {
-        printLog("error", `Failed to load sprite: ${error.message}`);
-      }
-    });
+      })
+    );
 
     return true;
   },

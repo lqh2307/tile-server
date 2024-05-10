@@ -293,6 +293,8 @@ export function newServer(opts) {
             if (dataGetter) {
               data = dataGetter(req);
               if (!data) {
+                res.header("Content-Type", "text/plain");
+
                 return res.status(404).send("Not found");
               }
             }
@@ -305,7 +307,7 @@ export function newServer(opts) {
               : "";
 
             if (template === "wmts") {
-              res.set("Content-Type", "text/xml");
+              res.header("Content-Type", "text/xml");
             }
 
             return res.status(200).send(compiled(data));
@@ -461,6 +463,8 @@ export function newServer(opts) {
   let startupComplete = false;
 
   app.get("/health", async (req, res, next) => {
+    res.header("Content-Type", "text/plain");
+
     if (startupComplete) {
       return res.status(200).send("OK");
     } else {
@@ -527,6 +531,8 @@ export function newServer(opts) {
       newServer(opts);
     });
 
+    res.header("Content-Type", "text/plain");
+
     return res.status(200).send("OK");
   });
 
@@ -536,6 +542,8 @@ export function newServer(opts) {
     server.shutdown((err) => {
       process.exit(0);
     });
+
+    res.header("Content-Type", "text/plain");
 
     return res.status(200).send("OK");
   });

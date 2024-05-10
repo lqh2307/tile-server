@@ -389,6 +389,8 @@ const respondImage = (
     lon !== lon ||
     lat !== lat
   ) {
+    res.header("Content-Type", "text/plain");
+
     return res.status(400).send("Invalid center");
   }
 
@@ -398,6 +400,8 @@ const respondImage = (
     width !== width ||
     height !== height
   ) {
+    res.header("Content-Type", "text/plain");
+
     return res.status(400).send("Invalid size");
   }
 
@@ -405,6 +409,8 @@ const respondImage = (
   } else if (format === "jpg" || format === "jpeg") {
     format = "jpeg";
   } else {
+    res.header("Content-Type", "text/plain");
+
     return res.status(400).send("Invalid format");
   }
 
@@ -450,7 +456,9 @@ const respondImage = (
       if (err) {
         printLog("error", err);
 
-        return res.status(500).header("Content-Type", "text/plain").send(err);
+        res.header("Content-Type", "text/plain");
+
+        return res.status(500).send(err);
       }
 
       const image = sharp(data, {
@@ -518,13 +526,14 @@ const respondImage = (
       }
       image.toBuffer((err, buffer, info) => {
         if (!buffer) {
+          res.header("Content-Type", "text/plain");
+
           return res.status(404).send("Not found");
         }
 
-        res.set({
-          "Last-Modified": item.lastModified,
-          "Content-Type": `image/${format}`,
-        });
+        res.header("Content-Type", `image/${format}`);
+        res.header("Last-Modified", item.lastModified);
+
         return res.status(200).send(buffer);
       });
     });
@@ -575,6 +584,8 @@ export const serve_rendered = {
           x >= Math.pow(2, z) ||
           y >= Math.pow(2, z)
         ) {
+          res.header("Content-Type", "text/plain");
+
           return res.status(404).send("Out of bounds");
         }
 
@@ -625,6 +636,8 @@ export const serve_rendered = {
             const format = req.params.format;
 
             if (z < 0) {
+              res.header("Content-Type", "text/plain");
+
               return res.status(404).send("Invalid zoom");
             }
 
@@ -793,6 +806,8 @@ export const serve_rendered = {
 
             // Check if we have at least one coordinate to calculate a bounding box
             if (coords.length < 1) {
+              res.header("Content-Type", "text/plain");
+
               return res.status(400).send("No coordinates provided");
             }
 

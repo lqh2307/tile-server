@@ -63,22 +63,27 @@ export const serve_font = {
       throw Error(`Fallback font "${fallbackFont}" is not found`);
     }
 
-    fontstacks.forEach(async (font) => {
-      try {
-        /* Validate font */
-        const dirPath = path.join(fontPath, font);
+    await Promise.all(
+      fontstacks.map(async (font) => {
+        try {
+          /* Validate font */
+          const dirPath = path.join(fontPath, font);
 
-        const fileNames = await findFiles(dirPath, /^\d{1,5}-\d{1,5}\.pbf{1}$/);
+          const fileNames = await findFiles(
+            dirPath,
+            /^\d{1,5}-\d{1,5}\.pbf{1}$/
+          );
 
-        if (fileNames.length == 256) {
-          repo[font] = true;
-        } else {
-          throw Error(`Font "${font}" is invalid`);
+          if (fileNames.length == 256) {
+            repo[font] = true;
+          } else {
+            throw Error(`Font "${font}" is invalid`);
+          }
+        } catch (error) {
+          printLog("error", `Failed to load fonts: ${error.message}`);
         }
-      } catch (error) {
-        printLog("error", `Failed to load fonts: ${error.message}`);
-      }
-    });
+      })
+    );
 
     return true;
   },

@@ -229,7 +229,6 @@ export const renderOverlay = async (
   }
 
   const center = precisePx([x, y], z);
-
   const mapHeight = 512 * (1 << z);
   const maxEdge = center[1] + h / 2;
   const minEdge = center[1] - h / 2;
