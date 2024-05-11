@@ -177,7 +177,7 @@ export function newServer(opts) {
       );
     }
 
-    if (success && item.serve_rendered !== false) {
+    if (success) {
       startupPromises.push(
         serve_rendered.add(
           config.options,
@@ -430,10 +430,6 @@ export function newServer(opts) {
     const wmts = serving.styles[id];
 
     if (!wmts) {
-      return null;
-    }
-
-    if (wmts.hasOwnProperty("serve_rendered") && !wmts.serve_rendered) {
       return null;
     }
 
