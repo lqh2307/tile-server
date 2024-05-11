@@ -120,19 +120,9 @@ export function newServer(opts) {
   startupPromises.push(serve_font.add(config, serving.fonts));
   startupPromises.push(serve_sprite.add(config, serving.sprites));
   startupPromises.push(serve_data.add(config, serving.data));
-
-  for (const id of Object.keys(config.styles)) {
-    const item = config.styles[id];
-    if (!item.style) {
-      printLog("error", `Missing "style" property for ${id}`);
-
-      continue;
-    }
-
-    startupPromises.push(
-      serve_style.add(config, serving.styles, serving.rendered, id)
-    );
-  }
+  startupPromises.push(
+    serve_style.add(config, serving.styles, serving.rendered)
+  );
 
   const addTileJSONs = (arr, req, type, tileSize) => {
     for (const id of Object.keys(serving[type])) {

@@ -71,72 +71,95 @@ export const serve_style = {
     delete repo[id];
   },
 
-  add: async (config, styleRepo, renderRepo, id) => {
+  add: async (config, styleRepo, renderRepo) => {
     const stylePath = config.options.paths.styles;
-    const styleFilePath = path.resolve(stylePath, id, "style.json");
+    const styles = Object.keys(config.styles);
 
-    let styleJSON = {};
+    await Promise.all(
+      styles.map(async (id) => {
+        const item = config.styles[id];
+        if (!item.style) {
+          printLog("error", `Missing "style" property for ${id}`);
 
-    try {
-      const file = fs.readFileSync(styleFilePath);
-
-      styleJSON = JSON.parse(file);
-    } catch (error) {
-      printLog("error", `Failed to load style "${id}": ${error.message}`);
-
-      return false;
-    }
-
-    /* Validate style */
-    const validationErrors = validateStyleMin(styleJSON);
-    if (validationErrors.length > 0) {
-      let errString = `Failed to load style "${id}": Style is invalid:`;
-
-      for (const err of validationErrors) {
-        errString += "\n\t" + `${err.message}`;
-      }
-
-      printLog("error", errString);
-
-      return false;
-    }
-
-    for (const name of Object.keys(styleJSON.sources) || {}) {
-      let url = styleJSON.sources[name].url;
-
-      if (
-        url &&
-        (url.startsWith("pmtiles://") || url.startsWith("mbtiles://"))
-      ) {
-        let dataId = url.replace("pmtiles://", "").replace("mbtiles://", "");
-        if (dataId.startsWith("{") && dataId.endsWith("}")) {
-          dataId = dataId.slice(1, -1);
+          return;
         }
 
-        if (!Object.keys(config.data).includes(dataId)) {
+        const styleFilePath = path.resolve(stylePath, id, "style.json");
+
+        let styleJSON = {};
+
+        try {
+          const file = fs.readFileSync(styleFilePath);
+
+          styleJSON = JSON.parse(file);
+        } catch (error) {
+          printLog("error", `Failed to load style "${id}": ${error.message}`);
+
           return false;
         }
 
-        styleJSON.sources[name].url = `local://data/${dataId}.json`;
-      }
-    }
+        /* Validate style */
+        const validationErrors = validateStyleMin(styleJSON);
+        if (validationErrors.length > 0) {
+          let errString = `Failed to load style "${id}": Style is invalid:`;
 
-    if (styleJSON.sprite && styleJSON.sprite.startsWith("sprites://")) {
-      styleJSON.sprite = styleJSON.sprite.replace(
-        "sprites://",
-        "local://sprites/"
-      );
-    }
+          for (const err of validationErrors) {
+            errString += "\n\t" + `${err.message}`;
+          }
 
-    if (styleJSON.glyphs && styleJSON.glyphs.startsWith("fonts://")) {
-      styleJSON.glyphs = styleJSON.glyphs.replace("fonts://", "local://fonts/");
-    }
+          printLog("error", errString);
 
-    styleRepo[id] = {
-      styleJSON,
-      name: styleJSON.name,
-    };
+          return false;
+        }
 
-    return await serve_rendered.add(config, renderRepo, config.styles[id], id);
+        for (const name of Object.keys(styleJSON.sources) || {}) {
+          let url = styleJSON.sources[name].url;
+
+          if (
+            url &&
+            (url.startsWith("pmtiles://") || url.startsWith("mbtiles://"))
+          ) {
+            let dataId = url
+              .replace("pmtiles://", "")
+              .replace("mbtiles://", "");
+            if (dataId.startsWith("{") && dataId.endsWith("}")) {
+              dataId = dataId.slice(1, -1);
+            }
+
+            if (!Object.keys(config.data).includes(dataId)) {
+              return false;
+            }
+
+            styleJSON.sources[name].url = `local://data/${dataId}.json`;
+          }
+        }
+
+        if (styleJSON.sprite && styleJSON.sprite.startsWith("sprites://")) {
+          styleJSON.sprite = styleJSON.sprite.replace(
+            "sprites://",
+            "local://sprites/"
+          );
+        }
+
+        if (styleJSON.glyphs && styleJSON.glyphs.startsWith("fonts://")) {
+          styleJSON.glyphs = styleJSON.glyphs.replace(
+            "fonts://",
+            "local://fonts/"
+          );
+        }
+
+        styleRepo[id] = {
+          styleJSON,
+          name: styleJSON.name,
+        };
+
+        return await serve_rendered.add(
+          config,
+          renderRepo,
+          config.styles[id],
+          id
+        );
+      })
+    );
   },
 };
