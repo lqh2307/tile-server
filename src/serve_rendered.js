@@ -854,7 +854,9 @@ export const serve_rendered = {
     app.get("/(:tileSize(256|512)/)?:id.json", async (req, res, next) => {
       const item = repo[req.params.id];
       if (!item) {
-        return res.sendStatus(404);
+        res.header("Content-Type", "text/plain");
+
+        return res.status(404).send("Data is not found");
       }
 
       const tileSize = parseInt(req.params.tileSize, 10) || undefined;
@@ -867,7 +869,9 @@ export const serve_rendered = {
         info.format
       );
 
-      return res.send(info);
+      res.header("Content-type", "application/json");
+
+      return res.status(200).send(info);
     });
 
     return app;
@@ -890,23 +894,23 @@ export const serve_rendered = {
           request: async (req, callback) => {
             const protocol = req.url.split(":")[0];
             if (protocol === "sprites") {
-              const file = decodeURI(req.url).substring(protocol.length + 3);
-
-              fs.readFile(
-                path.join(options.paths[protocol], file),
-                (err, data) => {
-                  callback(err, { data: data });
-                }
+              const file = decodeURIComponent(req.url).substring(
+                protocol.length + 3
               );
+              const filePath = path.join(options.paths[protocol], file);
+
+              fs.readFile(filePath, (err, data) => {
+                callback(err, { data: data });
+              });
             } else if (protocol === "fonts") {
-              const parts = req.url.split("/");
-              const fontstack = decodeURI(parts[2]);
+              const parts = decodeURIComponent(req.url).split("/");
+              const fonts = parts[2];
               const range = parts[3].split(".")[0];
 
               try {
                 const concatenated = await getFontsPbf(
                   options.paths[protocol],
-                  fontstack,
+                  fonts,
                   range
                 );
 
@@ -915,7 +919,7 @@ export const serve_rendered = {
                 callback(err, { data: null });
               }
             } else if (protocol === "mbtiles" || protocol === "pmtiles") {
-              const parts = req.url.split("/");
+              const parts = decodeURIComponent(req.url).split("/");
               const sourceId = parts[2];
               const source = map.sources[sourceId];
               const sourceType = map.sourceTypes[sourceId];

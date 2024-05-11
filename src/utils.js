@@ -4,6 +4,8 @@ import path from "node:path";
 import fs from "node:fs";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
 import chalk from "chalk";
+import { pngValidator } from "png-validator";
+import Pbf from "pbf";
 
 export const httpTester = /^https?:\/\//i;
 
@@ -124,31 +126,36 @@ export const fixTileJSONCenter = (tileJSON) => {
   }
 };
 
-const getFontPbf = (fontPath, name, range) =>
-  new Promise((resolve, reject) => {
-    const filePath = path.join(fontPath, name, `${range}.pbf`);
+const getFontPbf = (fontPath, name, range) => {
+  const filePath = path.join(fontPath, name, `${range}.pbf`);
 
-    fs.readFile(filePath, (err, data) => {
-      if (err) {
-        const fallbackFont = "Open Sans Regular";
+  try {
+    const data = fs.readFileSync(filePath);
 
-        printLog(
-          "error",
-          `${err.message}. Trying to use fallback font ${fallbackFont}`
-        );
-
-        getFontPbf(fontPath, fallbackFont, range).then(resolve, reject);
-      } else {
-        resolve(data);
-      }
-    });
-  });
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
 
 export const getFontsPbf = async (fontPath, names, range) => {
   const fonts = names.split(",");
 
   const values = await Promise.all(
-    fonts.map((font) => getFontPbf(fontPath, font, range))
+    fonts.map(async (font) => {
+      try {
+        return getFontPbf(fontPath, font, range);
+      } catch (error) {
+        const fallbackFont = "Open Sans Regular";
+
+        printLog(
+          "warning",
+          `Failed to load font "${font}": ${error.message}. Trying to use fallback font ${fallbackFont}`
+        );
+
+        return getFontPbf(fontPath, fallbackFont, range);
+      }
+    })
   );
 
   return glyphCompose.combine(values);
@@ -164,7 +171,7 @@ export const isValidHttpUrl = (string) => {
   }
 };
 
-export const findFiles = async (
+export const findFiles = (
   dirPath,
   regex,
   isRecurse = false,
@@ -178,7 +185,7 @@ export const findFiles = async (
       const filePath = path.join(dirPath, file);
 
       if (regex.test(file) && fs.statSync(filePath).isDirectory()) {
-        const subResults = await findFiles(filePath, regex, true);
+        const subResults = findFiles(filePath, regex, true);
 
         results.push(
           ...subResults.map((subResult) => path.join(file, subResult))
@@ -247,5 +254,51 @@ export const printLog = (level, msg) => {
 
       break;
     }
+  }
+};
+
+export const validatePBFFont = (pbfFilePath) => {
+  try {
+    const file = fs.readFileSync(pbfFilePath);
+
+    new Pbf(file);
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const validatePNGSprite = (pngFilePath) => {
+  try {
+    const data = fs.readFileSync(pngFilePath);
+
+    pngValidator(data);
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const validateJSONSprite = (jsonFilePath) => {
+  try {
+    const file = fs.readFileSync(jsonFilePath, "utf8");
+    const jsonData = JSON.parse(file);
+
+    Object.keys(jsonData).forEach((key) => {
+      const value = jsonData[key];
+
+      if (
+        typeof value !== "object" ||
+        !("height" in value) ||
+        !("pixelRatio" in value) ||
+        !("width" in value) ||
+        !("x" in value) ||
+        !("y" in value)
+      ) {
+        throw Error(
+          `"${key}" is missing one of properties "height", "pixelRatio", "width", "x", "y"`
+        );
+      }
+    });
+  } catch (error) {
+    throw error;
   }
 };

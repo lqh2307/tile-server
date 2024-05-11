@@ -3,7 +3,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import express from "express";
-import { printLog, findFiles, getUrl } from "./utils.js";
+import {
+  printLog,
+  findFiles,
+  getUrl,
+  validateJSONSprite,
+  validatePNGSprite,
+} from "./utils.js";
 
 export const serve_sprite = {
   init: async (config, repo) => {
@@ -36,7 +42,7 @@ export const serve_sprite = {
 
           return res.status(200).send(data);
         } catch (err) {
-          printLog("error", `Failed to get sprite: ${err.message}`);
+          printLog("error", `Failed to get sprite "${id}": ${err.message}`);
 
           res.header("Content-Type", "text/plain");
 
@@ -75,19 +81,34 @@ export const serve_sprite = {
         try {
           /* Validate sprite */
           const dirPath = path.join(spritePath, sprite);
+          const spritePattern = /^sprite(@\d+x)?\.(png|json){1}$/;
 
-          const fileNames = await findFiles(
-            dirPath,
-            /^sprite(@\d+x)?\.(png|json){1}$/
-          );
+          const fileNameWoExts = [
+            ...new Set(
+              findFiles(dirPath, spritePattern).map((fileName) =>
+                path.basename(fileName, path.extname(fileName))
+              )
+            ),
+          ];
 
-          if (fileNames.length > 0) {
-            repo[sprite] = true;
-          } else {
-            throw Error(`Sprite "${sprite}" is invalid`);
+          if (fileNameWoExts.length === 0) {
+            throw Error(`Sprite is empty`);
           }
+
+          fileNameWoExts.forEach((fileNameWoExt) => {
+            const jsonFilePath = path.join(dirPath, `${fileNameWoExt}.json`);
+            const pngFilePath = path.join(dirPath, `${fileNameWoExt}.png`);
+
+            validateJSONSprite(jsonFilePath);
+            validatePNGSprite(pngFilePath);
+          });
+
+          repo[sprite] = true;
         } catch (error) {
-          printLog("error", `Failed to load sprite: ${error.message}`);
+          printLog(
+            "error",
+            `Failed to load sprite "${sprite}": ${error.message}`
+          );
         }
       })
     );

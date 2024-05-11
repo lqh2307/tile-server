@@ -10,28 +10,25 @@ export const serve_font = {
     const lastModified = new Date().toUTCString();
     const fontPath = config.options.paths.fonts;
 
-    app.get(
-      "/:fontstack/:range(\\d{1,5}-\\d{1,5}).pbf",
-      async (req, res, next) => {
-        const fontstack = decodeURI(req.params.fontstack);
-        const { range = "" } = req.params;
+    app.get("/:id/:range(\\d{1,5}-\\d{1,5}).pbf", async (req, res, next) => {
+      const id = decodeURI(req.params.id);
+      const { range = "" } = req.params;
 
-        try {
-          const concatenated = await getFontsPbf(fontPath, fontstack, range);
+      try {
+        const concatenated = await getFontsPbf(fontPath, id, range);
 
-          res.header("Content-type", "application/x-protobuf");
-          res.header("Last-Modified", lastModified);
+        res.header("Content-type", "application/x-protobuf");
+        res.header("Last-Modified", lastModified);
 
-          return res.status(200).send(concatenated);
-        } catch (err) {
-          printLog("error", `Failed to get font: ${err.message}`);
+        return res.status(200).send(concatenated);
+      } catch (err) {
+        printLog("error", `Failed to get font ${id}: ${err.message}`);
 
-          res.header("Content-Type", "text/plain");
+        res.header("Content-Type", "text/plain");
 
-          return res.status(404).send(err.message);
-        }
+        return res.status(404).send("Font is not found");
       }
-    );
+    });
 
     app.get("/fonts.json", async (req, res, next) => {
       const result = Object.keys(repo).map((font) => {
@@ -50,8 +47,8 @@ export const serve_font = {
     return app;
   },
 
-  remove: (repo, fontstack) => {
-    delete repo[fontstack];
+  remove: (repo, id) => {
+    delete repo[id];
   },
 
   add: async (config, repo) => {
@@ -69,10 +66,7 @@ export const serve_font = {
           /* Validate font */
           const dirPath = path.join(fontPath, font);
 
-          const fileNames = await findFiles(
-            dirPath,
-            /^\d{1,5}-\d{1,5}\.pbf{1}$/
-          );
+          const fileNames = findFiles(dirPath, /^\d{1,5}-\d{1,5}\.pbf{1}$/);
 
           if (fileNames.length == 256) {
             repo[font] = true;
