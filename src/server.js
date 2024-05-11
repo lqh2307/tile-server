@@ -2,7 +2,6 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import fnv1a from "@sindresorhus/fnv1a";
 import chokidar from "chokidar";
 import enableShutdown from "http-shutdown";
 import express from "express";
@@ -16,7 +15,7 @@ import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_sprite } from "./serve_sprite.js";
-import { getTileUrls, isValidHttpUrl, printLog } from "./utils.js";
+import { getTileUrls, printLog } from "./utils.js";
 
 const mercator = new SphericalMercator();
 
@@ -122,42 +121,6 @@ export function newServer(opts) {
   startupPromises.push(serve_sprite.add(config, serving.sprites));
   startupPromises.push(serve_data.add(config, serving.data));
 
-  const addStyle = (id, item) => {
-    let success = serve_style.add(config, serving.styles, id);
-
-    if (success) {
-      startupPromises.push(
-        serve_rendered.add(
-          config.options,
-          serving.rendered,
-          item,
-          id,
-          function dataResolver(styleSourceId) {
-            let fileType;
-            let inputFile;
-            for (const id of Object.keys(config.data)) {
-              fileType = Object.keys(config.data[id])[0];
-              if (styleSourceId === id) {
-                inputFile = config.data[id][fileType];
-
-                break;
-              } else if (config.data[id][fileType] === styleSourceId) {
-                inputFile = config.data[id][fileType];
-
-                break;
-              }
-            }
-            if (!isValidHttpUrl(inputFile)) {
-              inputFile = path.join(config.options.paths[fileType], inputFile);
-            }
-
-            return { inputFile, fileType };
-          }
-        )
-      );
-    }
-  };
-
   for (const id of Object.keys(config.styles)) {
     const item = config.styles[id];
     if (!item.style) {
@@ -166,7 +129,9 @@ export function newServer(opts) {
       continue;
     }
 
-    addStyle(id, item);
+    startupPromises.push(
+      serve_style.add(config, serving.styles, serving.rendered, id)
+    );
   }
 
   const addTileJSONs = (arr, req, type, tileSize) => {

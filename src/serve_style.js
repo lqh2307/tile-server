@@ -6,6 +6,7 @@ import express from "express";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { fixUrl, printLog, getUrl } from "./utils.js";
 import clone from "clone";
+import { serve_rendered } from "./serve_rendered.js";
 
 export const serve_style = {
   init: async (config, repo) => {
@@ -70,7 +71,7 @@ export const serve_style = {
     delete repo[id];
   },
 
-  add: (config, repo, id) => {
+  add: async (config, styleRepo, renderRepo, id) => {
     const stylePath = config.options.paths.styles;
     const styleFilePath = path.resolve(stylePath, id, "style.json");
 
@@ -131,11 +132,11 @@ export const serve_style = {
       styleJSON.glyphs = styleJSON.glyphs.replace("fonts://", "local://fonts/");
     }
 
-    repo[id] = {
+    styleRepo[id] = {
       styleJSON,
       name: styleJSON.name,
     };
 
-    return true;
+    return await serve_rendered.add(config, renderRepo, config.styles[id], id);
   },
 };

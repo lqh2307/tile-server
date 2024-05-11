@@ -877,7 +877,7 @@ export const serve_rendered = {
     return app;
   },
 
-  add: async (options, repo, params, id, dataResolver) => {
+  add: async (config, repo, params, id) => {
     const map = {
       renderers: [],
       renderersStatic: [],
@@ -897,7 +897,7 @@ export const serve_rendered = {
               const file = decodeURIComponent(req.url).substring(
                 protocol.length + 3
               );
-              const filePath = path.join(options.paths[protocol], file);
+              const filePath = path.join(config.options.paths[protocol], file);
 
               fs.readFile(filePath, (err, data) => {
                 callback(err, { data: data });
@@ -909,7 +909,7 @@ export const serve_rendered = {
 
               try {
                 const concatenated = await getFontsPbf(
-                  options.paths[protocol],
+                  config.options.paths[protocol],
                   fonts,
                   range
                 );
@@ -1035,7 +1035,7 @@ export const serve_rendered = {
       });
     };
 
-    const stylePath = options.paths.styles;
+    const stylePath = config.options.paths.styles;
     const styleJSONPath = path.join(stylePath, id, "style.json");
 
     try {
@@ -1075,7 +1075,7 @@ export const serve_rendered = {
 
     Object.assign(tileJSON, params.tilejson);
 
-    tileJSON.tiles = params.domains || options.domains;
+    tileJSON.tiles = config.options.domains;
 
     fixTileJSONCenter(tileJSON);
 
@@ -1084,16 +1084,15 @@ export const serve_rendered = {
       map,
       dataProjWGStoInternalWGS: null,
       lastModified: new Date().toUTCString(),
-      watermark: params.watermark || options.watermark,
+      watermark: params.watermark || config.options.watermark,
       staticAttributionText:
-        params.staticAttributionText || options.staticAttributionText,
+        params.staticAttributionText || config.options.staticAttributionText,
     };
 
     repo[id] = repoobj;
 
     const queue = [];
     for (const name of Object.keys(styleJSON.sources)) {
-      let sourceType;
       let source = styleJSON.sources[name];
       let url = source.url;
       if (
@@ -1108,17 +1107,27 @@ export const serve_rendered = {
           dataId = dataId.slice(1, -1);
         }
 
-        const mapsTo = (params.mapping || {})[dataId];
-        if (mapsTo) {
-          dataId = mapsTo;
+        let sourceType;
+        let inputFile;
+        for (const id of Object.keys(config.data)) {
+          if (dataId === id) {
+            if (config.data[id].mbtiles) {
+              sourceType = "mbtiles";
+              inputFile = path.join(
+                config.options.paths.mbtiles,
+                config.data[id].mbtiles
+              );
+            } else if (config.data[id].pmtiles) {
+              sourceType = "mbtiles";
+              inputFile = path.join(
+                config.options.paths.pmtiles,
+                config.data[id].pmtiles
+              );
+            }
+          }
         }
 
-        let inputFile;
-        const dataInfo = dataResolver(dataId);
-        if (dataInfo.inputFile) {
-          inputFile = dataInfo.inputFile;
-          sourceType = dataInfo.fileType;
-        } else {
+        if (!inputFile) {
           printLog("error", `Data "${inputFile}" is not found`);
 
           process.exit(1);
@@ -1172,7 +1181,7 @@ export const serve_rendered = {
         } else {
           queue.push(
             new Promise((resolve, reject) => {
-              inputFile = path.resolve(options.paths.mbtiles, inputFile);
+              inputFile = path.resolve(config.options.paths.mbtiles, inputFile);
               const inputFileStats = fs.statSync(inputFile);
               if (!inputFileStats.isFile() || inputFileStats.size === 0) {
                 throw Error(`Invalid MBTiles file: ${inputFile}`);
@@ -1234,8 +1243,8 @@ export const serve_rendered = {
     await Promise.all(queue);
 
     // standard and @2x tiles are much more usual -> default to larger pools
-    const minPoolSizes = options.minRendererPoolSizes || [8, 4, 2];
-    const maxPoolSizes = options.maxRendererPoolSizes || [16, 8, 4];
+    const minPoolSizes = config.options.minRendererPoolSizes || [8, 4, 2];
+    const maxPoolSizes = config.options.maxRendererPoolSizes || [16, 8, 4];
     for (let s = 1; s <= maxScaleFactor; s++) {
       const i = Math.min(minPoolSizes.length - 1, s - 1);
       const j = Math.min(maxPoolSizes.length - 1, s - 1);
