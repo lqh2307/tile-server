@@ -31,7 +31,7 @@ export const serve_font = {
     });
 
     app.get("/fonts.json", async (req, res, next) => {
-      const result = Object.keys(repo).map((font) => {
+      const result = Object.keys(repo.fonts).map((font) => {
         return {
           name: font,
           url: `${getUrl(req)}fonts/${font}/{range}.pbf`,
@@ -48,7 +48,7 @@ export const serve_font = {
   },
 
   remove: (repo, id) => {
-    delete repo[id];
+    delete repo.fonts[id];
   },
 
   add: async (config, repo) => {
@@ -69,7 +69,7 @@ export const serve_font = {
           const fileNames = findFiles(dirPath, /^\d{1,5}-\d{1,5}\.pbf{1}$/);
 
           if (fileNames.length === 256) {
-            repo[font] = true;
+            repo.fonts[font] = true;
           } else {
             throw Error(`Font "${font}" is invalid`);
           }

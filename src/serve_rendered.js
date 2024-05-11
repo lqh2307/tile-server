@@ -556,7 +556,7 @@ export const serve_rendered = {
     app.get(
       `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(${scalePattern})?.:format([\\w]+)`,
       async (req, res, next) => {
-        const item = repo[req.params.id];
+        const item = repo.rendered[req.params.id];
         if (!item) {
           return res.sendStatus(404);
         }
@@ -620,7 +620,7 @@ export const serve_rendered = {
         util.format(staticPattern, centerPattern),
         async (req, res, next) => {
           try {
-            const item = repo[req.params.id];
+            const item = repo.rendered[req.params.id];
             if (!item) {
               return res.sendStatus(404);
             }
@@ -675,7 +675,7 @@ export const serve_rendered = {
 
       const serveBounds = async (req, res, next) => {
         try {
-          const item = repo[req.params.id];
+          const item = repo.rendered[req.params.id];
           if (!item) {
             return res.sendStatus(404);
           }
@@ -772,7 +772,7 @@ export const serve_rendered = {
         util.format(staticPattern, autoPattern),
         async (req, res, next) => {
           try {
-            const item = repo[req.params.id];
+            const item = repo.rendered[req.params.id];
             if (!item) {
               return res.sendStatus(404);
             }
@@ -852,7 +852,7 @@ export const serve_rendered = {
     }
 
     app.get("/(:tileSize(256|512)/)?:id.json", async (req, res, next) => {
-      const item = repo[req.params.id];
+      const item = repo.rendered[req.params.id];
       if (!item) {
         res.header("Content-Type", "text/plain");
 
@@ -1089,7 +1089,7 @@ export const serve_rendered = {
         params.staticAttributionText || config.options.staticAttributionText,
     };
 
-    repo[id] = repoobj;
+    repo.rendered[id] = repoobj;
 
     const queue = [];
     for (const name of Object.keys(styleJSON.sources)) {
@@ -1261,7 +1261,7 @@ export const serve_rendered = {
   },
 
   remove: (repo, id) => {
-    const item = repo[id];
+    const item = repo.rendered[id];
 
     if (item) {
       item.map.renderers.forEach((pool) => {
@@ -1272,6 +1272,6 @@ export const serve_rendered = {
       });
     }
 
-    delete repo[id];
+    delete repo.rendered[id];
   },
 };

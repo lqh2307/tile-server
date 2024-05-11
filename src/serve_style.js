@@ -15,7 +15,7 @@ export const serve_style = {
 
     app.get("/:id/style.json", async (req, res, next) => {
       const id = decodeURI(req.params.id);
-      const item = repo[id];
+      const item = repo.styles[id];
 
       if (!item) {
         res.header("Content-Type", "text/plain");
@@ -50,10 +50,10 @@ export const serve_style = {
     });
 
     app.get("/styles.json", async (req, res, next) => {
-      const result = Object.keys(repo).map((id) => {
+      const result = Object.keys(repo.styles).map((id) => {
         return {
           id: id,
-          name: repo[id].styleJSON.name,
+          name: repo.styles[id].styleJSON.name,
           url: `${getUrl(req)}styles/${id}/style.json`,
         };
       });
@@ -68,10 +68,10 @@ export const serve_style = {
   },
 
   remove: (repo, id) => {
-    delete repo[id];
+    delete repo.styles[id];
   },
 
-  add: async (config, styleRepo, renderRepo) => {
+  add: async (config, repo) => {
     const stylePath = config.options.paths.styles;
     const styles = Object.keys(config.styles);
 
@@ -148,17 +148,12 @@ export const serve_style = {
           );
         }
 
-        styleRepo[id] = {
+        repo.styles[id] = {
           styleJSON,
           name: styleJSON.name,
         };
 
-        return await serve_rendered.add(
-          config,
-          renderRepo,
-          config.styles[id],
-          id
-        );
+        return await serve_rendered.add(config, repo, config.styles[id], id);
       })
     );
   },

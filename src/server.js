@@ -62,6 +62,17 @@ function loadConfigFile(configFilePath) {
   }
 }
 
+function createRepo() {
+  return {
+    styles: {},
+    rendered: {},
+    data: {},
+    fonts: {},
+    sprites: {},
+    icons: [],
+  };
+}
+
 /**
  *
  * @param opts
@@ -71,14 +82,7 @@ export function newServer(opts) {
 
   const config = loadConfigFile(opts.config);
 
-  const serving = {
-    styles: {},
-    rendered: {},
-    data: {},
-    fonts: {},
-    sprites: {},
-    icons: [],
-  };
+  const repo = createRepo();
 
   const app = express()
     .disable("x-powered-by")
@@ -88,45 +92,43 @@ export function newServer(opts) {
   const startupPromises = [];
 
   startupPromises.push(
-    serve_font.init(config, serving.fonts).then((sub) => {
+    serve_font.init(config, repo).then((sub) => {
       app.use("/fonts", sub);
     })
   );
 
   startupPromises.push(
-    serve_sprite.init(config, serving.sprites).then((sub) => {
+    serve_sprite.init(config, repo).then((sub) => {
       app.use("/sprites", sub);
     })
   );
 
   startupPromises.push(
-    serve_data.init(config, serving.data).then((sub) => {
+    serve_data.init(config, repo).then((sub) => {
       app.use("/data", sub);
     })
   );
 
   startupPromises.push(
-    serve_style.init(config, serving.styles).then((sub) => {
+    serve_style.init(config, repo).then((sub) => {
       app.use("/styles", sub);
     })
   );
 
   startupPromises.push(
-    serve_rendered.init(config.options, serving.rendered).then((sub) => {
+    serve_rendered.init(config.options, repo).then((sub) => {
       app.use("/styles", sub);
     })
   );
 
-  startupPromises.push(serve_font.add(config, serving.fonts));
-  startupPromises.push(serve_sprite.add(config, serving.sprites));
-  startupPromises.push(serve_data.add(config, serving.data));
-  startupPromises.push(
-    serve_style.add(config, serving.styles, serving.rendered)
-  );
+  startupPromises.push(serve_font.add(config, repo));
+  startupPromises.push(serve_sprite.add(config, repo));
+  startupPromises.push(serve_data.add(config, repo));
+  startupPromises.push(serve_style.add(config, repo));
 
   const addTileJSONs = (arr, req, type, tileSize) => {
-    for (const id of Object.keys(serving[type])) {
-      const info = clone((serving[type][id] || {}).tileJSON || {});
+    for (const id of Object.keys(repo[type])) {
+      const info = clone((repo[type][id] || {}).tileJSON || {});
       let path = "";
       if (type === "rendered") {
         path = `styles/${id}`;
@@ -224,11 +226,11 @@ export function newServer(opts) {
 
   serveTemplate("/$", "index", (req) => {
     const styles = {};
-    for (const id of Object.keys(serving.styles)) {
+    for (const id of Object.keys(repo.styles)) {
       const style = {
-        ...serving.styles[id],
-        serving_data: serving.styles[id],
-        serving_rendered: serving.rendered[id],
+        ...repo.styles[id],
+        serving_data: repo.styles[id],
+        serving_rendered: repo.rendered[id],
       };
 
       if (style.serving_rendered) {
@@ -255,9 +257,9 @@ export function newServer(opts) {
     }
 
     const datas = {};
-    for (const id of Object.keys(serving.data)) {
-      const data = clone(serving.data[id] || {});
-      const { tileJSON } = serving.data[id];
+    for (const id of Object.keys(repo.data)) {
+      const data = clone(repo.data[id] || {});
+      const { tileJSON } = repo.data[id];
       const { center } = tileJSON;
 
       if (center) {
@@ -313,7 +315,7 @@ export function newServer(opts) {
 
   serveTemplate("/styles/:id/$", "viewer", (req) => {
     const { id } = req.params;
-    const style = serving.styles[id]?.styleJSON;
+    const style = repo.styles[id]?.styleJSON;
 
     if (!style) {
       return null;
@@ -322,15 +324,15 @@ export function newServer(opts) {
     return {
       ...style,
       id,
-      name: (serving.styles[id] || serving.rendered[id]).name,
-      serving_data: serving.styles[id],
-      serving_rendered: serving.rendered[id],
+      name: (repo.styles[id] || repo.rendered[id]).name,
+      serving_data: repo.styles[id],
+      serving_rendered: repo.rendered[id],
     };
   });
 
   serveTemplate("/styles/:id/wmts.xml", "wmts", (req) => {
     const { id } = req.params;
-    const wmts = serving.styles[id];
+    const wmts = repo.styles[id];
 
     if (!wmts) {
       return null;
@@ -339,14 +341,14 @@ export function newServer(opts) {
     return {
       ...wmts,
       id,
-      name: (serving.styles[id] || serving.rendered[id]).name,
+      name: (repo.styles[id] || repo.rendered[id]).name,
       baseUrl: `${req.get("X-Forwarded-Protocol") ? req.get("X-Forwarded-Protocol") : req.protocol}://${req.get("host")}/`,
     };
   });
 
   serveTemplate("/data/:id/$", "data", (req) => {
     const { id } = req.params;
-    const data = serving.data[id];
+    const data = repo.data[id];
 
     if (!data) {
       return null;
@@ -378,7 +380,7 @@ export function newServer(opts) {
       startupComplete = true;
     })
     .catch((err) => {
-      printLog("error", `Failed to starting server: ${err.message}`);
+      printLog("error", `Failed to starting server: ${err}`);
 
       process.exit(1);
     });

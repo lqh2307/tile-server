@@ -25,7 +25,7 @@ export const serve_data = {
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
         let { z = 0, x = 0, y = 0, format = "" } = req.params;
-        const item = repo[id];
+        const item = repo.data[id];
 
         if (!item) {
           res.header("Content-Type", "text/plain");
@@ -171,7 +171,7 @@ export const serve_data = {
 
     app.get("/:id.json", async (req, res, next) => {
       const id = decodeURI(req.params.id);
-      const item = repo[id];
+      const item = repo.data[id];
 
       if (!item) {
         res.header("Content-Type", "text/plain");
@@ -202,7 +202,7 @@ export const serve_data = {
   },
 
   remove: (repo, id) => {
-    delete repo[id];
+    delete repo.data[id];
   },
 
   add: async (config, repo) => {
@@ -259,7 +259,7 @@ export const serve_data = {
 
                   fixTileJSONCenter(tileJSON);
 
-                  repo[id] = {
+                  repo.data[id] = {
                     tileJSON,
                     source,
                     sourceType: "mbtiles",
@@ -295,7 +295,7 @@ export const serve_data = {
 
             fixTileJSONCenter(tileJSON);
 
-            repo[id] = {
+            repo.data[id] = {
               tileJSON,
               source,
               sourceType: "pmtiles",

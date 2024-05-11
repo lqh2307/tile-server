@@ -24,7 +24,7 @@ export const serve_sprite = {
         const { scale = "", format = "" } = req.params;
 
         try {
-          if (!repo[id]) {
+          if (!repo.sprites[id]) {
             throw Error("Sprite is not found");
           }
 
@@ -52,7 +52,7 @@ export const serve_sprite = {
     );
 
     app.get("/sprites.json", async (req, res, next) => {
-      const result = Object.keys(repo).map((sprite) => {
+      const result = Object.keys(repo.sprites).map((sprite) => {
         return {
           name: sprite,
           url: `${getUrl(req)}sprites/${sprite}/sprite`,
@@ -69,7 +69,7 @@ export const serve_sprite = {
   },
 
   remove: (repo, id) => {
-    delete repo[id];
+    delete repo.sprites[id];
   },
 
   add: async (config, repo) => {
@@ -103,7 +103,7 @@ export const serve_sprite = {
             validatePNGSprite(pngFilePath);
           });
 
-          repo[sprite] = true;
+          repo.sprites[sprite] = true;
         } catch (error) {
           printLog(
             "error",
