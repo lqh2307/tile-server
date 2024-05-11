@@ -2,7 +2,7 @@
 
 import path from "node:path";
 import express from "express";
-import { getFontsPbf, printLog, findFiles, getUrl } from "./utils.js";
+import { getFontsPbf, printLog, getUrl, validatePBFFont } from "./utils.js";
 
 export const serve_font = {
   init: async (config, repo) => {
@@ -53,26 +53,22 @@ export const serve_font = {
 
   add: async (config, repo) => {
     const fontPath = config.options.paths.fonts;
-    const fontstacks = Object.keys(config.fonts);
+    const fonts = Object.keys(config.fonts);
     const fallbackFont = "Open Sans Regular";
 
-    if (!fontstacks.includes(fallbackFont)) {
+    if (!fonts.includes(fallbackFont)) {
       throw Error(`Fallback font "${fallbackFont}" is not found`);
     }
 
     await Promise.all(
-      fontstacks.map(async (font) => {
+      fonts.map(async (font) => {
         try {
           /* Validate font */
-          const dirPath = path.join(fontPath, font);
+          const pbfDirPath = path.join(fontPath, font);
 
-          const fileNames = findFiles(dirPath, /^\d{1,5}-\d{1,5}\.pbf{1}$/);
+          validatePBFFont(pbfDirPath);
 
-          if (fileNames.length === 256) {
-            repo.fonts[font] = true;
-          } else {
-            throw Error(`Font "${font}" is invalid`);
-          }
+          repo.fonts[font] = true;
         } catch (error) {
           printLog("error", `Failed to load fonts: ${error.message}`);
         }

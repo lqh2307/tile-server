@@ -3,13 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import express from "express";
-import {
-  printLog,
-  findFiles,
-  getUrl,
-  validateJSONSprite,
-  validatePNGSprite,
-} from "./utils.js";
+import { printLog, getUrl, validateSprite } from "./utils.js";
 
 export const serve_sprite = {
   init: async (config, repo) => {
@@ -80,28 +74,9 @@ export const serve_sprite = {
       sprites.map(async (sprite) => {
         try {
           /* Validate sprite */
-          const dirPath = path.join(spritePath, sprite);
-          const spritePattern = /^sprite(@\d+x)?\.(png|json){1}$/;
+          const spriteDirPath = path.join(spritePath, sprite);
 
-          const fileNameWoExts = [
-            ...new Set(
-              findFiles(dirPath, spritePattern).map((fileName) =>
-                path.basename(fileName, path.extname(fileName))
-              )
-            ),
-          ];
-
-          if (fileNameWoExts.length === 0) {
-            throw Error(`Sprite is empty`);
-          }
-
-          fileNameWoExts.forEach((fileNameWoExt) => {
-            const jsonFilePath = path.join(dirPath, `${fileNameWoExt}.json`);
-            const pngFilePath = path.join(dirPath, `${fileNameWoExt}.png`);
-
-            validateJSONSprite(jsonFilePath);
-            validatePNGSprite(pngFilePath);
-          });
+          validateSprite(spriteDirPath);
 
           repo.sprites[sprite] = true;
         } catch (error) {

@@ -5,7 +5,6 @@ import fs from "node:fs";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
 import chalk from "chalk";
 import { pngValidator } from "png-validator";
-import Pbf from "pbf";
 
 export const httpTester = /^https?:\/\//i;
 
@@ -257,46 +256,64 @@ export const printLog = (level, msg) => {
   }
 };
 
-export const validatePBFFont = (pbfFilePath) => {
+export const validatePBFFont = (pbfDirPath) => {
   try {
-    const file = fs.readFileSync(pbfFilePath);
+    const fileNames = findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf{1}$/);
 
-    new Pbf(file);
+    if (fileNames.length !== 256) {
+      throw Error(`Font "${font}" is invalid`);
+    }
   } catch (error) {
     throw error;
   }
 };
 
-export const validatePNGSprite = (pngFilePath) => {
+export const validateSprite = (spriteDirPath) => {
   try {
-    const data = fs.readFileSync(pngFilePath);
+    const spritePattern = /^sprite(@\d+x)?\.(png|json){1}$/;
 
-    pngValidator(data);
-  } catch (error) {
-    throw error;
-  }
-};
+    const fileNameWoExts = [
+      ...new Set(
+        findFiles(spriteDirPath, spritePattern).map((fileName) =>
+          path.basename(fileName, path.extname(fileName))
+        )
+      ),
+    ];
 
-export const validateJSONSprite = (jsonFilePath) => {
-  try {
-    const file = fs.readFileSync(jsonFilePath, "utf8");
-    const jsonData = JSON.parse(file);
+    if (fileNameWoExts.length === 0) {
+      throw Error(`Sprite is empty`);
+    }
 
-    Object.keys(jsonData).forEach((key) => {
-      const value = jsonData[key];
+    fileNameWoExts.forEach((fileNameWoExt) => {
+      const jsonFilePath = path.join(spriteDirPath, `${fileNameWoExt}.json`);
+      const pngFilePath = path.join(spriteDirPath, `${fileNameWoExt}.png`);
 
-      if (
-        typeof value !== "object" ||
-        !("height" in value) ||
-        !("pixelRatio" in value) ||
-        !("width" in value) ||
-        !("x" in value) ||
-        !("y" in value)
-      ) {
-        throw Error(
-          `"${key}" is missing one of properties "height", "pixelRatio", "width", "x", "y"`
-        );
-      }
+      const jsonFile = fs.readFileSync(jsonFilePath, "utf8");
+
+      const jsonData = JSON.parse(jsonFile);
+
+      /* Validate JSON sprite */
+      Object.keys(jsonData).forEach((key) => {
+        const value = jsonData[key];
+
+        if (
+          typeof value !== "object" ||
+          !("height" in value) ||
+          !("pixelRatio" in value) ||
+          !("width" in value) ||
+          !("x" in value) ||
+          !("y" in value)
+        ) {
+          throw Error(
+            `"${key}" is missing one of properties "height", "pixelRatio", "width", "x", "y"`
+          );
+        }
+      });
+
+      /* Validate PNG sprite */
+      const pngData = fs.readFileSync(pngFilePath);
+
+      pngValidator(pngData);
     });
   } catch (error) {
     throw error;

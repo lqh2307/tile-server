@@ -877,7 +877,7 @@ export const serve_rendered = {
     return app;
   },
 
-  add: async (config, repo, params, id) => {
+  add: async (config, repo, id) => {
     const map = {
       renderers: [],
       renderersStatic: [],
@@ -1068,12 +1068,13 @@ export const serve_rendered = {
       format: "png",
       type: "baselayer",
     };
-    const attributionOverride = params.tilejson && params.tilejson.attribution;
+    const attributionOverride =
+      config.styles[id].tilejson && config.styles[id].tilejson.attribution;
     if (styleJSON.center && styleJSON.zoom) {
       tileJSON.center = styleJSON.center.concat(Math.round(styleJSON.zoom));
     }
 
-    Object.assign(tileJSON, params.tilejson);
+    Object.assign(tileJSON, config.styles[id].tilejson);
 
     tileJSON.tiles = config.options.domains;
 
@@ -1084,9 +1085,10 @@ export const serve_rendered = {
       map,
       dataProjWGStoInternalWGS: null,
       lastModified: new Date().toUTCString(),
-      watermark: params.watermark || config.options.watermark,
+      watermark: config.styles[id].watermark || config.options.watermark,
       staticAttributionText:
-        params.staticAttributionText || config.options.staticAttributionText,
+        config.styles[id].staticAttributionText ||
+        config.options.staticAttributionText,
     };
 
     repo.rendered[id] = repoobj;

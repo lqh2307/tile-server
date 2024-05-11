@@ -5,8 +5,8 @@ import fs from "node:fs";
 import express from "express";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { fixUrl, printLog, getUrl } from "./utils.js";
-import clone from "clone";
 import { serve_rendered } from "./serve_rendered.js";
+import clone from "clone";
 
 export const serve_style = {
   init: async (config, repo) => {
@@ -84,11 +84,11 @@ export const serve_style = {
           return;
         }
 
-        const styleFilePath = path.resolve(stylePath, id, "style.json");
-
         let styleJSON = {};
 
         try {
+          const styleFilePath = path.resolve(stylePath, id, "style.json");
+
           const file = fs.readFileSync(styleFilePath);
 
           styleJSON = JSON.parse(file);
@@ -153,7 +153,7 @@ export const serve_style = {
           name: styleJSON.name,
         };
 
-        return await serve_rendered.add(config, repo, config.styles[id], id);
+        return await serve_rendered.add(config, repo, id);
       })
     );
   },

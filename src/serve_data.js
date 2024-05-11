@@ -214,6 +214,15 @@ export const serve_data = {
       datas.map(async (id) => {
         try {
           const item = config.data[id];
+          const dataInfo = {
+            tileJSON: {
+              tiles: config.options.domains,
+              name: id,
+              tilejson: "2.0.0",
+            },
+            source: null,
+            sourceType: "",
+          };
 
           if (!item.mbtiles && !item.pmtiles) {
             throw Error(
@@ -225,6 +234,7 @@ export const serve_data = {
             );
           } else if (item.mbtiles) {
             let inputDataFile = "";
+            dataInfo.sourceType = "mbtiles";
 
             if (isValidHttpUrl(item.mbtiles)) {
               throw Error(`MBTiles data "${id}" is invalid`);
@@ -237,7 +247,7 @@ export const serve_data = {
               }
             }
 
-            const source = new MBTiles(
+            dataInfo.source = new MBTiles(
               inputDataFile + "?mode=ro",
               (err, mbtiles) => {
                 if (err) {
@@ -249,26 +259,13 @@ export const serve_data = {
                     throw err;
                   }
 
-                  const tileJSON = {
-                    tiles: config.options.domains,
-                    name: id,
-                    tilejson: "2.0.0",
-                  };
-
-                  Object.assign(tileJSON, info);
-
-                  fixTileJSONCenter(tileJSON);
-
-                  repo.data[id] = {
-                    tileJSON,
-                    source,
-                    sourceType: "mbtiles",
-                  };
+                  Object.assign(dataInfo.tileJSON, info);
                 });
               }
             );
           } else if (item.pmtiles) {
             let inputDataFile = "";
+            dataInfo.sourceType = "pmtiles";
 
             if (isValidHttpUrl(item.pmtiles)) {
               inputDataFile = item.pmtiles;
@@ -281,26 +278,16 @@ export const serve_data = {
               }
             }
 
-            const source = openPMtiles(inputDataFile);
+            dataInfo.source = openPMtiles(inputDataFile);
 
             const info = await getPMtilesInfo(source);
 
-            const tileJSON = {
-              tiles: config.options.domains,
-              name: id,
-              tilejson: "2.0.0",
-            };
-
-            Object.assign(tileJSON, info);
-
-            fixTileJSONCenter(tileJSON);
-
-            repo.data[id] = {
-              tileJSON,
-              source,
-              sourceType: "pmtiles",
-            };
+            Object.assign(dataInfo.tileJSON, info);
           }
+
+          fixTileJSONCenter(dataInfo.tileJSON);
+
+          repo.data[id] = dataInfo;
         } catch (error) {
           throw error;
         }
