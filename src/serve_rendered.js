@@ -1036,7 +1036,7 @@ export const serve_rendered = {
     };
 
     const stylePath = options.paths.styles;
-    const styleJSONPath = path.join(stylePath, params.style);
+    const styleJSONPath = path.join(stylePath, id, "style.json");
 
     try {
       styleJSON = JSON.parse(fs.readFileSync(styleJSONPath));

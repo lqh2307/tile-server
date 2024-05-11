@@ -201,6 +201,10 @@ export const serve_data = {
     return app;
   },
 
+  remove: (repo, id) => {
+    delete repo[id];
+  },
+
   add: async (config, repo) => {
     const mbtilesPath = config.options.paths.mbtiles;
     const pmtilesPath = config.options.paths.pmtiles;

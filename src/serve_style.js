@@ -70,16 +70,18 @@ export const serve_style = {
     delete repo[id];
   },
 
-  add: (config, repo, params, id, reportTiles) => {
+  add: (config, repo, id, reportTiles) => {
     const stylePath = config.options.paths.styles;
-    const styleFilePath = path.resolve(stylePath, params.style);
+    const styleFilePath = path.resolve(stylePath, id, "style.json");
 
     let styleJSON = {};
 
     try {
-      styleJSON = JSON.parse(fs.readFileSync(styleFilePath));
+      const file = fs.readFileSync(styleFilePath);
+
+      styleJSON = JSON.parse(file);
     } catch (error) {
-      printLog("error", `Failed to load style file: ${error.message}`);
+      printLog("error", `Failed to load style "${id}": ${error.message}`);
 
       return false;
     }
@@ -87,10 +89,10 @@ export const serve_style = {
     /* Validate style */
     const validationErrors = validateStyleMin(styleJSON);
     if (validationErrors.length > 0) {
-      let errString = `Style "${params.style}" is invalid:`;
+      let errString = `Failed to load style "${id}": Style is invalid:`;
 
       for (const err of validationErrors) {
-        errString += "\n" + `${err.line}: ${err.message}`;
+        errString += "\n\t" + `${err.message}`;
       }
 
       printLog("error", errString);
@@ -110,11 +112,6 @@ export const serve_style = {
         let dataId = url.replace("pmtiles://", "").replace("mbtiles://", "");
         if (dataId.startsWith("{") && dataId.endsWith("}")) {
           dataId = dataId.slice(1, -1);
-        }
-
-        const mapsTo = (params.mapping || {})[dataId];
-        if (mapsTo) {
-          dataId = mapsTo;
         }
 
         const identifier = reportTiles(dataId, protocol);

@@ -122,60 +122,46 @@ export function newServer(opts) {
   startupPromises.push(serve_sprite.add(config, serving.sprites));
   startupPromises.push(serve_data.add(config, serving.data));
 
-  const addStyle = (id, item, allowMoreData) => {
-    let success = true;
-    if (item.serve_data !== false) {
-      success = serve_style.add(
-        config,
-        serving.styles,
-        item,
-        id,
-        (styleSourceId, protocol) => {
-          let dataItemId;
-          for (const id of Object.keys(config.data)) {
-            if (id === styleSourceId) {
-              // Style id was found in data ids, return that id
-              dataItemId = id;
-            } else {
-              const fileType = Object.keys(config.data[id])[0];
-              if (config.data[id][fileType] === styleSourceId) {
-                // Style id was found in data filename, return the id that filename belong to
-                dataItemId = id;
-              }
-            }
-          }
-
-          if (dataItemId) {
-            // input files exists in the data config, return found id
-            return dataItemId;
+  const addStyle = (id, item) => {
+    let success = serve_style.add(
+      config,
+      serving.styles,
+      id,
+      (styleSourceId, protocol) => {
+        let dataItemId;
+        for (const id of Object.keys(config.data)) {
+          if (id === styleSourceId) {
+            // Style id was found in data ids, return that id
+            dataItemId = id;
           } else {
-            if (!allowMoreData) {
-              printLog(
-                "error",
-                `Style "${item.style}" using unknown file "${styleSourceId}". Skipping...`
-              );
-
-              return undefined;
-            } else {
-              let id =
-                styleSourceId.substr(0, styleSourceId.lastIndexOf(".")) ||
-                styleSourceId;
-              if (isValidHttpUrl(styleSourceId)) {
-                id =
-                  fnv1a(styleSourceId) + "_" + id.replace(/^.*\/(.*)$/, "$1");
-              }
-              while (config.data[id]) id += "_"; //if the data source id already exists, add a "_" untill it doesn't
-              //Add the new data source to the data array.
-              config.data[id] = {
-                [protocol]: styleSourceId,
-              };
-
-              return id;
+            const fileType = Object.keys(config.data[id])[0];
+            if (config.data[id][fileType] === styleSourceId) {
+              // Style id was found in data filename, return the id that filename belong to
+              dataItemId = id;
             }
           }
         }
-      );
-    }
+
+        if (dataItemId) {
+          // input files exists in the data config, return found id
+          return dataItemId;
+        } else {
+          let id =
+            styleSourceId.substr(0, styleSourceId.lastIndexOf(".")) ||
+            styleSourceId;
+          if (isValidHttpUrl(styleSourceId)) {
+            id = fnv1a(styleSourceId) + "_" + id.replace(/^.*\/(.*)$/, "$1");
+          }
+          while (config.data[id]) id += "_"; //if the data source id already exists, add a "_" untill it doesn't
+          //Add the new data source to the data array.
+          config.data[id] = {
+            [protocol]: styleSourceId,
+          };
+
+          return id;
+        }
+      }
+    );
 
     if (success) {
       startupPromises.push(
@@ -212,13 +198,13 @@ export function newServer(opts) {
 
   for (const id of Object.keys(config.styles)) {
     const item = config.styles[id];
-    if (!item.style || item.style.length === 0) {
+    if (!item.style) {
       printLog("error", `Missing "style" property for ${id}`);
 
       continue;
     }
 
-    addStyle(id, item, true);
+    addStyle(id, item);
   }
 
   const addTileJSONs = (arr, req, type, tileSize) => {
