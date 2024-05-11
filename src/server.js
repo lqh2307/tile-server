@@ -379,28 +379,31 @@ export function newServer(opts) {
 
       startupComplete = true;
 
-      //  function removeCircularReferences(obj, seen = new Set()) {
-      //if (typeof obj === "object" && obj !== null) {
-      //   if (seen.has(obj)) {
-      //     return undefined;
-      //   }
-      //   seen.add(obj);
-      //    for (const key in obj) {
-      //      obj[key] = removeCircularReferences(obj[key], seen);
-      //    }
-      //  }
-      //  return obj;
-      // }
+      function removeCircularReferences(obj, seen = new Set()) {
+        if (typeof obj === "object" && obj !== null) {
+          if (seen.has(obj)) {
+            return undefined;
+          }
 
-      //const cleanedObject = removeCircularReferences(repo);
+          seen.add(obj);
 
-      // const jsonData = JSON.stringify(cleanedObject);
+          for (const key in obj) {
+            obj[key] = removeCircularReferences(obj[key], seen);
+          }
+        }
 
-      //fs.writeFile("./repo.json", jsonData, "utf8", (err) => {
-      //if (err) {
-      // throw err;
-      // }
-      //});
+        return obj;
+      }
+
+      const cleanedObject = removeCircularReferences(repo);
+
+      const jsonData = JSON.stringify(cleanedObject);
+
+      fs.writeFile("./repo.json", jsonData, "utf8", (err) => {
+        if (err) {
+          throw err;
+        }
+      });
     })
     .catch((err) => {
       printLog("error", `Failed to starting server: ${err}`);
