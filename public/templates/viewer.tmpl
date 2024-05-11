@@ -37,7 +37,7 @@
             const canvas = document.createElement('canvas');
             try {
                 const context = canvas.getContext('webgl2') || canvas.getContext('webgl');
-                if (context && typeof context.getParameter == 'function') {
+                if (context && typeof context.getParameter === 'function') {
                     return true;
                 }
             } catch (e) {
@@ -57,7 +57,7 @@
     var keyMatch = location.search.match(/[\?\&]key=([^&]+)/i);
     var keyParam = keyMatch ? '?key=' + keyMatch[1] : '';    
 
-    if (preference == 'vector') {
+    if (preference === 'vector') {
       maplibregl.setRTLTextPlugin('/mapbox-gl-rtl-text.js' + keyParam);
       var map = new maplibregl.Map({
         container: 'map',

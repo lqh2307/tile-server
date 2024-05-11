@@ -70,7 +70,7 @@ export const serve_style = {
     delete repo[id];
   },
 
-  add: (config, repo, id, reportTiles) => {
+  add: (config, repo, id) => {
     const stylePath = config.options.paths.styles;
     const styleFilePath = path.resolve(stylePath, id, "style.json");
 
@@ -107,19 +107,16 @@ export const serve_style = {
         url &&
         (url.startsWith("pmtiles://") || url.startsWith("mbtiles://"))
       ) {
-        const protocol = url.split(":")[0];
-
         let dataId = url.replace("pmtiles://", "").replace("mbtiles://", "");
         if (dataId.startsWith("{") && dataId.endsWith("}")) {
           dataId = dataId.slice(1, -1);
         }
 
-        const identifier = reportTiles(dataId, protocol);
-        if (!identifier) {
+        if (!Object.keys(config.data).includes(dataId)) {
           return false;
         }
 
-        styleJSON.sources[name].url = `local://data/${identifier}.json`;
+        styleJSON.sources[name].url = `local://data/${dataId}.json`;
       }
     }
 

@@ -123,45 +123,7 @@ export function newServer(opts) {
   startupPromises.push(serve_data.add(config, serving.data));
 
   const addStyle = (id, item) => {
-    let success = serve_style.add(
-      config,
-      serving.styles,
-      id,
-      (styleSourceId, protocol) => {
-        let dataItemId;
-        for (const id of Object.keys(config.data)) {
-          if (id === styleSourceId) {
-            // Style id was found in data ids, return that id
-            dataItemId = id;
-          } else {
-            const fileType = Object.keys(config.data[id])[0];
-            if (config.data[id][fileType] === styleSourceId) {
-              // Style id was found in data filename, return the id that filename belong to
-              dataItemId = id;
-            }
-          }
-        }
-
-        if (dataItemId) {
-          // input files exists in the data config, return found id
-          return dataItemId;
-        } else {
-          let id =
-            styleSourceId.substr(0, styleSourceId.lastIndexOf(".")) ||
-            styleSourceId;
-          if (isValidHttpUrl(styleSourceId)) {
-            id = fnv1a(styleSourceId) + "_" + id.replace(/^.*\/(.*)$/, "$1");
-          }
-          while (config.data[id]) id += "_"; //if the data source id already exists, add a "_" untill it doesn't
-          //Add the new data source to the data array.
-          config.data[id] = {
-            [protocol]: styleSourceId,
-          };
-
-          return id;
-        }
-      }
-    );
+    let success = serve_style.add(config, serving.styles, id);
 
     if (success) {
       startupPromises.push(
@@ -175,11 +137,11 @@ export function newServer(opts) {
             let inputFile;
             for (const id of Object.keys(config.data)) {
               fileType = Object.keys(config.data[id])[0];
-              if (styleSourceId == id) {
+              if (styleSourceId === id) {
                 inputFile = config.data[id][fileType];
 
                 break;
-              } else if (config.data[id][fileType] == styleSourceId) {
+              } else if (config.data[id][fileType] === styleSourceId) {
                 inputFile = config.data[id][fileType];
 
                 break;

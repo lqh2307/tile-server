@@ -934,7 +934,7 @@ export const serve_rendered = {
                 let tileinfo = await getPMtilesTile(source, z, x, y);
                 let data = tileinfo.data;
                 let headers = tileinfo.header;
-                if (data == undefined) {
+                if (data === undefined) {
                   printLog("error", `MBTiles error, serving empty: ${err}`);
 
                   createEmptyResponse(
@@ -1253,6 +1253,7 @@ export const serve_rendered = {
 
   remove: (repo, id) => {
     const item = repo[id];
+
     if (item) {
       item.map.renderers.forEach((pool) => {
         pool.close();

@@ -81,7 +81,7 @@ export const getTileUrls = (req, domains, path, tileSize, format, aliases) => {
     }
     domains = newDomains;
   }
-  if (!domains || domains.length == 0) {
+  if (!domains || domains.length === 0) {
     domains = [urlObject.host];
   }
 

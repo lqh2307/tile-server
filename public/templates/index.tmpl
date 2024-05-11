@@ -9,7 +9,7 @@
     function toggle_xyz(id) {
       var el = document.getElementById(id);
       var s = el.style;
-      s.display = s.display == 'none' ? 'inline-block' : 'none';
+      s.display = s.display === 'none' ? 'inline-block' : 'none';
       el.setSelectionRange(0, el.value.length);
       return false;
     }

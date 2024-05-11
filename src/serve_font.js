@@ -68,7 +68,7 @@ export const serve_font = {
 
           const fileNames = findFiles(dirPath, /^\d{1,5}-\d{1,5}\.pbf{1}$/);
 
-          if (fileNames.length == 256) {
+          if (fileNames.length === 256) {
             repo[font] = true;
           } else {
             throw Error(`Font "${font}" is invalid`);

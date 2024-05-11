@@ -63,7 +63,7 @@ export const serve_data = {
 
         if (item.sourceType === "pmtiles") {
           let tileinfo = await getPMtilesTile(item.source, z, x, y);
-          if (tileinfo == undefined || tileinfo.data == undefined) {
+          if (tileinfo === undefined || tileinfo.data === undefined) {
             res.header("Content-Type", "text/plain");
 
             return res.status(404).send("Data is not found");
@@ -115,7 +115,7 @@ export const serve_data = {
                 return res.status(500).send(err.message);
               }
             } else {
-              if (data == null) {
+              if (data === null) {
                 res.header("Content-Type", "text/plain");
 
                 return res.status(404).send("Data is not found");
