@@ -35,8 +35,6 @@ export const serve_data = {
 
         try {
           if (!item) {
-            res.header("Content-Type", "text/plain");
-
             throw Error("Data is not found");
           }
 
