@@ -17,9 +17,13 @@
 </head>
 <body>
   <section>
-    <h1 class="title">Style and Tileset preview</h1>
+    <h1 class="title">
+      Style and Tileset preview
+    </h1>
     {{#if styles}}
-      <h2 class="box-header">Styles</h2>
+      <h2 class="box-header">
+        Styles
+      </h2>
       <div class="box">
       {{#each styles}}
         <div class="item">
@@ -32,16 +36,7 @@
             <h3>{{name}}</h3>
             <p class="identifier">identifier: {{@key}}</p>
             <p class="services">
-              services:
-              {{#if serving_data}}
-                <a href="/styles/{{@key}}/style.json{{&../key_query}}">GL Style</a>
-              {{/if}}
-              {{#if serving_rendered}}
-                {{#if serving_data}}| {{/if}}<a href="/styles/256/{{@key}}.json{{&../key_query}}">TileJSON</a>
-              {{/if}}
-              {{#if serving_rendered}}
-                | <a href="/styles/{{@key}}/wmts.xml{{&../key_query}}">WMTS</a>
-              {{/if}}
+              services: <a href="/styles/{{@key}}/style.json{{&../key_query}}">GL Style</a> | <a href="/styles/256/{{@key}}.json{{&../key_query}}">TileJSON</a> | <a href="/styles/{{@key}}/wmts.xml{{&../key_query}}">WMTS</a>
               {{#if xyz_link}}
                 | <a href="#" onclick="return toggle_xyz('xyz_style_{{@key}}');">XYZ</a>
                   <input id="xyz_style_{{@key}}" type="text" value="{{&xyz_link}}" style="display:none;" />
@@ -49,36 +44,36 @@
             </p>
           </div>
           <div class="viewers">
-            {{#if serving_data}}
-              {{#if serving_rendered}}
-                <a class="btn" href="/styles/{{@key}}/{{&../key_query}}{{viewer_hash}}">Viewer</a>
-              {{/if}}
-            {{/if}}
-            {{#if serving_rendered}}
+              <a class="btn" href="/styles/{{@key}}/{{&../key_query}}{{viewer_hash}}">Viewer</a>
               <a class="btn" href="/styles/{{@key}}/?{{&../key_query_part}}raster{{viewer_hash}}">Raster</a>
-            {{/if}}
-            {{#if serving_data}}
               <a class="btn" href="/styles/{{@key}}/?{{&../key_query_part}}vector{{viewer_hash}}">Vector</a>
-            {{/if}}
           </div>
         </div>
       {{/each}}
       </div>
     {{/if}}
     {{#if data}}
-      <h2 class="box-header">Data</h2>
+      <h2 class="box-header">
+        Data
+      </h2>
       <div class="box">
       {{#each data}}
         <div class="item">
           {{#if thumbnail}}
-            <img src="/data/{{@key}}/{{thumbnail}}{{&../key_query}}" alt="{{tileJSON.name}} preview" />
+            <img src="/data/{{@key}}/{{thumbnail}}{{&../key_query}}" alt="{{name}} preview" />
           {{else}}
-            <img src="/images/placeholder.png{{&key_query}}" alt="{{tileJSON.name}} preview" />
+            <img src="/images/placeholder.png{{&key_query}}" alt="{{name}} preview" />
           {{/if}}
           <div class="details">
-            <h3>{{tileJSON.name}}</h3>
-            <div class="identifier">identifier: {{@key}}{{#if formatted_filesize}} | size: {{formatted_filesize}}{{/if}}</div>
-            <div class="identifier">type: {{#is_vector}}vector{{/is_vector}}{{^is_vector}}raster{{/is_vector}} data {{#if sourceType}} | ext: {{sourceType}}{{/if}}</div>
+            <h3>
+              {{name}}
+            </h3>
+            <div class="identifier">
+              identifier: {{@key}}{{#if formatted_filesize}} | size: {{formatted_filesize}}{{/if}}
+            </div>
+            <div class="identifier">
+              type: {{#if is_vector}}vector{{else}}raster{{/if}} {{#if sourceType}} | ext: {{sourceType}}{{/if}}
+            </div>
             <p class="services">
               services: <a href="/data/{{@key}}.json{{&../key_query}}">TileJSON</a>
               {{#if xyz_link}}
@@ -88,12 +83,11 @@
             </p>
           </div>
           <div class="viewers">
-            {{#is_vector}}
-            <a class="btn" href="/data/{{@key}}/{{&../key_query}}{{viewer_hash}}">Inspect</a>
-            {{/is_vector}}
-            {{^is_vector}}
-            <a class="btn" href="/data/{{@key}}/{{&../key_query}}{{viewer_hash}}">View</a>
-            {{/is_vector}}
+            {{#if is_vector}}
+                <a class="btn" href="/data/{{@key}}/{{&../key_query}}{{viewer_hash}}">Inspect</a>
+            {{else}}
+                <a class="btn" href="/data/{{@key}}/{{&../key_query}}{{viewer_hash}}">View</a>
+            {{/if}}
           </div>
         </div>
       {{/each}}

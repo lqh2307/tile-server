@@ -3,10 +3,10 @@
 import path from "node:path";
 import fs from "node:fs";
 import express from "express";
+import clone from "clone";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { fixUrl, printLog, getUrl } from "./utils.js";
 import { serve_rendered } from "./serve_rendered.js";
-import clone from "clone";
 
 export const serve_style = {
   init: async (config, repo) => {
@@ -78,13 +78,13 @@ export const serve_style = {
     await Promise.all(
       styles.map(async (id) => {
         const item = config.styles[id];
-        if (!item.style) {
-          printLog("error", `Missing "style" property for ${id}`);
-
-          return;
-        }
-
         let styleJSON = {};
+
+        if (!item.style) {
+          printLog("error", `"style" property for style "${id}" is empty`);
+
+          return false;
+        }
 
         try {
           const styleFilePath = path.resolve(stylePath, id, "style.json");
@@ -150,7 +150,6 @@ export const serve_style = {
 
         repo.styles[id] = {
           styleJSON,
-          name: styleJSON.name,
         };
 
         return await serve_rendered.add(config, repo, id);

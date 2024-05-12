@@ -56,12 +56,14 @@ export const getUrl = (req) => {
   return getUrlObject(req).toString();
 };
 
-export const getTileUrls = (req, domains, path, tileSize, format, aliases) => {
+export const getTileUrls = (req, domains, path, tileSize, format) => {
   const urlObject = getUrlObject(req);
+
   if (domains) {
     if (domains.constructor === String && domains.length > 0) {
       domains = domains.split(",");
     }
+
     const hostParts = urlObject.host.split(".");
     const relativeSubdomainsUsable =
       hostParts.length > 1 &&
@@ -78,8 +80,10 @@ export const getTileUrls = (req, domains, path, tileSize, format, aliases) => {
         newDomains.push(domain);
       }
     }
+
     domains = newDomains;
   }
+
   if (!domains || domains.length === 0) {
     domains = [urlObject.host];
   }
@@ -88,21 +92,19 @@ export const getTileUrls = (req, domains, path, tileSize, format, aliases) => {
   if (req.query.key) {
     queryParams.push(`key=${encodeURIComponent(req.query.key)}`);
   }
+
   if (req.query.style) {
     queryParams.push(`style=${encodeURIComponent(req.query.style)}`);
   }
-  const query = queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
 
-  if (aliases && aliases[format]) {
-    format = aliases[format];
-  }
+  const query = queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
 
   let tileParams = `{z}/{x}/{y}`;
   if (tileSize && ["png", "jpg", "jpeg", "webp"].includes(format)) {
     tileParams = `${tileSize}/{z}/{x}/{y}`;
   }
 
-  let xForwardedPath = `${req.get("X-Forwarded-Path") ? "/" + req.get("X-Forwarded-Path") : ""}`;
+  const xForwardedPath = `${req.get("X-Forwarded-Path") ? "/" + req.get("X-Forwarded-Path") : ""}`;
   const uris = domains.map(
     (domain) =>
       `${req.protocol}://${domain}${xForwardedPath}/${path}/${tileParams}.${format}${query}`
@@ -114,6 +116,7 @@ export const getTileUrls = (req, domains, path, tileSize, format, aliases) => {
 export const fixTileJSONCenter = (tileJSON) => {
   if (tileJSON.bounds && !tileJSON.center) {
     const tiles = 4;
+
     tileJSON.center = [
       (tileJSON.bounds[0] + tileJSON.bounds[2]) / 2,
       (tileJSON.bounds[1] + tileJSON.bounds[3]) / 2,

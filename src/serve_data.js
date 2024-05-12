@@ -21,20 +21,16 @@ export const serve_data = {
     const lastModified = new Date().toUTCString();
 
     app.get(
-      "/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format([\\w.]+)",
+      "/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format((pbf|jpg|png|webp|geojson){1})",
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
-        let { z = 0, x = 0, y = 0, format = "" } = req.params;
+        const { z = 0, x = 0, y = 0, format = "" } = req.params;
         const item = repo.data[id];
 
         if (!item) {
           res.header("Content-Type", "text/plain");
 
           return res.status(404).send("Data is not found");
-        }
-
-        if (format === config.options.pbfAlias) {
-          format = "pbf";
         }
 
         const tileJSONFormat = item.tileJSON.format;
@@ -48,13 +44,13 @@ export const serve_data = {
         }
 
         if (
-          z < item.tileJSON.minzoom ||
-          0 ||
-          x < 0 ||
-          y < 0 ||
-          z > item.tileJSON.maxzoom ||
-          x >= Math.pow(2, z) ||
-          y >= Math.pow(2, z)
+          !(
+            0 <= z &&
+            item.tileJSON.minzoom <= z &&
+            z <= item.tileJSON.maxzoom
+          ) ||
+          !(0 <= x && x < Math.pow(2, z)) ||
+          !(0 <= y && y < Math.pow(2, z))
         ) {
           res.header("Content-Type", "text/plain");
 
@@ -63,7 +59,8 @@ export const serve_data = {
 
         if (item.sourceType === "pmtiles") {
           let tileinfo = await getPMtilesTile(item.source, z, x, y);
-          if (tileinfo === undefined || tileinfo.data === undefined) {
+
+          if (!tileinfo?.data) {
             res.header("Content-Type", "text/plain");
 
             return res.status(404).send("Data is not found");
@@ -74,6 +71,7 @@ export const serve_data = {
               headers["Content-Type"] = "application/x-protobuf";
             } else if (format === "geojson") {
               headers["Content-Type"] = "application/json";
+
               const tile = new VectorTile(new Pbf(data));
               const geojson = {
                 type: "FeatureCollection",
@@ -106,6 +104,7 @@ export const serve_data = {
         } else if (item.sourceType === "mbtiles") {
           item.source.getTile(z, x, y, (err, data, headers) => {
             let isGzipped;
+
             if (err) {
               if (/does not exist/.test(err.message)) {
                 return res.status(204).send();
@@ -124,6 +123,7 @@ export const serve_data = {
                   isGzipped =
                     data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0;
                 }
+
                 if (format === "pbf") {
                   headers["Content-Type"] = "application/x-protobuf";
                 } else if (format === "geojson") {
@@ -139,6 +139,7 @@ export const serve_data = {
                     type: "FeatureCollection",
                     features: [],
                   };
+
                   for (const layerName in tile.layers) {
                     const layer = tile.layers[layerName];
                     for (let i = 0; i < layer.length; i++) {
@@ -148,6 +149,7 @@ export const serve_data = {
                       geojson.features.push(featureGeoJSON);
                     }
                   }
+
                   data = JSON.stringify(geojson);
                 }
 
@@ -184,12 +186,9 @@ export const serve_data = {
       info.tiles = getTileUrls(
         req,
         info.tiles,
-        `data/${req.params.id}`,
+        `data/${id}`,
         undefined,
-        info.format,
-        {
-          pbf: config.options.pbfAlias,
-        }
+        info.format
       );
 
       res.header("Content-type", "application/json");

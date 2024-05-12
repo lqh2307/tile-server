@@ -136,9 +136,7 @@ export function newServer(opts) {
         path = `${type}/${id}`;
       }
 
-      info.tiles = getTileUrls(req, info.tiles, path, tileSize, info.format, {
-        pbf: config.options.pbfAlias,
-      });
+      info.tiles = getTileUrls(req, info.tiles, path, tileSize, info.format);
 
       arr.push(info);
     }
@@ -226,70 +224,53 @@ export function newServer(opts) {
 
   serveTemplate("/$", "index", (req) => {
     const styles = {};
+
     for (const id of Object.keys(repo.styles)) {
-      const style = {
-        ...repo.styles[id],
-        serving_data: repo.styles[id],
-        serving_rendered: repo.rendered[id],
-      };
+      const style = repo.rendered[id];
+      const { center, tiles, format } = style.tileJSON;
 
-      if (style.serving_rendered) {
-        const { center } = style.serving_rendered.tileJSON;
-        if (center) {
-          style.viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
+      let viewer_hash = "";
+      let thumbnail = "";
+      if (center) {
+        viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
 
-          const centerPx = mercator.px([center[0], center[1]], center[2]);
+        const centerPx = mercator.px([center[0], center[1]], center[2]);
 
-          // Set thumbnail default size to be 256px x 256px
-          style.thumbnail = `${center[2]}/${Math.floor(centerPx[0] / 256)}/${Math.floor(centerPx[1] / 256)}.png`;
-        }
-
-        style.xyz_link = getTileUrls(
-          req,
-          style.serving_rendered.tileJSON.tiles,
-          `styles/${id}`,
-          256,
-          style.serving_rendered.tileJSON.format
-        )[0];
+        // Set thumbnail (default size: 256px x 256px)
+        thumbnail = `${center[2]}/${Math.floor(centerPx[0] / 256)}/${Math.floor(centerPx[1] / 256)}.png`;
       }
 
-      styles[id] = style;
+      styles[id] = {
+        xyz_link: getTileUrls(req, tiles, `styles/${id}`, 256, format)[0],
+        viewer_hash,
+        thumbnail,
+        name: style.tileJSON.name,
+      };
     }
 
     const datas = {};
+
     for (const id of Object.keys(repo.data)) {
-      const data = clone(repo.data[id] || {});
-      const { tileJSON } = repo.data[id];
-      const { center } = tileJSON;
+      const data = repo.data[id];
+      const { center, filesize, format, tiles, name } = data.tileJSON;
 
+      let viewer_hash = "";
+      let thumbnail = "";
       if (center) {
-        data.viewer_hash = `#${center[2]}/${center[1].toFixed(
-          5
-        )}/${center[0].toFixed(5)}`;
-      }
+        viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
 
-      data.is_vector = tileJSON.format === "pbf";
-      if (!data.is_vector) {
-        if (center) {
+        if (!(format === "pbf")) {
           const centerPx = mercator.px([center[0], center[1]], center[2]);
-          data.thumbnail = `${center[2]}/${Math.floor(centerPx[0] / 256)}/${Math.floor(centerPx[1] / 256)}.${tileJSON.format}`;
+
+          // Set thumbnail (default size: 256px x 256px)
+          thumbnail = `${center[2]}/${Math.floor(centerPx[0] / 256)}/${Math.floor(centerPx[1] / 256)}.${format}`;
         }
       }
 
-      data.xyz_link = getTileUrls(
-        req,
-        tileJSON.tiles,
-        `data/${id}`,
-        undefined,
-        tileJSON.format,
-        {
-          pbf: config.options.pbfAlias,
-        }
-      )[0];
-
-      if (data.filesize) {
+      let formatted_filesize = "";
+      if (filesize) {
         let suffix = "kB";
-        let size = parseInt(tileJSON.filesize, 10) / 1024;
+        let size = parseInt(filesize, 10) / 1024;
 
         if (size > 1024) {
           suffix = "MB";
@@ -301,10 +282,18 @@ export function newServer(opts) {
           size /= 1024;
         }
 
-        data.formatted_filesize = `${size.toFixed(2)} ${suffix}`;
+        formatted_filesize = `${size.toFixed(2)} ${suffix}`;
       }
 
-      datas[id] = data;
+      datas[id] = {
+        xyz_link: getTileUrls(req, tiles, `data/${id}`, undefined, format)[0],
+        viewer_hash,
+        thumbnail,
+        sourceType: data.sourceType,
+        is_vector: format === "pbf",
+        formatted_filesize,
+        name: name,
+      };
     }
 
     return {
@@ -314,40 +303,36 @@ export function newServer(opts) {
   });
 
   serveTemplate("/styles/:id/$", "viewer", (req) => {
-    const { id } = req.params;
-    const style = repo.styles[id]?.styleJSON;
+    const id = decodeURI(req.params.id);
+    const style = repo.rendered[id];
 
     if (!style) {
       return null;
     }
 
     return {
-      ...style,
       id,
-      name: (repo.styles[id] || repo.rendered[id]).name,
-      serving_data: repo.styles[id],
-      serving_rendered: repo.rendered[id],
+      name: style.tileJSON.name,
     };
   });
 
   serveTemplate("/styles/:id/wmts.xml", "wmts", (req) => {
-    const { id } = req.params;
-    const wmts = repo.styles[id];
+    const id = decodeURI(req.params.id);
+    const wmts = repo.rendered[id];
 
     if (!wmts) {
       return null;
     }
 
     return {
-      ...wmts,
       id,
-      name: (repo.styles[id] || repo.rendered[id]).name,
+      name: repo.rendered[id].name,
       baseUrl: `${req.get("X-Forwarded-Protocol") ? req.get("X-Forwarded-Protocol") : req.protocol}://${req.get("host")}/`,
     };
   });
 
   serveTemplate("/data/:id/$", "data", (req) => {
-    const { id } = req.params;
+    const id = decodeURI(req.params.id);
     const data = repo.data[id];
 
     if (!data) {
@@ -355,8 +340,8 @@ export function newServer(opts) {
     }
 
     return {
-      ...data,
       id,
+      name: data.tileJSON.name,
       is_vector: data.tileJSON.format === "pbf",
     };
   });
@@ -379,7 +364,7 @@ export function newServer(opts) {
 
       startupComplete = true;
 
-      function removeCircularReferences(obj, seen = new Set()) {
+      /* function removeCircularReferences(obj, seen = new Set()) {
         if (typeof obj === "object" && obj !== null) {
           if (seen.has(obj)) {
             return undefined;
@@ -403,7 +388,7 @@ export function newServer(opts) {
         if (err) {
           throw err;
         }
-      });
+      }); */
     })
     .catch((err) => {
       printLog("error", `Failed to starting server: ${err}`);
