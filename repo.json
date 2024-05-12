@@ -9459,14 +9459,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525971018],
-                [null, 1715525971018],
-                [null, 1715525971019],
-                [null, 1715525971020],
-                [null, 1715525971021],
-                [null, 1715525971022],
-                [null, 1715525971023],
-                [null, 1715525971024]
+                [null, 1715533589225],
+                [null, 1715533589227],
+                [null, 1715533589228],
+                [null, 1715533589229],
+                [null, 1715533589230],
+                [null, 1715533589230],
+                [null, 1715533589232],
+                [null, 1715533589232]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -9536,128 +9536,128 @@
                                                                           "_idleTimeout": 1000,
                                                                           "_idlePrev": {
                                                                             "_idleTimeout": 1000,
-                                                                            "_idleStart": 808,
+                                                                            "_idleStart": 689,
                                                                             "_repeat": 1000,
                                                                             "_destroyed": false
                                                                           },
-                                                                          "_idleStart": 802,
+                                                                          "_idleStart": 684,
                                                                           "_repeat": 1000,
                                                                           "_destroyed": false
                                                                         },
-                                                                        "_idleStart": 788,
+                                                                        "_idleStart": 675,
                                                                         "_repeat": 1000,
                                                                         "_destroyed": false
                                                                       },
-                                                                      "_idleStart": 778,
+                                                                      "_idleStart": 664,
                                                                       "_repeat": 1000,
                                                                       "_destroyed": false
                                                                     },
-                                                                    "_idleStart": 753,
+                                                                    "_idleStart": 643,
                                                                     "_repeat": 1000,
                                                                     "_destroyed": false
                                                                   },
-                                                                  "_idleStart": 719,
+                                                                  "_idleStart": 612,
                                                                   "_repeat": 1000,
                                                                   "_destroyed": false
                                                                 },
-                                                                "_idleStart": 648,
+                                                                "_idleStart": 511,
                                                                 "_repeat": 1000,
                                                                 "_destroyed": false
                                                               },
-                                                              "_idleStart": 643,
+                                                              "_idleStart": 506,
                                                               "_repeat": 1000,
                                                               "_destroyed": false
                                                             },
-                                                            "_idleStart": 632,
+                                                            "_idleStart": 495,
                                                             "_repeat": 1000,
                                                             "_destroyed": false
                                                           },
-                                                          "_idleStart": 611,
+                                                          "_idleStart": 482,
                                                           "_repeat": 1000,
                                                           "_destroyed": false
                                                         },
-                                                        "_idleStart": 581,
+                                                        "_idleStart": 460,
                                                         "_repeat": 1000,
                                                         "_destroyed": false
                                                       },
-                                                      "_idleStart": 538,
+                                                      "_idleStart": 404,
                                                       "_repeat": 1000,
                                                       "_destroyed": false
                                                     },
-                                                    "expiry": 1538,
+                                                    "expiry": 1404,
                                                     "id": -9007199254740991,
                                                     "msecs": 1000,
                                                     "priorityQueuePosition": 1
                                                   },
-                                                  "_idleStart": 1035,
+                                                  "_idleStart": 954,
                                                   "_repeat": 1000,
                                                   "_destroyed": false
                                                 },
-                                                "_idleStart": 1035,
+                                                "_idleStart": 954,
                                                 "_repeat": 1000,
                                                 "_destroyed": false
                                               },
-                                              "_idleStart": 1035,
+                                              "_idleStart": 953,
                                               "_repeat": 1000,
                                               "_destroyed": false
                                             },
-                                            "_idleStart": 1035,
+                                            "_idleStart": 953,
                                             "_repeat": 1000,
                                             "_destroyed": false
                                           },
-                                          "_idleStart": 1034,
+                                          "_idleStart": 942,
                                           "_repeat": 1000,
                                           "_destroyed": false
                                         },
-                                        "_idleStart": 1033,
+                                        "_idleStart": 941,
                                         "_repeat": 1000,
                                         "_destroyed": false
                                       },
-                                      "_idleStart": 939,
+                                      "_idleStart": 796,
                                       "_repeat": 1000,
                                       "_destroyed": false
                                     },
-                                    "_idleStart": 933,
+                                    "_idleStart": 791,
                                     "_repeat": 1000,
                                     "_destroyed": false
                                   },
-                                  "_idleStart": 921,
+                                  "_idleStart": 781,
                                   "_repeat": 1000,
                                   "_destroyed": false
                                 },
-                                "_idleStart": 906,
+                                "_idleStart": 771,
                                 "_repeat": 1000,
                                 "_destroyed": false
                               },
-                              "_idleStart": 881,
+                              "_idleStart": 747,
                               "_repeat": 1000,
                               "_destroyed": false
                             },
-                            "_idleStart": 847,
+                            "_idleStart": 727,
                             "_repeat": 1000,
                             "_destroyed": false
                           },
-                          "_idleStart": 845,
+                          "_idleStart": 725,
                           "_repeat": 1000,
                           "_destroyed": false
                         },
-                        "_idleStart": 842,
+                        "_idleStart": 724,
                         "_repeat": 1000,
                         "_destroyed": false
                       },
-                      "_idleStart": 839,
+                      "_idleStart": 718,
                       "_repeat": 1000,
                       "_destroyed": false
                     },
-                    "_idleStart": 835,
+                    "_idleStart": 714,
                     "_repeat": 1000,
                     "_destroyed": false
                   },
-                  "_idleStart": 826,
+                  "_idleStart": 707,
                   "_repeat": 1000,
                   "_destroyed": false
                 },
-                "_idleStart": 819,
+                "_idleStart": 694,
                 "_repeat": 1000,
                 "_destroyed": false
               },
@@ -9672,10 +9672,10 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525971033],
-                [null, 1715525971034],
-                [null, 1715525971035],
-                [null, 1715525971036]
+                [null, 1715533589241],
+                [null, 1715533589242],
+                [null, 1715533589243],
+                [null, 1715533589243]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -9695,8 +9695,8 @@
             "priv": {
               "allObjects": [{}, {}],
               "freeObjects": [
-                [null, 1715525971041],
-                [null, 1715525971042]
+                [null, 1715533589250],
+                [null, 1715533589251]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -9719,14 +9719,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525971025],
-                [null, 1715525971026],
-                [null, 1715525971027],
-                [null, 1715525971028],
-                [null, 1715525971028],
-                [null, 1715525971029],
-                [null, 1715525971031],
-                [null, 1715525971032]
+                [null, 1715533589233],
+                [null, 1715533589234],
+                [null, 1715533589235],
+                [null, 1715533589236],
+                [null, 1715533589237],
+                [null, 1715533589238],
+                [null, 1715533589239],
+                [null, 1715533589240]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -9746,10 +9746,10 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525971037],
-                [null, 1715525971038],
-                [null, 1715525971039],
-                [null, 1715525971040]
+                [null, 1715533589244],
+                [null, 1715533589246],
+                [null, 1715533589247],
+                [null, 1715533589249]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -9769,8 +9769,8 @@
             "priv": {
               "allObjects": [{}, {}],
               "freeObjects": [
-                [null, 1715525971043],
-                [null, 1715525971044]
+                [null, 1715533589252],
+                [null, 1715533589253]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -10591,7 +10591,7 @@
         "sourceTypes": { "vietnam": "mbtiles" }
       },
       "dataProjWGStoInternalWGS": null,
-      "lastModified": "Sun, 12 May 2024 14:59:00 GMT",
+      "lastModified": "Sun, 12 May 2024 17:05:58 GMT",
       "staticAttributionText": ""
     },
     "streets": {
@@ -10615,14 +10615,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525970921],
-                [null, 1715525970923],
-                [null, 1715525970926],
-                [null, 1715525970940],
-                [null, 1715525970943],
-                [null, 1715525970945],
-                [null, 1715525970948],
-                [null, 1715525970950]
+                [null, 1715533589141],
+                [null, 1715533589144],
+                [null, 1715533589146],
+                [null, 1715533589149],
+                [null, 1715533589160],
+                [null, 1715533589162],
+                [null, 1715533589166],
+                [null, 1715533589168]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -10642,10 +10642,10 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525970978],
-                [null, 1715525970981],
-                [null, 1715525970983],
-                [null, 1715525970985]
+                [null, 1715533589193],
+                [null, 1715533589196],
+                [null, 1715533589198],
+                [null, 1715533589200]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -10665,8 +10665,8 @@
             "priv": {
               "allObjects": [{}, {}],
               "freeObjects": [
-                [null, 1715525971003],
-                [null, 1715525971006]
+                [null, 1715533589213],
+                [null, 1715533589215]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -10689,14 +10689,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525970953],
-                [null, 1715525970956],
-                [null, 1715525970958],
-                [null, 1715525970965],
-                [null, 1715525970968],
-                [null, 1715525970971],
-                [null, 1715525970973],
-                [null, 1715525970976]
+                [null, 1715533589171],
+                [null, 1715533589174],
+                [null, 1715533589178],
+                [null, 1715533589180],
+                [null, 1715533589182],
+                [null, 1715533589185],
+                [null, 1715533589187],
+                [null, 1715533589189]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -10716,10 +10716,10 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525970988],
-                [null, 1715525970991],
-                [null, 1715525970994],
-                [null, 1715525971000]
+                [null, 1715533589203],
+                [null, 1715533589205],
+                [null, 1715533589207],
+                [null, 1715533589210]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -10739,8 +10739,8 @@
             "priv": {
               "allObjects": [{}, {}],
               "freeObjects": [
-                [null, 1715525971008],
-                [null, 1715525971011]
+                [null, 1715533589218],
+                [null, 1715533589220]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -11561,7 +11561,7 @@
         "sourceTypes": { "vietnam": "mbtiles" }
       },
       "dataProjWGStoInternalWGS": null,
-      "lastModified": "Sun, 12 May 2024 14:59:00 GMT",
+      "lastModified": "Sun, 12 May 2024 17:05:58 GMT",
       "staticAttributionText": ""
     },
     "zurich_switzerland": {
@@ -11585,14 +11585,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525970756],
-                [null, 1715525970758],
-                [null, 1715525970761],
-                [null, 1715525970765],
-                [null, 1715525970768],
-                [null, 1715525970773],
-                [null, 1715525970776],
-                [null, 1715525970779]
+                [null, 1715533588966],
+                [null, 1715533588969],
+                [null, 1715533588972],
+                [null, 1715533588975],
+                [null, 1715533588978],
+                [null, 1715533588980],
+                [null, 1715533588984],
+                [null, 1715533588986]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -11612,10 +11612,10 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525970816],
-                [null, 1715525970819],
-                [null, 1715525970821],
-                [null, 1715525970829]
+                [null, 1715533589011],
+                [null, 1715533589014],
+                [null, 1715533589019],
+                [null, 1715533589021]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -11635,8 +11635,8 @@
             "priv": {
               "allObjects": [{}, {}],
               "freeObjects": [
-                [null, 1715525970843],
-                [null, 1715525970846]
+                [null, 1715533589034],
+                [null, 1715533589037]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -11659,14 +11659,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525970782],
-                [null, 1715525970785],
-                [null, 1715525970788],
-                [null, 1715525970794],
-                [null, 1715525970800],
-                [null, 1715525970803],
-                [null, 1715525970806],
-                [null, 1715525970809]
+                [null, 1715533588989],
+                [null, 1715533588992],
+                [null, 1715533588994],
+                [null, 1715533588997],
+                [null, 1715533589000],
+                [null, 1715533589002],
+                [null, 1715533589005],
+                [null, 1715533589008]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -11686,10 +11686,10 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525970832],
-                [null, 1715525970835],
-                [null, 1715525970838],
-                [null, 1715525970841]
+                [null, 1715533589024],
+                [null, 1715533589026],
+                [null, 1715533589029],
+                [null, 1715533589031]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -11709,8 +11709,8 @@
             "priv": {
               "allObjects": [{}, {}],
               "freeObjects": [
-                [null, 1715525970849],
-                [null, 1715525970854]
+                [null, 1715533589039],
+                [null, 1715533589042]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -11729,7 +11729,7 @@
         "sourceTypes": {}
       },
       "dataProjWGStoInternalWGS": null,
-      "lastModified": "Sun, 12 May 2024 14:59:00 GMT",
+      "lastModified": "Sun, 12 May 2024 17:05:58 GMT",
       "staticAttributionText": ""
     },
     "magellan_strait": {
@@ -11753,14 +11753,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525971231],
-                [null, 1715525971231],
-                [null, 1715525971231],
-                [null, 1715525971232],
-                [null, 1715525971232],
-                [null, 1715525971232],
-                [null, 1715525971232],
-                [null, 1715525971232]
+                [null, 1715533589467],
+                [null, 1715533589467],
+                [null, 1715533589467],
+                [null, 1715533589467],
+                [null, 1715533589467],
+                [null, 1715533589468],
+                [null, 1715533589468],
+                [null, 1715533589468]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -11780,10 +11780,10 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525971232],
-                [null, 1715525971232],
-                [null, 1715525971232],
-                [null, 1715525971232]
+                [null, 1715533589479],
+                [null, 1715533589479],
+                [null, 1715533589479],
+                [null, 1715533589479]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -11803,8 +11803,8 @@
             "priv": {
               "allObjects": [{}, {}],
               "freeObjects": [
-                [null, 1715525971233],
-                [null, 1715525971233]
+                [null, 1715533589479],
+                [null, 1715533589479]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -11827,14 +11827,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525971232],
-                [null, 1715525971232],
-                [null, 1715525971232],
-                [null, 1715525971232],
-                [null, 1715525971232],
-                [null, 1715525971232],
-                [null, 1715525971232],
-                [null, 1715525971232]
+                [null, 1715533589468],
+                [null, 1715533589468],
+                [null, 1715533589468],
+                [null, 1715533589468],
+                [null, 1715533589478],
+                [null, 1715533589479],
+                [null, 1715533589479],
+                [null, 1715533589479]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -11854,10 +11854,10 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525971232],
-                [null, 1715525971233],
-                [null, 1715525971233],
-                [null, 1715525971233]
+                [null, 1715533589479],
+                [null, 1715533589479],
+                [null, 1715533589479],
+                [null, 1715533589479]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -11877,8 +11877,8 @@
             "priv": {
               "allObjects": [{}, {}],
               "freeObjects": [
-                [null, 1715525971233],
-                [null, 1715525971233]
+                [null, 1715533589479],
+                [null, 1715533589479]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -11942,7 +11942,7 @@
         "sourceTypes": { "magellan_strait": "mbtiles" }
       },
       "dataProjWGStoInternalWGS": null,
-      "lastModified": "Sun, 12 May 2024 14:59:00 GMT",
+      "lastModified": "Sun, 12 May 2024 17:05:58 GMT",
       "staticAttributionText": ""
     },
     "merge": {
@@ -11966,14 +11966,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525971054],
-                [null, 1715525971057],
-                [null, 1715525971061],
-                [null, 1715525971064],
-                [null, 1715525971067],
-                [null, 1715525971070],
-                [null, 1715525971075],
-                [null, 1715525971078]
+                [null, 1715533589255],
+                [null, 1715533589258],
+                [null, 1715533589260],
+                [null, 1715533589263],
+                [null, 1715533589266],
+                [null, 1715533589268],
+                [null, 1715533589271],
+                [null, 1715533589273]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -11993,10 +11993,10 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525971109],
-                [null, 1715525971112],
-                [null, 1715525971115],
-                [null, 1715525971119]
+                [null, 1715533589299],
+                [null, 1715533589302],
+                [null, 1715533589304],
+                [null, 1715533589307]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -12016,8 +12016,8 @@
             "priv": {
               "allObjects": [{}, {}],
               "freeObjects": [
-                [null, 1715525971134],
-                [null, 1715525971136]
+                [null, 1715533589320],
+                [null, 1715533589322]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -12040,14 +12040,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525971081],
-                [null, 1715525971084],
-                [null, 1715525971087],
-                [null, 1715525971090],
-                [null, 1715525971093],
-                [null, 1715525971096],
-                [null, 1715525971101],
-                [null, 1715525971104]
+                [null, 1715533589276],
+                [null, 1715533589279],
+                [null, 1715533589281],
+                [null, 1715533589284],
+                [null, 1715533589286],
+                [null, 1715533589289],
+                [null, 1715533589293],
+                [null, 1715533589296]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -12067,10 +12067,10 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715525971122],
-                [null, 1715525971125],
-                [null, 1715525971128],
-                [null, 1715525971131]
+                [null, 1715533589309],
+                [null, 1715533589312],
+                [null, 1715533589314],
+                [null, 1715533589317]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -12090,8 +12090,8 @@
             "priv": {
               "allObjects": [{}, {}],
               "freeObjects": [
-                [null, 1715525971139],
-                [null, 1715525971142]
+                [null, 1715533589325],
+                [null, 1715533589327]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -12912,7 +12912,7 @@
         "sourceTypes": { "vietnam_1": "mbtiles" }
       },
       "dataProjWGStoInternalWGS": null,
-      "lastModified": "Sun, 12 May 2024 14:59:00 GMT",
+      "lastModified": "Sun, 12 May 2024 17:05:58 GMT",
       "staticAttributionText": ""
     }
   },
@@ -15109,21 +15109,7 @@
       "sourceType": "mbtiles"
     },
     "magellan_strait": {
-      "tileJSON": {
-        "tilejson": "2.0.0",
-        "basename": "MagellanStrait.mbtiles",
-        "id": "MagellanStrait",
-        "filesize": 84647936,
-        "name": "MagellanStrait",
-        "format": "png",
-        "type": "baselayer",
-        "bounds": [-78.75, -61.60639637138628, -56.25, -48.92249926375824],
-        "date": "20240407-1829",
-        "scheme": "xyz",
-        "minzoom": 8,
-        "maxzoom": 16,
-        "center": [-67.5, -55.26444781757226, 12]
-      },
+      "tileJSON": { "tilejson": "2.0.0" },
       "source": {
         "_maxListeners": 0,
         "filename": "/home/huy/Downloads/source/tile-server/data/mbtiles/MagellanStrait/MagellanStrait.mbtiles",
@@ -15150,18 +15136,6 @@
           "birthtime": "2024-04-30T18:58:19.823Z"
         },
         "open": true,
-        "_info": {
-          "basename": "MagellanStrait.mbtiles",
-          "id": "MagellanStrait",
-          "filesize": 84647936,
-          "name": "MagellanStrait",
-          "format": "png",
-          "type": "baselayer",
-          "date": "20240407-1829",
-          "scheme": "xyz",
-          "minzoom": 8,
-          "maxzoom": 16
-        },
         "_eventsCount": 0
       },
       "sourceType": "mbtiles"
