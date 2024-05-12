@@ -104,7 +104,7 @@ export function newServer(opts) {
     serve_style.init(config, repo).then((sub) => {
       app.use("/styles", sub);
     }),
-    serve_rendered.init(config.options, repo).then((sub) => {
+    serve_rendered.init(config, repo).then((sub) => {
       app.use("/styles", sub);
     }),
     serve_font.add(config, repo),

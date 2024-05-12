@@ -113,7 +113,7 @@ export const serve_data = {
                   throw error;
                 }
               } else {
-                if (data === null) {
+                if (!data) {
                   throw Error("Data is not found");
                 } else {
                   if (tileJSONFormat === "pbf") {

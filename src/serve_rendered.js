@@ -316,12 +316,6 @@ const extractMarkersFromQuery = (query, options, transformer) => {
       }
 
       iconURI = path.resolve(options.paths.icons, iconURI);
-
-      // When we encounter a remote icon check if the configuration explicitly allows them.
-    } else if (isRemoteURL && options.allowRemoteMarkerIcons !== true) {
-      continue;
-    } else if (isDataURL && options.allowInlineMarkerImages !== true) {
-      continue;
     }
 
     // Ensure marker location could be parsed
@@ -368,7 +362,7 @@ const calcZForBBox = (bbox, w, h, query) => {
 };
 
 const respondImage = (
-  options,
+  config,
   item,
   z,
   lon,
@@ -396,7 +390,7 @@ const respondImage = (
 
   if (
     Math.min(width, height) <= 0 ||
-    Math.max(width, height) * scale > (options.maxSize || 2048) ||
+    Math.max(width, height) * scale > (config.options.maxSize || 2048) ||
     width !== width ||
     height !== height
   ) {
@@ -414,7 +408,7 @@ const respondImage = (
     return res.status(400).send("Invalid format");
   }
 
-  const tileMargin = Math.max(options.tileMargin || 0, 0);
+  const tileMargin = Math.max(config.options.tileMargin || 0, 0);
   let pool;
   if (mode === "tile" && tileMargin === 0) {
     pool = item.map.renderers[scale];
@@ -515,7 +509,7 @@ const respondImage = (
         image.composite(composites);
       }
 
-      const formatQuality = (options.formatQuality || {})[format];
+      const formatQuality = (config.options.formatQuality || {})[format];
 
       if (format === "png") {
         image.png({ adaptiveFiltering: false });
@@ -543,8 +537,11 @@ const respondImage = (
 let maxScaleFactor = 2;
 
 export const serve_rendered = {
-  init: async (options, repo) => {
-    maxScaleFactor = Math.min(Math.floor(options.maxScaleFactor || 3), 9);
+  init: async (config, repo) => {
+    maxScaleFactor = Math.min(
+      Math.floor(config.options.maxScaleFactor || 3),
+      9
+    );
     let scalePattern = "";
     for (let i = 2; i <= maxScaleFactor; i++) {
       scalePattern += i.toFixed();
@@ -596,7 +593,7 @@ export const serve_rendered = {
           );
 
           return respondImage(
-            options,
+            config,
             item,
             z,
             tileCenter[0],
@@ -619,79 +616,110 @@ export const serve_rendered = {
       }
     );
 
-    if (options.serveStaticMaps) {
-      const staticPattern = `/:id/static/:raw(raw)?/%s/:width(\\d+)x:height(\\d+):scale(${scalePattern})?.:format((pbf|jpg|png|webp|geojson){1})`;
+    const staticPattern = `/:id/static/:raw(raw)?/%s/:width(\\d+)x:height(\\d+):scale(${scalePattern})?.:format((pbf|jpg|png|webp|geojson){1})`;
+    const centerPattern = util.format(
+      ":x(%s),:y(%s),:z(%s)(@:bearing(%s)(,:pitch(%s))?)?",
+      FLOAT_PATTERN,
+      FLOAT_PATTERN,
+      FLOAT_PATTERN,
+      FLOAT_PATTERN,
+      FLOAT_PATTERN
+    );
+    const boundsPattern = util.format(
+      ":minx(%s),:miny(%s),:maxx(%s),:maxy(%s)",
+      FLOAT_PATTERN,
+      FLOAT_PATTERN,
+      FLOAT_PATTERN,
+      FLOAT_PATTERN
+    );
 
-      const centerPattern = util.format(
-        ":x(%s),:y(%s),:z(%s)(@:bearing(%s)(,:pitch(%s))?)?",
-        FLOAT_PATTERN,
-        FLOAT_PATTERN,
-        FLOAT_PATTERN,
-        FLOAT_PATTERN,
-        FLOAT_PATTERN
-      );
+    const serveBounds = async (req, res, next) => {
+      try {
+        const id = decodeURI(req.params.id);
+        const item = repo.rendered[id];
 
-      app.get(
-        util.format(staticPattern, centerPattern),
-        async (req, res, next) => {
-          try {
-            const id = decodeURI(req.params.id);
-            const item = repo.rendered[id];
-
-            if (!item) {
-              return res.sendStatus(404);
-            }
-
-            const raw = req.params.raw;
-            const z = +req.params.z;
-            let x = +req.params.x;
-            let y = +req.params.y;
-            const bearing = +(req.params.bearing || "0");
-            const pitch = +(req.params.pitch || "0");
-            const w = req.params.width | 0;
-            const h = req.params.height | 0;
-            const scale = getScale(req.params.scale);
-            const format = req.params.format;
-
-            if (z < 0) {
-              res.header("Content-Type", "text/plain");
-
-              return res.status(400).send("Invalid zoom");
-            }
-
-            const transformer = raw
-              ? mercator.inverse.bind(mercator)
-              : item.dataProjWGStoInternalWGS;
-
-            if (transformer) {
-              const ll = transformer([x, y]);
-              x = ll[0];
-              y = ll[1];
-            }
-
-            const paths = extractPathsFromQuery(req.query, transformer);
-            const markers = extractMarkersFromQuery(
-              req.query,
-              options,
-              transformer
-            );
-
-            // prettier-ignore
-            const overlay = await renderOverlay(
-              z, x, y, bearing, pitch, w, h, scale, paths, markers, req.query,
-            );
-
-            // prettier-ignore
-            return respondImage(
-              options, item, z, x, y, bearing, pitch, w, h, scale, format, res, overlay, 'static',
-            );
-          } catch (e) {
-            next(e);
-          }
+        if (!item) {
+          return res.sendStatus(404);
         }
-      );
+        const raw = req.params.raw;
+        const bbox = [
+          +req.params.minx,
+          +req.params.miny,
+          +req.params.maxx,
+          +req.params.maxy,
+        ];
+        let center = [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2];
 
-      const serveBounds = async (req, res, next) => {
+        const transformer = raw
+          ? mercator.inverse.bind(mercator)
+          : item.dataProjWGStoInternalWGS;
+
+        if (transformer) {
+          const minCorner = transformer(bbox.slice(0, 2));
+          const maxCorner = transformer(bbox.slice(2));
+          bbox[0] = minCorner[0];
+          bbox[1] = minCorner[1];
+          bbox[2] = maxCorner[0];
+          bbox[3] = maxCorner[1];
+          center = transformer(center);
+        }
+
+        const w = req.params.width | 0;
+        const h = req.params.height | 0;
+        const scale = getScale(req.params.scale);
+        const format = req.params.format;
+
+        const z = calcZForBBox(bbox, w, h, req.query);
+        const x = center[0];
+        const y = center[1];
+        const bearing = 0;
+        const pitch = 0;
+
+        const paths = extractPathsFromQuery(req.query, transformer);
+        const markers = extractMarkersFromQuery(
+          req.query,
+          config.options,
+          transformer
+        );
+
+        const overlay = await renderOverlay(
+          z,
+          x,
+          y,
+          bearing,
+          pitch,
+          w,
+          h,
+          scale,
+          paths,
+          markers,
+          req.query
+        );
+
+        return respondImage(
+          config,
+          item,
+          z,
+          x,
+          y,
+          bearing,
+          pitch,
+          w,
+          h,
+          scale,
+          format,
+          res,
+          overlay,
+          "static"
+        );
+      } catch (e) {
+        next(e);
+      }
+    };
+
+    app.get(
+      util.format(staticPattern, centerPattern),
+      async (req, res, next) => {
         try {
           const id = decodeURI(req.params.id);
           const item = repo.rendered[id];
@@ -699,180 +727,203 @@ export const serve_rendered = {
           if (!item) {
             return res.sendStatus(404);
           }
+
           const raw = req.params.raw;
-          const bbox = [
-            +req.params.minx,
-            +req.params.miny,
-            +req.params.maxx,
-            +req.params.maxy,
-          ];
-          let center = [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2];
+          const z = +req.params.z;
+          let x = +req.params.x;
+          let y = +req.params.y;
+          const bearing = +(req.params.bearing || "0");
+          const pitch = +(req.params.pitch || "0");
+          const w = req.params.width | 0;
+          const h = req.params.height | 0;
+          const scale = getScale(req.params.scale);
+          const format = req.params.format;
+
+          if (z < 0) {
+            res.header("Content-Type", "text/plain");
+
+            return res.status(400).send("Invalid zoom");
+          }
 
           const transformer = raw
             ? mercator.inverse.bind(mercator)
             : item.dataProjWGStoInternalWGS;
 
           if (transformer) {
-            const minCorner = transformer(bbox.slice(0, 2));
-            const maxCorner = transformer(bbox.slice(2));
-            bbox[0] = minCorner[0];
-            bbox[1] = minCorner[1];
-            bbox[2] = maxCorner[0];
-            bbox[3] = maxCorner[1];
-            center = transformer(center);
+            const ll = transformer([x, y]);
+            x = ll[0];
+            y = ll[1];
           }
-
-          const w = req.params.width | 0;
-          const h = req.params.height | 0;
-          const scale = getScale(req.params.scale);
-          const format = req.params.format;
-
-          const z = calcZForBBox(bbox, w, h, req.query);
-          const x = center[0];
-          const y = center[1];
-          const bearing = 0;
-          const pitch = 0;
 
           const paths = extractPathsFromQuery(req.query, transformer);
           const markers = extractMarkersFromQuery(
             req.query,
-            options,
+            config.options,
             transformer
           );
 
-          // prettier-ignore
           const overlay = await renderOverlay(
-            z, x, y, bearing, pitch, w, h, scale, paths, markers, req.query,
+            z,
+            x,
+            y,
+            bearing,
+            pitch,
+            w,
+            h,
+            scale,
+            paths,
+            markers,
+            req.query
           );
 
-          // prettier-ignore
           return respondImage(
-            options, item, z, x, y, bearing, pitch, w, h, scale, format, res, overlay, 'static',
+            config,
+            item,
+            z,
+            x,
+            y,
+            bearing,
+            pitch,
+            w,
+            h,
+            scale,
+            format,
+            res,
+            overlay,
+            "static"
           );
         } catch (e) {
           next(e);
         }
-      };
+      }
+    );
 
-      const boundsPattern = util.format(
-        ":minx(%s),:miny(%s),:maxx(%s),:maxy(%s)",
-        FLOAT_PATTERN,
-        FLOAT_PATTERN,
-        FLOAT_PATTERN,
-        FLOAT_PATTERN
-      );
+    app.get(util.format(staticPattern, boundsPattern), serveBounds);
 
-      app.get(util.format(staticPattern, boundsPattern), serveBounds);
+    app.get("/:id/static/", (req, res, next) => {
+      for (const key in req.query) {
+        req.query[key.toLowerCase()] = req.query[key];
+      }
+      req.params.raw = true;
+      req.params.format = (req.query.format || "image/png").split("/").pop();
+      const bbox = (req.query.bbox || "").split(",");
+      req.params.minx = bbox[0];
+      req.params.miny = bbox[1];
+      req.params.maxx = bbox[2];
+      req.params.maxy = bbox[3];
+      req.params.width = req.query.width || "256";
+      req.params.height = req.query.height || "256";
+      if (req.query.scale) {
+        req.params.width /= req.query.scale;
+        req.params.height /= req.query.scale;
+        req.params.scale = `@${req.query.scale}`;
+      }
 
-      app.get("/:id/static/", (req, res, next) => {
-        for (const key in req.query) {
-          req.query[key.toLowerCase()] = req.query[key];
+      return serveBounds(req, res, next);
+    });
+
+    app.get(util.format(staticPattern, "auto"), async (req, res, next) => {
+      try {
+        const id = decodeURI(req.params.id);
+        const item = repo.rendered[id];
+
+        if (!item) {
+          return res.sendStatus(404);
         }
-        req.params.raw = true;
-        req.params.format = (req.query.format || "image/png").split("/").pop();
-        const bbox = (req.query.bbox || "").split(",");
-        req.params.minx = bbox[0];
-        req.params.miny = bbox[1];
-        req.params.maxx = bbox[2];
-        req.params.maxy = bbox[3];
-        req.params.width = req.query.width || "256";
-        req.params.height = req.query.height || "256";
-        if (req.query.scale) {
-          req.params.width /= req.query.scale;
-          req.params.height /= req.query.scale;
-          req.params.scale = `@${req.query.scale}`;
+
+        const raw = req.params.raw;
+        const w = req.params.width | 0;
+        const h = req.params.height | 0;
+        const bearing = 0;
+        const pitch = 0;
+        const scale = getScale(req.params.scale);
+        const format = req.params.format;
+
+        const transformer = raw
+          ? mercator.inverse.bind(mercator)
+          : item.dataProjWGStoInternalWGS;
+
+        const paths = extractPathsFromQuery(req.query, transformer);
+        const markers = extractMarkersFromQuery(
+          req.query,
+          config.options,
+          transformer
+        );
+
+        // Extract coordinates from markers
+        const markerCoordinates = [];
+        for (const marker of markers) {
+          markerCoordinates.push(marker.location);
         }
 
-        return serveBounds(req, res, next);
-      });
+        // Create array with coordinates from markers and path
+        const coords = [].concat(paths.flat()).concat(markerCoordinates);
 
-      const autoPattern = "auto";
+        // Check if we have at least one coordinate to calculate a bounding box
+        if (coords.length < 1) {
+          res.header("Content-Type", "text/plain");
 
-      app.get(
-        util.format(staticPattern, autoPattern),
-        async (req, res, next) => {
-          try {
-            const id = decodeURI(req.params.id);
-            const item = repo.rendered[id];
-
-            if (!item) {
-              return res.sendStatus(404);
-            }
-
-            const raw = req.params.raw;
-            const w = req.params.width | 0;
-            const h = req.params.height | 0;
-            const bearing = 0;
-            const pitch = 0;
-            const scale = getScale(req.params.scale);
-            const format = req.params.format;
-
-            const transformer = raw
-              ? mercator.inverse.bind(mercator)
-              : item.dataProjWGStoInternalWGS;
-
-            const paths = extractPathsFromQuery(req.query, transformer);
-            const markers = extractMarkersFromQuery(
-              req.query,
-              options,
-              transformer
-            );
-
-            // Extract coordinates from markers
-            const markerCoordinates = [];
-            for (const marker of markers) {
-              markerCoordinates.push(marker.location);
-            }
-
-            // Create array with coordinates from markers and path
-            const coords = [].concat(paths.flat()).concat(markerCoordinates);
-
-            // Check if we have at least one coordinate to calculate a bounding box
-            if (coords.length < 1) {
-              res.header("Content-Type", "text/plain");
-
-              return res.status(400).send("No coordinates provided");
-            }
-
-            const bbox = [Infinity, Infinity, -Infinity, -Infinity];
-            for (const pair of coords) {
-              bbox[0] = Math.min(bbox[0], pair[0]);
-              bbox[1] = Math.min(bbox[1], pair[1]);
-              bbox[2] = Math.max(bbox[2], pair[0]);
-              bbox[3] = Math.max(bbox[3], pair[1]);
-            }
-
-            const bbox_ = mercator.convert(bbox, "900913");
-            const center = mercator.inverse([
-              (bbox_[0] + bbox_[2]) / 2,
-              (bbox_[1] + bbox_[3]) / 2,
-            ]);
-
-            // Calculate zoom level
-            const maxZoom = parseFloat(req.query.maxzoom);
-            let z = calcZForBBox(bbox, w, h, req.query);
-            if (maxZoom > 0) {
-              z = Math.min(z, maxZoom);
-            }
-
-            const x = center[0];
-            const y = center[1];
-
-            // prettier-ignore
-            const overlay = await renderOverlay(
-              z, x, y, bearing, pitch, w, h, scale, paths, markers, req.query,
-            );
-
-            // prettier-ignore
-            return respondImage(
-              options, item, z, x, y, bearing, pitch, w, h, scale, format, res, overlay, 'static',
-            );
-          } catch (e) {
-            next(e);
-          }
+          return res.status(400).send("No coordinates provided");
         }
-      );
-    }
+
+        const bbox = [Infinity, Infinity, -Infinity, -Infinity];
+        for (const pair of coords) {
+          bbox[0] = Math.min(bbox[0], pair[0]);
+          bbox[1] = Math.min(bbox[1], pair[1]);
+          bbox[2] = Math.max(bbox[2], pair[0]);
+          bbox[3] = Math.max(bbox[3], pair[1]);
+        }
+
+        const bbox_ = mercator.convert(bbox, "900913");
+        const center = mercator.inverse([
+          (bbox_[0] + bbox_[2]) / 2,
+          (bbox_[1] + bbox_[3]) / 2,
+        ]);
+
+        // Calculate zoom level
+        const maxZoom = parseFloat(req.query.maxzoom);
+        let z = calcZForBBox(bbox, w, h, req.query);
+        if (maxZoom > 0) {
+          z = Math.min(z, maxZoom);
+        }
+
+        const x = center[0];
+        const y = center[1];
+
+        const overlay = await renderOverlay(
+          z,
+          x,
+          y,
+          bearing,
+          pitch,
+          w,
+          h,
+          scale,
+          paths,
+          markers,
+          req.query
+        );
+
+        return respondImage(
+          config,
+          item,
+          z,
+          x,
+          y,
+          bearing,
+          pitch,
+          w,
+          h,
+          scale,
+          format,
+          res,
+          overlay,
+          "static"
+        );
+      } catch (e) {
+        next(e);
+      }
+    });
 
     app.get("/(:tileSize(256|512)/)?:id.json", async (req, res, next) => {
       const id = decodeURI(req.params.id);
@@ -909,8 +960,163 @@ export const serve_rendered = {
   },
 
   add: async (config, repo) => {
+    const mbtilesPath = config.options.paths.mbtiles;
+    const pmtilesPath = config.options.paths.pmtiles;
     const stylePath = config.options.paths.styles;
     const styles = Object.keys(repo.styles);
+
+    const createPool = (map, style, styleJSON, ratio, mode, min, max) => {
+      const createRenderer = (ratio, createCallback) => {
+        const renderer = new mlgl.Map({
+          mode,
+          ratio,
+          request: async (req, callback) => {
+            const protocol = req.url.split(":")[0];
+            if (protocol === "sprites") {
+              const file = decodeURIComponent(req.url).substring(
+                protocol.length + 3
+              );
+              const filePath = path.join(config.options.paths[protocol], file);
+
+              fs.readFile(filePath, (err, data) => {
+                callback(err, { data: data });
+              });
+            } else if (protocol === "fonts") {
+              const parts = decodeURIComponent(req.url).split("/");
+              const fonts = parts[2];
+              const range = parts[3].split(".")[0];
+
+              try {
+                const concatenated = await getFontsPbf(
+                  config.options.paths[protocol],
+                  fonts,
+                  range
+                );
+
+                callback(null, { data: concatenated });
+              } catch (err) {
+                callback(err, { data: null });
+              }
+            } else if (protocol === "mbtiles" || protocol === "pmtiles") {
+              const parts = decodeURIComponent(req.url).split("/");
+              const sourceId = parts[2];
+              const source = map.sources[sourceId];
+              const sourceType = map.sourceTypes[sourceId];
+              const sourceInfo = styleJSON.sources[sourceId];
+
+              const z = parts[3] | 0;
+              const x = parts[4] | 0;
+              const y = parts[5].split(".")[0] | 0;
+              const format = parts[5].split(".")[1];
+
+              if (sourceType === "pmtiles") {
+                let tileinfo = await getPMtilesTile(source, z, x, y);
+                let data = tileinfo.data;
+                let headers = tileinfo.header;
+                if (data === undefined) {
+                  printLog("error", `PMTiles error, serving empty: ${err}`);
+
+                  createEmptyResponse(
+                    sourceInfo.format,
+                    sourceInfo.color,
+                    callback
+                  );
+
+                  return;
+                } else {
+                  const response = {};
+                  response.data = data;
+                  if (headers["Last-Modified"]) {
+                    response.modified = new Date(headers["Last-Modified"]);
+                  }
+
+                  callback(null, response);
+                }
+              } else if (sourceType === "mbtiles") {
+                source.getTile(z, x, y, (err, data, headers) => {
+                  if (err) {
+                    printLog("error", `MBTiles error, serving empty: ${err}`);
+
+                    createEmptyResponse(
+                      sourceInfo.format,
+                      sourceInfo.color,
+                      callback
+                    );
+
+                    return;
+                  }
+
+                  const response = {};
+                  if (headers["Last-Modified"]) {
+                    response.modified = new Date(headers["Last-Modified"]);
+                  }
+
+                  if (format === "pbf") {
+                    try {
+                      response.data = zlib.unzipSync(data);
+                    } catch (err) {
+                      printLog(
+                        "error",
+                        `Skipping incorrect header for tile mbtiles://${style}/${z}/${x}/${y}.pbf`
+                      );
+                    }
+                  } else {
+                    response.data = data;
+                  }
+
+                  callback(null, response);
+                });
+              }
+            } else if (protocol === "http" || protocol === "https") {
+              try {
+                const response = await axios.get(req.url, {
+                  responseType: "arraybuffer", // Get the response as raw buffer
+                  // Axios handles gzip by default, so no need for a gzip flag
+                });
+
+                const responseHeaders = response.headers;
+                const responseData = response.data;
+
+                const parsedResponse = {};
+                if (responseHeaders["last-modified"]) {
+                  parsedResponse.modified = new Date(
+                    responseHeaders["last-modified"]
+                  );
+                }
+                if (responseHeaders.expires) {
+                  parsedResponse.expires = new Date(responseHeaders.expires);
+                }
+                if (responseHeaders.etag) {
+                  parsedResponse.etag = responseHeaders.etag;
+                }
+
+                parsedResponse.data = responseData;
+                callback(null, parsedResponse);
+              } catch (error) {
+                const parts = url.parse(req.url);
+                const extension = path.extname(parts.pathname).toLowerCase();
+                const format = extensionToFormat[extension] || "";
+
+                createEmptyResponse(format, "", callback);
+              }
+            }
+          },
+        });
+
+        renderer.load(styleJSON);
+
+        createCallback(null, renderer);
+      };
+
+      return new advancedPool.Pool({
+        min,
+        max,
+        create: createRenderer.bind(null, ratio),
+        destroy: (renderer) => {
+          renderer.release();
+        },
+      });
+    };
 
     await Promise.all(
       styles.map(async (style) => {
@@ -920,176 +1126,6 @@ export const serve_rendered = {
             renderersStatic: [],
             sources: {},
             sourceTypes: {},
-          };
-
-          const createPool = (ratio, mode, min, max) => {
-            const createRenderer = (ratio, createCallback) => {
-              const renderer = new mlgl.Map({
-                mode,
-                ratio,
-                request: async (req, callback) => {
-                  const protocol = req.url.split(":")[0];
-                  if (protocol === "sprites") {
-                    const file = decodeURIComponent(req.url).substring(
-                      protocol.length + 3
-                    );
-                    const filePath = path.join(
-                      config.options.paths[protocol],
-                      file
-                    );
-
-                    fs.readFile(filePath, (err, data) => {
-                      callback(err, { data: data });
-                    });
-                  } else if (protocol === "fonts") {
-                    const parts = decodeURIComponent(req.url).split("/");
-                    const fonts = parts[2];
-                    const range = parts[3].split(".")[0];
-
-                    try {
-                      const concatenated = await getFontsPbf(
-                        config.options.paths[protocol],
-                        fonts,
-                        range
-                      );
-
-                      callback(null, { data: concatenated });
-                    } catch (err) {
-                      callback(err, { data: null });
-                    }
-                  } else if (protocol === "mbtiles" || protocol === "pmtiles") {
-                    const parts = decodeURIComponent(req.url).split("/");
-                    const sourceId = parts[2];
-                    const source = map.sources[sourceId];
-                    const sourceType = map.sourceTypes[sourceId];
-                    const sourceInfo = styleJSON.sources[sourceId];
-
-                    const z = parts[3] | 0;
-                    const x = parts[4] | 0;
-                    const y = parts[5].split(".")[0] | 0;
-                    const format = parts[5].split(".")[1];
-
-                    if (sourceType === "pmtiles") {
-                      let tileinfo = await getPMtilesTile(source, z, x, y);
-                      let data = tileinfo.data;
-                      let headers = tileinfo.header;
-                      if (data === undefined) {
-                        printLog(
-                          "error",
-                          `PMTiles error, serving empty: ${err}`
-                        );
-
-                        createEmptyResponse(
-                          sourceInfo.format,
-                          sourceInfo.color,
-                          callback
-                        );
-
-                        return;
-                      } else {
-                        const response = {};
-                        response.data = data;
-                        if (headers["Last-Modified"]) {
-                          response.modified = new Date(
-                            headers["Last-Modified"]
-                          );
-                        }
-
-                        callback(null, response);
-                      }
-                    } else if (sourceType === "mbtiles") {
-                      source.getTile(z, x, y, (err, data, headers) => {
-                        if (err) {
-                          printLog(
-                            "error",
-                            `MBTiles error, serving empty: ${err}`
-                          );
-
-                          createEmptyResponse(
-                            sourceInfo.format,
-                            sourceInfo.color,
-                            callback
-                          );
-
-                          return;
-                        }
-
-                        const response = {};
-                        if (headers["Last-Modified"]) {
-                          response.modified = new Date(
-                            headers["Last-Modified"]
-                          );
-                        }
-
-                        if (format === "pbf") {
-                          try {
-                            response.data = zlib.unzipSync(data);
-                          } catch (err) {
-                            printLog(
-                              "error",
-                              `Skipping incorrect header for tile mbtiles://${style}/${z}/${x}/${y}.pbf`
-                            );
-                          }
-                        } else {
-                          response.data = data;
-                        }
-
-                        callback(null, response);
-                      });
-                    }
-                  } else if (protocol === "http" || protocol === "https") {
-                    try {
-                      const response = await axios.get(req.url, {
-                        responseType: "arraybuffer", // Get the response as raw buffer
-                        // Axios handles gzip by default, so no need for a gzip flag
-                      });
-
-                      const responseHeaders = response.headers;
-                      const responseData = response.data;
-
-                      const parsedResponse = {};
-                      if (responseHeaders["last-modified"]) {
-                        parsedResponse.modified = new Date(
-                          responseHeaders["last-modified"]
-                        );
-                      }
-                      if (responseHeaders.expires) {
-                        parsedResponse.expires = new Date(
-                          responseHeaders.expires
-                        );
-                      }
-                      if (responseHeaders.etag) {
-                        parsedResponse.etag = responseHeaders.etag;
-                      }
-
-                      parsedResponse.data = responseData;
-                      callback(null, parsedResponse);
-                    } catch (error) {
-                      const parts = url.parse(req.url);
-                      const extension = path
-                        .extname(parts.pathname)
-                        .toLowerCase();
-                      const format = extensionToFormat[extension] || "";
-
-                      createEmptyResponse(format, "", callback);
-                    }
-                  }
-                },
-              });
-
-              renderer.load(styleJSON);
-
-              createCallback(null, renderer);
-            };
-
-            return new advancedPool.Pool({
-              min,
-              max,
-              create: createRenderer.bind(null, ratio),
-              destroy: (renderer) => {
-                renderer.release();
-              },
-            });
           };
 
           const styleJSONPath = path.join(
@@ -1176,16 +1212,10 @@ export const serve_rendered = {
                 if (dataId === id) {
                   if (config.data[id].mbtiles) {
                     sourceType = "mbtiles";
-                    inputFile = path.join(
-                      config.options.paths.mbtiles,
-                      config.data[id].mbtiles
-                    );
+                    inputFile = path.join(mbtilesPath, config.data[id].mbtiles);
                   } else if (config.data[id].pmtiles) {
                     sourceType = "mbtiles";
-                    inputFile = path.join(
-                      config.options.paths.pmtiles,
-                      config.data[id].pmtiles
-                    );
+                    inputFile = path.join(pmtilesPath, config.data[id].pmtiles);
                   }
                 }
               }
@@ -1240,10 +1270,8 @@ export const serve_rendered = {
               } else {
                 queue.push(
                   new Promise((resolve, reject) => {
-                    inputFile = path.resolve(
-                      config.options.paths.mbtiles,
-                      inputFile
-                    );
+                    inputFile = path.resolve(mbtilesPath, inputFile);
+
                     const inputFileStats = fs.statSync(inputFile);
                     if (!inputFileStats.isFile() || inputFileStats.size === 0) {
                       throw Error(`Invalid MBTiles file: ${inputFile}`);
@@ -1251,12 +1279,14 @@ export const serve_rendered = {
 
                     map.sources[name] = new MBTiles(
                       inputFile + "?mode=ro",
-                      (err) => {
-                        map.sources[name].getInfo((err, info) => {
-                          if (err) {
-                            printLog("error", err);
+                      (err, mbtiles) => {
+                        if (err) {
+                          reject(err);
+                        }
 
-                            return;
+                        mbtiles.getInfo((err, info) => {
+                          if (err) {
+                            reject(err);
                           }
 
                           map.sourceTypes[name] = "mbtiles";
@@ -1317,8 +1347,19 @@ export const serve_rendered = {
             const j = Math.min(maxPoolSizes.length - 1, s - 1);
             const minPoolSize = minPoolSizes[i];
             const maxPoolSize = Math.max(minPoolSize, maxPoolSizes[j]);
-            map.renderers[s] = createPool(s, "tile", minPoolSize, maxPoolSize);
+            map.renderers[s] = createPool(
+              map,
+              style,
+              styleJSON,
+              s,
+              "tile",
+              minPoolSize,
+              maxPoolSize
+            );
             map.renderersStatic[s] = createPool(
+              map,
+              style,
+              styleJSON,
               s,
               "static",
               minPoolSize,
