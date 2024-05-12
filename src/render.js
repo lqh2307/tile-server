@@ -95,15 +95,7 @@ const drawMarker = (ctx, marker, z) => {
  * @param {number} z Map zoom level.
  */
 const drawMarkers = async (ctx, markers, z) => {
-  const markerPromises = [];
-
-  for (const marker of markers) {
-    // Begin drawing marker
-    markerPromises.push(drawMarker(ctx, marker, z));
-  }
-
-  // Await marker drawings before continuing
-  await Promise.all(markerPromises);
+  await Promise.all(markers.map((marker) => drawMarker(ctx, marker, z)));
 };
 
 /**
@@ -148,6 +140,7 @@ const drawPath = (ctx, path, query, pathQuery, z) => {
         .find((x) => x.startsWith("fill:"))
         .replace("fill:", "");
     }
+
     ctx.fill();
   }
 
@@ -156,16 +149,19 @@ const drawPath = (ctx, path, query, pathQuery, z) => {
     splitPaths.filter((x) => x.startsWith("width")).length > 0;
   if (query.width !== undefined || pathHasWidth) {
     let lineWidth = 1;
+
     // Get line width from query
     if ("width" in query) {
       lineWidth = Number(query.width);
     }
+
     // Get line width from path in query
     if (pathHasWidth) {
       lineWidth = Number(
         splitPaths.find((x) => x.startsWith("width:")).replace("width:", "")
       );
     }
+
     // Get border width from query and fall back to 10% of line width
     const borderWidth =
       query.borderwidth !== undefined
@@ -190,6 +186,7 @@ const drawPath = (ctx, path, query, pathQuery, z) => {
       ctx.strokeStyle = query.border;
       ctx.stroke();
     }
+
     ctx.lineWidth = lineWidth;
   }
 

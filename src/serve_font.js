@@ -21,8 +21,8 @@ export const serve_font = {
         res.header("Last-Modified", lastModified);
 
         return res.status(200).send(concatenated);
-      } catch (err) {
-        printLog("error", `Failed to get font ${id}: ${err.message}`);
+      } catch (error) {
+        printLog("error", `Failed to get font ${id}: ${error}`);
 
         res.header("Content-Type", "text/plain");
 
@@ -70,7 +70,7 @@ export const serve_font = {
 
           repo.fonts[font] = true;
         } catch (error) {
-          printLog("error", `Failed to load fonts: ${error.message}`);
+          printLog("error", `Failed to load font "${font}": ${error}`);
         }
       })
     );

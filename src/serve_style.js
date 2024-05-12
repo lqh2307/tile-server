@@ -6,7 +6,6 @@ import express from "express";
 import clone from "clone";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { fixUrl, printLog, getUrl } from "./utils.js";
-import { serve_rendered } from "./serve_rendered.js";
 
 export const serve_style = {
   init: async (config, repo) => {
@@ -17,36 +16,42 @@ export const serve_style = {
       const id = decodeURI(req.params.id);
       const item = repo.styles[id];
 
-      if (!item) {
+      try {
+        if (!item) {
+          throw Error("Style is not found");
+        }
+
+        const styleJSON = clone(item.styleJSON || {});
+
+        if (styleJSON.sources) {
+          Object.keys(styleJSON.sources).forEach(
+            (source) =>
+              (styleJSON.sources[source].url = fixUrl(
+                req,
+                styleJSON.sources[source].url
+              ))
+          );
+        }
+
+        if (styleJSON.sprite) {
+          styleJSON.sprite = fixUrl(req, styleJSON.sprite);
+        }
+
+        if (styleJSON.glyphs) {
+          styleJSON.glyphs = fixUrl(req, styleJSON.glyphs);
+        }
+
+        res.header("Content-Type", "application/json");
+        res.header("Last-Modified", lastModified);
+
+        return res.status(200).send(styleJSON);
+      } catch (error) {
+        printLog("error", `Failed to get style ${id}: ${error}`);
+
         res.header("Content-Type", "text/plain");
 
         return res.status(404).send("Style is not found");
       }
-
-      const styleJSON = clone(item.styleJSON || {});
-
-      if (styleJSON.sources) {
-        Object.keys(styleJSON.sources).forEach(
-          (source) =>
-            (styleJSON.sources[source].url = fixUrl(
-              req,
-              styleJSON.sources[source].url
-            ))
-        );
-      }
-
-      if (styleJSON.sprite) {
-        styleJSON.sprite = fixUrl(req, styleJSON.sprite);
-      }
-
-      if (styleJSON.glyphs) {
-        styleJSON.glyphs = fixUrl(req, styleJSON.glyphs);
-      }
-
-      res.header("Content-Type", "application/json");
-      res.header("Last-Modified", lastModified);
-
-      return res.status(200).send(styleJSON);
     });
 
     app.get("/styles.json", async (req, res, next) => {
@@ -76,84 +81,78 @@ export const serve_style = {
     const styles = Object.keys(config.styles);
 
     await Promise.all(
-      styles.map(async (id) => {
-        const item = config.styles[id];
-        let styleJSON = {};
-
-        if (!item.style) {
-          printLog("error", `"style" property for style "${id}" is empty`);
-
-          return false;
-        }
-
+      styles.map(async (style) => {
         try {
-          const styleFilePath = path.resolve(stylePath, id, "style.json");
+          const item = config.styles[style];
+
+          if (!item.style) {
+            throw Error(`"style" property for style "${style}" is empty`);
+          }
+
+          const styleFilePath = path.resolve(stylePath, item.style);
 
           const file = fs.readFileSync(styleFilePath);
 
-          styleJSON = JSON.parse(file);
+          const styleJSON = JSON.parse(file);
+
+          /* Validate style */
+          const validationErrors = validateStyleMin(styleJSON);
+          if (validationErrors.length > 0) {
+            let errString = `Failed to load style "${style}": Style is invalid:`;
+
+            for (const err of validationErrors) {
+              errString += "\n\t" + `${err.message}`;
+            }
+
+            throw Error(errString);
+          }
+
+          for (const name of Object.keys(styleJSON.sources) || {}) {
+            const source = styleJSON.sources[name];
+
+            if (
+              source.url?.startsWith("pmtiles://") ||
+              source.url?.startsWith("mbtiles://")
+            ) {
+              let sourceID = "";
+              const sourceURL = source.url
+                .replace("pmtiles://", "")
+                .replace("mbtiles://", "");
+              if (sourceURL.startsWith("{") && sourceURL.endsWith("}")) {
+                sourceID = sourceURL.slice(1, -1);
+              }
+
+              if (!Object.keys(repo.data).includes(sourceID)) {
+                throw Error(`Source "${name}" is not found`);
+              }
+
+              source.url = `local://data/${sourceID}.json`;
+            }
+          }
+
+          if (styleJSON.sprite?.startsWith("sprites://")) {
+            styleJSON.sprite = styleJSON.sprite.replace(
+              "sprites://",
+              "local://sprites/"
+            );
+          }
+
+          if (styleJSON.glyphs?.startsWith("fonts://")) {
+            styleJSON.glyphs = styleJSON.glyphs.replace(
+              "fonts://",
+              "local://fonts/"
+            );
+          }
+
+          repo.styles[style] = {
+            styleJSON,
+          };
         } catch (error) {
-          printLog("error", `Failed to load style "${id}": ${error.message}`);
-
-          return false;
+          printLog("error", `Failed to load style "${style}": ${error}`);
         }
-
-        /* Validate style */
-        const validationErrors = validateStyleMin(styleJSON);
-        if (validationErrors.length > 0) {
-          let errString = `Failed to load style "${id}": Style is invalid:`;
-
-          for (const err of validationErrors) {
-            errString += "\n\t" + `${err.message}`;
-          }
-
-          printLog("error", errString);
-
-          return false;
-        }
-
-        for (const name of Object.keys(styleJSON.sources) || {}) {
-          let url = styleJSON.sources[name].url;
-
-          if (
-            url &&
-            (url.startsWith("pmtiles://") || url.startsWith("mbtiles://"))
-          ) {
-            let dataId = url
-              .replace("pmtiles://", "")
-              .replace("mbtiles://", "");
-            if (dataId.startsWith("{") && dataId.endsWith("}")) {
-              dataId = dataId.slice(1, -1);
-            }
-
-            if (!Object.keys(config.data).includes(dataId)) {
-              return false;
-            }
-
-            styleJSON.sources[name].url = `local://data/${dataId}.json`;
-          }
-        }
-
-        if (styleJSON.sprite && styleJSON.sprite.startsWith("sprites://")) {
-          styleJSON.sprite = styleJSON.sprite.replace(
-            "sprites://",
-            "local://sprites/"
-          );
-        }
-
-        if (styleJSON.glyphs && styleJSON.glyphs.startsWith("fonts://")) {
-          styleJSON.glyphs = styleJSON.glyphs.replace(
-            "fonts://",
-            "local://fonts/"
-          );
-        }
-
-        repo.styles[id] = {
-          styleJSON,
-        };
-
-        return await serve_rendered.add(config, repo, id);
       })
     );
+
+    return true;
   },
 };

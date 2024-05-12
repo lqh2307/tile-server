@@ -554,58 +554,73 @@ export const serve_rendered = {
     const app = express().disable("x-powered-by");
 
     app.get(
-      `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(${scalePattern})?.:format([\\w]+)`,
+      `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(${scalePattern})?.:format((pbf|jpg|png|webp|geojson){1})`,
       async (req, res, next) => {
-        const item = repo.rendered[req.params.id];
-        if (!item) {
-          return res.sendStatus(404);
-        }
+        const id = decodeURI(req.params.id);
+        const item = repo.rendered[id];
 
-        const modifiedSince = req.get("if-modified-since");
-        const cc = req.get("cache-control");
-        if (modifiedSince && (!cc || cc.indexOf("no-cache") === -1)) {
-          if (new Date(item.lastModified) <= new Date(modifiedSince)) {
-            return res.sendStatus(304);
+        try {
+          if (!item) {
+            throw Error("Rendered data is not found");
           }
-        }
 
-        const z = req.params.z | 0;
-        const x = req.params.x | 0;
-        const y = req.params.y | 0;
-        const scale = getScale(req.params.scale);
-        const format = req.params.format;
-        const tileSize = parseInt(req.params.tileSize, 10) || 256;
+          const modifiedSince = req.get("if-modified-since");
+          const cc = req.get("cache-control");
+          if (modifiedSince && (!cc || cc.indexOf("no-cache") === -1)) {
+            if (new Date(item.lastModified) <= new Date(modifiedSince)) {
+              return res.sendStatus(304);
+            }
+          }
 
-        if (
-          z < 0 ||
-          x < 0 ||
-          y < 0 ||
-          z > 22 ||
-          x >= Math.pow(2, z) ||
-          y >= Math.pow(2, z)
-        ) {
+          const z = req.params.z | 0;
+          const x = req.params.x | 0;
+          const y = req.params.y | 0;
+          const scale = getScale(req.params.scale);
+          const format = req.params.format;
+          const tileSize = parseInt(req.params.tileSize, 10) || 256;
+
+          if (
+            !(0 <= z && z <= 22) ||
+            !(0 <= x && x < Math.pow(2, z)) ||
+            !(0 <= y && y < Math.pow(2, z))
+          ) {
+            throw Error("Rendered data is out of bounds");
+          }
+
+          const tileCenter = mercator.ll(
+            [
+              ((x + 0.5) / (1 << z)) * (256 << z),
+              ((y + 0.5) / (1 << z)) * (256 << z),
+            ],
+            z
+          );
+
+          return respondImage(
+            options,
+            item,
+            z,
+            tileCenter[0],
+            tileCenter[1],
+            0,
+            0,
+            tileSize,
+            tileSize,
+            scale,
+            format,
+            res
+          );
+        } catch (error) {
+          printLog("error", `Failed to get rendered data ${id}: ${error}`);
+
           res.header("Content-Type", "text/plain");
 
-          return res.status(404).send("Out of bounds");
+          return res.status(404).send("Rendered data is not found");
         }
-
-        const tileCenter = mercator.ll(
-          [
-            ((x + 0.5) / (1 << z)) * (256 << z),
-            ((y + 0.5) / (1 << z)) * (256 << z),
-          ],
-          z
-        );
-
-        // prettier-ignore
-        return respondImage(
-          options, item, z, tileCenter[0], tileCenter[1], 0, 0, tileSize, tileSize, scale, format, res,
-        );
       }
     );
 
-    if (options.serveStaticMaps !== false) {
-      const staticPattern = `/:id/static/:raw(raw)?/%s/:width(\\d+)x:height(\\d+):scale(${scalePattern})?.:format([\\w]+)`;
+    if (options.serveStaticMaps) {
+      const staticPattern = `/:id/static/:raw(raw)?/%s/:width(\\d+)x:height(\\d+):scale(${scalePattern})?.:format((pbf|jpg|png|webp|geojson){1})`;
 
       const centerPattern = util.format(
         ":x(%s),:y(%s),:z(%s)(@:bearing(%s)(,:pitch(%s))?)?",
@@ -620,10 +635,13 @@ export const serve_rendered = {
         util.format(staticPattern, centerPattern),
         async (req, res, next) => {
           try {
-            const item = repo.rendered[req.params.id];
+            const id = decodeURI(req.params.id);
+            const item = repo.rendered[id];
+
             if (!item) {
               return res.sendStatus(404);
             }
+
             const raw = req.params.raw;
             const z = +req.params.z;
             let x = +req.params.x;
@@ -638,7 +656,7 @@ export const serve_rendered = {
             if (z < 0) {
               res.header("Content-Type", "text/plain");
 
-              return res.status(404).send("Invalid zoom");
+              return res.status(400).send("Invalid zoom");
             }
 
             const transformer = raw
@@ -675,7 +693,9 @@ export const serve_rendered = {
 
       const serveBounds = async (req, res, next) => {
         try {
-          const item = repo.rendered[req.params.id];
+          const id = decodeURI(req.params.id);
+          const item = repo.rendered[id];
+
           if (!item) {
             return res.sendStatus(404);
           }
@@ -772,10 +792,13 @@ export const serve_rendered = {
         util.format(staticPattern, autoPattern),
         async (req, res, next) => {
           try {
-            const item = repo.rendered[req.params.id];
+            const id = decodeURI(req.params.id);
+            const item = repo.rendered[id];
+
             if (!item) {
               return res.sendStatus(404);
             }
+
             const raw = req.params.raw;
             const w = req.params.width | 0;
             const h = req.params.height | 0;
@@ -852,414 +875,464 @@ export const serve_rendered = {
     }
 
     app.get("/(:tileSize(256|512)/)?:id.json", async (req, res, next) => {
-      const item = repo.rendered[req.params.id];
-      if (!item) {
+      const id = decodeURI(req.params.id);
+      const item = repo.rendered[id];
+
+      try {
+        if (!item) {
+          throw Error("Rendered data is not found");
+        }
+
+        const info = clone(item.tileJSON || {});
+
+        info.tiles = getTileUrls(
+          req,
+          info.tiles,
+          `styles/${id}`,
+          parseInt(req.params.tileSize, 10) || undefined,
+          info.format
+        );
+
+        res.header("Content-type", "application/json");
+
+        return res.status(200).send(info);
+      } catch (error) {
+        printLog("error", `Failed to get rendered data ${id}: ${error}`);
+
         res.header("Content-Type", "text/plain");
 
-        return res.status(404).send("Data is not found");
+        return res.status(404).send("Rendered data is not found");
       }
-
-      const tileSize = parseInt(req.params.tileSize, 10) || undefined;
-      const info = clone(item.tileJSON || {});
-      info.tiles = getTileUrls(
-        req,
-        info.tiles,
-        `styles/${req.params.id}`,
-        tileSize,
-        info.format
-      );
-
-      res.header("Content-type", "application/json");
-
-      return res.status(200).send(info);
     });
 
     return app;
   },
 
-  add: async (config, repo, id) => {
-    const map = {
-      renderers: [],
-      renderersStatic: [],
-      sources: {},
-      sourceTypes: {},
-    };
+  add: async (config, repo) => {
+    const stylePath = config.options.paths.styles;
+    const styles = Object.keys(repo.styles);
 
-    let styleJSON;
-    const createPool = (ratio, mode, min, max) => {
-      const createRenderer = (ratio, createCallback) => {
-        const renderer = new mlgl.Map({
-          mode,
-          ratio,
-          request: async (req, callback) => {
-            const protocol = req.url.split(":")[0];
-            if (protocol === "sprites") {
-              const file = decodeURIComponent(req.url).substring(
-                protocol.length + 3
-              );
-              const filePath = path.join(config.options.paths[protocol], file);
+    await Promise.all(
+      styles.map(async (style) => {
+        try {
+          const map = {
+            renderers: [],
+            renderersStatic: [],
+            sources: {},
+            sourceTypes: {},
+          };
 
-              fs.readFile(filePath, (err, data) => {
-                callback(err, { data: data });
-              });
-            } else if (protocol === "fonts") {
-              const parts = decodeURIComponent(req.url).split("/");
-              const fonts = parts[2];
-              const range = parts[3].split(".")[0];
-
-              try {
-                const concatenated = await getFontsPbf(
-                  config.options.paths[protocol],
-                  fonts,
-                  range
-                );
-
-                callback(null, { data: concatenated });
-              } catch (err) {
-                callback(err, { data: null });
-              }
-            } else if (protocol === "mbtiles" || protocol === "pmtiles") {
-              const parts = decodeURIComponent(req.url).split("/");
-              const sourceId = parts[2];
-              const source = map.sources[sourceId];
-              const sourceType = map.sourceTypes[sourceId];
-              const sourceInfo = styleJSON.sources[sourceId];
-
-              const z = parts[3] | 0;
-              const x = parts[4] | 0;
-              const y = parts[5].split(".")[0] | 0;
-              const format = parts[5].split(".")[1];
-
-              if (sourceType === "pmtiles") {
-                let tileinfo = await getPMtilesTile(source, z, x, y);
-                let data = tileinfo.data;
-                let headers = tileinfo.header;
-                if (data === undefined) {
-                  printLog("error", `MBTiles error, serving empty: ${err}`);
-
-                  createEmptyResponse(
-                    sourceInfo.format,
-                    sourceInfo.color,
-                    callback
-                  );
-
-                  return;
-                } else {
-                  const response = {};
-                  response.data = data;
-                  if (headers["Last-Modified"]) {
-                    response.modified = new Date(headers["Last-Modified"]);
-                  }
-
-                  callback(null, response);
-                }
-              } else if (sourceType === "mbtiles") {
-                source.getTile(z, x, y, (err, data, headers) => {
-                  if (err) {
-                    printLog("error", `MBTiles error, serving empty: ${err}`);
-
-                    createEmptyResponse(
-                      sourceInfo.format,
-                      sourceInfo.color,
-                      callback
+          const createPool = (ratio, mode, min, max) => {
+            const createRenderer = (ratio, createCallback) => {
+              const renderer = new mlgl.Map({
+                mode,
+                ratio,
+                request: async (req, callback) => {
+                  const protocol = req.url.split(":")[0];
+                  if (protocol === "sprites") {
+                    const file = decodeURIComponent(req.url).substring(
+                      protocol.length + 3
+                    );
+                    const filePath = path.join(
+                      config.options.paths[protocol],
+                      file
                     );
 
-                    return;
-                  }
+                    fs.readFile(filePath, (err, data) => {
+                      callback(err, { data: data });
+                    });
+                  } else if (protocol === "fonts") {
+                    const parts = decodeURIComponent(req.url).split("/");
+                    const fonts = parts[2];
+                    const range = parts[3].split(".")[0];
 
-                  const response = {};
-                  if (headers["Last-Modified"]) {
-                    response.modified = new Date(headers["Last-Modified"]);
-                  }
-
-                  if (format === "pbf") {
                     try {
-                      response.data = zlib.unzipSync(data);
-                    } catch (err) {
-                      printLog(
-                        "error",
-                        `Skipping incorrect header for tile mbtiles://${id}/${z}/${x}/${y}.pbf`
+                      const concatenated = await getFontsPbf(
+                        config.options.paths[protocol],
+                        fonts,
+                        range
                       );
+
+                      callback(null, { data: concatenated });
+                    } catch (err) {
+                      callback(err, { data: null });
                     }
-                  } else {
-                    response.data = data;
-                  }
+                  } else if (protocol === "mbtiles" || protocol === "pmtiles") {
+                    const parts = decodeURIComponent(req.url).split("/");
+                    const sourceId = parts[2];
+                    const source = map.sources[sourceId];
+                    const sourceType = map.sourceTypes[sourceId];
+                    const sourceInfo = styleJSON.sources[sourceId];
 
-                  callback(null, response);
-                });
-              }
-            } else if (protocol === "http" || protocol === "https") {
-              try {
-                const response = await axios.get(req.url, {
-                  responseType: "arraybuffer", // Get the response as raw buffer
-                  // Axios handles gzip by default, so no need for a gzip flag
-                });
+                    const z = parts[3] | 0;
+                    const x = parts[4] | 0;
+                    const y = parts[5].split(".")[0] | 0;
+                    const format = parts[5].split(".")[1];
 
-                const responseHeaders = response.headers;
-                const responseData = response.data;
+                    if (sourceType === "pmtiles") {
+                      let tileinfo = await getPMtilesTile(source, z, x, y);
+                      let data = tileinfo.data;
+                      let headers = tileinfo.header;
+                      if (data === undefined) {
+                        printLog(
+                          "error",
+                          `PMTiles error, serving empty: ${err}`
+                        );
 
-                const parsedResponse = {};
-                if (responseHeaders["last-modified"]) {
-                  parsedResponse.modified = new Date(
-                    responseHeaders["last-modified"]
-                  );
-                }
-                if (responseHeaders.expires) {
-                  parsedResponse.expires = new Date(responseHeaders.expires);
-                }
-                if (responseHeaders.etag) {
-                  parsedResponse.etag = responseHeaders.etag;
-                }
+                        createEmptyResponse(
+                          sourceInfo.format,
+                          sourceInfo.color,
+                          callback
+                        );
 
-                parsedResponse.data = responseData;
-                callback(null, parsedResponse);
-              } catch (error) {
-                const parts = url.parse(req.url);
-                const extension = path.extname(parts.pathname).toLowerCase();
-                const format = extensionToFormat[extension] || "";
-                createEmptyResponse(format, "", callback);
-              }
-            }
-          },
-        });
-        renderer.load(styleJSON);
-        createCallback(null, renderer);
-      };
-      return new advancedPool.Pool({
-        min,
-        max,
-        create: createRenderer.bind(null, ratio),
-        destroy: (renderer) => {
-          renderer.release();
-        },
-      });
-    };
+                        return;
+                      } else {
+                        const response = {};
+                        response.data = data;
+                        if (headers["Last-Modified"]) {
+                          response.modified = new Date(
+                            headers["Last-Modified"]
+                          );
+                        }
 
-    const stylePath = config.options.paths.styles;
-    const styleJSONPath = path.join(stylePath, id, "style.json");
+                        callback(null, response);
+                      }
+                    } else if (sourceType === "mbtiles") {
+                      source.getTile(z, x, y, (err, data, headers) => {
+                        if (err) {
+                          printLog(
+                            "error",
+                            `MBTiles error, serving empty: ${err}`
+                          );
 
-    try {
-      styleJSON = JSON.parse(fs.readFileSync(styleJSONPath));
-    } catch (e) {
-      printLog("error", `Error parsing style file: ${e.message}`);
+                          createEmptyResponse(
+                            sourceInfo.format,
+                            sourceInfo.color,
+                            callback
+                          );
 
-      return false;
-    }
+                          return;
+                        }
 
-    for (const layer of styleJSON.layers || []) {
-      if (layer && layer.paint) {
-        // Remove (flatten) 3D buildings
-        if (layer.paint["fill-extrusion-height"]) {
-          layer.paint["fill-extrusion-height"] = 0;
-        }
-        if (layer.paint["fill-extrusion-base"]) {
-          layer.paint["fill-extrusion-base"] = 0;
-        }
-      }
-    }
+                        const response = {};
+                        if (headers["Last-Modified"]) {
+                          response.modified = new Date(
+                            headers["Last-Modified"]
+                          );
+                        }
 
-    const tileJSON = {
-      tilejson: "2.0.0",
-      name: styleJSON.name,
-      attribution: "",
-      minzoom: 0,
-      maxzoom: 20,
-      bounds: [-180, -85.0511, 180, 85.0511],
-      format: "png",
-      type: "baselayer",
-    };
-    const attributionOverride =
-      config.styles[id].tilejson && config.styles[id].tilejson.attribution;
-    if (styleJSON.center && styleJSON.zoom) {
-      tileJSON.center = styleJSON.center.concat(Math.round(styleJSON.zoom));
-    }
+                        if (format === "pbf") {
+                          try {
+                            response.data = zlib.unzipSync(data);
+                          } catch (err) {
+                            printLog(
+                              "error",
+                              `Skipping incorrect header for tile mbtiles://${style}/${z}/${x}/${y}.pbf`
+                            );
+                          }
+                        } else {
+                          response.data = data;
+                        }
 
-    Object.assign(tileJSON, config.styles[id].tilejson);
+                        callback(null, response);
+                      });
+                    }
+                  } else if (protocol === "http" || protocol === "https") {
+                    try {
+                      const response = await axios.get(req.url, {
+                        responseType: "arraybuffer", // Get the response as raw buffer
+                        // Axios handles gzip by default, so no need for a gzip flag
+                      });
 
-    tileJSON.tiles = config.options.domains;
+                      const responseHeaders = response.headers;
+                      const responseData = response.data;
 
-    fixTileJSONCenter(tileJSON);
-
-    const repoobj = {
-      tileJSON,
-      map,
-      dataProjWGStoInternalWGS: null,
-      lastModified: new Date().toUTCString(),
-      watermark: config.styles[id].watermark || config.options.watermark,
-      staticAttributionText:
-        config.styles[id].staticAttributionText ||
-        config.options.staticAttributionText,
-    };
-
-    repo.rendered[id] = repoobj;
-
-    const queue = [];
-    for (const name of Object.keys(styleJSON.sources)) {
-      let source = styleJSON.sources[name];
-      let url = source.url;
-      if (
-        url &&
-        (url.startsWith("pmtiles://") || url.startsWith("mbtiles://"))
-      ) {
-        // found pmtiles or mbtiles source, replace with info from local file
-        delete source.url;
-
-        let dataId = url.replace("pmtiles://", "").replace("mbtiles://", "");
-        if (dataId.startsWith("{") && dataId.endsWith("}")) {
-          dataId = dataId.slice(1, -1);
-        }
-
-        let sourceType;
-        let inputFile;
-        for (const id of Object.keys(config.data)) {
-          if (dataId === id) {
-            if (config.data[id].mbtiles) {
-              sourceType = "mbtiles";
-              inputFile = path.join(
-                config.options.paths.mbtiles,
-                config.data[id].mbtiles
-              );
-            } else if (config.data[id].pmtiles) {
-              sourceType = "mbtiles";
-              inputFile = path.join(
-                config.options.paths.pmtiles,
-                config.data[id].pmtiles
-              );
-            }
-          }
-        }
-
-        if (!inputFile) {
-          printLog("error", `Data "${inputFile}" is not found`);
-
-          process.exit(1);
-        }
-
-        if (!isValidHttpUrl(inputFile)) {
-          const inputFileStats = fs.statSync(inputFile);
-          if (!inputFileStats.isFile() || inputFileStats.size === 0) {
-            throw Error(`Not valid PMTiles file: "${inputFile}"`);
-          }
-        }
-
-        if (sourceType === "pmtiles") {
-          map.sources[name] = openPMtiles(inputFile);
-          map.sourceTypes[name] = "pmtiles";
-          const metadata = await getPMtilesInfo(map.sources[name]);
-
-          if (!repoobj.dataProjWGStoInternalWGS && metadata.proj4) {
-            // how to do this for multiple sources with different proj4 defs?
-            const to3857 = proj4("EPSG:3857");
-            const toDataProj = proj4(metadata.proj4);
-            repoobj.dataProjWGStoInternalWGS = (xy) =>
-              to3857.inverse(toDataProj.forward(xy));
-          }
-
-          const type = source.type;
-
-          Object.assign(source, metadata);
-
-          source.type = type;
-          source.tiles = [
-            // meta url which will be detected when requested
-            `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || "pbf"}`,
-          ];
-
-          delete source.scheme;
-
-          if (
-            !attributionOverride &&
-            source.attribution &&
-            source.attribution.length > 0
-          ) {
-            if (!tileJSON.attribution.includes(source.attribution)) {
-              if (tileJSON.attribution.length > 0) {
-                tileJSON.attribution += " | ";
-              }
-
-              tileJSON.attribution += source.attribution;
-            }
-          }
-        } else {
-          queue.push(
-            new Promise((resolve, reject) => {
-              inputFile = path.resolve(config.options.paths.mbtiles, inputFile);
-              const inputFileStats = fs.statSync(inputFile);
-              if (!inputFileStats.isFile() || inputFileStats.size === 0) {
-                throw Error(`Invalid MBTiles file: ${inputFile}`);
-              }
-
-              map.sources[name] = new MBTiles(inputFile + "?mode=ro", (err) => {
-                map.sources[name].getInfo((err, info) => {
-                  if (err) {
-                    printLog("error", err);
-
-                    return;
-                  }
-
-                  map.sourceTypes[name] = "mbtiles";
-
-                  if (!repoobj.dataProjWGStoInternalWGS && info.proj4) {
-                    // how to do this for multiple sources with different proj4 defs?
-                    const to3857 = proj4("EPSG:3857");
-                    const toDataProj = proj4(info.proj4);
-                    repoobj.dataProjWGStoInternalWGS = (xy) =>
-                      to3857.inverse(toDataProj.forward(xy));
-                  }
-
-                  const type = source.type;
-
-                  Object.assign(source, info);
-
-                  source.type = type;
-                  source.tiles = [
-                    // meta url which will be detected when requested
-                    `mbtiles://${name}/{z}/{x}/{y}.${info.format || "pbf"}`,
-                  ];
-
-                  delete source.scheme;
-
-                  if (
-                    !attributionOverride &&
-                    source.attribution &&
-                    source.attribution.length > 0
-                  ) {
-                    if (!tileJSON.attribution.includes(source.attribution)) {
-                      if (tileJSON.attribution.length > 0) {
-                        tileJSON.attribution += " | ";
+                      const parsedResponse = {};
+                      if (responseHeaders["last-modified"]) {
+                        parsedResponse.modified = new Date(
+                          responseHeaders["last-modified"]
+                        );
+                      }
+                      if (responseHeaders.expires) {
+                        parsedResponse.expires = new Date(
+                          responseHeaders.expires
+                        );
+                      }
+                      if (responseHeaders.etag) {
+                        parsedResponse.etag = responseHeaders.etag;
                       }
 
-                      tileJSON.attribution += source.attribution;
+                      parsedResponse.data = responseData;
+                      callback(null, parsedResponse);
+                    } catch (error) {
+                      const parts = url.parse(req.url);
+                      const extension = path
+                        .extname(parts.pathname)
+                        .toLowerCase();
+                      const format = extensionToFormat[extension] || "";
+
+                      createEmptyResponse(format, "", callback);
                     }
                   }
-
-                  resolve();
-                });
+                },
               });
-            })
+
+              renderer.load(styleJSON);
+
+              createCallback(null, renderer);
+            };
+
+            return new advancedPool.Pool({
+              min,
+              max,
+              create: createRenderer.bind(null, ratio),
+              destroy: (renderer) => {
+                renderer.release();
+              },
+            });
+          };
+
+          const styleJSONPath = path.join(
+            stylePath,
+            config.styles[style].style
+          );
+
+          const file = fs.readFileSync(styleJSONPath);
+
+          const styleJSON = JSON.parse(file);
+
+          for (const layer of styleJSON.layers || []) {
+            if (layer && layer.paint) {
+              // Remove (flatten) 3D buildings
+              if (layer.paint["fill-extrusion-height"]) {
+                layer.paint["fill-extrusion-height"] = 0;
+              }
+              if (layer.paint["fill-extrusion-base"]) {
+                layer.paint["fill-extrusion-base"] = 0;
+              }
+            }
+          }
+
+          const tileJSON = {
+            tilejson: "2.0.0",
+            name: styleJSON.name,
+            attribution: "",
+            minzoom: 0,
+            maxzoom: 20,
+            bounds: [-180, -85.0511, 180, 85.0511],
+            format: "png",
+            type: "baselayer",
+          };
+
+          const attributionOverride =
+            !!config.styles[style].tilejson?.attribution;
+          if (styleJSON.center && styleJSON.zoom) {
+            tileJSON.center = styleJSON.center.concat(
+              Math.round(styleJSON.zoom)
+            );
+          }
+
+          Object.assign(tileJSON, config.styles[style].tilejson);
+
+          tileJSON.tiles = config.options.domains;
+
+          fixTileJSONCenter(tileJSON);
+
+          const repoobj = {
+            tileJSON,
+            map,
+            dataProjWGStoInternalWGS: null,
+            lastModified: new Date().toUTCString(),
+            watermark:
+              config.styles[style].watermark || config.options.watermark,
+            staticAttributionText:
+              config.styles[style].staticAttributionText ||
+              config.options.staticAttributionText,
+          };
+
+          repo.rendered[style] = repoobj;
+
+          const queue = [];
+          for (const name of Object.keys(styleJSON.sources)) {
+            let source = styleJSON.sources[name];
+            let url = source.url;
+            if (
+              source.url?.startsWith("pmtiles://") ||
+              source.url?.startsWith("mbtiles://")
+            ) {
+              // found pmtiles or mbtiles source, replace with info from local file
+              delete source.url;
+
+              let dataId = url
+                .replace("pmtiles://", "")
+                .replace("mbtiles://", "");
+              if (dataId.startsWith("{") && dataId.endsWith("}")) {
+                dataId = dataId.slice(1, -1);
+              }
+
+              let sourceType;
+              let inputFile;
+              for (const id of Object.keys(config.data)) {
+                if (dataId === id) {
+                  if (config.data[id].mbtiles) {
+                    sourceType = "mbtiles";
+                    inputFile = path.join(
+                      config.options.paths.mbtiles,
+                      config.data[id].mbtiles
+                    );
+                  } else if (config.data[id].pmtiles) {
+                    sourceType = "mbtiles";
+                    inputFile = path.join(
+                      config.options.paths.pmtiles,
+                      config.data[id].pmtiles
+                    );
+                  }
+                }
+              }
+
+              if (!inputFile) {
+                throw Error(`Data "${inputFile}" is not found`);
+              }
+
+              if (!isValidHttpUrl(inputFile)) {
+                const inputFileStats = fs.statSync(inputFile);
+                if (!inputFileStats.isFile() || inputFileStats.size === 0) {
+                  throw Error(`Not valid PMTiles file: "${inputFile}"`);
+                }
+              }
+
+              if (sourceType === "pmtiles") {
+                map.sources[name] = openPMtiles(inputFile);
+                map.sourceTypes[name] = "pmtiles";
+                const metadata = await getPMtilesInfo(map.sources[name]);
+
+                if (!repoobj.dataProjWGStoInternalWGS && metadata.proj4) {
+                  // how to do this for multiple sources with different proj4 defs?
+                  const to3857 = proj4("EPSG:3857");
+                  const toDataProj = proj4(metadata.proj4);
+                  repoobj.dataProjWGStoInternalWGS = (xy) =>
+                    to3857.inverse(toDataProj.forward(xy));
+                }
+
+                const type = source.type;
+
+                Object.assign(source, metadata);
+
+                source.type = type;
+                source.tiles = [
+                  // meta url which will be detected when requested
+                  `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || "pbf"}`,
+                ];
+
+                if (
+                  !attributionOverride &&
+                  source.attribution &&
+                  source.attribution.length > 0
+                ) {
+                  if (!tileJSON.attribution.includes(source.attribution)) {
+                    if (tileJSON.attribution.length > 0) {
+                      tileJSON.attribution += " | ";
+                    }
+
+                    tileJSON.attribution += source.attribution;
+                  }
+                }
+              } else {
+                queue.push(
+                  new Promise((resolve, reject) => {
+                    inputFile = path.resolve(
+                      config.options.paths.mbtiles,
+                      inputFile
+                    );
+                    const inputFileStats = fs.statSync(inputFile);
+                    if (!inputFileStats.isFile() || inputFileStats.size === 0) {
+                      throw Error(`Invalid MBTiles file: ${inputFile}`);
+                    }
+
+                    map.sources[name] = new MBTiles(
+                      inputFile + "?mode=ro",
+                      (err) => {
+                        map.sources[name].getInfo((err, info) => {
+                          if (err) {
+                            printLog("error", err);
+
+                            return;
+                          }
+
+                          map.sourceTypes[name] = "mbtiles";
+
+                          if (!repoobj.dataProjWGStoInternalWGS && info.proj4) {
+                            // how to do this for multiple sources with different proj4 defs?
+                            const to3857 = proj4("EPSG:3857");
+                            const toDataProj = proj4(info.proj4);
+                            repoobj.dataProjWGStoInternalWGS = (xy) =>
+                              to3857.inverse(toDataProj.forward(xy));
+                          }
+
+                          const type = source.type;
+
+                          Object.assign(source, info);
+
+                          source.type = type;
+                          source.tiles = [
+                            // meta url which will be detected when requested
+                            `mbtiles://${name}/{z}/{x}/{y}.${info.format || "pbf"}`,
+                          ];
+
+                          if (
+                            !attributionOverride &&
+                            source.attribution &&
+                            source.attribution.length > 0
+                          ) {
+                            if (
+                              !tileJSON.attribution.includes(source.attribution)
+                            ) {
+                              if (tileJSON.attribution.length > 0) {
+                                tileJSON.attribution += " | ";
+                              }
+
+                              tileJSON.attribution += source.attribution;
+                            }
+                          }
+
+                          resolve();
+                        });
+                      }
+                    );
+                  })
+                );
+              }
+            }
+          }
+
+          await Promise.all(queue);
+
+          // standard and @2x tiles are much more usual -> default to larger pools
+          const minPoolSizes = config.options.minRendererPoolSizes || [8, 4, 2];
+          const maxPoolSizes = config.options.maxRendererPoolSizes || [
+            16, 8, 4,
+          ];
+          for (let s = 1; s <= maxScaleFactor; s++) {
+            const i = Math.min(minPoolSizes.length - 1, s - 1);
+            const j = Math.min(maxPoolSizes.length - 1, s - 1);
+            const minPoolSize = minPoolSizes[i];
+            const maxPoolSize = Math.max(minPoolSize, maxPoolSizes[j]);
+            map.renderers[s] = createPool(s, "tile", minPoolSize, maxPoolSize);
+            map.renderersStatic[s] = createPool(
+              s,
+              "static",
+              minPoolSize,
+              maxPoolSize
+            );
+          }
+        } catch (error) {
+          printLog(
+            "error",
+            `Failed to load rendered data "${style}": ${error}`
           );
         }
-      }
-    }
-
-    await Promise.all(queue);
-
-    // standard and @2x tiles are much more usual -> default to larger pools
-    const minPoolSizes = config.options.minRendererPoolSizes || [8, 4, 2];
-    const maxPoolSizes = config.options.maxRendererPoolSizes || [16, 8, 4];
-    for (let s = 1; s <= maxScaleFactor; s++) {
-      const i = Math.min(minPoolSizes.length - 1, s - 1);
-      const j = Math.min(maxPoolSizes.length - 1, s - 1);
-      const minPoolSize = minPoolSizes[i];
-      const maxPoolSize = Math.max(minPoolSize, maxPoolSizes[j]);
-      map.renderers[s] = createPool(s, "tile", minPoolSize, maxPoolSize);
-      map.renderersStatic[s] = createPool(
-        s,
-        "static",
-        minPoolSize,
-        maxPoolSize
-      );
-    }
+      })
+    );
   },
 
   remove: (repo, id) => {

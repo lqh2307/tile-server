@@ -132,9 +132,7 @@ const getFontPbf = (fontPath, name, range) => {
   const filePath = path.join(fontPath, name, `${range}.pbf`);
 
   try {
-    const data = fs.readFileSync(filePath);
-
-    return data;
+    return fs.readFileSync(filePath);
   } catch (error) {
     throw error;
   }
@@ -264,7 +262,7 @@ export const validatePBFFont = (pbfDirPath) => {
     const fileNames = findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf{1}$/);
 
     if (fileNames.length !== 256) {
-      throw Error(`Font "${font}" is invalid`);
+      throw Error(`Font is invalid`);
     }
   } catch (error) {
     throw error;
@@ -308,7 +306,7 @@ export const validateSprite = (spriteDirPath) => {
           !("y" in value)
         ) {
           throw Error(
-            `"${key}" is missing one of properties "height", "pixelRatio", "width", "x", "y"`
+            `One of properties "height", "pixelRatio", "width", "x", "y" for sprite "${key}" is empty`
           );
         }
       });

@@ -16,9 +16,10 @@ export const serve_sprite = {
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
         const { scale = "", format = "" } = req.params;
+        const item = repo.sprites[id];
 
         try {
-          if (!repo.sprites[id]) {
+          if (!item) {
             throw Error("Sprite is not found");
           }
 
@@ -35,8 +36,8 @@ export const serve_sprite = {
           res.header("Last-Modified", lastModified);
 
           return res.status(200).send(data);
-        } catch (err) {
-          printLog("error", `Failed to get sprite "${id}": ${err.message}`);
+        } catch (error) {
+          printLog("error", `Failed to get sprite "${id}": ${error}`);
 
           res.header("Content-Type", "text/plain");
 
@@ -80,10 +81,7 @@ export const serve_sprite = {
 
           repo.sprites[sprite] = true;
         } catch (error) {
-          printLog(
-            "error",
-            `Failed to load sprite "${sprite}": ${error.message}`
-          );
+          printLog("error", `Failed to load sprite "${sprite}": ${error}`);
         }
       })
     );

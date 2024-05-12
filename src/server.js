@@ -94,37 +94,29 @@ export function newServer(opts) {
   startupPromises.push(
     serve_font.init(config, repo).then((sub) => {
       app.use("/fonts", sub);
-    })
-  );
-
-  startupPromises.push(
+    }),
     serve_sprite.init(config, repo).then((sub) => {
       app.use("/sprites", sub);
-    })
-  );
-
-  startupPromises.push(
+    }),
     serve_data.init(config, repo).then((sub) => {
       app.use("/data", sub);
-    })
-  );
-
-  startupPromises.push(
+    }),
     serve_style.init(config, repo).then((sub) => {
       app.use("/styles", sub);
-    })
-  );
-
-  startupPromises.push(
+    }),
     serve_rendered.init(config.options, repo).then((sub) => {
       app.use("/styles", sub);
-    })
+    }),
+    serve_font.add(config, repo),
+    serve_sprite.add(config, repo),
+    serve_data
+      .add(config, repo)
+      .then(() =>
+        serve_style
+          .add(config, repo)
+          .then(() => serve_rendered.add(config, repo))
+      )
   );
-
-  startupPromises.push(serve_font.add(config, repo));
-  startupPromises.push(serve_sprite.add(config, repo));
-  startupPromises.push(serve_data.add(config, repo));
-  startupPromises.push(serve_style.add(config, repo));
 
   const addTileJSONs = (arr, req, type, tileSize) => {
     for (const id of Object.keys(repo[type])) {
@@ -227,7 +219,12 @@ export function newServer(opts) {
 
     Object.keys(repo.rendered).forEach((id) => {
       const style = repo.rendered[id];
-      const { center, tiles, format, name } = style.tileJSON;
+      const {
+        center = "",
+        tiles = "",
+        format = "",
+        name = "",
+      } = style.tileJSON;
 
       let viewer_hash = "";
       let thumbnail = "";
@@ -305,7 +302,7 @@ export function newServer(opts) {
   serveTemplate("/styles/:id/$", "viewer", (req) => {
     const id = decodeURI(req.params.id);
     const style = repo.rendered[id];
-    const { name } = style.tileJSON;
+    const { name = "" } = style.tileJSON;
 
     if (!style) {
       return null;
@@ -320,7 +317,7 @@ export function newServer(opts) {
   serveTemplate("/styles/:id/wmts.xml", "wmts", (req) => {
     const id = decodeURI(req.params.id);
     const wmts = repo.rendered[id];
-    const { name } = wmts.tileJSON;
+    const { name = "" } = wmts.tileJSON;
 
     if (!wmts) {
       return null;
@@ -336,7 +333,7 @@ export function newServer(opts) {
   serveTemplate("/data/:id/$", "data", (req) => {
     const id = decodeURI(req.params.id);
     const data = repo.data[id];
-    const { name, format } = data.tileJSON;
+    const { name = "", format = "" } = data.tileJSON;
 
     if (!data) {
       return null;

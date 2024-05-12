@@ -15,7 +15,9 @@ class PMTilesFileSource {
 
   async getBytes(offset, length) {
     const buffer = Buffer.alloc(length);
+
     await readFileBytes(this.fd, buffer, offset);
+
     const ab = buffer.buffer.slice(
       buffer.byteOffset,
       buffer.byteOffset + buffer.byteLength
