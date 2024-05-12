@@ -70,7 +70,10 @@ export const serve_font = {
 
           repo.fonts[font] = true;
         } catch (error) {
-          printLog("error", `Failed to load font "${font}": ${error}`);
+          printLog(
+            "error",
+            `Failed to load font "${font}": ${error}. Skipping...`
+          );
         }
       })
     );

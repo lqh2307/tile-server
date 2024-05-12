@@ -312,7 +312,10 @@ export const serve_data = {
 
           repo.data[data] = dataInfo;
         } catch (error) {
-          printLog("error", `Failed to load data "${data}": ${error}`);
+          printLog(
+            "error",
+            `Failed to load data "${data}": ${error}. Skipping...`
+          );
         }
       })
     );

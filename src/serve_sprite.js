@@ -37,7 +37,10 @@ export const serve_sprite = {
 
           return res.status(200).send(data);
         } catch (error) {
-          printLog("error", `Failed to get sprite "${id}": ${error}`);
+          printLog(
+            "error",
+            `Failed to get sprite "${id}": ${error}. Skipping...`
+          );
 
           res.header("Content-Type", "text/plain");
 

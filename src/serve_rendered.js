@@ -1328,7 +1328,7 @@ export const serve_rendered = {
         } catch (error) {
           printLog(
             "error",
-            `Failed to load rendered data "${style}": ${error}`
+            `Failed to load rendered data "${style}": ${error}. Skipping...`
           );
         }
       })

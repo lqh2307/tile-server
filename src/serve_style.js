@@ -148,7 +148,10 @@ export const serve_style = {
             styleJSON,
           };
         } catch (error) {
-          printLog("error", `Failed to load style "${style}": ${error}`);
+          printLog(
+            "error",
+            `Failed to load style "${style}": ${error}. Skipping...`
+          );
         }
       })
     );
