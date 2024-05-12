@@ -225,7 +225,7 @@ export function newServer(opts) {
   serveTemplate("/$", "index", (req) => {
     const styles = {};
 
-    for (const id of Object.keys(repo.styles)) {
+    Object.keys(repo.rendered).forEach((id) => {
       const style = repo.rendered[id];
       const { center, tiles, format, name } = style.tileJSON;
 
@@ -246,11 +246,11 @@ export function newServer(opts) {
         thumbnail,
         name,
       };
-    }
+    });
 
     const datas = {};
 
-    for (const id of Object.keys(repo.data)) {
+    Object.keys(repo.data).forEach((id) => {
       const data = repo.data[id];
       const { center, filesize, format, tiles, name } = data.tileJSON;
 
@@ -294,7 +294,7 @@ export function newServer(opts) {
         formatted_filesize,
         name: name,
       };
-    }
+    });
 
     return {
       styles: Object.keys(styles).length ? styles : null,
