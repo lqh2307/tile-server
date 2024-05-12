@@ -100,8 +100,8 @@ export const serve_style = {
           if (validationErrors.length > 0) {
             let errString = `Failed to load style "${style}": Style is invalid:`;
 
-            for (const err of validationErrors) {
-              errString += "\n\t" + `${err.message}`;
+            for (const error of validationErrors) {
+              errString += "\n\t" + `${error.message}`;
             }
 
             throw Error(errString);

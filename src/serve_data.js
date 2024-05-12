@@ -103,14 +103,14 @@ export const serve_data = {
               return res.status(200).send(data);
             }
           } else if (item.sourceType === "mbtiles") {
-            item.source.getTile(z, x, y, (err, data, headers) => {
+            item.source.getTile(z, x, y, (error, data, headers) => {
               let isGzipped;
 
-              if (err) {
-                if (/does not exist/.test(err.message)) {
+              if (error) {
+                if (/does not exist/.test(error.message)) {
                   return res.status(204).send();
                 } else {
-                  throw err;
+                  throw error;
                 }
               } else {
                 if (data === null) {

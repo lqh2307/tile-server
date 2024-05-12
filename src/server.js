@@ -55,8 +55,8 @@ function loadConfigFile(configFilePath) {
     });
 
     return config;
-  } catch (err) {
-    printLog("error", `Failed to load config file: ${err.message}`);
+  } catch (error) {
+    printLog("error", `Failed to load config file: ${error.message}`);
 
     process.exit(1);
   }
