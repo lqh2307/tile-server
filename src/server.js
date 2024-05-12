@@ -227,7 +227,7 @@ export function newServer(opts) {
 
     for (const id of Object.keys(repo.styles)) {
       const style = repo.rendered[id];
-      const { center, tiles, format } = style.tileJSON;
+      const { center, tiles, format, name } = style.tileJSON;
 
       let viewer_hash = "";
       let thumbnail = "";
@@ -244,7 +244,7 @@ export function newServer(opts) {
         xyz_link: getTileUrls(req, tiles, `styles/${id}`, 256, format)[0],
         viewer_hash,
         thumbnail,
-        name: style.tileJSON.name,
+        name,
       };
     }
 
@@ -305,6 +305,7 @@ export function newServer(opts) {
   serveTemplate("/styles/:id/$", "viewer", (req) => {
     const id = decodeURI(req.params.id);
     const style = repo.rendered[id];
+    const { name } = style.tileJSON;
 
     if (!style) {
       return null;
@@ -312,13 +313,14 @@ export function newServer(opts) {
 
     return {
       id,
-      name: style.tileJSON.name,
+      name,
     };
   });
 
   serveTemplate("/styles/:id/wmts.xml", "wmts", (req) => {
     const id = decodeURI(req.params.id);
     const wmts = repo.rendered[id];
+    const { name } = wmts.tileJSON;
 
     if (!wmts) {
       return null;
@@ -326,7 +328,7 @@ export function newServer(opts) {
 
     return {
       id,
-      name: repo.rendered[id].name,
+      name,
       baseUrl: `${req.get("X-Forwarded-Protocol") ? req.get("X-Forwarded-Protocol") : req.protocol}://${req.get("host")}/`,
     };
   });
@@ -334,6 +336,7 @@ export function newServer(opts) {
   serveTemplate("/data/:id/$", "data", (req) => {
     const id = decodeURI(req.params.id);
     const data = repo.data[id];
+    const { name, format } = data.tileJSON;
 
     if (!data) {
       return null;
@@ -341,8 +344,8 @@ export function newServer(opts) {
 
     return {
       id,
-      name: data.tileJSON.name,
-      is_vector: data.tileJSON.format === "pbf",
+      name,
+      is_vector: format === "pbf",
     };
   });
 
