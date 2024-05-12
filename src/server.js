@@ -184,7 +184,7 @@ export function newServer(opts) {
       new Promise((resolve, reject) => {
         fs.readFile(templatePath, (err, content) => {
           if (err) {
-            reject(err.message);
+            reject(err);
 
             return;
           }
