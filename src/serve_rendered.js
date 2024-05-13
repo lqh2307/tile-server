@@ -306,6 +306,7 @@ const extractMarkersFromQuery = (query, options, transformer) => {
     const isRemoteURL =
       iconURI.startsWith("http://") || iconURI.startsWith("https://");
     const isDataURL = iconURI.startsWith("data:");
+
     if (!(isRemoteURL || isDataURL)) {
       // Sanitize URI with sanitize-filename
       // https://www.npmjs.com/package/sanitize-filename#details
@@ -338,6 +339,7 @@ const extractMarkersFromQuery = (query, options, transformer) => {
     // Add marker to list
     markers.push(marker);
   }
+
   return markers;
 };
 

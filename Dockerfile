@@ -27,26 +27,18 @@ RUN \
     libpixman-1-dev \
     libpixman-1-0;
 
-RUN \
-  mkdir -p /etc/apt/keyrings; \
-  curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
-  echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list; \
-  apt-get -qq update; \
-  apt-get install -y nodejs;
+  RUN \
+    mkdir -p /etc/apt/keyrings; \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list; \
+    apt-get -qq update; \
+    apt-get install -y nodejs; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*;
 
 WORKDIR /tile-server
 
 COPY . .
-
-RUN \
-  mv ./data_template ./data; \
-  mkdir -p \
-    ./data/fonts \
-    ./data/icons \
-    ./data/mbtiles \
-    ./data/pmtiles \
-    ./data/sprites \
-    ./data/styles;
 
 RUN \
   npm config set fetch-retries 5; \
@@ -78,22 +70,24 @@ RUN \
     librsvg2-2 \
     libpango-1.0-0;
 
-RUN \
-  mkdir -p /etc/apt/keyrings; \
-  curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
-  echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list; \
-  apt-get -qq update; \
-  apt-get install -y nodejs; \
-  apt-get -y remove curl gnupg; \
-  apt-get -y --purge autoremove; \
-  apt-get clean; \
-  rm -rf /var/lib/apt/lists/*;
+  RUN \
+    mkdir -p /etc/apt/keyrings; \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list; \
+    apt-get -qq update; \
+    apt-get install -y nodejs; \
+    apt-get -y remove curl gnupg; \
+    apt-get -y --purge autoremove; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*;
 
 WORKDIR /tile-server
 
 COPY --from=builder /tile-server .
 
-RUN chmod -R +x .
+RUN \
+  mv ./data_template ./data; \
+  chmod -R +x .;
 
 VOLUME /tile-server/data
 

@@ -269,6 +269,18 @@ export const validatePBFFont = (pbfDirPath) => {
   }
 };
 
+export const validateSVGIcon = (svgFilePath) => {
+  const fileName = path.basename(svgFilePath);
+
+  try {
+    if (!/^\w+.svg{1}$/.test(fileName) || !fs.statSync(svgFilePath).isFile()) {
+      throw Error(`Icon is invalid`);
+    }
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const validateSprite = (spriteDirPath) => {
   try {
     const spritePattern = /^sprite(@\d+x)?\.(png|json){1}$/;
