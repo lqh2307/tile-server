@@ -34,6 +34,7 @@ import {
   isValidHttpUrl,
   fixTileJSONCenter,
   printLog,
+  getUrl,
 } from "./utils.js";
 import {
   openPMtiles,
@@ -549,6 +550,7 @@ export const serve_rendered = {
     scalePattern = `@[${scalePattern}]x`;
 
     const app = express().disable("x-powered-by");
+    const lastModified = new Date().toUTCString();
 
     app.get(
       `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(${scalePattern})?.:format((pbf|jpg|png|webp|geojson){1})`,
@@ -799,6 +801,25 @@ export const serve_rendered = {
     );
 
     app.get(util.format(staticPattern, boundsPattern), serveBounds);
+
+    app.get("/(:tileSize(256|512)/)?rendered.json", (req, res, next) => {
+      const tileSize = req.params.tileSize;
+
+      const result = Object.keys(repo.rendered).map((id) => {
+        const tileJSON = repo.rendered[id].tileJSON;
+
+        return {
+          id: id,
+          name: tileJSON.name,
+          url: `${getUrl(req)}styles/${id}/${tileSize}/{z}/{x}/{y}.${tileJSON.format}`,
+        };
+      });
+
+      res.header("Content-Type", "text/plain");
+      res.header("Last-Modified", lastModified);
+
+      return res.status(200).send(result);
+    });
 
     app.get("/:id/static/", (req, res, next) => {
       for (const key in req.query) {

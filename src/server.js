@@ -8,7 +8,6 @@ import express from "express";
 import handlebars from "handlebars";
 import SphericalMercator from "@mapbox/sphericalmercator";
 import morgan from "morgan";
-import clone from "clone";
 import chalk from "chalk";
 import { serve_data } from "./serve_data.js";
 import { serve_style } from "./serve_style.js";
@@ -117,46 +116,6 @@ export function newServer(opts) {
           .then(() => serve_rendered.add(config, repo))
       )
   );
-
-  const addTileJSONs = (arr, req, type, tileSize) => {
-    for (const id of Object.keys(repo[type])) {
-      const info = clone((repo[type][id] || {}).tileJSON || {});
-      let path = "";
-      if (type === "rendered") {
-        path = `styles/${id}`;
-      } else {
-        path = `${type}/${id}`;
-      }
-
-      info.tiles = getTileUrls(req, info.tiles, path, tileSize, info.format);
-
-      arr.push(info);
-    }
-
-    return arr;
-  };
-
-  app.get("/(:tileSize(256|512)/)?rendered.json", async (req, res, next) => {
-    const tileSize = parseInt(req.params.tileSize, 10) || undefined;
-
-    res.send(addTileJSONs([], req, "rendered", tileSize));
-  });
-
-  app.get("/(:tileSize(256|512)/)?index.json", async (req, res, next) => {
-    const tileSize = parseInt(req.params.tileSize, 10) || undefined;
-    res.send(
-      addTileJSONs(
-        addTileJSONs([], req, "rendered", tileSize),
-        req,
-        "data",
-        undefined
-      )
-    );
-  });
-
-  app.get("/data.json", async (req, res, next) => {
-    res.send(addTileJSONs([], req, "data", undefined));
-  });
 
   // serve web presentations
   app.use("/", express.static(path.resolve("public", "resources")));
@@ -286,7 +245,7 @@ export function newServer(opts) {
         xyz_link: getTileUrls(req, tiles, `data/${id}`, undefined, format)[0],
         viewer_hash,
         thumbnail,
-        sourceType: data.sourceType,
+        source_type: data.sourceType,
         is_vector: format === "pbf",
         formatted_filesize,
         name: name,
@@ -326,7 +285,7 @@ export function newServer(opts) {
     return {
       id,
       name,
-      baseUrl: `${req.get("X-Forwarded-Protocol") ? req.get("X-Forwarded-Protocol") : req.protocol}://${req.get("host")}/`,
+      base_url: `${req.get("X-Forwarded-Protocol") ? req.get("X-Forwarded-Protocol") : req.protocol}://${req.get("host")}/`,
     };
   });
 

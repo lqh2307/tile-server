@@ -66,7 +66,7 @@ export const serve_style = {
       res.header("Content-Type", "text/plain");
       res.header("Last-Modified", lastModified);
 
-      res.status(200).send(result);
+      return res.status(200).send(result);
     });
 
     return app;

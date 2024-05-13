@@ -72,7 +72,7 @@
               identifier: {{@key}}{{#if formatted_filesize}} | size: {{formatted_filesize}}{{/if}}
             </div>
             <div class="identifier">
-              type: {{#if is_vector}}vector{{else}}raster{{/if}} {{#if sourceType}} | ext: {{sourceType}}{{/if}}
+              type: {{#if is_vector}}vector{{else}}raster{{/if}} {{#if source_type}} | ext: {{source_type}}{{/if}}
             </div>
             <p class="services">
               services: <a href="/data/{{@key}}.json{{&../key_query}}">TileJSON</a>
