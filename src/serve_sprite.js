@@ -50,7 +50,9 @@ export const serve_sprite = {
     );
 
     app.get("/sprites.json", async (req, res, next) => {
-      const result = Object.keys(repo.sprites).map((sprite) => {
+      const sprites = Object.keys(repo.sprites)
+
+      const result = sprites.map((sprite) => {
         return {
           name: sprite,
           url: `${getUrl(req)}sprites/${sprite}/sprite`,
