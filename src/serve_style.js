@@ -122,14 +122,14 @@ export const serve_style = {
               const sourceURL = source.url.slice(10);
 
               if (!sourceURL.startsWith("{") || !sourceURL.endsWith("}")) {
-                throw Error(`Source "${name}" is not valid`);
+                throw Error(`Source data "${name}" is not valid`);
               }
 
               const sourceID = sourceURL.slice(1, -1);
               const datas = Object.keys(repo.data);
 
               if (!datas.includes(sourceID)) {
-                throw Error(`Source "${name}" is not found`);
+                throw Error(`Source data "${name}" is not found`);
               }
 
               source.url = `local://data/${sourceID}.json`;

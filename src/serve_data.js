@@ -30,10 +30,10 @@ export const serve_data = {
       "/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format((pbf|jpg|png|jpeg|webp|geojson){1})",
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
-        const { format = "" } = req.params;
-        const z = Number(req.params.z) || 0;
-        const x = Number(req.params.x) || 0;
-        const y = Number(req.params.y) || 0;
+        const { format } = req.params;
+        const z = Number(req.params.z);
+        const x = Number(req.params.x);
+        const y = Number(req.params.y);
         const item = repo.data[id];
 
         try {
@@ -62,13 +62,11 @@ export const serve_data = {
           }
 
           if (item.sourceType === "pmtiles") {
-            let tileinfo = await getPMtilesTile(item.source, z, x, y);
+            let { data, headers } = await getPMtilesTile(item.source, z, x, y);
 
-            if (!tileinfo?.data) {
+            if (!data) {
               throw Error("Data is not found");
             } else {
-              let { data = "", headers = {} } = tileinfo.data;
-
               if (format === "pbf") {
                 headers["Content-Type"] = "application/x-protobuf";
               } else if (format === "geojson") {
@@ -259,39 +257,36 @@ export const serve_data = {
               `"mbtiles" and "pmtiles" properties cannot be used together for data "${data}"`
             );
           } else if (item.mbtiles) {
-            let inputDataFile = "";
-            dataInfo.sourceType = "mbtiles";
-
             if (isValidHttpUrl(item.mbtiles)) {
               throw Error(`MBTiles data "${data}" is invalid`);
             } else {
-              inputDataFile = path.join(mbtilesPath, item.mbtiles);
+              dataInfo.sourceType = "mbtiles";
+              const inputDataFile = path.join(mbtilesPath, item.mbtiles);
 
               const fileStats = fs.statSync(inputDataFile);
               if (!fileStats.isFile() || fileStats.size === 0) {
                 throw Error(`MBTiles data "${data}" is invalid`);
               }
-            }
 
-            dataInfo.source = new MBTiles(
-              inputDataFile + "?mode=ro",
-              (err, mbtiles) => {
-                if (err) {
-                  throw err;
-                }
-
-                mbtiles.getInfo((err, info) => {
+              dataInfo.source = new MBTiles(
+                inputDataFile + "?mode=ro",
+                (err, mbtiles) => {
                   if (err) {
                     throw err;
                   }
 
-                  Object.assign(dataInfo.tileJSON, info);
-                });
-              }
-            );
+                  mbtiles.getInfo((err, info) => {
+                    if (err) {
+                      throw err;
+                    }
+
+                    Object.assign(dataInfo.tileJSON, info);
+                  });
+                }
+              );
+            }
           } else if (item.pmtiles) {
             let inputDataFile = "";
-            dataInfo.sourceType = "pmtiles";
 
             if (isValidHttpUrl(item.pmtiles)) {
               inputDataFile = item.pmtiles;
@@ -304,6 +299,7 @@ export const serve_data = {
               }
             }
 
+            dataInfo.sourceType = "pmtiles";
             dataInfo.source = openPMtiles(inputDataFile);
 
             const info = await getPMtilesInfo(source);

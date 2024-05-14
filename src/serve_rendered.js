@@ -61,7 +61,7 @@ const extensionToFormat = {
 
 const mercator = new SphericalMercator();
 
-const getScale = (scale = "@1x") => Number(scale.slice(1, -1)) || 0;
+const getScale = (scale = "@1x") => Number(scale.slice(1, -1)) || 1;
 
 mlgl.on("message", (e) => {
   if (e.severity === "WARNING" || e.severity === "ERROR") {
@@ -556,10 +556,10 @@ export const serve_rendered = {
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
         const item = repo.rendered[id];
-        const { format = "" } = req.params;
-        const z = Number(req.params.z) || 0;
-        const x = Number(req.params.x) || 0;
-        const y = Number(req.params.y) || 0;
+        const { format } = req.params;
+        const z = Number(req.params.z);
+        const x = Number(req.params.x);
+        const y = Number(req.params.y);
         const scale = getScale(req.params.scale);
         const tileSize = Number(req.params.tileSize) || 256;
 
@@ -643,13 +643,13 @@ export const serve_rendered = {
           return res.sendStatus(404);
         }
 
-        const { raw, format = "" } = req.params;
+        const { raw, format } = req.params;
         const minx = +Number(req.params.minx) || 0;
         const miny = +Number(req.params.miny) || 0;
         const maxx = +Number(req.params.maxx) || 0;
         const maxy = +Number(req.params.maxy) || 0;
-        const width = Number(req.params.width) || 0;
-        const height = Number(req.params.height) || 0;
+        const width = Number(req.params.width);
+        const height = Number(req.params.height);
 
         const bbox = [minx, miny, maxx, maxy];
         let center = [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2];
@@ -728,14 +728,14 @@ export const serve_rendered = {
             return res.sendStatus(404);
           }
 
-          const { raw, format = "" } = req.params;
+          const { raw, format } = req.params;
           const z = +Number(req.params.z) || 0;
           let x = +Number(req.params.x) || 0;
           let y = +Number(req.params.y) || 0;
           const bearing = +Number(req.params.bearing) || 0;
           const pitch = +Number(req.params.pitch) || 0;
-          const width = Number(req.params.width) || 0;
-          const height = Number(req.params.height) || 0;
+          const width = Number(req.params.width);
+          const height = Number(req.params.height);
           const scale = getScale(req.params.scale);
 
           if (z < 0) {
@@ -823,6 +823,7 @@ export const serve_rendered = {
       for (const key in req.query) {
         req.query[key.toLowerCase()] = req.query[key];
       }
+
       req.params.raw = true;
       req.params.format = (req.query.format || "image/png").split("/").pop();
       const bbox = (req.query.bbox || "").split(",");
@@ -832,6 +833,7 @@ export const serve_rendered = {
       req.params.maxy = bbox[3];
       req.params.width = req.query.width || "256";
       req.params.height = req.query.height || "256";
+
       if (req.query.scale) {
         req.params.width /= req.query.scale;
         req.params.height /= req.query.scale;
@@ -850,9 +852,9 @@ export const serve_rendered = {
           return res.sendStatus(404);
         }
 
-        const { raw, format = "" } = req.params;
-        const width = Number(req.params.width) || 0;
-        const height = Number(req.params.height) || 0;
+        const { raw, format } = req.params;
+        const width = Number(req.params.width);
+        const height = Number(req.params.height);
         const bearing = 0;
         const pitch = 0;
         const scale = getScale(req.params.scale);
@@ -1041,8 +1043,10 @@ export const serve_rendered = {
 
                   return;
                 } else {
-                  const response = {};
-                  response.data = data;
+                  const response = {
+                    data,
+                  };
+
                   if (headers["Last-Modified"]) {
                     response.modified = new Date(headers["Last-Modified"]);
                   }
@@ -1064,6 +1068,7 @@ export const serve_rendered = {
                   }
 
                   const response = {};
+
                   if (headers["Last-Modified"]) {
                     response.modified = new Date(headers["Last-Modified"]);
                   }
@@ -1187,7 +1192,8 @@ export const serve_rendered = {
           repo.rendered[style] = repoobj;
 
           const queue = [];
-          for (const name of Object.keys(styleJSON.sources)) {
+          const sources = Object.keys(styleJSON.sources);
+          for (const name of sources) {
             const source = styleJSON.sources[name];
 
             if (
@@ -1200,7 +1206,7 @@ export const serve_rendered = {
               delete source.url;
 
               if (!sourceURL.startsWith("{") || !sourceURL.endsWith("}")) {
-                throw Error(`Source "${name}" is not valid`);
+                throw Error(`Source data "${name}" is not valid`);
               }
 
               const sourceID = sourceURL.slice(1, -1);
@@ -1215,7 +1221,7 @@ export const serve_rendered = {
 
                     const stat = fs.statSync(inputFile);
                     if (!stat.isFile() || stat.size === 0) {
-                      throw Error(`Invalid MBTiles file: ${inputFile}`);
+                      throw Error(`MBTiles data "${name}" is invalid`);
                     }
 
                     map.sourceTypes[name] = "mbtiles";
@@ -1278,7 +1284,7 @@ export const serve_rendered = {
 
                 const stat = fs.statSync(inputFile);
                 if (!stat.isFile() || stat.size === 0) {
-                  throw Error(`Not valid PMTiles file: "${inputFile}"`);
+                  throw Error(`PMTiles data "${name}" is invalid`);
                 }
 
                 map.sources[name] = openPMtiles(inputFile);
@@ -1314,7 +1320,7 @@ export const serve_rendered = {
                   }
                 }
               } else {
-                throw Error(`Source "${sourceID}" is not found`);
+                throw Error(`Source data "${sourceID}" is not found`);
               }
             }
           }
