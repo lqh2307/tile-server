@@ -49,7 +49,8 @@ const PATH_PATTERN =
   /^((fill|stroke|width)\:[^\|]+\|)*(enc:.+|-?\d+(\.\d*)?,-?\d+(\.\d*)?(\|-?\d+(\.\d*)?,-?\d+(\.\d*)?)+)/;
 
 const mercator = new SphericalMercator();
-const getScale = (scale) => (scale || "@1x").slice(1, 2) | 0;
+
+const getScale = (scale) => (scale || "@1x").slice(1, -1) | 0;
 
 mlgl.on("message", (e) => {
   if (e.severity === "WARNING" || e.severity === "ERROR") {
@@ -179,6 +180,7 @@ const extractPathsFromQuery = (query, transformer) => {
   if ("path" in query && !query.path) {
     return paths;
   }
+
   // Parse paths provided via path query argument
   if ("path" in query) {
     const providedPaths = Array.isArray(query.path) ? query.path : [query.path];
@@ -223,6 +225,7 @@ const extractPathsFromQuery = (query, transformer) => {
       }
     }
   }
+
   return paths;
 };
 
@@ -247,7 +250,9 @@ const parseMarkerOptions = (optionsList, marker) => {
       case "scale":
         // Scale factors must not be negative
         marker.scale = Math.abs(parseFloat(optionParts[1]));
+
         break;
+
       // Icon offset as positive or negative pixel value in the following
       // format [offsetX],[offsetY] where [offsetY] is optional
       case "offset":
@@ -258,6 +263,7 @@ const parseMarkerOptions = (optionsList, marker) => {
         if (providedOffset.length > 1) {
           marker.offsetY = parseFloat(providedOffset[1]);
         }
+
         break;
     }
   }
@@ -541,24 +547,15 @@ let maxScaleFactor = 2;
 
 export const serve_rendered = {
   init: async (config, repo) => {
-    maxScaleFactor = Math.min(
-      Math.floor(config.options.maxScaleFactor || 3),
-      9
-    );
-    let scalePattern = "";
-    for (let i = 2; i <= maxScaleFactor; i++) {
-      scalePattern += i.toFixed();
-    }
-    scalePattern = `@[${scalePattern}]x`;
-
     const app = express().disable("x-powered-by");
     const lastModified = new Date().toUTCString();
 
     app.get(
-      `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(${scalePattern})?.:format((pbf|jpg|png|webp|geojson){1})`,
+      `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(@\\d+x)?.:format((pbf|jpg|png|webp|geojson){1})`,
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
         const item = repo.rendered[id];
+        const { z = 0, x = 0, y = 0, format = "", scale = "", tileSize = "" } = req.params
 
         try {
           if (!item) {
@@ -572,13 +569,6 @@ export const serve_rendered = {
               return res.sendStatus(304);
             }
           }
-
-          const z = req.params.z | 0;
-          const x = req.params.x | 0;
-          const y = req.params.y | 0;
-          const scale = getScale(req.params.scale);
-          const format = req.params.format;
-          const tileSize = parseInt(req.params.tileSize, 10) || 256;
 
           if (
             !(0 <= z && z <= 22) ||
@@ -604,9 +594,9 @@ export const serve_rendered = {
             tileCenter[1],
             0,
             0,
-            tileSize,
-            tileSize,
-            scale,
+            parseInt(tileSize, 10) || 256,
+            parseInt(tileSize, 10) || 256,
+            getScale(scale),
             format,
             res
           );
@@ -620,7 +610,7 @@ export const serve_rendered = {
       }
     );
 
-    const staticPattern = `/:id/static/:raw(raw)?/%s/:width(\\d+)x:height(\\d+):scale(${scalePattern})?.:format((pbf|jpg|png|webp|geojson){1})`;
+    const staticPattern = `/:id/static/:raw(raw)?/%s/:width(\\d+)x:height(\\d+):scale(@\\d+x)?.:format((pbf|jpg|png|webp|geojson){1})`;
     const centerPattern = util.format(
       ":x(%s),:y(%s),:z(%s)(@:bearing(%s)(,:pitch(%s))?)?",
       FLOAT_PATTERN,
@@ -645,6 +635,7 @@ export const serve_rendered = {
         if (!item) {
           return res.sendStatus(404);
         }
+
         const raw = req.params.raw;
         const bbox = [
           +req.params.minx,
@@ -805,15 +796,16 @@ export const serve_rendered = {
     app.get(util.format(staticPattern, boundsPattern), serveBounds);
 
     app.get("/(:tileSize(256|512)/)?rendered.json", (req, res, next) => {
-      const tileSize = req.params.tileSize;
+      const { tileSize = "/" } = req.params;
+      const rendereds = Object.keys(repo.rendered)
 
-      const result = Object.keys(repo.rendered).map((id) => {
-        const tileJSON = repo.rendered[id].tileJSON;
+      const result = rendereds.map((rendered) => {
+        const tileJSON = repo.rendered[rendered].tileJSON;
 
         return {
-          id: id,
+          id: rendered,
           name: tileJSON.name,
-          url: `${getUrl(req)}styles/${id}/${tileSize}/{z}/{x}/{y}.${tileJSON.format}`,
+          url: `${getUrl(req)}styles/${rendered}/${tileSize}{z}/{x}/{y}.${tileJSON.format}`,
         };
       });
 
@@ -950,6 +942,7 @@ export const serve_rendered = {
 
     app.get("/(:tileSize(256|512)/)?:id.json", async (req, res, next) => {
       const id = decodeURI(req.params.id);
+      const { tileSize = "" } = req.params
       const item = repo.rendered[id];
 
       try {
@@ -963,7 +956,7 @@ export const serve_rendered = {
           req,
           info.tiles,
           `styles/${id}`,
-          parseInt(req.params.tileSize, 10) || undefined,
+          parseInt(tileSize, 10) || undefined,
           info.format
         );
 
@@ -1214,24 +1207,26 @@ export const serve_rendered = {
           const queue = [];
           for (const name of Object.keys(styleJSON.sources)) {
             let source = styleJSON.sources[name];
-            let url = source.url;
+
             if (
               source.url?.startsWith("pmtiles://") ||
               source.url?.startsWith("mbtiles://")
             ) {
+              const sourceURL = source.url.slice(10);
+
               // found pmtiles or mbtiles source, replace with info from local file
               delete source.url;
 
-              let dataId = url
-                .replace("pmtiles://", "")
-                .replace("mbtiles://", "");
-              if (dataId.startsWith("{") && dataId.endsWith("}")) {
-                dataId = dataId.slice(1, -1);
+              if (!sourceURL.startsWith("{") || !sourceURL.endsWith("}")) {
+                throw Error(`Source "${name}" is not valid`);
               }
+
+              const dataId = sourceURL.slice(1, -1);
+              const datas = Object.keys(repo.data)
 
               let sourceType;
               let inputFile;
-              for (const id of Object.keys(config.data)) {
+              for (const id of datas) {
                 if (dataId === id) {
                   if (config.data[id].mbtiles) {
                     sourceType = "mbtiles";
@@ -1244,17 +1239,15 @@ export const serve_rendered = {
               }
 
               if (!inputFile) {
-                throw Error(`Data "${inputFile}" is not found`);
+                throw Error(`Source "${inputFile}" is not found`);
               }
 
-              if (!isValidHttpUrl(inputFile)) {
+              if (sourceType === "pmtiles") {
                 const inputFileStats = fs.statSync(inputFile);
                 if (!inputFileStats.isFile() || inputFileStats.size === 0) {
                   throw Error(`Not valid PMTiles file: "${inputFile}"`);
                 }
-              }
 
-              if (sourceType === "pmtiles") {
                 map.sources[name] = openPMtiles(inputFile);
                 map.sourceTypes[name] = "pmtiles";
                 const metadata = await getPMtilesInfo(map.sources[name]);
@@ -1365,6 +1358,7 @@ export const serve_rendered = {
           const maxPoolSizes = config.options.maxRendererPoolSizes || [
             16, 8, 4,
           ];
+
           for (let s = 1; s <= maxScaleFactor; s++) {
             const i = Math.min(minPoolSizes.length - 1, s - 1);
             const j = Math.min(maxPoolSizes.length - 1, s - 1);
