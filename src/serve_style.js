@@ -26,10 +26,10 @@ export const serve_style = {
         if (styleJSON.sources) {
           Object.keys(styleJSON.sources).forEach(
             (source) =>
-              (styleJSON.sources[source].url = fixUrl(
-                req,
-                styleJSON.sources[source].url
-              ))
+            (styleJSON.sources[source].url = fixUrl(
+              req,
+              styleJSON.sources[source].url
+            ))
           );
         }
 
@@ -55,11 +55,15 @@ export const serve_style = {
     });
 
     app.get("/styles.json", async (req, res, next) => {
-      const result = Object.keys(repo.styles).map((id) => {
+      const styles = Object.keys(repo.styles)
+
+      const result = styles.map((style) => {
+        const item = repo.styles[style]
+
         return {
-          id: id,
-          name: repo.styles[id].styleJSON.name,
-          url: `${getUrl(req)}styles/${id}/style.json`,
+          id: style,
+          name: item.styleJSON.name,
+          url: `${getUrl(req)}styles/${style}/style.json`,
         };
       });
 
@@ -107,28 +111,30 @@ export const serve_style = {
             throw Error(errString);
           }
 
-          for (const name of Object.keys(styleJSON.sources) || {}) {
+          const sources = Object.keys(styleJSON.sources) || {}
+          sources.forEach((name)=>{
             const source = styleJSON.sources[name];
 
             if (
               source.url?.startsWith("pmtiles://") ||
               source.url?.startsWith("mbtiles://")
             ) {
-              let sourceID = "";
-              const sourceURL = source.url
-                .replace("pmtiles://", "")
-                .replace("mbtiles://", "");
-              if (sourceURL.startsWith("{") && sourceURL.endsWith("}")) {
-                sourceID = sourceURL.slice(1, -1);
+              const sourceURL = source.url.slice(10);
+
+              if (!sourceURL.startsWith("{") || !sourceURL.endsWith("}")) {
+                throw Error(`Source "${name}" is not valid`);
               }
 
-              if (!Object.keys(repo.data).includes(sourceID)) {
+              const sourceID = sourceURL.slice(1, -1);
+              const datas = Object.keys(repo.data)
+
+              if (!datas.includes(sourceID)) {
                 throw Error(`Source "${name}" is not found`);
               }
 
               source.url = `local://data/${sourceID}.json`;
             }
-          }
+          })
 
           if (styleJSON.sprite?.startsWith("sprites://")) {
             styleJSON.sprite = styleJSON.sprite.replace(
