@@ -25,13 +25,15 @@ export const serve_data = {
   init: async (config, repo) => {
     const app = express().disable("x-powered-by");
     const lastModified = new Date().toUTCString();
-    const formatPattern = "(pbf|jpg|png|jpeg|webp|geojson){1}"
 
     app.get(
-      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(${formatPattern})`,
+      "/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format((pbf|jpg|png|jpeg|webp|geojson){1})",
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
-        const { z = 0, x = 0, y = 0, format = "" } = req.params;
+        const { format = "" } = req.params;
+        const z = Number(req.params.z) || 0;
+        const x = Number(req.params.x) || 0;
+        const y = Number(req.params.y) || 0;
         const item = repo.data[id];
 
         try {
@@ -175,10 +177,10 @@ export const serve_data = {
     );
 
     app.get("/datas.json", async (req, res, next) => {
-      const datas = Object.keys(repo.data)
+      const datas = Object.keys(repo.data);
 
       const result = datas.map((data) => {
-        const item = repo.data[data]
+        const item = repo.data[data];
 
         return {
           id: data,
@@ -246,8 +248,6 @@ export const serve_data = {
               tiles: config.options.domains,
               tilejson: "2.0.0",
             },
-            source: null,
-            sourceType: "",
           };
 
           if (!item.mbtiles && !item.pmtiles) {

@@ -22,7 +22,7 @@ export const serve_font = {
 
         return res.status(200).send(concatenated);
       } catch (error) {
-        printLog("error", `Failed to get font ${id}: ${error}`);
+        printLog("error", `Failed to get font "${id}": ${error}`);
 
         res.header("Content-Type", "text/plain");
 
@@ -31,7 +31,7 @@ export const serve_font = {
     });
 
     app.get("/fonts.json", async (req, res, next) => {
-      const fonts = Object.keys(repo.fonts)
+      const fonts = Object.keys(repo.fonts);
 
       const result = fonts.map((font) => {
         return {

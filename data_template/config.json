@@ -14,7 +14,7 @@
       "jpeg": 100,
       "webp": 100
     },
-    "maxScaleFactor": 3,
+    "maxScaleFactor": 1,
     "maxSize": 8192,
     "pbfAlias": "pbf",
     "serveStaticMaps": true,

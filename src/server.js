@@ -215,7 +215,7 @@ export function newServer(opts) {
       if (center) {
         viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
 
-        if (!(format === "pbf")) {
+        if (format !== "pbf") {
           const centerPx = mercator.px([center[0], center[1]], center[2]);
 
           // Set thumbnail (default size: 256px x 256px)

@@ -37,10 +37,7 @@ export const serve_sprite = {
 
           return res.status(200).send(data);
         } catch (error) {
-          printLog(
-            "error",
-            `Failed to get sprite "${id}": ${error}. Skipping...`
-          );
+          printLog("error", `Failed to get sprite "${id}": ${error}`);
 
           res.header("Content-Type", "text/plain");
 
@@ -50,7 +47,7 @@ export const serve_sprite = {
     );
 
     app.get("/sprites.json", async (req, res, next) => {
-      const sprites = Object.keys(repo.sprites)
+      const sprites = Object.keys(repo.sprites);
 
       const result = sprites.map((sprite) => {
         return {

@@ -26,10 +26,10 @@ export const serve_style = {
         if (styleJSON.sources) {
           Object.keys(styleJSON.sources).forEach(
             (source) =>
-            (styleJSON.sources[source].url = fixUrl(
-              req,
-              styleJSON.sources[source].url
-            ))
+              (styleJSON.sources[source].url = fixUrl(
+                req,
+                styleJSON.sources[source].url
+              ))
           );
         }
 
@@ -46,7 +46,7 @@ export const serve_style = {
 
         return res.status(200).send(styleJSON);
       } catch (error) {
-        printLog("error", `Failed to get style ${id}: ${error}`);
+        printLog("error", `Failed to get style "${id}": ${error}`);
 
         res.header("Content-Type", "text/plain");
 
@@ -55,10 +55,10 @@ export const serve_style = {
     });
 
     app.get("/styles.json", async (req, res, next) => {
-      const styles = Object.keys(repo.styles)
+      const styles = Object.keys(repo.styles);
 
       const result = styles.map((style) => {
-        const item = repo.styles[style]
+        const item = repo.styles[style];
 
         return {
           id: style,
@@ -111,8 +111,8 @@ export const serve_style = {
             throw Error(errString);
           }
 
-          const sources = Object.keys(styleJSON.sources) || {}
-          sources.forEach((name)=>{
+          const sources = Object.keys(styleJSON.sources) || {};
+          sources.forEach((name) => {
             const source = styleJSON.sources[name];
 
             if (
@@ -126,7 +126,7 @@ export const serve_style = {
               }
 
               const sourceID = sourceURL.slice(1, -1);
-              const datas = Object.keys(repo.data)
+              const datas = Object.keys(repo.data);
 
               if (!datas.includes(sourceID)) {
                 throw Error(`Source "${name}" is not found`);
@@ -134,7 +134,7 @@ export const serve_style = {
 
               source.url = `local://data/${sourceID}.json`;
             }
-          })
+          });
 
           if (styleJSON.sprite?.startsWith("sprites://")) {
             styleJSON.sprite = styleJSON.sprite.replace(
