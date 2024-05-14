@@ -31,7 +31,9 @@ export const serve_font = {
     });
 
     app.get("/fonts.json", async (req, res, next) => {
-      const result = Object.keys(repo.fonts).map((font) => {
+      const fonts = Object.keys(repo.fonts)
+
+      const result = fonts.map((font) => {
         return {
           name: font,
           url: `${getUrl(req)}fonts/${font}/{range}.pbf`,
