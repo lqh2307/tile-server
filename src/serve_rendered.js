@@ -31,7 +31,6 @@ import axios from "axios";
 import {
   getFontsPbf,
   getTileUrls,
-  isValidHttpUrl,
   fixTileJSONCenter,
   printLog,
   getUrl,
@@ -50,23 +49,13 @@ const PATH_PATTERN =
 
 const mercator = new SphericalMercator();
 
-const getScale = (scale) => (scale || "@1x").slice(1, -1) | 0;
+const getScale = (scale = "@1x") => scale.slice(1, -1);
 
 mlgl.on("message", (e) => {
   if (e.severity === "WARNING" || e.severity === "ERROR") {
     printLog("error", `mlgl: ${JSON.stringify(e)}`);
   }
 });
-
-/**
- * Lookup of sharp output formats by file extension.
- */
-const extensionToFormat = {
-  ".jpg": "jpeg",
-  ".jpeg": "jpeg",
-  ".png": "png",
-  ".webp": "webp",
-};
 
 /**
  * Cache of response data by sharp output format and color.  Entry for empty
@@ -549,9 +538,10 @@ export const serve_rendered = {
   init: async (config, repo) => {
     const app = express().disable("x-powered-by");
     const lastModified = new Date().toUTCString();
+    const formatPattern = "(pbf|jpg|png|jpeg|webp|geojson){1}"
 
     app.get(
-      `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(@\\d+x)?.:format((pbf|jpg|png|webp|geojson){1})`,
+      `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(@\\d+x)?.:format(${formatPattern})`,
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
         const item = repo.rendered[id];
@@ -610,7 +600,7 @@ export const serve_rendered = {
       }
     );
 
-    const staticPattern = `/:id/static/:raw(raw)?/%s/:width(\\d+)x:height(\\d+):scale(@\\d+x)?.:format((pbf|jpg|png|webp|geojson){1})`;
+    const staticPattern = `/:id/static/:raw(raw)?/%s/:width(\\d+)x:height(\\d+):scale(@\\d+x)?.:format(${formatPattern})`;
     const centerPattern = util.format(
       ":x(%s),:y(%s),:z(%s)(@:bearing(%s)(,:pitch(%s))?)?",
       FLOAT_PATTERN,
@@ -988,11 +978,12 @@ export const serve_rendered = {
           ratio,
           request: async (req, callback) => {
             const protocol = req.url.split(":")[0];
+
             if (protocol === "sprites") {
               const file = decodeURIComponent(req.url).substring(
                 protocol.length + 3
               );
-              const filePath = path.join(config.options.paths[protocol], file);
+              const filePath = path.join(config.options.paths.sprites, file);
 
               fs.readFile(filePath, (err, data) => {
                 callback(err, { data: data });
@@ -1004,7 +995,7 @@ export const serve_rendered = {
 
               try {
                 const concatenated = await getFontsPbf(
-                  config.options.paths[protocol],
+                  config.options.paths.fonts,
                   fonts,
                   range
                 );
@@ -1029,7 +1020,7 @@ export const serve_rendered = {
                 let tileinfo = await getPMtilesTile(source, z, x, y);
                 let data = tileinfo.data;
                 let headers = tileinfo.header;
-                if (data === undefined) {
+                if (!data) {
                   printLog("error", `PMTiles error, serving empty: ${err}`);
 
                   createEmptyResponse(
@@ -1110,8 +1101,7 @@ export const serve_rendered = {
                 callback(null, parsedResponse);
               } catch (error) {
                 const parts = url.parse(req.url);
-                const extension = path.extname(parts.pathname).toLowerCase();
-                const format = extensionToFormat[extension] || "";
+                const format = path.extname(parts.pathname).toLowerCase().slice(1, -1) || "";
 
                 createEmptyResponse(format, "", callback);
               }
@@ -1136,34 +1126,20 @@ export const serve_rendered = {
 
     await Promise.all(
       styles.map(async (style) => {
-        try {
-          const map = {
-            renderers: [],
-            renderersStatic: [],
-            sources: {},
-            sourceTypes: {},
-          };
+        const item = config.styles[style]
+        const map = {
+          renderers: [],
+          renderersStatic: [],
+          sources: {},
+          sourceTypes: {},
+        };
 
-          const styleJSONPath = path.join(
-            stylePath,
-            config.styles[style].style
-          );
+        try {
+          const styleJSONPath = path.join(stylePath, item.style);
 
           const file = fs.readFileSync(styleJSONPath);
 
           const styleJSON = JSON.parse(file);
-
-          for (const layer of styleJSON.layers || []) {
-            if (layer && layer.paint) {
-              // Remove (flatten) 3D buildings
-              if (layer.paint["fill-extrusion-height"]) {
-                layer.paint["fill-extrusion-height"] = 0;
-              }
-              if (layer.paint["fill-extrusion-base"]) {
-                layer.paint["fill-extrusion-base"] = 0;
-              }
-            }
-          }
 
           const tileJSON = {
             tilejson: "2.0.0",
@@ -1177,14 +1153,14 @@ export const serve_rendered = {
           };
 
           const attributionOverride =
-            !!config.styles[style].tilejson?.attribution;
+            !!item.tilejson?.attribution;
           if (styleJSON.center && styleJSON.zoom) {
             tileJSON.center = styleJSON.center.concat(
               Math.round(styleJSON.zoom)
             );
           }
 
-          Object.assign(tileJSON, config.styles[style].tilejson);
+          Object.assign(tileJSON, item.tilejson);
 
           tileJSON.tiles = config.options.domains;
 
@@ -1196,9 +1172,9 @@ export const serve_rendered = {
             dataProjWGStoInternalWGS: null,
             lastModified: new Date().toUTCString(),
             watermark:
-              config.styles[style].watermark || config.options.watermark,
+              item.watermark || config.options.watermark,
             staticAttributionText:
-              config.styles[style].staticAttributionText ||
+              item.staticAttributionText ||
               config.options.staticAttributionText,
           };
 
@@ -1222,71 +1198,11 @@ export const serve_rendered = {
               }
 
               const dataId = sourceURL.slice(1, -1);
-              const datas = Object.keys(repo.data)
 
-              let sourceType;
-              let inputFile;
-              for (const id of datas) {
-                if (dataId === id) {
-                  if (config.data[id].mbtiles) {
-                    sourceType = "mbtiles";
-                    inputFile = path.join(mbtilesPath, config.data[id].mbtiles);
-                  } else if (config.data[id].pmtiles) {
-                    sourceType = "mbtiles";
-                    inputFile = path.join(pmtilesPath, config.data[id].pmtiles);
-                  }
-                }
-              }
-
-              if (!inputFile) {
-                throw Error(`Source "${inputFile}" is not found`);
-              }
-
-              if (sourceType === "pmtiles") {
-                const inputFileStats = fs.statSync(inputFile);
-                if (!inputFileStats.isFile() || inputFileStats.size === 0) {
-                  throw Error(`Not valid PMTiles file: "${inputFile}"`);
-                }
-
-                map.sources[name] = openPMtiles(inputFile);
-                map.sourceTypes[name] = "pmtiles";
-                const metadata = await getPMtilesInfo(map.sources[name]);
-
-                if (!repoobj.dataProjWGStoInternalWGS && metadata.proj4) {
-                  // how to do this for multiple sources with different proj4 defs?
-                  const to3857 = proj4("EPSG:3857");
-                  const toDataProj = proj4(metadata.proj4);
-                  repoobj.dataProjWGStoInternalWGS = (xy) =>
-                    to3857.inverse(toDataProj.forward(xy));
-                }
-
-                const type = source.type;
-
-                Object.assign(source, metadata);
-
-                source.type = type;
-                source.tiles = [
-                  // meta url which will be detected when requested
-                  `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || "pbf"}`,
-                ];
-
-                if (
-                  !attributionOverride &&
-                  source.attribution &&
-                  source.attribution.length > 0
-                ) {
-                  if (!tileJSON.attribution.includes(source.attribution)) {
-                    if (tileJSON.attribution.length > 0) {
-                      tileJSON.attribution += " | ";
-                    }
-
-                    tileJSON.attribution += source.attribution;
-                  }
-                }
-              } else {
+              if (repo[dataId]?.sourceType === "mbtiles") {
                 queue.push(
                   new Promise((resolve, reject) => {
-                    inputFile = path.resolve(mbtilesPath, inputFile);
+                    const inputFile = path.resolve(mbtilesPath, config.data[id].mbtiles);
 
                     const inputFileStats = fs.statSync(inputFile);
                     if (!inputFileStats.isFile() || inputFileStats.size === 0) {
@@ -1347,7 +1263,54 @@ export const serve_rendered = {
                     );
                   })
                 );
+              } else if (repo[dataId]?.sourceType === "pmtiles") {
+                const inputFile = path.join(pmtilesPath, config.data[id].pmtiles);
+
+                const inputFileStats = fs.statSync(inputFile);
+                if (!inputFileStats.isFile() || inputFileStats.size === 0) {
+                  throw Error(`Not valid PMTiles file: "${inputFile}"`);
+                }
+
+                map.sources[name] = openPMtiles(inputFile);
+                map.sourceTypes[name] = "pmtiles";
+
+                const metadata = await getPMtilesInfo(map.sources[name]);
+
+                if (!repoobj.dataProjWGStoInternalWGS && metadata.proj4) {
+                  // how to do this for multiple sources with different proj4 defs?
+                  const to3857 = proj4("EPSG:3857");
+                  const toDataProj = proj4(metadata.proj4);
+                  repoobj.dataProjWGStoInternalWGS = (xy) =>
+                    to3857.inverse(toDataProj.forward(xy));
+                }
+
+                const type = source.type;
+
+                Object.assign(source, metadata);
+
+                source.type = type;
+                source.tiles = [
+                  // meta url which will be detected when requested
+                  `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || "pbf"}`,
+                ];
+
+                if (
+                  !attributionOverride &&
+                  source.attribution &&
+                  source.attribution.length > 0
+                ) {
+                  if (!tileJSON.attribution.includes(source.attribution)) {
+                    if (tileJSON.attribution.length > 0) {
+                      tileJSON.attribution += " | ";
+                    }
+
+                    tileJSON.attribution += source.attribution;
+                  }
+                }
+              } else {
+                throw Error(`Source "${dataId}" is not found`);
               }
+
             }
           }
 
@@ -1364,6 +1327,7 @@ export const serve_rendered = {
             const j = Math.min(maxPoolSizes.length - 1, s - 1);
             const minPoolSize = minPoolSizes[i];
             const maxPoolSize = Math.max(minPoolSize, maxPoolSizes[j]);
+
             map.renderers[s] = createPool(
               map,
               style,
@@ -1373,6 +1337,7 @@ export const serve_rendered = {
               minPoolSize,
               maxPoolSize
             );
+
             map.renderersStatic[s] = createPool(
               map,
               style,
