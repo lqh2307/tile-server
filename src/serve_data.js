@@ -64,7 +64,7 @@ export const serve_data = {
             if (!tileinfo?.data) {
               throw Error("Data is not found");
             } else {
-              let { data = "", headers = "" } = tileinfo.data;
+              let { data = "", headers = {} } = tileinfo.data;
 
               if (format === "pbf") {
                 headers["Content-Type"] = "application/x-protobuf";
@@ -174,10 +174,14 @@ export const serve_data = {
     );
 
     app.get("/datas.json", async (req, res, next) => {
-      const result = Object.keys(repo.data).map((data) => {
+      const datas = Object.keys(repo.data)
+
+      const result = datas.map((data) => {
+        const item = repo.data[data]
+
         return {
           id: data,
-          name: repo.data[data].tileJSON.name,
+          name: item.tileJSON.name,
           url: `${getUrl(req)}data/${data}/data.json`,
         };
       });
