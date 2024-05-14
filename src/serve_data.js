@@ -25,9 +25,10 @@ export const serve_data = {
   init: async (config, repo) => {
     const app = express().disable("x-powered-by");
     const lastModified = new Date().toUTCString();
+    const formatPattern = "(pbf|jpg|png|jpeg|webp|geojson){1}"
 
     app.get(
-      "/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format((pbf|jpg|png|webp|geojson){1})",
+      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(${formatPattern})`,
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
         const { z = 0, x = 0, y = 0, format = "" } = req.params;
