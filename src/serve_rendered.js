@@ -644,10 +644,10 @@ export const serve_rendered = {
         }
 
         const { raw, format } = req.params;
-        const minx = +Number(req.params.minx) || 0;
-        const miny = +Number(req.params.miny) || 0;
-        const maxx = +Number(req.params.maxx) || 0;
-        const maxy = +Number(req.params.maxy) || 0;
+        const minx = Number(req.params.minx) || 0;
+        const miny = Number(req.params.miny) || 0;
+        const maxx = Number(req.params.maxx) || 0;
+        const maxy = Number(req.params.maxy) || 0;
         const width = Number(req.params.width);
         const height = Number(req.params.height);
 
@@ -729,11 +729,11 @@ export const serve_rendered = {
           }
 
           const { raw, format } = req.params;
-          const z = +Number(req.params.z) || 0;
-          let x = +Number(req.params.x) || 0;
-          let y = +Number(req.params.y) || 0;
-          const bearing = +Number(req.params.bearing) || 0;
-          const pitch = +Number(req.params.pitch) || 0;
+          const z = Number(req.params.z) || 0;
+          let x = Number(req.params.x) || 0;
+          let y = Number(req.params.y) || 0;
+          const bearing = Number(req.params.bearing) || 0;
+          const pitch = Number(req.params.pitch) || 0;
           const width = Number(req.params.width);
           const height = Number(req.params.height);
           const scale = getScale(req.params.scale);
@@ -855,8 +855,6 @@ export const serve_rendered = {
         const { raw, format } = req.params;
         const width = Number(req.params.width);
         const height = Number(req.params.height);
-        const bearing = 0;
-        const pitch = 0;
         const scale = getScale(req.params.scale);
 
         const transformer = raw
@@ -914,8 +912,8 @@ export const serve_rendered = {
           z,
           x,
           y,
-          bearing,
-          pitch,
+          0,
+          0,
           width,
           height,
           scale,
@@ -930,8 +928,8 @@ export const serve_rendered = {
           z,
           x,
           y,
-          bearing,
-          pitch,
+          0,
+          0,
           width,
           height,
           scale,
@@ -1168,7 +1166,7 @@ export const serve_rendered = {
 
           const attributionOverride = !!item.tilejson?.attribution;
 
-          if (styleJSON.center?.length == 2 && styleJSON.zoom) {
+          if (styleJSON.center?.length === 2 && styleJSON.zoom) {
             tileJSON.center = styleJSON.center.concat(
               Math.round(styleJSON.zoom)
             );
@@ -1220,7 +1218,7 @@ export const serve_rendered = {
                     );
 
                     const stat = fs.statSync(inputFile);
-                    if (!stat.isFile() || stat.size === 0) {
+                    if (stat.isFile() === false || stat.size === 0) {
                       throw Error(`MBTiles data "${name}" is invalid`);
                     }
 
@@ -1283,7 +1281,7 @@ export const serve_rendered = {
                 );
 
                 const stat = fs.statSync(inputFile);
-                if (!stat.isFile() || stat.size === 0) {
+                if (stat.isFile() === false || stat.size === 0) {
                   throw Error(`PMTiles data "${name}" is invalid`);
                 }
 

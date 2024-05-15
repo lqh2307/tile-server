@@ -41,10 +41,9 @@ export const serve_data = {
             throw Error("Data is not found");
           }
 
-          const tileJSONFormat = item.tileJSON.format;
           if (
-            format !== tileJSONFormat &&
-            !(format === "geojson" && tileJSONFormat === "pbf")
+            format !== item.tileJSON.format &&
+            !(format === "geojson" && item.tileJSON.format === "pbf")
           ) {
             throw Error("Invalid data format");
           }
@@ -72,18 +71,20 @@ export const serve_data = {
               } else if (format === "geojson") {
                 headers["Content-Type"] = "application/json";
 
-                const tile = new VectorTile(new Pbf(data));
                 const geojson = {
                   type: "FeatureCollection",
                   features: [],
                 };
 
+                const tile = new VectorTile(new Pbf(data));
+
                 for (const layerName in tile.layers) {
                   const layer = tile.layers[layerName];
+
                   for (let i = 0; i < layer.length; i++) {
-                    const feature = layer.feature(i);
-                    const featureGeoJSON = feature.toGeoJSON(x, y, z);
+                    const featureGeoJSON = layer.feature(i).toGeoJSON(x, y, z);
                     featureGeoJSON.properties.layer = layerName;
+
                     geojson.features.push(featureGeoJSON);
                   }
                 }
@@ -115,7 +116,7 @@ export const serve_data = {
                 if (!data) {
                   throw Error("Data is not found");
                 } else {
-                  if (tileJSONFormat === "pbf") {
+                  if (item.tileJSON.format === "pbf") {
                     isGzipped =
                       data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0;
                   }
@@ -125,23 +126,27 @@ export const serve_data = {
                   } else if (format === "geojson") {
                     headers["Content-Type"] = "application/json";
 
+                    const geojson = {
+                      type: "FeatureCollection",
+                      features: [],
+                    };
+
                     if (isGzipped) {
                       data = zlib.unzipSync(data);
                       isGzipped = false;
                     }
 
                     const tile = new VectorTile(new Pbf(data));
-                    const geojson = {
-                      type: "FeatureCollection",
-                      features: [],
-                    };
 
                     for (const layerName in tile.layers) {
                       const layer = tile.layers[layerName];
+
                       for (let i = 0; i < layer.length; i++) {
-                        const feature = layer.feature(i);
-                        const featureGeoJSON = feature.toGeoJSON(x, y, z);
+                        const featureGeoJSON = layer
+                          .feature(i)
+                          .toGeoJSON(x, y, z);
                         featureGeoJSON.properties.layer = layerName;
+
                         geojson.features.push(featureGeoJSON);
                       }
                     }
@@ -260,14 +265,14 @@ export const serve_data = {
             if (isValidHttpUrl(item.mbtiles)) {
               throw Error(`MBTiles data "${data}" is invalid`);
             } else {
-              dataInfo.sourceType = "mbtiles";
               const inputDataFile = path.join(mbtilesPath, item.mbtiles);
 
-              const fileStats = fs.statSync(inputDataFile);
-              if (!fileStats.isFile() || fileStats.size === 0) {
+              const stat = fs.statSync(inputDataFile);
+              if (stat.isFile() === false || stat.size === 0) {
                 throw Error(`MBTiles data "${data}" is invalid`);
               }
 
+              dataInfo.sourceType = "mbtiles";
               dataInfo.source = new MBTiles(
                 inputDataFile + "?mode=ro",
                 (err, mbtiles) => {
@@ -293,8 +298,8 @@ export const serve_data = {
             } else {
               inputDataFile = path.join(pmtilesPath, item.pmtiles);
 
-              const fileStats = fs.statSync(inputDataFile);
-              if (!fileStats.isFile() || fileStats.size === 0) {
+              const stat = fs.statSync(inputDataFile);
+              if (stat.isFile() === false || stat.size === 0) {
                 throw Error(`PMTiles data "${data}" is invalid`);
               }
             }
