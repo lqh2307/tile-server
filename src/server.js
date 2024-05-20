@@ -36,6 +36,7 @@ function loadConfigFile(configFilePath) {
 
     const rootPath = config.options.paths?.root || "";
 
+    /* Add paths option */
     config.options.paths = {
       root: path.resolve(rootPath),
       styles: path.resolve(rootPath, config.options.paths?.styles || ""),
@@ -48,14 +49,14 @@ function loadConfigFile(configFilePath) {
 
     /* Check paths */
     Object.keys(config.options.paths).forEach((key) => {
-      if (!fs.statSync(config.options.paths[key]).isDirectory()) {
+      if (fs.statSync(config.options.paths[key]).isDirectory() === false) {
         throw Error(`"${key}" dir does not exist`);
       }
     });
 
     return config;
   } catch (error) {
-    printLog("error", `Failed to load config file: ${error.message}`);
+    printLog("error", `Failed to load config file: ${error}`);
 
     process.exit(1);
   }
@@ -117,7 +118,7 @@ export function newServer(opts) {
       )
   );
 
-  // serve web presentations
+  // Serve web presentations
   app.use("/", express.static(path.resolve("public", "resources")));
 
   const serveTemplate = (urlPath, template, dataGetter) => {
@@ -178,13 +179,9 @@ export function newServer(opts) {
 
     Object.keys(repo.rendered).forEach((id) => {
       const style = repo.rendered[id];
-      const {
-        center = "",
-        tiles = "",
-        format = "",
-        name = "",
-      } = style.tileJSON;
+      const { center, tiles, format = "", name = "" } = style.tileJSON;
 
+      const tileSize = 256;
       let viewer_hash = "";
       let thumbnail = "";
       if (center) {
@@ -193,11 +190,11 @@ export function newServer(opts) {
         const centerPx = mercator.px([center[0], center[1]], center[2]);
 
         // Set thumbnail (default size: 256px x 256px)
-        thumbnail = `${center[2]}/${Math.floor(centerPx[0] / 256)}/${Math.floor(centerPx[1] / 256)}.png`;
+        thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.png`;
       }
 
       styles[id] = {
-        xyz_link: getTileUrls(req, tiles, `styles/${id}`, 256, format)[0],
+        xyz_link: getTileUrls(req, tiles, `styles/${id}`, tileSize, format)[0],
         viewer_hash,
         thumbnail,
         name,
@@ -208,8 +205,9 @@ export function newServer(opts) {
 
     Object.keys(repo.data).forEach((id) => {
       const data = repo.data[id];
-      const { center, filesize, format, tiles, name } = data.tileJSON;
+      const { center, filesize, format = "", tiles, name = "" } = data.tileJSON;
 
+      const tileSize = 256;
       let viewer_hash = "";
       let thumbnail = "";
       if (center) {
@@ -219,7 +217,7 @@ export function newServer(opts) {
           const centerPx = mercator.px([center[0], center[1]], center[2]);
 
           // Set thumbnail (default size: 256px x 256px)
-          thumbnail = `${center[2]}/${Math.floor(centerPx[0] / 256)}/${Math.floor(centerPx[1] / 256)}.${format}`;
+          thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.${format}`;
         }
       }
 
@@ -317,49 +315,11 @@ export function newServer(opts) {
     }
   });
 
-  Promise.all(startupPromises)
-    .then(() => {
-      printLog("info", "Startup complete!");
-
-      startupComplete = true;
-
-      /* function removeCircularReferences(obj, seen = new Set()) {
-        if (typeof obj === "object" && obj !== null) {
-          if (seen.has(obj)) {
-            return undefined;
-          }
-
-          seen.add(obj);
-
-          for (const key in obj) {
-            obj[key] = removeCircularReferences(obj[key], seen);
-          }
-        }
-
-        return obj;
-      }
-
-      const cleanedObject = removeCircularReferences(repo);
-
-      const jsonData = JSON.stringify(cleanedObject);
-
-      fs.writeFile("./repo.json", jsonData, "utf8", (err) => {
-        if (err) {
-          throw err;
-        }
-      }); */
-    })
-    .catch((err) => {
-      printLog("error", `Failed to starting server: ${err}`);
-
-      process.exit(1);
-    });
-
   const server = app.listen(opts.port, function () {
     printLog("info", `Listening in port: ${this.address().port}`);
   });
 
-  // add server.shutdown() to gracefully stop serving
+  // To gracefully stop serving
   enableShutdown(server);
 
   const newChokidar = chokidar.watch(opts.config, {
@@ -369,7 +329,7 @@ export function newServer(opts) {
     interval: 1000,
     binaryInterval: 1000,
   });
-  if (opts.kill || (opts.kill && opts.refresh)) {
+  if (opts.kill) {
     printLog("info", "Enable killing server after changing config file");
 
     newChokidar.on("change", () => {
@@ -418,4 +378,43 @@ export function newServer(opts) {
 
     return res.status(200).send("OK");
   });
+
+  /*  */
+  Promise.all(startupPromises)
+    .then(() => {
+      printLog("info", "Startup complete!");
+
+      startupComplete = true;
+
+      /* function removeCircularReferences(obj, seen = new Set()) {
+      if (typeof obj === "object" && obj !== null) {
+        if (seen.has(obj)) {
+          return undefined;
+        }
+
+        seen.add(obj);
+
+        for (const key in obj) {
+          obj[key] = removeCircularReferences(obj[key], seen);
+        }
+      }
+
+      return obj;
+    }
+
+    const cleanedObject = removeCircularReferences(repo);
+
+    const jsonData = JSON.stringify(cleanedObject);
+
+    fs.writeFile("./repo.json", jsonData, "utf8", (err) => {
+      if (err) {
+        throw err;
+      }
+    }); */
+    })
+    .catch((error) => {
+      printLog("error", `Failed to starting server: ${error}`);
+
+      process.exit(1);
+    });
 }

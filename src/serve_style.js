@@ -21,17 +21,13 @@ export const serve_style = {
           throw Error("Style is not found");
         }
 
-        const styleJSON = clone(item.styleJSON || {});
+        const styleJSON = clone(item.styleJSON);
 
-        if (styleJSON.sources) {
-          Object.keys(styleJSON.sources).forEach(
-            (source) =>
-              (styleJSON.sources[source].url = fixUrl(
-                req,
-                styleJSON.sources[source].url
-              ))
-          );
-        }
+        Object.keys(styleJSON.sources || {}).forEach((name) => {
+          const source = styleJSON.sources[name];
+
+          source.url = fixUrl(req, source.url);
+        });
 
         if (styleJSON.sprite) {
           styleJSON.sprite = fixUrl(req, styleJSON.sprite);
@@ -102,7 +98,7 @@ export const serve_style = {
           /* Validate style */
           const validationErrors = validateStyleMin(styleJSON);
           if (validationErrors.length > 0) {
-            let errString = `Failed to load style "${style}": Style is invalid:`;
+            let errString = "Style is invalid:";
 
             for (const error of validationErrors) {
               errString += "\n\t" + `${error.message}`;
@@ -111,8 +107,7 @@ export const serve_style = {
             throw Error(errString);
           }
 
-          const sources = Object.keys(styleJSON.sources) || {};
-          sources.forEach((name) => {
+          Object.keys(styleJSON.sources || {}).forEach((name) => {
             const source = styleJSON.sources[name];
 
             if (
@@ -122,13 +117,12 @@ export const serve_style = {
               const sourceURL = source.url.slice(10);
 
               if (!sourceURL.startsWith("{") || !sourceURL.endsWith("}")) {
-                throw Error(`Source data "${name}" is not valid`);
+                throw Error(`Source data "${name}" is invalid`);
               }
 
               const sourceID = sourceURL.slice(1, -1);
-              const datas = Object.keys(repo.data);
 
-              if (!datas.includes(sourceID)) {
+              if (!repo.data[sourceID]) {
                 throw Error(`Source data "${name}" is not found`);
               }
 

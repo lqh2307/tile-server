@@ -46,6 +46,7 @@ import clone from "clone";
 const FLOAT_PATTERN = "[+-]?(?:\\d+|\\d+.?\\d+)";
 const PATH_PATTERN =
   /^((fill|stroke|width)\:[^\|]+\|)*(enc:.+|-?\d+(\.\d*)?,-?\d+(\.\d*)?(\|-?\d+(\.\d*)?,-?\d+(\.\d*)?)+)/;
+const FORMAT_PATTERN = "(pbf|jpg|png|jpeg|webp|geojson)";
 
 /**
  * Lookup of sharp output formats by file extension.
@@ -530,6 +531,7 @@ const respondImage = (
       } else if (format === "webp") {
         image.webp({ quality: formatQuality || 90 });
       }
+
       image.toBuffer((err, buffer, info) => {
         if (!buffer) {
           res.header("Content-Type", "text/plain");
@@ -552,7 +554,7 @@ export const serve_rendered = {
     const lastModified = new Date().toUTCString();
 
     app.get(
-      "/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(@\\d+x)?.:format((pbf|jpg|png|jpeg|webp|geojson){1})",
+      `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(@\\d+x)?.:format(${FORMAT_PATTERN}{1})`,
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
         const item = repo.rendered[id];
@@ -572,7 +574,7 @@ export const serve_rendered = {
           const cc = req.get("cache-control");
           if (modifiedSince && (!cc || cc.indexOf("no-cache") === -1)) {
             if (new Date(item.lastModified) <= new Date(modifiedSince)) {
-              return res.sendStatus(304);
+              return res.status(304).send();
             }
           }
 
@@ -616,8 +618,7 @@ export const serve_rendered = {
       }
     );
 
-    const staticPattern =
-      "/:id/static/:raw(raw)?/%s/:width(\\d+)x:height(\\d+):scale(@\\d+x)?.:format((pbf|jpg|png|jpeg|webp|geojson){1})";
+    const staticPattern = `/:id/static/:raw(raw)?/%s/:width(\\d+)x:height(\\d+):scale(@\\d+x)?.:format(${FORMAT_PATTERN}{1})`;
     const centerPattern = util.format(
       ":x(%s),:y(%s),:z(%s)(@:bearing(%s)(,:pitch(%s))?)?",
       FLOAT_PATTERN,
@@ -800,7 +801,7 @@ export const serve_rendered = {
     app.get(util.format(staticPattern, boundsPattern), serveBounds);
 
     app.get("/(:tileSize(256|512)/)?rendered.json", (req, res, next) => {
-      const { tileSize = "/" } = req.params;
+      const { tileSize = "" } = req.params;
       const rendereds = Object.keys(repo.rendered);
 
       const result = rendereds.map((rendered) => {
@@ -1157,7 +1158,7 @@ export const serve_rendered = {
             name: styleJSON.name,
             attribution: "",
             minzoom: 0,
-            maxzoom: 20,
+            maxzoom: 24,
             bounds: [-180, -85.0511, 180, 85.0511],
             format: "png",
             type: "baselayer",
@@ -1204,7 +1205,7 @@ export const serve_rendered = {
               delete source.url;
 
               if (!sourceURL.startsWith("{") || !sourceURL.endsWith("}")) {
-                throw Error(`Source data "${name}" is not valid`);
+                throw Error(`Source data "${name}" is invalid`);
               }
 
               const sourceID = sourceURL.slice(1, -1);
@@ -1365,6 +1366,8 @@ export const serve_rendered = {
         }
       })
     );
+
+    return true;
   },
 
   remove: (repo, id) => {

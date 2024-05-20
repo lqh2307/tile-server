@@ -21,13 +21,15 @@ import {
   getPMtilesTile,
 } from "./pmtiles_adapter.js";
 
+const FORMAT_PATTERN = "(pbf|jpg|png|jpeg|webp|geojson)";
+
 export const serve_data = {
   init: async (config, repo) => {
     const app = express().disable("x-powered-by");
     const lastModified = new Date().toUTCString();
 
     app.get(
-      "/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format((pbf|jpg|png|jpeg|webp|geojson){1})",
+      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(${FORMAT_PATTERN}{1})`,
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
         const { format } = req.params;
@@ -42,10 +44,10 @@ export const serve_data = {
           }
 
           if (
-            format !== item.tileJSON.format &&
-            !(format === "geojson" && item.tileJSON.format === "pbf")
+            !(format === "geojson" && item.tileJSON.format === "pbf") &&
+            format !== item.tileJSON.format
           ) {
-            throw Error("Invalid data format");
+            throw Error("Data is invalid format");
           }
 
           if (
@@ -104,8 +106,6 @@ export const serve_data = {
             }
           } else if (item.sourceType === "mbtiles") {
             item.source.getTile(z, x, y, (error, data, headers) => {
-              let isGzipped;
-
               if (error) {
                 if (/does not exist/.test(error.message)) {
                   return res.status(204).send();
@@ -116,9 +116,13 @@ export const serve_data = {
                 if (!data) {
                   throw Error("Data is not found");
                 } else {
-                  if (item.tileJSON.format === "pbf") {
-                    isGzipped =
-                      data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0;
+                  let isGzipped = false;
+
+                  if (
+                    item.tileJSON.format === "pbf" &&
+                    data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0
+                  ) {
+                    isGzipped = true;
                   }
 
                   if (format === "pbf") {
@@ -133,6 +137,7 @@ export const serve_data = {
 
                     if (isGzipped) {
                       data = zlib.unzipSync(data);
+
                       isGzipped = false;
                     }
 
@@ -207,7 +212,7 @@ export const serve_data = {
           throw Error("Data is not found");
         }
 
-        const info = clone(item.tileJSON || {});
+        const info = clone(item.tileJSON);
 
         info.tiles = getTileUrls(
           req,
