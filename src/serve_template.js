@@ -22,100 +22,98 @@ export const serve_template = {
         const styles = {};
         const datas = {};
 
-        await Promise.all(
-          Object.keys(repo.rendered).map(async (id) => {
-            const style = repo.rendered[id];
-            const { center, tiles, format = "", name = "" } = style.tileJSON;
-            const tileSize = 256;
-            const xyzLink = getTileUrls(
-              req,
-              tiles,
-              `styles/${id}`,
-              tileSize,
-              format
-            )[0];
+        const renderedPromises = Object.keys(repo.rendered).map(async (id) => {
+          const style = repo.rendered[id];
+          const { center, tiles, format = "", name = "" } = style.tileJSON;
+          const tileSize = 256;
+          const xyzLink = getTileUrls(
+            req,
+            tiles,
+            `styles/${id}`,
+            tileSize,
+            format
+          )[0];
 
-            let viewer_hash = "";
-            let thumbnail = "";
-            if (center) {
-              viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
+          let viewer_hash = "";
+          let thumbnail = "";
+          if (center) {
+            viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
 
+            const centerPx = mercator.px([center[0], center[1]], center[2]);
+
+            // Set thumbnail (default size: 256px x 256px)
+            thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.png`;
+          }
+
+          styles[id] = {
+            xyz_link: xyzLink,
+            viewer_hash,
+            thumbnail,
+            name,
+          };
+        });
+
+        const dataPromises = Object.keys(repo.data).map(async (id) => {
+          const data = repo.data[id];
+          const {
+            center,
+            filesize,
+            format = "",
+            tiles,
+            name = "",
+          } = data.tileJSON;
+          const tileSize = 256;
+          const xyzLink = getTileUrls(
+            req,
+            tiles,
+            `data/${id}`,
+            undefined,
+            format
+          )[0];
+
+          let viewer_hash = "";
+          let thumbnail = "";
+          if (center) {
+            viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
+
+            if (format !== "pbf") {
               const centerPx = mercator.px([center[0], center[1]], center[2]);
 
               // Set thumbnail (default size: 256px x 256px)
-              thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.png`;
+              thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.${format}`;
+            }
+          }
+
+          let formatted_filesize = "";
+          if (filesize) {
+            let suffix = "kB";
+            let size = parseInt(filesize, 10) / 1024;
+
+            if (size > 1024) {
+              suffix = "MB";
+              size /= 1024;
             }
 
-            styles[id] = {
-              xyz_link: xyzLink,
-              viewer_hash,
-              thumbnail,
-              name,
-            };
-          })
-        );
-
-        await Promise.all(
-          Object.keys(repo.data).map(async (id) => {
-            const data = repo.data[id];
-            const {
-              center,
-              filesize,
-              format = "",
-              tiles,
-              name = "",
-            } = data.tileJSON;
-            const tileSize = 256;
-            const xyzLink = getTileUrls(
-              req,
-              tiles,
-              `data/${id}`,
-              undefined,
-              format
-            )[0];
-
-            let viewer_hash = "";
-            let thumbnail = "";
-            if (center) {
-              viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
-
-              if (format !== "pbf") {
-                const centerPx = mercator.px([center[0], center[1]], center[2]);
-
-                // Set thumbnail (default size: 256px x 256px)
-                thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.${format}`;
-              }
+            if (size > 1024) {
+              suffix = "GB";
+              size /= 1024;
             }
 
-            let formatted_filesize = "";
-            if (filesize) {
-              let suffix = "kB";
-              let size = parseInt(filesize, 10) / 1024;
+            formatted_filesize = `${size.toFixed(2)} ${suffix}`;
+          }
 
-              if (size > 1024) {
-                suffix = "MB";
-                size /= 1024;
-              }
+          datas[id] = {
+            xyz_link: xyzLink,
+            viewer_hash,
+            thumbnail,
+            source_type: data.sourceType,
+            is_vector: format === "pbf",
+            formatted_filesize,
+            name: name,
+          };
+        });
 
-              if (size > 1024) {
-                suffix = "GB";
-                size /= 1024;
-              }
-
-              formatted_filesize = `${size.toFixed(2)} ${suffix}`;
-            }
-
-            datas[id] = {
-              xyz_link: xyzLink,
-              viewer_hash,
-              thumbnail,
-              source_type: data.sourceType,
-              is_vector: format === "pbf",
-              formatted_filesize,
-              name: name,
-            };
-          })
-        );
+        await Promise.all([...renderedPromises, ...dataPromises]);
 
         const serveData = {
           styles: Object.keys(styles).length ? styles : null,
