@@ -87,7 +87,5 @@ export const serve_sprite = {
         }
       })
     );
-
-    return true;
   },
 };

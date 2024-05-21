@@ -155,7 +155,5 @@ export const serve_style = {
         }
       })
     );
-
-    return true;
   },
 };

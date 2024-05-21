@@ -87,11 +87,225 @@ export function newServer(opts) {
   const app = express()
     .disable("x-powered-by")
     .enable("trust proxy")
-    .use(morgan(logFormat));
+    .use(morgan(logFormat))
+    .use("/", express.static(path.resolve("public", "resources")));
 
-  const startupPromises = [];
+  let startupComplete = false;
 
-  startupPromises.push(
+  app.get("/health", async (req, res, next) => {
+    res.header("Content-Type", "text/plain");
+
+    if (startupComplete) {
+      return res.status(200).send("OK");
+    } else {
+      return res.status(503).send("Starting");
+    }
+  });
+
+  const serveTemplate = async (urlPath, template) => {
+    let dataGetter = null;
+
+    if (template === "index") {
+      if (config.options.frontPage === false) {
+        return;
+      }
+
+      dataGetter = async (req) => {
+        const styles = {};
+
+        await Promise.all(
+          Object.keys(repo.rendered).map(async (id) => {
+            const style = repo.rendered[id];
+            const { center, tiles, format = "", name = "" } = style.tileJSON;
+            const tileSize = 256;
+            const xyzLink = getTileUrls(
+              req,
+              tiles,
+              `styles/${id}`,
+              tileSize,
+              format
+            )[0];
+
+            let viewer_hash = "";
+            let thumbnail = "";
+            if (center) {
+              viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
+
+              const centerPx = mercator.px([center[0], center[1]], center[2]);
+
+              // Set thumbnail (default size: 256px x 256px)
+              thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.png`;
+            }
+
+            styles[id] = {
+              xyz_link: xyzLink,
+              viewer_hash,
+              thumbnail,
+              name,
+            };
+          })
+        );
+
+        const datas = {};
+
+        await Promise.all(
+          Object.keys(repo.data).map(async (id) => {
+            const data = repo.data[id];
+            const {
+              center,
+              filesize,
+              format = "",
+              tiles,
+              name = "",
+            } = data.tileJSON;
+            const tileSize = 256;
+            const xyzLink = getTileUrls(
+              req,
+              tiles,
+              `data/${id}`,
+              undefined,
+              format
+            )[0];
+
+            let viewer_hash = "";
+            let thumbnail = "";
+            if (center) {
+              viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
+
+              if (format !== "pbf") {
+                const centerPx = mercator.px([center[0], center[1]], center[2]);
+
+                // Set thumbnail (default size: 256px x 256px)
+                thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.${format}`;
+              }
+            }
+
+            let formatted_filesize = "";
+            if (filesize) {
+              let suffix = "kB";
+              let size = parseInt(filesize, 10) / 1024;
+
+              if (size > 1024) {
+                suffix = "MB";
+                size /= 1024;
+              }
+
+              if (size > 1024) {
+                suffix = "GB";
+                size /= 1024;
+              }
+
+              formatted_filesize = `${size.toFixed(2)} ${suffix}`;
+            }
+
+            datas[id] = {
+              xyz_link: xyzLink,
+              viewer_hash,
+              thumbnail,
+              source_type: data.sourceType,
+              is_vector: format === "pbf",
+              formatted_filesize,
+              name: name,
+            };
+          })
+        );
+
+        return {
+          styles: Object.keys(styles).length ? styles : null,
+          data: Object.keys(datas).length ? datas : null,
+        };
+      };
+    } else if (template === "viewer") {
+      dataGetter = async (req) => {
+        const id = decodeURI(req.params.id);
+        const style = repo.rendered[id];
+        const { name = "" } = style.tileJSON;
+
+        if (!style) {
+          return null;
+        }
+
+        return {
+          id,
+          name,
+        };
+      };
+    } else if (template === "wmts") {
+      dataGetter = async (req) => {
+        const id = decodeURI(req.params.id);
+        const wmts = repo.rendered[id];
+        const { name = "" } = wmts.tileJSON;
+
+        if (!wmts) {
+          return null;
+        }
+
+        return {
+          id,
+          name,
+          base_url: `${req.get("X-Forwarded-Protocol") ? req.get("X-Forwarded-Protocol") : req.protocol}://${req.get("host")}/`,
+        };
+      };
+    } else if (template === "data") {
+      dataGetter = async (req) => {
+        const id = decodeURI(req.params.id);
+        const data = repo.data[id];
+        const { name = "", format } = data.tileJSON;
+
+        if (!data) {
+          return null;
+        }
+
+        return {
+          id,
+          name,
+          is_vector: format === "pbf",
+        };
+      };
+    } else {
+      return;
+    }
+
+    const templatePath = path.resolve(
+      "public",
+      "templates",
+      `${template}.tmpl`
+    );
+
+    const file = fs.readFileSync(templatePath);
+
+    const compiled = handlebars.compile(file.toString());
+
+    app.use(urlPath, async (req, res, next) => {
+      let data = {};
+
+      if (dataGetter) {
+        data = await dataGetter(req);
+
+        if (!data) {
+          res.header("Content-Type", "text/plain");
+
+          return res.status(404).send("Not found");
+        }
+      }
+
+      data.key_query_part = req.query.key
+        ? `key=${encodeURIComponent(req.query.key)}&amp;`
+        : "";
+      data.key_query = req.query.key
+        ? `?key=${encodeURIComponent(req.query.key)}`
+        : "";
+
+      if (template === "wmts") {
+        res.header("Content-Type", "text/xml");
+      }
+
+      return res.status(200).send(compiled(data));
+    });
+  };
+
+  /*  */
+  Promise.all([
     serve_font.init(config, repo).then((sub) => {
       app.use("/fonts", sub);
     }),
@@ -115,205 +329,48 @@ export function newServer(opts) {
         serve_style
           .add(config, repo)
           .then(() => serve_rendered.add(config, repo))
-      )
-  );
+      ),
+    serveTemplate("/$", "index"),
+    serveTemplate("/styles/:id/$", "viewer"),
+    serveTemplate("/styles/:id/wmts.xml", "wmts"),
+    serveTemplate("/data/:id/$", "data"),
+  ])
+    .then(() => {
+      printLog("info", "Startup complete!");
 
-  // Serve web presentations
-  app.use("/", express.static(path.resolve("public", "resources")));
+      startupComplete = true;
 
-  const serveTemplate = (urlPath, template, dataGetter) => {
-    if (template === "index" && config.options.frontPage === false) {
-      return;
-    }
+      /* function removeCircularReferences(obj, seen = new Set()) {
+      if (typeof obj === "object" && obj !== null) {
+        if (seen.has(obj)) {
+          return undefined;
+        }
 
-    const templatePath = path.resolve(
-      "public",
-      "templates",
-      `${template}.tmpl`
-    );
+        seen.add(obj);
 
-    startupPromises.push(
-      new Promise((resolve, reject) => {
-        fs.readFile(templatePath, (err, content) => {
-          if (err) {
-            reject(err);
-
-            return;
-          }
-
-          const compiled = handlebars.compile(content.toString());
-
-          app.use(urlPath, (req, res, next) => {
-            let data = {};
-            if (dataGetter) {
-              data = dataGetter(req);
-              if (!data) {
-                res.header("Content-Type", "text/plain");
-
-                return res.status(404).send("Not found");
-              }
-            }
-
-            data.key_query_part = req.query.key
-              ? `key=${encodeURIComponent(req.query.key)}&amp;`
-              : "";
-            data.key_query = req.query.key
-              ? `?key=${encodeURIComponent(req.query.key)}`
-              : "";
-
-            if (template === "wmts") {
-              res.header("Content-Type", "text/xml");
-            }
-
-            return res.status(200).send(compiled(data));
-          });
-
-          resolve();
-        });
-      })
-    );
-  };
-
-  serveTemplate("/$", "index", (req) => {
-    const styles = {};
-
-    Object.keys(repo.rendered).forEach((id) => {
-      const style = repo.rendered[id];
-      const { center, tiles, format = "", name = "" } = style.tileJSON;
-
-      const tileSize = 256;
-      let viewer_hash = "";
-      let thumbnail = "";
-      if (center) {
-        viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
-
-        const centerPx = mercator.px([center[0], center[1]], center[2]);
-
-        // Set thumbnail (default size: 256px x 256px)
-        thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.png`;
+        for (const key in obj) {
+          obj[key] = removeCircularReferences(obj[key], seen);
+        }
       }
 
-      styles[id] = {
-        xyz_link: getTileUrls(req, tiles, `styles/${id}`, tileSize, format)[0],
-        viewer_hash,
-        thumbnail,
-        name,
-      };
+      return obj;
+    }
+
+    const cleanedObject = removeCircularReferences(repo);
+
+    const jsonData = JSON.stringify(cleanedObject);
+
+    fs.writeFile("./repo.json", jsonData, "utf8", (err) => {
+      if (err) {
+        throw err;
+      }
+    }); */
+    })
+    .catch((error) => {
+      printLog("error", `Failed to starting server: ${error}`);
+
+      process.exit(1);
     });
-
-    const datas = {};
-
-    Object.keys(repo.data).forEach((id) => {
-      const data = repo.data[id];
-      const { center, filesize, format = "", tiles, name = "" } = data.tileJSON;
-
-      const tileSize = 256;
-      let viewer_hash = "";
-      let thumbnail = "";
-      if (center) {
-        viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
-
-        if (format !== "pbf") {
-          const centerPx = mercator.px([center[0], center[1]], center[2]);
-
-          // Set thumbnail (default size: 256px x 256px)
-          thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.${format}`;
-        }
-      }
-
-      let formatted_filesize = "";
-      if (filesize) {
-        let suffix = "kB";
-        let size = parseInt(filesize, 10) / 1024;
-
-        if (size > 1024) {
-          suffix = "MB";
-          size /= 1024;
-        }
-
-        if (size > 1024) {
-          suffix = "GB";
-          size /= 1024;
-        }
-
-        formatted_filesize = `${size.toFixed(2)} ${suffix}`;
-      }
-
-      datas[id] = {
-        xyz_link: getTileUrls(req, tiles, `data/${id}`, undefined, format)[0],
-        viewer_hash,
-        thumbnail,
-        source_type: data.sourceType,
-        is_vector: format === "pbf",
-        formatted_filesize,
-        name: name,
-      };
-    });
-
-    return {
-      styles: Object.keys(styles).length ? styles : null,
-      data: Object.keys(datas).length ? datas : null,
-    };
-  });
-
-  serveTemplate("/styles/:id/$", "viewer", (req) => {
-    const id = decodeURI(req.params.id);
-    const style = repo.rendered[id];
-    const { name = "" } = style.tileJSON;
-
-    if (!style) {
-      return null;
-    }
-
-    return {
-      id,
-      name,
-    };
-  });
-
-  serveTemplate("/styles/:id/wmts.xml", "wmts", (req) => {
-    const id = decodeURI(req.params.id);
-    const wmts = repo.rendered[id];
-    const { name = "" } = wmts.tileJSON;
-
-    if (!wmts) {
-      return null;
-    }
-
-    return {
-      id,
-      name,
-      base_url: `${req.get("X-Forwarded-Protocol") ? req.get("X-Forwarded-Protocol") : req.protocol}://${req.get("host")}/`,
-    };
-  });
-
-  serveTemplate("/data/:id/$", "data", (req) => {
-    const id = decodeURI(req.params.id);
-    const data = repo.data[id];
-    const { name = "", format = "" } = data.tileJSON;
-
-    if (!data) {
-      return null;
-    }
-
-    return {
-      id,
-      name,
-      is_vector: format === "pbf",
-    };
-  });
-
-  let startupComplete = false;
-
-  app.get("/health", async (req, res, next) => {
-    res.header("Content-Type", "text/plain");
-
-    if (startupComplete) {
-      return res.status(200).send("OK");
-    } else {
-      return res.status(503).send("Starting");
-    }
-  });
 
   const server = app.listen(opts.port, function () {
     printLog("info", `Listening in port: ${this.address().port}`);
@@ -378,43 +435,4 @@ export function newServer(opts) {
 
     return res.status(200).send("OK");
   });
-
-  /*  */
-  Promise.all(startupPromises)
-    .then(() => {
-      printLog("info", "Startup complete!");
-
-      startupComplete = true;
-
-      /* function removeCircularReferences(obj, seen = new Set()) {
-      if (typeof obj === "object" && obj !== null) {
-        if (seen.has(obj)) {
-          return undefined;
-        }
-
-        seen.add(obj);
-
-        for (const key in obj) {
-          obj[key] = removeCircularReferences(obj[key], seen);
-        }
-      }
-
-      return obj;
-    }
-
-    const cleanedObject = removeCircularReferences(repo);
-
-    const jsonData = JSON.stringify(cleanedObject);
-
-    fs.writeFile("./repo.json", jsonData, "utf8", (err) => {
-      if (err) {
-        throw err;
-      }
-    }); */
-    })
-    .catch((error) => {
-      printLog("error", `Failed to starting server: ${error}`);
-
-      process.exit(1);
-    });
 }

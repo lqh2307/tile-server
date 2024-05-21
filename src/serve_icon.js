@@ -25,7 +25,5 @@ export const serve_icon = {
         }
       })
     );
-
-    return true;
   },
 };

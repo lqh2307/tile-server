@@ -79,7 +79,5 @@ export const serve_font = {
         }
       })
     );
-
-    return true;
   },
 };

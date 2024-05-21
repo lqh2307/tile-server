@@ -328,7 +328,5 @@ export const serve_data = {
         }
       })
     );
-
-    return true;
   },
 };

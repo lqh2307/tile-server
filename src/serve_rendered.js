@@ -800,7 +800,7 @@ export const serve_rendered = {
 
     app.get(util.format(staticPattern, boundsPattern), serveBounds);
 
-    app.get("/(:tileSize(256|512)/)?rendered.json", (req, res, next) => {
+    app.get("/(:tileSize(256|512)/)?rendered.json", async (req, res, next) => {
       const { tileSize = "" } = req.params;
       const rendereds = Object.keys(repo.rendered);
 
@@ -1366,8 +1366,6 @@ export const serve_rendered = {
         }
       })
     );
-
-    return true;
   },
 
   remove: (repo, id) => {
