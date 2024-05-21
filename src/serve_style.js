@@ -9,7 +9,7 @@ import { fixUrl, printLog, getUrl } from "./utils.js";
 
 export const serve_style = {
   init: async (config, repo) => {
-    const app = express().disable("x-powered-by");
+    const app = express();
     const lastModified = new Date().toUTCString();
 
     app.get("/:id/style.json", async (req, res, next) => {

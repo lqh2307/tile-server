@@ -25,7 +25,7 @@ const FORMAT_PATTERN = "(pbf|jpg|png|jpeg|webp|geojson)";
 
 export const serve_data = {
   init: async (config, repo) => {
-    const app = express().disable("x-powered-by");
+    const app = express();
     const lastModified = new Date().toUTCString();
 
     app.get(

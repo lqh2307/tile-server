@@ -550,7 +550,7 @@ const respondImage = (
 
 export const serve_rendered = {
   init: async (config, repo) => {
-    const app = express().disable("x-powered-by");
+    const app = express();
     const lastModified = new Date().toUTCString();
 
     app.get(

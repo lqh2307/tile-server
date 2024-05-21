@@ -7,7 +7,7 @@ import { printLog, getUrl, validateSprite } from "./utils.js";
 
 export const serve_sprite = {
   init: async (config, repo) => {
-    const app = express().disable("x-powered-by");
+    const app = express();
     const lastModified = new Date().toUTCString();
     const spritePath = config.options.paths.sprites;
 

@@ -5,8 +5,6 @@ import path from "node:path";
 import chokidar from "chokidar";
 import enableShutdown from "http-shutdown";
 import express from "express";
-import handlebars from "handlebars";
-import SphericalMercator from "@mapbox/sphericalmercator";
 import morgan from "morgan";
 import chalk from "chalk";
 import { serve_data } from "./serve_data.js";
@@ -14,9 +12,8 @@ import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_sprite } from "./serve_sprite.js";
-import { getTileUrls, printLog } from "./utils.js";
-
-const mercator = new SphericalMercator();
+import { serve_template } from "./serve_template.js";
+import { printLog } from "./utils.js";
 
 const logFormat = `${chalk.gray(":date[iso]")} ${chalk.green("[INFO]")} :method :url :status :res[content-length] :response-time :remote-addr :user-agent`;
 
@@ -81,14 +78,11 @@ export function newServer(opts) {
   printLog("info", "Starting server...");
 
   const config = loadConfigFile(opts.config);
-
   const repo = createRepo();
-
   const app = express()
     .disable("x-powered-by")
     .enable("trust proxy")
-    .use(morgan(logFormat))
-    .use("/", express.static(path.resolve("public", "resources")));
+    .use(morgan(logFormat));
 
   let startupComplete = false;
 
@@ -101,208 +95,6 @@ export function newServer(opts) {
       return res.status(503).send("Starting");
     }
   });
-
-  const serveTemplate = async (urlPath, template) => {
-    let dataGetter = null;
-
-    if (template === "index") {
-      if (config.options.frontPage === false) {
-        return;
-      }
-
-      dataGetter = async (req) => {
-        const styles = {};
-
-        await Promise.all(
-          Object.keys(repo.rendered).map(async (id) => {
-            const style = repo.rendered[id];
-            const { center, tiles, format = "", name = "" } = style.tileJSON;
-            const tileSize = 256;
-            const xyzLink = getTileUrls(
-              req,
-              tiles,
-              `styles/${id}`,
-              tileSize,
-              format
-            )[0];
-
-            let viewer_hash = "";
-            let thumbnail = "";
-            if (center) {
-              viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
-
-              const centerPx = mercator.px([center[0], center[1]], center[2]);
-
-              // Set thumbnail (default size: 256px x 256px)
-              thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.png`;
-            }
-
-            styles[id] = {
-              xyz_link: xyzLink,
-              viewer_hash,
-              thumbnail,
-              name,
-            };
-          })
-        );
-
-        const datas = {};
-
-        await Promise.all(
-          Object.keys(repo.data).map(async (id) => {
-            const data = repo.data[id];
-            const {
-              center,
-              filesize,
-              format = "",
-              tiles,
-              name = "",
-            } = data.tileJSON;
-            const tileSize = 256;
-            const xyzLink = getTileUrls(
-              req,
-              tiles,
-              `data/${id}`,
-              undefined,
-              format
-            )[0];
-
-            let viewer_hash = "";
-            let thumbnail = "";
-            if (center) {
-              viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
-
-              if (format !== "pbf") {
-                const centerPx = mercator.px([center[0], center[1]], center[2]);
-
-                // Set thumbnail (default size: 256px x 256px)
-                thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.${format}`;
-              }
-            }
-
-            let formatted_filesize = "";
-            if (filesize) {
-              let suffix = "kB";
-              let size = parseInt(filesize, 10) / 1024;
-
-              if (size > 1024) {
-                suffix = "MB";
-                size /= 1024;
-              }
-
-              if (size > 1024) {
-                suffix = "GB";
-                size /= 1024;
-              }
-
-              formatted_filesize = `${size.toFixed(2)} ${suffix}`;
-            }
-
-            datas[id] = {
-              xyz_link: xyzLink,
-              viewer_hash,
-              thumbnail,
-              source_type: data.sourceType,
-              is_vector: format === "pbf",
-              formatted_filesize,
-              name: name,
-            };
-          })
-        );
-
-        return {
-          styles: Object.keys(styles).length ? styles : null,
-          data: Object.keys(datas).length ? datas : null,
-        };
-      };
-    } else if (template === "viewer") {
-      dataGetter = async (req) => {
-        const id = decodeURI(req.params.id);
-        const style = repo.rendered[id];
-        const { name = "" } = style.tileJSON;
-
-        if (!style) {
-          return null;
-        }
-
-        return {
-          id,
-          name,
-        };
-      };
-    } else if (template === "wmts") {
-      dataGetter = async (req) => {
-        const id = decodeURI(req.params.id);
-        const wmts = repo.rendered[id];
-        const { name = "" } = wmts.tileJSON;
-
-        if (!wmts) {
-          return null;
-        }
-
-        return {
-          id,
-          name,
-          base_url: `${req.get("X-Forwarded-Protocol") ? req.get("X-Forwarded-Protocol") : req.protocol}://${req.get("host")}/`,
-        };
-      };
-    } else if (template === "data") {
-      dataGetter = async (req) => {
-        const id = decodeURI(req.params.id);
-        const data = repo.data[id];
-        const { name = "", format } = data.tileJSON;
-
-        if (!data) {
-          return null;
-        }
-
-        return {
-          id,
-          name,
-          is_vector: format === "pbf",
-        };
-      };
-    } else {
-      return;
-    }
-
-    const templatePath = path.resolve(
-      "public",
-      "templates",
-      `${template}.tmpl`
-    );
-
-    const file = fs.readFileSync(templatePath);
-
-    const compiled = handlebars.compile(file.toString());
-
-    app.use(urlPath, async (req, res, next) => {
-      let data = {};
-
-      if (dataGetter) {
-        data = await dataGetter(req);
-
-        if (!data) {
-          res.header("Content-Type", "text/plain");
-
-          return res.status(404).send("Not found");
-        }
-      }
-
-      data.key_query_part = req.query.key
-        ? `key=${encodeURIComponent(req.query.key)}&amp;`
-        : "";
-      data.key_query = req.query.key
-        ? `?key=${encodeURIComponent(req.query.key)}`
-        : "";
-
-      if (template === "wmts") {
-        res.header("Content-Type", "text/xml");
-      }
-
-      return res.status(200).send(compiled(data));
-    });
-  };
 
   /*  */
   Promise.all([
@@ -321,6 +113,9 @@ export function newServer(opts) {
     serve_rendered.init(config, repo).then((sub) => {
       app.use("/styles", sub);
     }),
+    serve_template.init(config, repo).then((sub) => {
+      app.use("/", sub);
+    }),
     serve_font.add(config, repo),
     serve_sprite.add(config, repo),
     serve_data
@@ -330,10 +125,6 @@ export function newServer(opts) {
           .add(config, repo)
           .then(() => serve_rendered.add(config, repo))
       ),
-    serveTemplate("/$", "index"),
-    serveTemplate("/styles/:id/$", "viewer"),
-    serveTemplate("/styles/:id/wmts.xml", "wmts"),
-    serveTemplate("/data/:id/$", "data"),
   ])
     .then(() => {
       printLog("info", "Startup complete!");
