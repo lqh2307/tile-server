@@ -64,9 +64,9 @@ const extensionToFormat = {
 const mercator = new SphericalMercator();
 
 mlgl.on("message", (error) => {
-  if (error.severity === "WARNING") {
+  if (error.severity === "ERROR") {
     printLog("error", `mlgl: ${JSON.stringify(error)}`);
-  } else if (error.severity === "ERROR") {
+  } else if (error.severity === "WARNING") {
     printLog("warning", `mlgl: ${JSON.stringify(error)}`);
   }
 });
