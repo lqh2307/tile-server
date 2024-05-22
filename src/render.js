@@ -45,6 +45,7 @@ const drawMarker = (ctx, marker, z) => {
       if (marker.offsetX) {
         xCoordinate = xCoordinate + marker.offsetX * scale;
       }
+
       if (marker.offsetY) {
         yCoordinate = yCoordinate + marker.offsetY * scale;
       }

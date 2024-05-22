@@ -10,7 +10,6 @@ import { fixUrl, printLog, getUrl } from "./utils.js";
 export const serve_style = {
   init: async (config, repo) => {
     const app = express();
-    const lastModified = new Date().toUTCString();
 
     app.get("/:id/style.json", async (req, res, next) => {
       const id = decodeURI(req.params.id);
@@ -38,7 +37,6 @@ export const serve_style = {
         }
 
         res.header("Content-Type", "application/json");
-        res.header("Last-Modified", lastModified);
 
         return res.status(200).send(styleJSON);
       } catch (error) {
@@ -64,7 +62,6 @@ export const serve_style = {
       });
 
       res.header("Content-Type", "text/plain");
-      res.header("Last-Modified", lastModified);
 
       return res.status(200).send(result);
     });

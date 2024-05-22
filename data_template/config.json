@@ -15,8 +15,9 @@
       "webp": 100
     },
     "maxScaleFactor": 1,
-    "maxSize": 8192,
+    "maxSize": 2048,
     "pbfAlias": "pbf",
+    "frontPage": true,
     "serveStaticMaps": true,
     "allowRemoteMarkerIcons": true,
     "allowInlineMarkerImages": true,

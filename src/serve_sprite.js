@@ -8,7 +8,6 @@ import { printLog, getUrl, validateSprite } from "./utils.js";
 export const serve_sprite = {
   init: async (config, repo) => {
     const app = express();
-    const lastModified = new Date().toUTCString();
     const spritePath = config.options.paths.sprites;
 
     app.get(
@@ -33,8 +32,6 @@ export const serve_sprite = {
             res.header("Content-type", "image/png");
           }
 
-          res.header("Last-Modified", lastModified);
-
           return res.status(200).send(data);
         } catch (error) {
           printLog("error", `Failed to get sprite "${id}": ${error}`);
@@ -57,7 +54,6 @@ export const serve_sprite = {
       });
 
       res.header("Content-Type", "text/plain");
-      res.header("Last-Modified", lastModified);
 
       return res.status(200).send(result);
     });

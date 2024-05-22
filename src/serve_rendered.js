@@ -71,7 +71,7 @@ mlgl.on("message", (e) => {
 });
 
 /**
- * Cache of response data by sharp output format and color.  Entry for empty
+ * Cache of response data by sharp output format and color. Entry for empty
  * string is for unknown or unsupported formats.
  */
 const cachedEmptyResponses = {
@@ -86,7 +86,9 @@ const cachedEmptyResponses = {
  */
 function createEmptyResponse(format, color, callback) {
   if (!format || format === "pbf") {
-    callback(null, { data: cachedEmptyResponses[""] });
+    callback(null, {
+      data: cachedEmptyResponses[""],
+    });
 
     return;
   }
@@ -102,7 +104,9 @@ function createEmptyResponse(format, color, callback) {
   const cacheKey = `${format},${color}`;
   const data = cachedEmptyResponses[cacheKey];
   if (data) {
-    callback(null, { data: data });
+    callback(null, {
+      data: data,
+    });
 
     return;
   }
@@ -124,7 +128,9 @@ function createEmptyResponse(format, color, callback) {
         cachedEmptyResponses[cacheKey] = buffer;
       }
 
-      callback(null, { data: buffer });
+      callback(null, {
+        data: buffer,
+      });
     });
 }
 
@@ -540,7 +546,6 @@ const respondImage = (
         }
 
         res.header("Content-Type", `image/${format}`);
-        res.header("Last-Modified", item.lastModified);
 
         return res.status(200).send(buffer);
       });
@@ -551,7 +556,6 @@ const respondImage = (
 export const serve_rendered = {
   init: async (config, repo) => {
     const app = express();
-    const lastModified = new Date().toUTCString();
 
     app.get(
       `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(@\\d+x)?.:format(${FORMAT_PATTERN}{1})`,
@@ -568,14 +572,6 @@ export const serve_rendered = {
         try {
           if (!item) {
             throw Error("Rendered data is not found");
-          }
-
-          const modifiedSince = req.get("if-modified-since");
-          const cc = req.get("cache-control");
-          if (modifiedSince && (!cc || cc.indexOf("no-cache") === -1)) {
-            if (new Date(item.lastModified) <= new Date(modifiedSince)) {
-              return res.status(304).send();
-            }
           }
 
           if (
@@ -815,7 +811,6 @@ export const serve_rendered = {
       });
 
       res.header("Content-Type", "text/plain");
-      res.header("Last-Modified", lastModified);
 
       return res.status(200).send(result);
     });
@@ -1003,7 +998,9 @@ export const serve_rendered = {
               const filePath = path.join(spritePath, file);
 
               fs.readFile(filePath, (err, data) => {
-                callback(err, { data: data });
+                callback(err, {
+                  data: data,
+                });
               });
             } else if (protocol === "fonts") {
               const parts = decodeURIComponent(req.url).split("/");
@@ -1011,11 +1008,13 @@ export const serve_rendered = {
               const range = parts[3].split(".")[0];
 
               try {
-                const concatenated = await getFontsPbf(fontPath, fonts, range);
-
-                callback(null, { data: concatenated });
+                callback(null, {
+                  data: await getFontsPbf(fontPath, fonts, range),
+                });
               } catch (err) {
-                callback(err, { data: null });
+                callback(err, {
+                  data: null,
+                });
               }
             } else if (protocol === "mbtiles" || protocol === "pmtiles") {
               const parts = decodeURIComponent(req.url).split("/");
@@ -1032,7 +1031,10 @@ export const serve_rendered = {
                 const { data, headers } = await getPMtilesTile(source, z, x, y);
 
                 if (!data) {
-                  printLog("error", `PMTiles error, serving empty: ${err}`);
+                  printLog(
+                    "warning",
+                    `PMTiles source "${sourceId}" error: ${err}. Serving empty`
+                  );
 
                   createEmptyResponse(
                     sourceInfo.format,
@@ -1041,21 +1043,18 @@ export const serve_rendered = {
                   );
 
                   return;
-                } else {
-                  const response = {
-                    data,
-                  };
-
-                  if (headers["Last-Modified"]) {
-                    response.modified = new Date(headers["Last-Modified"]);
-                  }
-
-                  callback(null, response);
                 }
+
+                callback(null, {
+                  data: data,
+                });
               } else if (sourceType === "mbtiles") {
                 source.getTile(z, x, y, (err, data, headers) => {
                   if (err) {
-                    printLog("error", `MBTiles error, serving empty: ${err}`);
+                    printLog(
+                      "warning",
+                      `MBTiles source "${sourceId}" error: ${err}. Serving empty`
+                    );
 
                     createEmptyResponse(
                       sourceInfo.format,
@@ -1067,10 +1066,6 @@ export const serve_rendered = {
                   }
 
                   const response = {};
-
-                  if (headers["Last-Modified"]) {
-                    response.modified = new Date(headers["Last-Modified"]);
-                  }
 
                   if (format === "pbf") {
                     try {
@@ -1091,24 +1086,12 @@ export const serve_rendered = {
             } else if (protocol === "http" || protocol === "https") {
               try {
                 const { data, headers } = await axios.get(req.url, {
-                  responseType: "arraybuffer", // Get the response as raw buffer
-                  // Axios handles gzip by default, so no need for a gzip flag
+                  responseType: "arraybuffer",
                 });
 
-                const parsedResponse = {};
-                if (headers["last-modified"]) {
-                  parsedResponse.modified = new Date(headers["last-modified"]);
-                }
-                if (headers.expires) {
-                  parsedResponse.expires = new Date(headers.expires);
-                }
-                if (headers.etag) {
-                  parsedResponse.etag = headers.etag;
-                }
-
-                parsedResponse.data = data;
-
-                callback(null, parsedResponse);
+                callback(null, {
+                  data: data,
+                });
               } catch (error) {
                 const ext = path
                   .extname(url.parse(req.url).pathname)
@@ -1181,7 +1164,6 @@ export const serve_rendered = {
             tileJSON,
             map,
             dataProjWGStoInternalWGS: null,
-            lastModified: new Date().toUTCString(),
             watermark: item.watermark || config.options.watermark,
             staticAttributionText:
               item.staticAttributionText ||
@@ -1220,7 +1202,7 @@ export const serve_rendered = {
 
                     const stat = fs.statSync(inputFile);
                     if (stat.isFile() === false || stat.size === 0) {
-                      throw Error(`MBTiles data "${name}" is invalid`);
+                      throw Error(`MBTiles source data "${name}" is invalid`);
                     }
 
                     map.sourceTypes[name] = "mbtiles";
@@ -1283,7 +1265,7 @@ export const serve_rendered = {
 
                 const stat = fs.statSync(inputFile);
                 if (stat.isFile() === false || stat.size === 0) {
-                  throw Error(`PMTiles data "${name}" is invalid`);
+                  throw Error(`PMTiles source data "${name}" is invalid`);
                 }
 
                 map.sources[name] = openPMtiles(inputFile);
@@ -1375,6 +1357,7 @@ export const serve_rendered = {
       item.map.renderers.forEach((pool) => {
         pool.close();
       });
+
       item.map.renderersStatic.forEach((pool) => {
         pool.close();
       });

@@ -15,7 +15,6 @@ export const serve_template = {
       "/",
       express.static(path.resolve("public", "resources"))
     );
-    const lastModified = new Date().toUTCString();
 
     if (config.options.frontPage) {
       app.get("/$", async (req, res, next) => {
@@ -41,7 +40,6 @@ export const serve_template = {
 
             const centerPx = mercator.px([center[0], center[1]], center[2]);
 
-            // Set thumbnail (default size: 256px x 256px)
             thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.png`;
           }
 
@@ -79,7 +77,6 @@ export const serve_template = {
             if (format !== "pbf") {
               const centerPx = mercator.px([center[0], center[1]], center[2]);
 
-              // Set thumbnail (default size: 256px x 256px)
               thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.${format}`;
             }
           }
@@ -127,12 +124,9 @@ export const serve_template = {
         };
 
         const templatePath = path.resolve("public", "templates", "index.tmpl");
-
         const file = fs.readFileSync(templatePath);
 
         const compiled = handlebars.compile(file.toString());
-
-        res.header("Last-Modified", lastModified);
 
         return res.status(200).send(compiled(serveData));
       });
@@ -166,8 +160,6 @@ export const serve_template = {
 
       const compiled = handlebars.compile(file.toString());
 
-      res.header("Last-Modified", lastModified);
-
       return res.status(200).send(compiled(serveData));
     });
 
@@ -195,13 +187,11 @@ export const serve_template = {
       };
 
       const templatePath = path.resolve("public", "templates", "wmts.tmpl");
-
       const file = fs.readFileSync(templatePath);
 
       const compiled = handlebars.compile(file.toString());
 
       res.header("Content-Type", "text/xml");
-      res.header("Last-Modified", lastModified);
 
       return res.status(200).send(compiled(serveData));
     });
@@ -230,12 +220,9 @@ export const serve_template = {
       };
 
       const templatePath = path.resolve("public", "templates", "data.tmpl");
-
       const file = fs.readFileSync(templatePath);
 
       const compiled = handlebars.compile(file.toString());
-
-      res.header("Last-Modified", lastModified);
 
       return res.status(200).send(compiled(serveData));
     });

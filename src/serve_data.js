@@ -26,7 +26,6 @@ const FORMAT_PATTERN = "(pbf|jpg|png|jpeg|webp|geojson)";
 export const serve_data = {
   init: async (config, repo) => {
     const app = express();
-    const lastModified = new Date().toUTCString();
 
     app.get(
       `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(${FORMAT_PATTERN}{1})`,
@@ -94,8 +93,6 @@ export const serve_data = {
                 data = JSON.stringify(geojson);
               }
 
-              delete headers["ETag"]; // do not trust the tile ETag -- regenerate
-
               headers["Content-Encoding"] = "gzip";
 
               res.set(headers);
@@ -159,8 +156,6 @@ export const serve_data = {
                     data = JSON.stringify(geojson);
                   }
 
-                  delete headers["ETag"]; // do not trust the tile ETag -- regenerate
-
                   headers["Content-Encoding"] = "gzip";
 
                   res.set(headers);
@@ -198,7 +193,6 @@ export const serve_data = {
       });
 
       res.header("Content-Type", "text/plain");
-      res.header("Last-Modified", lastModified);
 
       return res.status(200).send(result);
     });
@@ -223,7 +217,6 @@ export const serve_data = {
         );
 
         res.header("Content-type", "application/json");
-        res.header("Last-Modified", lastModified);
 
         return res.status(200).send(info);
       } catch (error) {

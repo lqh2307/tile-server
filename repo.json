@@ -6640,7 +6640,7 @@
           }
         },
         "glyphs": "local://fonts/{fontstack}/{range}.pbf",
-        "sprite": "local://sprites/streets/sprite",
+        "sprite": "",
         "id": "magellan_strait",
         "layers": [
           {
@@ -9443,12 +9443,12 @@
         "name": "Basic",
         "attribution": "<a href=\"https://www.maptiler.com/copyright/\" target=\"_blank\">&copy; MapTiler</a> <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\">&copy; OpenStreetMap contributors</a>",
         "minzoom": 0,
-        "maxzoom": 20,
+        "maxzoom": 24,
         "bounds": [-180, -85.0511, 180, 85.0511],
         "format": "png",
         "type": "baselayer",
-        "center": [105.84139, 21.04813, 10],
-        "tiles": []
+        "tiles": [],
+        "center": [105.84139, 21.04813, 10]
       },
       "map": {
         "renderers": [
@@ -9459,14 +9459,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715622889531],
-                [null, 1715622889532],
-                [null, 1715622889534],
-                [null, 1715622889536],
-                [null, 1715622889538],
-                [null, 1715622889540],
-                [null, 1715622889542],
-                [null, 1715622889544]
+                [null, 1716378993813],
+                [null, 1716378993814],
+                [null, 1716378993815],
+                [null, 1716378993816],
+                [null, 1716378993816],
+                [null, 1716378993817],
+                [null, 1716378993818],
+                [null, 1716378993819]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -9484,7 +9484,6 @@
                     "_idlePrev": {
                       "_idleTimeout": 1000,
                       "_idlePrev": {
-                        "_idleTimeout": 1000,
                         "_idlePrev": {
                           "_idleTimeout": 1000,
                           "_idlePrev": {
@@ -9497,214 +9496,51 @@
                                   "_idleTimeout": 1000,
                                   "_idlePrev": {
                                     "_idleTimeout": 1000,
-                                    "_idlePrev": {
-                                      "_idleTimeout": 1000,
-                                      "_idlePrev": {
-                                        "_idleTimeout": 1000,
-                                        "_idlePrev": {
-                                          "_idleTimeout": 1000,
-                                          "_idlePrev": {
-                                            "_idleTimeout": 1000,
-                                            "_idlePrev": {
-                                              "_idleTimeout": 1000,
-                                              "_idlePrev": {
-                                                "_idleTimeout": 1000,
-                                                "_idlePrev": {
-                                                  "_idleTimeout": 1000,
-                                                  "_idlePrev": {
-                                                    "_idlePrev": {
-                                                      "_idleTimeout": 1000,
-                                                      "_idlePrev": {
-                                                        "_idleTimeout": 1000,
-                                                        "_idlePrev": {
-                                                          "_idleTimeout": 1000,
-                                                          "_idlePrev": {
-                                                            "_idleTimeout": 1000,
-                                                            "_idlePrev": {
-                                                              "_idleTimeout": 1000,
-                                                              "_idlePrev": {
-                                                                "_idleTimeout": 1000,
-                                                                "_idlePrev": {
-                                                                  "_idleTimeout": 1000,
-                                                                  "_idlePrev": {
-                                                                    "_idleTimeout": 1000,
-                                                                    "_idlePrev": {
-                                                                      "_idleTimeout": 1000,
-                                                                      "_idlePrev": {
-                                                                        "_idleTimeout": 1000,
-                                                                        "_idlePrev": {
-                                                                          "_idleTimeout": 1000,
-                                                                          "_idlePrev": {
-                                                                            "_idleTimeout": 1000,
-                                                                            "_idleStart": 1256,
-                                                                            "_repeat": 1000,
-                                                                            "_destroyed": false
-                                                                          },
-                                                                          "_idleStart": 1247,
-                                                                          "_repeat": 1000,
-                                                                          "_destroyed": false
-                                                                        },
-                                                                        "_idleStart": 1230,
-                                                                        "_repeat": 1000,
-                                                                        "_destroyed": false
-                                                                      },
-                                                                      "_idleStart": 1211,
-                                                                      "_repeat": 1000,
-                                                                      "_destroyed": false
-                                                                    },
-                                                                    "_idleStart": 1170,
-                                                                    "_repeat": 1000,
-                                                                    "_destroyed": false
-                                                                  },
-                                                                  "_idleStart": 1128,
-                                                                  "_repeat": 1000,
-                                                                  "_destroyed": false
-                                                                },
-                                                                "_idleStart": 1038,
-                                                                "_repeat": 1000,
-                                                                "_destroyed": false
-                                                              },
-                                                              "_idleStart": 1030,
-                                                              "_repeat": 1000,
-                                                              "_destroyed": false
-                                                            },
-                                                            "_idleStart": 1021,
-                                                            "_repeat": 1000,
-                                                            "_destroyed": false
-                                                          },
-                                                          "_idleStart": 1010,
-                                                          "_repeat": 1000,
-                                                          "_destroyed": false
-                                                        },
-                                                        "_idleStart": 988,
-                                                        "_repeat": 1000,
-                                                        "_destroyed": false
-                                                      },
-                                                      "_idleStart": 907,
-                                                      "_repeat": 1000,
-                                                      "_destroyed": false
-                                                    },
-                                                    "expiry": 1907,
-                                                    "id": -9007199254740991,
-                                                    "msecs": 1000,
-                                                    "priorityQueuePosition": 2
-                                                  },
-                                                  "_idleStart": 1696,
-                                                  "_repeat": 1000,
-                                                  "_destroyed": false
-                                                },
-                                                "_idleStart": 1696,
-                                                "_repeat": 1000,
-                                                "_destroyed": false
-                                              },
-                                              "_idleStart": 1696,
-                                              "_repeat": 1000,
-                                              "_destroyed": false
-                                            },
-                                            "_idleStart": 1696,
-                                            "_repeat": 1000,
-                                            "_destroyed": false
-                                          },
-                                          "_idleStart": 1695,
-                                          "_repeat": 1000,
-                                          "_destroyed": false
-                                        },
-                                        "_idleStart": 1694,
-                                        "_repeat": 1000,
-                                        "_destroyed": false
-                                      },
-                                      "_idleStart": 1435,
-                                      "_repeat": 1000,
-                                      "_destroyed": false
-                                    },
-                                    "_idleStart": 1425,
+                                    "_idleStart": 561,
                                     "_repeat": 1000,
                                     "_destroyed": false
                                   },
-                                  "_idleStart": 1406,
+                                  "_idleStart": 531,
                                   "_repeat": 1000,
                                   "_destroyed": false
                                 },
-                                "_idleStart": 1387,
+                                "_idleStart": 511,
                                 "_repeat": 1000,
                                 "_destroyed": false
                               },
-                              "_idleStart": 1346,
+                              "_idleStart": 490,
                               "_repeat": 1000,
                               "_destroyed": false
                             },
-                            "_idleStart": 1312,
+                            "_idleStart": 437,
                             "_repeat": 1000,
                             "_destroyed": false
                           },
-                          "_idleStart": 1311,
+                          "_idleStart": 403,
                           "_repeat": 1000,
                           "_destroyed": false
                         },
-                        "_idleStart": 1309,
-                        "_repeat": 1000,
-                        "_destroyed": false
+                        "expiry": 1403,
+                        "id": -9007199254740991,
+                        "msecs": 1000,
+                        "priorityQueuePosition": 2
                       },
-                      "_idleStart": 1306,
+                      "_idleStart": 732,
                       "_repeat": 1000,
                       "_destroyed": false
                     },
-                    "_idleStart": 1296,
+                    "_idleStart": 731,
                     "_repeat": 1000,
                     "_destroyed": false
                   },
-                  "_idleStart": 1282,
+                  "_idleStart": 593,
                   "_repeat": 1000,
                   "_destroyed": false
                 },
-                "_idleStart": 1267,
+                "_idleStart": 585,
                 "_repeat": 1000,
                 "_destroyed": false
               },
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}, {}, {}],
-              "freeObjects": [
-                [null, 1715622889560],
-                [null, 1715622889562],
-                [null, 1715622889564],
-                [null, 1715622889568]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 4,
-              "max": 8,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}],
-              "freeObjects": [
-                [null, 1715622889572],
-                [null, 1715622889573]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 2,
-              "max": 4,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
               "isAddObjectIfNeededRegistered": false,
               "queue": { "queueSize": 0, "queue": [] },
               "closed": false
@@ -9719,63 +9555,19 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715622889546],
-                [null, 1715622889547],
-                [null, 1715622889549],
-                [null, 1715622889551],
-                [null, 1715622889553],
-                [null, 1715622889555],
-                [null, 1715622889557],
-                [null, 1715622889558]
+                [null, 1716378993820],
+                [null, 1716378993821],
+                [null, 1716378993822],
+                [null, 1716378993823],
+                [null, 1716378993824],
+                [null, 1716378993824],
+                [null, 1716378993825],
+                [null, 1716378993826]
               ],
               "busyObjects": [],
               "name": "pool",
               "min": 8,
               "max": 16,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}, {}, {}],
-              "freeObjects": [
-                [null, 1715622889569],
-                [null, 1715622889569],
-                [null, 1715622889570],
-                [null, 1715622889571]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 4,
-              "max": 8,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}],
-              "freeObjects": [
-                [null, 1715622889573],
-                [null, 1715622889574]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 2,
-              "max": 4,
               "pendingCreateCount": 0,
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
@@ -9802,11 +9594,11 @@
               "ino": 1599910,
               "size": 458919936,
               "blocks": 896336,
-              "atimeMs": 1715610482057.7305,
+              "atimeMs": 1716301267110.8606,
               "mtimeMs": 1714465291267.8901,
               "ctimeMs": 1715491068446.0078,
               "birthtimeMs": 1714465271652.2068,
-              "atime": "2024-05-13T14:28:02.058Z",
+              "atime": "2024-05-21T14:21:07.111Z",
               "mtime": "2024-04-30T08:21:31.268Z",
               "ctime": "2024-05-12T05:17:48.446Z",
               "birthtime": "2024-04-30T08:21:11.652Z"
@@ -10591,7 +10383,6 @@
         "sourceTypes": { "vietnam": "mbtiles" }
       },
       "dataProjWGStoInternalWGS": null,
-      "lastModified": "Mon, 13 May 2024 17:54:19 GMT",
       "staticAttributionText": ""
     },
     "streets": {
@@ -10600,7 +10391,7 @@
         "name": "Streets",
         "attribution": "<a href=\"https://www.maptiler.com/copyright/\" target=\"_blank\">&copy; MapTiler</a> <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\">&copy; OpenStreetMap contributors</a>",
         "minzoom": 0,
-        "maxzoom": 20,
+        "maxzoom": 24,
         "bounds": [-180, -85.0511, 180, 85.0511],
         "format": "png",
         "type": "baselayer",
@@ -10615,63 +10406,19 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715622889395],
-                [null, 1715622889400],
-                [null, 1715622889405],
-                [null, 1715622889409],
-                [null, 1715622889417],
-                [null, 1715622889421],
-                [null, 1715622889426],
-                [null, 1715622889432]
+                [null, 1716378993719],
+                [null, 1716378993722],
+                [null, 1716378993724],
+                [null, 1716378993728],
+                [null, 1716378993730],
+                [null, 1716378993733],
+                [null, 1716378993735],
+                [null, 1716378993738]
               ],
               "busyObjects": [],
               "name": "pool",
               "min": 8,
               "max": 16,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}, {}, {}],
-              "freeObjects": [
-                [null, 1715622889477],
-                [null, 1715622889482],
-                [null, 1715622889486],
-                [null, 1715622889492]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 4,
-              "max": 8,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}],
-              "freeObjects": [
-                [null, 1715622889513],
-                [null, 1715622889518]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 2,
-              "max": 4,
               "pendingCreateCount": 0,
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
@@ -10689,63 +10436,19 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715622889439],
-                [null, 1715622889444],
-                [null, 1715622889448],
-                [null, 1715622889453],
-                [null, 1715622889457],
-                [null, 1715622889463],
-                [null, 1715622889468],
-                [null, 1715622889473]
+                [null, 1716378993740],
+                [null, 1716378993742],
+                [null, 1716378993745],
+                [null, 1716378993748],
+                [null, 1716378993750],
+                [null, 1716378993753],
+                [null, 1716378993755],
+                [null, 1716378993757]
               ],
               "busyObjects": [],
               "name": "pool",
               "min": 8,
               "max": 16,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}, {}, {}],
-              "freeObjects": [
-                [null, 1715622889496],
-                [null, 1715622889501],
-                [null, 1715622889505],
-                [null, 1715622889509]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 4,
-              "max": 8,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}],
-              "freeObjects": [
-                [null, 1715622889523],
-                [null, 1715622889527]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 2,
-              "max": 4,
               "pendingCreateCount": 0,
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
@@ -10772,11 +10475,11 @@
               "ino": 1599910,
               "size": 458919936,
               "blocks": 896336,
-              "atimeMs": 1715610482057.7305,
+              "atimeMs": 1716301267110.8606,
               "mtimeMs": 1714465291267.8901,
               "ctimeMs": 1715491068446.0078,
               "birthtimeMs": 1714465271652.2068,
-              "atime": "2024-05-13T14:28:02.058Z",
+              "atime": "2024-05-21T14:21:07.111Z",
               "mtime": "2024-04-30T08:21:31.268Z",
               "ctime": "2024-05-12T05:17:48.446Z",
               "birthtime": "2024-04-30T08:21:11.652Z"
@@ -11561,7 +11264,6 @@
         "sourceTypes": { "vietnam": "mbtiles" }
       },
       "dataProjWGStoInternalWGS": null,
-      "lastModified": "Mon, 13 May 2024 17:54:19 GMT",
       "staticAttributionText": ""
     },
     "zurich_switzerland": {
@@ -11570,7 +11272,7 @@
         "name": "Zurich Switzerland",
         "attribution": "",
         "minzoom": 0,
-        "maxzoom": 20,
+        "maxzoom": 24,
         "bounds": [-180, -85.0511, 180, 85.0511],
         "format": "png",
         "type": "baselayer",
@@ -11585,63 +11287,19 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715622889232],
-                [null, 1715622889234],
-                [null, 1715622889237],
-                [null, 1715622889240],
-                [null, 1715622889243],
-                [null, 1715622889245],
-                [null, 1715622889247],
-                [null, 1715622889250]
+                [null, 1716378993644],
+                [null, 1716378993647],
+                [null, 1716378993650],
+                [null, 1716378993653],
+                [null, 1716378993656],
+                [null, 1716378993659],
+                [null, 1716378993661],
+                [null, 1716378993664]
               ],
               "busyObjects": [],
               "name": "pool",
               "min": 8,
               "max": 16,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}, {}, {}],
-              "freeObjects": [
-                [null, 1715622889275],
-                [null, 1715622889278],
-                [null, 1715622889280],
-                [null, 1715622889283]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 4,
-              "max": 8,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}],
-              "freeObjects": [
-                [null, 1715622889295],
-                [null, 1715622889300]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 2,
-              "max": 4,
               "pendingCreateCount": 0,
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
@@ -11659,63 +11317,19 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715622889252],
-                [null, 1715622889255],
-                [null, 1715622889257],
-                [null, 1715622889262],
-                [null, 1715622889265],
-                [null, 1715622889267],
-                [null, 1715622889269],
-                [null, 1715622889272]
+                [null, 1716378993667],
+                [null, 1716378993670],
+                [null, 1716378993672],
+                [null, 1716378993675],
+                [null, 1716378993679],
+                [null, 1716378993682],
+                [null, 1716378993685],
+                [null, 1716378993687]
               ],
               "busyObjects": [],
               "name": "pool",
               "min": 8,
               "max": 16,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}, {}, {}],
-              "freeObjects": [
-                [null, 1715622889285],
-                [null, 1715622889287],
-                [null, 1715622889290],
-                [null, 1715622889292]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 4,
-              "max": 8,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}],
-              "freeObjects": [
-                [null, 1715622889304],
-                [null, 1715622889308]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 2,
-              "max": 4,
               "pendingCreateCount": 0,
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
@@ -11729,7 +11343,6 @@
         "sourceTypes": {}
       },
       "dataProjWGStoInternalWGS": null,
-      "lastModified": "Mon, 13 May 2024 17:54:19 GMT",
       "staticAttributionText": ""
     },
     "magellan_strait": {
@@ -11738,7 +11351,7 @@
         "name": "Magellan Strait",
         "attribution": "",
         "minzoom": 0,
-        "maxzoom": 20,
+        "maxzoom": 24,
         "bounds": [-180, -85.0511, 180, 85.0511],
         "format": "png",
         "type": "baselayer",
@@ -11753,63 +11366,19 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715622889957],
-                [null, 1715622889957],
-                [null, 1715622889957],
-                [null, 1715622889957],
-                [null, 1715622889957],
-                [null, 1715622889957],
-                [null, 1715622889957],
-                [null, 1715622889957]
+                [null, 1716378993958],
+                [null, 1716378993958],
+                [null, 1716378993958],
+                [null, 1716378993958],
+                [null, 1716378993958],
+                [null, 1716378993958],
+                [null, 1716378993958],
+                [null, 1716378993958]
               ],
               "busyObjects": [],
               "name": "pool",
               "min": 8,
               "max": 16,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}, {}, {}],
-              "freeObjects": [
-                [null, 1715622889958],
-                [null, 1715622889958],
-                [null, 1715622889958],
-                [null, 1715622889958]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 4,
-              "max": 8,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}],
-              "freeObjects": [
-                [null, 1715622889958],
-                [null, 1715622889958]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 2,
-              "max": 4,
               "pendingCreateCount": 0,
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
@@ -11827,63 +11396,19 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715622889957],
-                [null, 1715622889957],
-                [null, 1715622889957],
-                [null, 1715622889957],
-                [null, 1715622889957],
-                [null, 1715622889957],
-                [null, 1715622889958],
-                [null, 1715622889958]
+                [null, 1716378993958],
+                [null, 1716378993958],
+                [null, 1716378993958],
+                [null, 1716378993959],
+                [null, 1716378993959],
+                [null, 1716378993959],
+                [null, 1716378993959],
+                [null, 1716378993959]
               ],
               "busyObjects": [],
               "name": "pool",
               "min": 8,
               "max": 16,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}, {}, {}],
-              "freeObjects": [
-                [null, 1715622889958],
-                [null, 1715622889958],
-                [null, 1715622889958],
-                [null, 1715622889958]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 4,
-              "max": 8,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}],
-              "freeObjects": [
-                [null, 1715622889958],
-                [null, 1715622889958]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 2,
-              "max": 4,
               "pendingCreateCount": 0,
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
@@ -11910,11 +11435,11 @@
               "ino": 674049,
               "size": 84647936,
               "blocks": 165328,
-              "atimeMs": 1715610482057.7305,
+              "atimeMs": 1716301267118.8608,
               "mtimeMs": 1714503714760.164,
               "ctimeMs": 1715491064533.8809,
               "birthtimeMs": 1714503499823.494,
-              "atime": "2024-05-13T14:28:02.058Z",
+              "atime": "2024-05-21T14:21:07.119Z",
               "mtime": "2024-04-30T19:01:54.760Z",
               "ctime": "2024-05-12T05:17:44.534Z",
               "birthtime": "2024-04-30T18:58:19.823Z"
@@ -11942,7 +11467,6 @@
         "sourceTypes": { "magellan_strait": "mbtiles" }
       },
       "dataProjWGStoInternalWGS": null,
-      "lastModified": "Mon, 13 May 2024 17:54:19 GMT",
       "staticAttributionText": ""
     },
     "merge": {
@@ -11951,7 +11475,7 @@
         "name": "Merge",
         "attribution": "<a href=\"https://www.maptiler.com/copyright/\" target=\"_blank\">&copy; MapTiler</a> <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\">&copy; OpenStreetMap contributors</a>",
         "minzoom": 0,
-        "maxzoom": 20,
+        "maxzoom": 24,
         "bounds": [-180, -85.0511, 180, 85.0511],
         "format": "png",
         "type": "baselayer",
@@ -11966,63 +11490,19 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715622889577],
-                [null, 1715622889581],
-                [null, 1715622889585],
-                [null, 1715622889589],
-                [null, 1715622889594],
-                [null, 1715622889599],
-                [null, 1715622889603],
-                [null, 1715622889608]
+                [null, 1716378993761],
+                [null, 1716378993764],
+                [null, 1716378993768],
+                [null, 1716378993772],
+                [null, 1716378993775],
+                [null, 1716378993781],
+                [null, 1716378993785],
+                [null, 1716378993787]
               ],
               "busyObjects": [],
               "name": "pool",
               "min": 8,
               "max": 16,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}, {}, {}],
-              "freeObjects": [
-                [null, 1715622889654],
-                [null, 1715622889659],
-                [null, 1715622889664],
-                [null, 1715622889668]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 4,
-              "max": 8,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}],
-              "freeObjects": [
-                [null, 1715622889692],
-                [null, 1715622889697]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 2,
-              "max": 4,
               "pendingCreateCount": 0,
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
@@ -12040,63 +11520,19 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1715622889612],
-                [null, 1715622889617],
-                [null, 1715622889621],
-                [null, 1715622889627],
-                [null, 1715622889632],
-                [null, 1715622889639],
-                [null, 1715622889644],
-                [null, 1715622889649]
+                [null, 1716378993790],
+                [null, 1716378993793],
+                [null, 1716378993796],
+                [null, 1716378993798],
+                [null, 1716378993801],
+                [null, 1716378993806],
+                [null, 1716378993809],
+                [null, 1716378993812]
               ],
               "busyObjects": [],
               "name": "pool",
               "min": 8,
               "max": 16,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}, {}, {}],
-              "freeObjects": [
-                [null, 1715622889673],
-                [null, 1715622889678],
-                [null, 1715622889682],
-                [null, 1715622889687]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 4,
-              "max": 8,
-              "pendingCreateCount": 0,
-              "idleTimeout": 30000,
-              "idleCheckInterval": 1000,
-              "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
-              "closed": false
-            }
-          },
-          {
-            "_events": {},
-            "_eventsCount": 0,
-            "priv": {
-              "allObjects": [{}, {}],
-              "freeObjects": [
-                [null, 1715622889701],
-                [null, 1715622889710]
-              ],
-              "busyObjects": [],
-              "name": "pool",
-              "min": 2,
-              "max": 4,
               "pendingCreateCount": 0,
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
@@ -12123,11 +11559,11 @@
               "ino": 1599910,
               "size": 458919936,
               "blocks": 896336,
-              "atimeMs": 1715610482057.7305,
+              "atimeMs": 1716301267110.8606,
               "mtimeMs": 1714465291267.8901,
               "ctimeMs": 1715491068446.0078,
               "birthtimeMs": 1714465271652.2068,
-              "atime": "2024-05-13T14:28:02.058Z",
+              "atime": "2024-05-21T14:21:07.111Z",
               "mtime": "2024-04-30T08:21:31.268Z",
               "ctime": "2024-05-12T05:17:48.446Z",
               "birthtime": "2024-04-30T08:21:11.652Z"
@@ -12912,7 +12348,6 @@
         "sourceTypes": { "vietnam_1": "mbtiles" }
       },
       "dataProjWGStoInternalWGS": null,
-      "lastModified": "Mon, 13 May 2024 17:54:19 GMT",
       "staticAttributionText": ""
     }
   },
@@ -13692,6 +13127,7 @@
           }
         ]
       },
+      "sourceType": "mbtiles",
       "source": {
         "_maxListeners": 0,
         "filename": "/home/huy/Downloads/source/tile-server/data/mbtiles/vietnam/vietnam.mbtiles",
@@ -13708,11 +13144,11 @@
           "ino": 1599910,
           "size": 458919936,
           "blocks": 896336,
-          "atimeMs": 1715610482057.7305,
+          "atimeMs": 1716301267110.8606,
           "mtimeMs": 1714465291267.8901,
           "ctimeMs": 1715491068446.0078,
           "birthtimeMs": 1714465271652.2068,
-          "atime": "2024-05-13T14:28:02.058Z",
+          "atime": "2024-05-21T14:21:07.111Z",
           "mtime": "2024-04-30T08:21:31.268Z",
           "ctime": "2024-05-12T05:17:48.446Z",
           "birthtime": "2024-04-30T08:21:11.652Z"
@@ -13735,8 +13171,7 @@
           "version": "3.11"
         },
         "_eventsCount": 0
-      },
-      "sourceType": "mbtiles"
+      }
     },
     "vietnam_1": {
       "tileJSON": {
@@ -14062,6 +13497,7 @@
           ]
         }
       },
+      "sourceType": "mbtiles",
       "source": {
         "_maxListeners": 0,
         "filename": "/home/huy/Downloads/source/tile-server/data/mbtiles/vietnam_1/vietnam_1.mbtiles",
@@ -14078,11 +13514,11 @@
           "ino": 1599911,
           "size": 245223424,
           "blocks": 478960,
-          "atimeMs": 1715610482057.7305,
+          "atimeMs": 1716301267118.8608,
           "mtimeMs": 1714465298607.7747,
           "ctimeMs": 1715491069906.0552,
           "birthtimeMs": 1714465293439.856,
-          "atime": "2024-05-13T14:28:02.058Z",
+          "atime": "2024-05-21T14:21:07.119Z",
           "mtime": "2024-04-30T08:21:38.608Z",
           "ctime": "2024-05-12T05:17:49.906Z",
           "birthtime": "2024-04-30T08:21:33.440Z"
@@ -14102,8 +13538,7 @@
           "scheme": "xyz"
         },
         "_eventsCount": 0
-      },
-      "sourceType": "mbtiles"
+      }
     },
     "vietnam_hanoi": {
       "tileJSON": {
@@ -14880,6 +14315,7 @@
           }
         ]
       },
+      "sourceType": "mbtiles",
       "source": {
         "_maxListeners": 0,
         "filename": "/home/huy/Downloads/source/tile-server/data/mbtiles/vietnam_hanoi/vietnam_hanoi.mbtiles",
@@ -14896,11 +14332,11 @@
           "ino": 1599912,
           "size": 28033024,
           "blocks": 54752,
-          "atimeMs": 1715610482057.7305,
+          "atimeMs": 1716301267118.8608,
           "mtimeMs": 1714465300183.75,
           "ctimeMs": 1715491066641.9492,
           "birthtimeMs": 1714465299851.7554,
-          "atime": "2024-05-13T14:28:02.058Z",
+          "atime": "2024-05-21T14:21:07.119Z",
           "mtime": "2024-04-30T08:21:40.184Z",
           "ctime": "2024-05-12T05:17:46.642Z",
           "birthtime": "2024-04-30T08:21:39.852Z"
@@ -14923,8 +14359,7 @@
           "version": "3.11"
         },
         "_eventsCount": 0
-      },
-      "sourceType": "mbtiles"
+      }
     },
     "zurich_switzerland": {
       "tileJSON": {
@@ -15062,6 +14497,7 @@
         "version": "3.3",
         "type": "overlay"
       },
+      "sourceType": "mbtiles",
       "source": {
         "_maxListeners": 0,
         "filename": "/home/huy/Downloads/source/tile-server/data/mbtiles/zurich_switzerland/zurich_switzerland.mbtiles",
@@ -15078,11 +14514,11 @@
           "ino": 1599913,
           "size": 24244224,
           "blocks": 47352,
-          "atimeMs": 1715610482057.7305,
+          "atimeMs": 1716301267118.8608,
           "mtimeMs": 1714465301127.7354,
           "ctimeMs": 1715491071226.0981,
           "birthtimeMs": 1714465300483.7454,
-          "atime": "2024-05-13T14:28:02.058Z",
+          "atime": "2024-05-21T14:21:07.119Z",
           "mtime": "2024-04-30T08:21:41.128Z",
           "ctime": "2024-05-12T05:17:51.226Z",
           "birthtime": "2024-04-30T08:21:40.484Z"
@@ -15105,11 +14541,11 @@
           "type": "overlay"
         },
         "_eventsCount": 0
-      },
-      "sourceType": "mbtiles"
+      }
     },
     "magellan_strait": {
       "tileJSON": { "tilejson": "2.0.0" },
+      "sourceType": "mbtiles",
       "source": {
         "_maxListeners": 0,
         "filename": "/home/huy/Downloads/source/tile-server/data/mbtiles/MagellanStrait/MagellanStrait.mbtiles",
@@ -15126,19 +14562,18 @@
           "ino": 674049,
           "size": 84647936,
           "blocks": 165328,
-          "atimeMs": 1715610482057.7305,
+          "atimeMs": 1716301267118.8608,
           "mtimeMs": 1714503714760.164,
           "ctimeMs": 1715491064533.8809,
           "birthtimeMs": 1714503499823.494,
-          "atime": "2024-05-13T14:28:02.058Z",
+          "atime": "2024-05-21T14:21:07.119Z",
           "mtime": "2024-04-30T19:01:54.760Z",
           "ctime": "2024-05-12T05:17:44.534Z",
           "birthtime": "2024-04-30T18:58:19.823Z"
         },
         "open": true,
         "_eventsCount": 0
-      },
-      "sourceType": "mbtiles"
+      }
     }
   },
   "fonts": {

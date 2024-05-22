@@ -7,7 +7,6 @@ import { getFontsPbf, printLog, getUrl, validatePBFFont } from "./utils.js";
 export const serve_font = {
   init: async (config, repo) => {
     const app = express();
-    const lastModified = new Date().toUTCString();
     const fontPath = config.options.paths.fonts;
 
     app.get("/:id/:range(\\d{1,5}-\\d{1,5}).pbf", async (req, res, next) => {
@@ -18,7 +17,6 @@ export const serve_font = {
         const concatenated = await getFontsPbf(fontPath, id, range);
 
         res.header("Content-type", "application/x-protobuf");
-        res.header("Last-Modified", lastModified);
 
         return res.status(200).send(concatenated);
       } catch (error) {
@@ -41,7 +39,6 @@ export const serve_font = {
       });
 
       res.header("Content-Type", "text/plain");
-      res.header("Last-Modified", lastModified);
 
       return res.status(200).send(result);
     });
