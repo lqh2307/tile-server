@@ -34,6 +34,7 @@ import {
   fixTileJSONCenter,
   printLog,
   getUrl,
+  getScale,
 } from "./utils.js";
 import {
   openPMtiles,
@@ -62,11 +63,11 @@ const extensionToFormat = {
 
 const mercator = new SphericalMercator();
 
-const getScale = (scale = "@1x") => Number(scale.slice(1, -1)) || 1;
-
-mlgl.on("message", (e) => {
-  if (e.severity === "WARNING" || e.severity === "ERROR") {
-    printLog("error", `mlgl: ${JSON.stringify(e)}`);
+mlgl.on("message", (error) => {
+  if (error.severity === "WARNING") {
+    printLog("error", `mlgl: ${JSON.stringify(error)}`);
+  } else if (error.severity === "ERROR") {
+    printLog("warning", `mlgl: ${JSON.stringify(error)}`);
   }
 });
 
@@ -394,12 +395,7 @@ const respondImage = (
   overlay = null,
   mode = "tile"
 ) => {
-  if (
-    Math.abs(lon) > 180 ||
-    Math.abs(lat) > 85.06 ||
-    lon !== lon ||
-    lat !== lat
-  ) {
+  if (Math.abs(lon) > 180 || Math.abs(lat) > 85.06) {
     res.header("Content-Type", "text/plain");
 
     return res.status(400).send("Invalid center");
@@ -407,9 +403,7 @@ const respondImage = (
 
   if (
     Math.min(width, height) <= 0 ||
-    Math.max(width, height) * scale > (config.options.maxSize || 2048) ||
-    width !== width ||
-    height !== height
+    Math.max(width, height) * scale > (config.options.maxSize || 2048)
   ) {
     res.header("Content-Type", "text/plain");
 
@@ -435,6 +429,14 @@ const respondImage = (
   }
 
   pool.acquire((err, renderer) => {
+    if (err) {
+      printLog("Render error:", err);
+
+      res.header("Content-Type", "text/plain");
+
+      return res.status(500).send(err);
+    }
+
     // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
     let mlglZ;
     if (width === 512) {
@@ -467,7 +469,7 @@ const respondImage = (
     renderer.render(params, (err, data) => {
       pool.release(renderer);
       if (err) {
-        printLog("error", err);
+        printLog("Render error:", err);
 
         res.header("Content-Type", "text/plain");
 
@@ -901,13 +903,10 @@ export const serve_rendered = {
           z = Math.min(z, maxZoom);
         }
 
-        const x = center[0];
-        const y = center[1];
-
         const overlay = await renderOverlay(
           z,
-          x,
-          y,
+          center[0],
+          center[1],
           0,
           0,
           width,
@@ -922,8 +921,8 @@ export const serve_rendered = {
           config,
           item,
           z,
-          x,
-          y,
+          center[0],
+          center[1],
           0,
           0,
           width,

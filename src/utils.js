@@ -332,3 +332,5 @@ export const validateSprite = (spriteDirPath) => {
     throw error;
   }
 };
+
+export const getScale = (scale = "@1x") => Number(scale.slice(1, -1)) || 1;
