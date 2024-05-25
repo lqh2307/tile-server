@@ -79,8 +79,8 @@ const drawMarker = (ctx, marker, z) => {
     };
 
     img.onload = drawOnCanvas;
-    img.onerror = (err) => {
-      throw err;
+    img.onerror = (error) => {
+      throw error;
     };
     img.src = marker.icon;
   });

@@ -60,7 +60,9 @@
         "layers": [
           {
             "id": "background",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "paint": {
               "background-color": {
                 "stops": [
@@ -74,7 +76,9 @@
           {
             "filter": ["all", ["==", "class", "ice"]],
             "id": "snow",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 24,
             "paint": {
               "fill-antialias": true,
@@ -93,10 +97,15 @@
           {
             "filter": ["==", "$type", "Polygon"],
             "id": "aeroway_fill",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "minzoom": 11,
-            "paint": { "fill-color": "hsl(0,0%,93%)", "fill-opacity": 1 },
+            "paint": {
+              "fill-color": "hsl(0,0%,93%)",
+              "fill-opacity": 1
+            },
             "source": "vietnam",
             "source-layer": "aeroway",
             "type": "fill"
@@ -104,7 +113,9 @@
           {
             "filter": ["all", ["in", "class", "grass", "sand", "wood"]],
             "id": "landcover",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "fill-antialias": false,
@@ -128,7 +139,9 @@
           {
             "filter": ["all", ["in", "class", "industrial", "quarry"]],
             "id": "landuse_industrial",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 24,
             "metadata": {},
             "paint": {
@@ -177,7 +190,9 @@
               ["in", "class", "residential", "suburbs", "neighbourhood"]
             ],
             "id": "landuse_residential",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 24,
             "metadata": {},
             "paint": {
@@ -202,9 +217,14 @@
               ["in", "subclass", "pedestrian", "platform"]
             ],
             "id": "road_area_pedestrian",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
-            "paint": { "fill-color": "hsl(43,100%,99%)", "fill-opacity": 0.7 },
+            "paint": {
+              "fill-color": "hsl(43,100%,99%)",
+              "fill-opacity": 0.7
+            },
             "source": "vietnam",
             "source-layer": "transportation",
             "type": "fill"
@@ -227,7 +247,9 @@
               ]
             ],
             "id": "landuse",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 24,
             "metadata": {},
             "minzoom": 9,
@@ -264,7 +286,10 @@
           {
             "filter": ["all", ["==", "brunnel", "tunnel"]],
             "id": "waterway_tunnel",
-            "layout": { "line-cap": "round", "visibility": "visible" },
+            "layout": {
+              "line-cap": "round",
+              "visibility": "visible"
+            },
             "minzoom": 14,
             "paint": {
               "line-color": "hsl(210,73%,78%)",
@@ -285,7 +310,10 @@
           {
             "filter": ["all", ["!=", "brunnel", "tunnel"]],
             "id": "waterway_river",
-            "layout": { "line-cap": "round", "visibility": "visible" },
+            "layout": {
+              "line-cap": "round",
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(210,73%,78%)",
@@ -303,7 +331,9 @@
           {
             "filter": ["all"],
             "id": "water",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "fill-antialias": true,
@@ -323,7 +353,9 @@
           {
             "filter": ["all", ["==", "$type", "LineString"]],
             "id": "aeroway",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "minzoom": 11,
             "paint": {
@@ -345,10 +377,15 @@
           {
             "filter": ["all", ["in", "class", "runway"]],
             "id": "aeroway_runway",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "minzoom": 11,
-            "paint": { "fill-color": "hsl(0,0%,97%)", "fill-opacity": 1 },
+            "paint": {
+              "fill-color": "hsl(0,0%,97%)",
+              "fill-opacity": 1
+            },
             "source": "vietnam",
             "source-layer": "aeroway",
             "type": "fill"
@@ -356,10 +393,15 @@
           {
             "filter": ["all", ["in", "class", "helipad"]],
             "id": "aeroway_helipad",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "minzoom": 11,
-            "paint": { "fill-color": "hsl(0,0%,100%)", "fill-opacity": 1 },
+            "paint": {
+              "fill-color": "hsl(0,0%,100%)",
+              "fill-opacity": 1
+            },
             "source": "vietnam",
             "source-layer": "aeroway",
             "type": "fill"
@@ -367,7 +409,10 @@
           {
             "filter": ["all", ["in", "class", "ferry"]],
             "id": "ferry_line",
-            "layout": { "line-join": "round", "visibility": "visible" },
+            "layout": {
+              "line-join": "round",
+              "visibility": "visible"
+            },
             "paint": {
               "line-color": {
                 "stops": [
@@ -653,7 +698,9 @@
               ["in", "class", "rail"]
             ],
             "id": "tunnel_rail",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(0,0%,73%)",
@@ -678,7 +725,9 @@
               ["==", "class", "rail"]
             ],
             "id": "tunnel_rail-hatching",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(0,0%,73%)",
@@ -774,7 +823,9 @@
               ["==", "class", "pier"]
             ],
             "id": "road_area_pier",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "fill-antialias": true,
@@ -818,7 +869,9 @@
               ["==", "brunnel", "bridge"]
             ],
             "id": "road_area_bridge",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "fill-antialias": true,
@@ -1326,7 +1379,9 @@
               ["==", "class", "rail"]
             ],
             "id": "rail_major",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": {
@@ -1356,7 +1411,9 @@
               ["==", "class", "rail"]
             ],
             "id": "rail_major-hatching",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(0,0%,72%)",
@@ -1378,7 +1435,9 @@
           {
             "filter": ["all", ["in", "subclass", "tram", "light_rail"]],
             "id": "rail_minor",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(0,0%,73%)",
@@ -1398,7 +1457,9 @@
           {
             "filter": ["all", ["in", "subclass", "tram", "light_rail"]],
             "id": "rail_minor-hatching",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(0,0%,73%)",
@@ -1418,7 +1479,9 @@
           },
           {
             "id": "building",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 15,
             "metadata": {},
             "minzoom": 13,
@@ -1440,7 +1503,9 @@
           {
             "filter": ["all", ["!has", "hide_3d"]],
             "id": "building-3d",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "minzoom": 15,
             "paint": {
@@ -1514,7 +1579,10 @@
           {
             "filter": ["==", "class", "aerialway"],
             "id": "cablecar",
-            "layout": { "line-cap": "round", "visibility": "visible" },
+            "layout": {
+              "line-cap": "round",
+              "visibility": "visible"
+            },
             "minzoom": 13,
             "paint": {
               "line-blur": 1,
@@ -1563,7 +1631,9 @@
               ["<", "admin_level", 10]
             ],
             "id": "border_other",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 13,
             "minzoom": 3,
             "paint": {
@@ -1905,7 +1975,9 @@
               "visibility": "visible"
             },
             "minzoom": 16,
-            "paint": { "icon-opacity": 0.5 },
+            "paint": {
+              "icon-opacity": 0.5
+            },
             "source": "vietnam",
             "source-layer": "transportation",
             "type": "symbol"
@@ -2024,7 +2096,9 @@
               "visibility": "visible"
             },
             "minzoom": 8,
-            "paint": { "text-color": "hsl(0,0%,18%)" },
+            "paint": {
+              "text-color": "hsl(0,0%,18%)"
+            },
             "source": "vietnam",
             "source-layer": "transportation_name",
             "type": "symbol"
@@ -2830,14 +2904,19 @@
         "center": [105.84139, 21.04813],
         "zoom": 10,
         "sources": {
-          "vietnam": { "type": "vector", "url": "local://data/vietnam.json" }
+          "vietnam": {
+            "type": "vector",
+            "url": "local://data/vietnam.json"
+          }
         },
         "glyphs": "http://localhost:8080/fonts/{fontstack}/{range}.pbf",
         "layers": [
           {
             "id": "background",
             "type": "background",
-            "paint": { "background-color": "hsl(47, 26%, 88%)" }
+            "paint": {
+              "background-color": "hsl(47, 26%, 88%)"
+            }
           },
           {
             "id": "landuse-residential",
@@ -2849,8 +2928,13 @@
               ["==", "$type", "Polygon"],
               ["in", "class", "residential", "suburb", "neighbourhood"]
             ],
-            "layout": { "visibility": "visible" },
-            "paint": { "fill-color": "hsl(47, 13%, 86%)", "fill-opacity": 0.7 }
+            "layout": {
+              "visibility": "visible"
+            },
+            "paint": {
+              "fill-color": "hsl(47, 13%, 86%)",
+              "fill-opacity": 0.7
+            }
           },
           {
             "id": "landcover_grass",
@@ -2858,7 +2942,10 @@
             "source": "vietnam",
             "source-layer": "landcover",
             "filter": ["==", "class", "grass"],
-            "paint": { "fill-color": "hsl(82, 46%, 72%)", "fill-opacity": 0.45 }
+            "paint": {
+              "fill-color": "hsl(82, 46%, 72%)",
+              "fill-opacity": 0.45
+            }
           },
           {
             "id": "landcover_wood",
@@ -2888,8 +2975,12 @@
               ["!=", "intermittent", 1],
               ["!=", "brunnel", "tunnel"]
             ],
-            "layout": { "visibility": "visible" },
-            "paint": { "fill-color": "hsl(205, 56%, 73%)" }
+            "layout": {
+              "visibility": "visible"
+            },
+            "paint": {
+              "fill-color": "hsl(205, 56%, 73%)"
+            }
           },
           {
             "id": "water_intermittent",
@@ -2901,8 +2992,13 @@
               ["==", "$type", "Polygon"],
               ["==", "intermittent", 1]
             ],
-            "layout": { "visibility": "visible" },
-            "paint": { "fill-color": "hsl(205, 56%, 73%)", "fill-opacity": 0.7 }
+            "layout": {
+              "visibility": "visible"
+            },
+            "paint": {
+              "fill-color": "hsl(205, 56%, 73%)",
+              "fill-opacity": 0.7
+            }
           },
           {
             "id": "landcover-ice-shelf",
@@ -2910,8 +3006,13 @@
             "source": "vietnam",
             "source-layer": "landcover",
             "filter": ["==", "subclass", "ice_shelf"],
-            "layout": { "visibility": "visible" },
-            "paint": { "fill-color": "hsl(47, 26%, 88%)", "fill-opacity": 0.8 }
+            "layout": {
+              "visibility": "visible"
+            },
+            "paint": {
+              "fill-color": "hsl(47, 26%, 88%)",
+              "fill-opacity": 0.8
+            }
           },
           {
             "id": "landcover-glacier",
@@ -2919,7 +3020,9 @@
             "source": "vietnam",
             "source-layer": "landcover",
             "filter": ["==", "subclass", "glacier"],
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "paint": {
               "fill-color": "hsl(47, 22%, 94%)",
               "fill-opacity": {
@@ -2950,8 +3053,12 @@
             "source": "vietnam",
             "source-layer": "landuse",
             "filter": ["==", "class", "agriculture"],
-            "layout": { "visibility": "visible" },
-            "paint": { "fill-color": "#eae0d0" }
+            "layout": {
+              "visibility": "visible"
+            },
+            "paint": {
+              "fill-color": "#eae0d0"
+            }
           },
           {
             "id": "landuse_overlay_national_park",
@@ -2980,7 +3087,9 @@
               ["==", "$type", "LineString"],
               ["==", "brunnel", "tunnel"]
             ],
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "paint": {
               "line-color": "hsl(205, 56%, 73%)",
               "line-dasharray": [3, 3],
@@ -3011,7 +3120,9 @@
               ["!in", "brunnel", "tunnel", "bridge"],
               ["!=", "intermittent", 1]
             ],
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "paint": {
               "line-color": "hsl(205, 56%, 73%)",
               "line-opacity": 1,
@@ -3035,7 +3146,9 @@
               ["!in", "brunnel", "tunnel", "bridge"],
               ["==", "intermittent", 1]
             ],
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "paint": {
               "line-color": "hsl(205, 56%, 73%)",
               "line-dasharray": [2, 1],
@@ -3061,7 +3174,10 @@
               ["==", "brunnel", "tunnel"],
               ["==", "class", "transit"]
             ],
-            "layout": { "line-cap": "butt", "line-join": "miter" },
+            "layout": {
+              "line-cap": "butt",
+              "line-join": "miter"
+            },
             "paint": {
               "line-color": "hsl(34, 12%, 66%)",
               "line-dasharray": [3, 3],
@@ -3109,7 +3225,9 @@
               "text-font": ["Noto Sans Regular"],
               "text-size": 10
             },
-            "paint": { "text-color": "rgba(212, 177, 146, 1)" }
+            "paint": {
+              "text-color": "rgba(212, 177, 146, 1)"
+            }
           },
           {
             "id": "road_area_pier",
@@ -3122,7 +3240,9 @@
               ["==", "$type", "Polygon"],
               ["==", "class", "pier"]
             ],
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "paint": {
               "fill-antialias": true,
               "fill-color": "hsl(47, 26%, 88%)"
@@ -3139,7 +3259,10 @@
               ["==", "$type", "LineString"],
               ["in", "class", "pier"]
             ],
-            "layout": { "line-cap": "round", "line-join": "round" },
+            "layout": {
+              "line-cap": "round",
+              "line-join": "round"
+            },
             "paint": {
               "line-color": "hsl(47, 26%, 88%)",
               "line-width": {
@@ -3162,7 +3285,10 @@
               ["in", "brunnel", "bridge"]
             ],
             "layout": {},
-            "paint": { "fill-color": "hsl(47, 26%, 88%)", "fill-opacity": 0.5 }
+            "paint": {
+              "fill-color": "hsl(47, 26%, 88%)",
+              "fill-opacity": 0.5
+            }
           },
           {
             "id": "road_path",
@@ -3174,7 +3300,10 @@
               ["==", "$type", "LineString"],
               ["in", "class", "path", "track"]
             ],
-            "layout": { "line-cap": "square", "line-join": "bevel" },
+            "layout": {
+              "line-cap": "square",
+              "line-join": "bevel"
+            },
             "paint": {
               "line-color": "hsl(0, 0%, 97%)",
               "line-dasharray": [1, 1],
@@ -3198,7 +3327,10 @@
               ["==", "$type", "LineString"],
               ["in", "class", "minor", "service"]
             ],
-            "layout": { "line-cap": "round", "line-join": "round" },
+            "layout": {
+              "line-cap": "round",
+              "line-join": "round"
+            },
             "paint": {
               "line-color": "hsl(0, 0%, 97%)",
               "line-width": {
@@ -3221,7 +3353,10 @@
               ["==", "brunnel", "tunnel"],
               ["==", "class", "minor_road"]
             ],
-            "layout": { "line-cap": "butt", "line-join": "miter" },
+            "layout": {
+              "line-cap": "butt",
+              "line-join": "miter"
+            },
             "paint": {
               "line-color": "#efefef",
               "line-dasharray": [0.36, 0.18],
@@ -3245,7 +3380,10 @@
               ["==", "brunnel", "tunnel"],
               ["in", "class", "primary", "secondary", "tertiary", "trunk"]
             ],
-            "layout": { "line-cap": "butt", "line-join": "miter" },
+            "layout": {
+              "line-cap": "butt",
+              "line-join": "miter"
+            },
             "paint": {
               "line-color": "#fff",
               "line-dasharray": [0.28, 0.14],
@@ -3261,7 +3399,9 @@
           {
             "id": "aeroway-area",
             "type": "fill",
-            "metadata": { "mapbox:group": "1444849345966.4436" },
+            "metadata": {
+              "mapbox:group": "1444849345966.4436"
+            },
             "source": "vietnam",
             "source-layer": "aeroway",
             "minzoom": 4,
@@ -3270,7 +3410,9 @@
               ["==", "$type", "Polygon"],
               ["in", "class", "runway", "taxiway"]
             ],
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "paint": {
               "fill-color": "rgba(255, 255, 255, 1)",
               "fill-opacity": {
@@ -3285,7 +3427,9 @@
           {
             "id": "aeroway-taxiway",
             "type": "line",
-            "metadata": { "mapbox:group": "1444849345966.4436" },
+            "metadata": {
+              "mapbox:group": "1444849345966.4436"
+            },
             "source": "vietnam",
             "source-layer": "aeroway",
             "minzoom": 12,
@@ -3314,7 +3458,9 @@
           {
             "id": "aeroway-runway",
             "type": "line",
-            "metadata": { "mapbox:group": "1444849345966.4436" },
+            "metadata": {
+              "mapbox:group": "1444849345966.4436"
+            },
             "source": "vietnam",
             "source-layer": "aeroway",
             "minzoom": 4,
@@ -3350,7 +3496,10 @@
               ["==", "$type", "LineString"],
               ["in", "class", "trunk", "primary"]
             ],
-            "layout": { "line-cap": "round", "line-join": "round" },
+            "layout": {
+              "line-cap": "round",
+              "line-join": "round"
+            },
             "paint": {
               "line-color": "#fff",
               "line-width": {
@@ -3372,7 +3521,10 @@
               ["==", "$type", "LineString"],
               ["in", "class", "secondary", "tertiary"]
             ],
-            "layout": { "line-cap": "round", "line-join": "round" },
+            "layout": {
+              "line-cap": "round",
+              "line-join": "round"
+            },
             "paint": {
               "line-color": "#fff",
               "line-width": {
@@ -3394,7 +3546,10 @@
               ["==", "$type", "LineString"],
               ["==", "class", "motorway"]
             ],
-            "layout": { "line-cap": "round", "line-join": "round" },
+            "layout": {
+              "line-cap": "round",
+              "line-join": "round"
+            },
             "paint": {
               "line-color": "hsl(0, 0%, 100%)",
               "line-offset": 0,
@@ -3417,7 +3572,9 @@
               ["==", "class", "transit"],
               ["!=", "brunnel", "tunnel"]
             ],
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "paint": {
               "line-color": "hsl(34, 12%, 66%)",
               "line-opacity": {
@@ -3435,7 +3592,9 @@
             "source": "vietnam",
             "source-layer": "transportation",
             "filter": ["==", "class", "rail"],
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "paint": {
               "line-color": "hsl(34, 12%, 66%)",
               "line-opacity": {
@@ -3457,7 +3616,10 @@
               ["==", "$type", "LineString"],
               ["==", "brunnel", "bridge"]
             ],
-            "layout": { "line-cap": "butt", "line-join": "miter" },
+            "layout": {
+              "line-cap": "butt",
+              "line-join": "miter"
+            },
             "paint": {
               "line-color": "#bbbbbb",
               "line-gap-width": {
@@ -3486,7 +3648,10 @@
               ["==", "$type", "LineString"],
               ["==", "brunnel", "bridge"]
             ],
-            "layout": { "line-cap": "round", "line-join": "round" },
+            "layout": {
+              "line-cap": "round",
+              "line-join": "round"
+            },
             "paint": {
               "line-color": "hsl(205, 56%, 73%)",
               "line-width": {
@@ -3509,7 +3674,10 @@
               ["==", "brunnel", "bridge"],
               ["==", "class", "minor_road"]
             ],
-            "layout": { "line-cap": "butt", "line-join": "miter" },
+            "layout": {
+              "line-cap": "butt",
+              "line-join": "miter"
+            },
             "paint": {
               "line-color": "#dedede",
               "line-gap-width": {
@@ -3539,7 +3707,10 @@
               ["==", "brunnel", "bridge"],
               ["in", "class", "primary", "secondary", "tertiary", "trunk"]
             ],
-            "layout": { "line-cap": "butt", "line-join": "miter" },
+            "layout": {
+              "line-cap": "butt",
+              "line-join": "miter"
+            },
             "paint": {
               "line-color": "#dedede",
               "line-gap-width": {
@@ -3569,7 +3740,10 @@
               ["==", "brunnel", "bridge"],
               ["==", "class", "minor_road"]
             ],
-            "layout": { "line-cap": "round", "line-join": "round" },
+            "layout": {
+              "line-cap": "round",
+              "line-join": "round"
+            },
             "paint": {
               "line-color": "#efefef",
               "line-width": {
@@ -3592,7 +3766,10 @@
               ["==", "brunnel", "bridge"],
               ["in", "class", "primary", "secondary", "tertiary", "trunk"]
             ],
-            "layout": { "line-cap": "round", "line-join": "round" },
+            "layout": {
+              "line-cap": "round",
+              "line-join": "round"
+            },
             "paint": {
               "line-color": "#fff",
               "line-width": {
@@ -3610,7 +3787,9 @@
             "source": "vietnam",
             "source-layer": "boundary",
             "filter": ["in", "admin_level", 4, 6, 8],
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "paint": {
               "line-color": "hsla(0, 0%, 60%, 0.5)",
               "line-dasharray": [2, 1]
@@ -3890,7 +4069,10 @@
         "center": [105.84139, 21.04813],
         "zoom": 10,
         "sources": {
-          "vietnam_1": { "type": "vector", "url": "local://data/vietnam.json" },
+          "vietnam_1": {
+            "type": "vector",
+            "url": "local://data/vietnam.json"
+          },
           "vietnam_2": {
             "type": "vector",
             "url": "http://localhost:8080/data/vietnam.json"
@@ -3902,7 +4084,9 @@
         "layers": [
           {
             "id": "background",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "paint": {
               "background-color": {
                 "stops": [
@@ -3916,7 +4100,9 @@
           {
             "filter": ["all", ["==", "class", "ice"]],
             "id": "snow",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 24,
             "paint": {
               "fill-antialias": true,
@@ -3935,10 +4121,15 @@
           {
             "filter": ["==", "$type", "Polygon"],
             "id": "aeroway_fill",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "minzoom": 11,
-            "paint": { "fill-color": "hsl(0,0%,93%)", "fill-opacity": 1 },
+            "paint": {
+              "fill-color": "hsl(0,0%,93%)",
+              "fill-opacity": 1
+            },
             "source": "vietnam_1",
             "source-layer": "aeroway",
             "type": "fill"
@@ -3946,7 +4137,9 @@
           {
             "filter": ["all", ["in", "class", "grass", "sand", "wood"]],
             "id": "landcover",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "fill-antialias": false,
@@ -3970,7 +4163,9 @@
           {
             "filter": ["all", ["in", "class", "industrial", "quarry"]],
             "id": "landuse_industrial",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 24,
             "metadata": {},
             "paint": {
@@ -4019,7 +4214,9 @@
               ["in", "class", "residential", "suburbs", "neighbourhood"]
             ],
             "id": "landuse_residential",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 24,
             "metadata": {},
             "paint": {
@@ -4044,9 +4241,14 @@
               ["in", "subclass", "pedestrian", "platform"]
             ],
             "id": "road_area_pedestrian",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
-            "paint": { "fill-color": "hsl(43,100%,99%)", "fill-opacity": 0.7 },
+            "paint": {
+              "fill-color": "hsl(43,100%,99%)",
+              "fill-opacity": 0.7
+            },
             "source": "vietnam_1",
             "source-layer": "transportation",
             "type": "fill"
@@ -4069,7 +4271,9 @@
               ]
             ],
             "id": "landuse",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 24,
             "metadata": {},
             "minzoom": 9,
@@ -4106,7 +4310,10 @@
           {
             "filter": ["all", ["==", "brunnel", "tunnel"]],
             "id": "waterway_tunnel",
-            "layout": { "line-cap": "round", "visibility": "visible" },
+            "layout": {
+              "line-cap": "round",
+              "visibility": "visible"
+            },
             "minzoom": 14,
             "paint": {
               "line-color": "hsl(210,73%,78%)",
@@ -4127,7 +4334,10 @@
           {
             "filter": ["all", ["!=", "brunnel", "tunnel"]],
             "id": "waterway_river",
-            "layout": { "line-cap": "round", "visibility": "visible" },
+            "layout": {
+              "line-cap": "round",
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(210,73%,78%)",
@@ -4145,7 +4355,9 @@
           {
             "filter": ["all"],
             "id": "water",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "fill-antialias": true,
@@ -4165,7 +4377,9 @@
           {
             "filter": ["all", ["==", "$type", "LineString"]],
             "id": "aeroway",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "minzoom": 11,
             "paint": {
@@ -4187,10 +4401,15 @@
           {
             "filter": ["all", ["in", "class", "runway"]],
             "id": "aeroway_runway",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "minzoom": 11,
-            "paint": { "fill-color": "hsl(0,0%,97%)", "fill-opacity": 1 },
+            "paint": {
+              "fill-color": "hsl(0,0%,97%)",
+              "fill-opacity": 1
+            },
             "source": "vietnam_1",
             "source-layer": "aeroway",
             "type": "fill"
@@ -4198,10 +4417,15 @@
           {
             "filter": ["all", ["in", "class", "helipad"]],
             "id": "aeroway_helipad",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "minzoom": 11,
-            "paint": { "fill-color": "hsl(0,0%,100%)", "fill-opacity": 1 },
+            "paint": {
+              "fill-color": "hsl(0,0%,100%)",
+              "fill-opacity": 1
+            },
             "source": "vietnam_1",
             "source-layer": "aeroway",
             "type": "fill"
@@ -4209,7 +4433,10 @@
           {
             "filter": ["all", ["in", "class", "ferry"]],
             "id": "ferry_line",
-            "layout": { "line-join": "round", "visibility": "visible" },
+            "layout": {
+              "line-join": "round",
+              "visibility": "visible"
+            },
             "paint": {
               "line-color": {
                 "stops": [
@@ -4495,7 +4722,9 @@
               ["in", "class", "rail"]
             ],
             "id": "tunnel_rail",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(0,0%,73%)",
@@ -4520,7 +4749,9 @@
               ["==", "class", "rail"]
             ],
             "id": "tunnel_rail-hatching",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(0,0%,73%)",
@@ -4616,7 +4847,9 @@
               ["==", "class", "pier"]
             ],
             "id": "road_area_pier",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "fill-antialias": true,
@@ -4660,7 +4893,9 @@
               ["==", "brunnel", "bridge"]
             ],
             "id": "road_area_bridge",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "fill-antialias": true,
@@ -5168,7 +5403,9 @@
               ["==", "class", "rail"]
             ],
             "id": "rail_major",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": {
@@ -5198,7 +5435,9 @@
               ["==", "class", "rail"]
             ],
             "id": "rail_major-hatching",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(0,0%,72%)",
@@ -5220,7 +5459,9 @@
           {
             "filter": ["all", ["in", "subclass", "tram", "light_rail"]],
             "id": "rail_minor",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(0,0%,73%)",
@@ -5240,7 +5481,9 @@
           {
             "filter": ["all", ["in", "subclass", "tram", "light_rail"]],
             "id": "rail_minor-hatching",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(0,0%,73%)",
@@ -5260,7 +5503,9 @@
           },
           {
             "id": "building",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 15,
             "metadata": {},
             "minzoom": 13,
@@ -5282,7 +5527,9 @@
           {
             "filter": ["all", ["!has", "hide_3d"]],
             "id": "building-3d",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "minzoom": 15,
             "paint": {
@@ -5356,7 +5603,10 @@
           {
             "filter": ["==", "class", "aerialway"],
             "id": "cablecar",
-            "layout": { "line-cap": "round", "visibility": "visible" },
+            "layout": {
+              "line-cap": "round",
+              "visibility": "visible"
+            },
             "minzoom": 13,
             "paint": {
               "line-blur": 1,
@@ -5405,7 +5655,9 @@
               ["<", "admin_level", 10]
             ],
             "id": "border_other",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 13,
             "minzoom": 3,
             "paint": {
@@ -5747,7 +5999,9 @@
               "visibility": "visible"
             },
             "minzoom": 16,
-            "paint": { "icon-opacity": 0.5 },
+            "paint": {
+              "icon-opacity": 0.5
+            },
             "source": "vietnam_2",
             "source-layer": "transportation",
             "type": "symbol"
@@ -5866,7 +6120,9 @@
               "visibility": "visible"
             },
             "minzoom": 8,
-            "paint": { "text-color": "hsl(0,0%,18%)" },
+            "paint": {
+              "text-color": "hsl(0,0%,18%)"
+            },
             "source": "vietnam_2",
             "source-layer": "transportation_name",
             "type": "symbol"
@@ -6672,7 +6928,10 @@
         "center": [105.84139, 21.04813],
         "zoom": 10,
         "sources": {
-          "vietnam": { "type": "vector", "url": "local://data/vietnam.json" }
+          "vietnam": {
+            "type": "vector",
+            "url": "local://data/vietnam.json"
+          }
         },
         "glyphs": "local://fonts/{fontstack}/{range}.pbf",
         "sprite": "local://sprites/streets/sprite",
@@ -6680,7 +6939,9 @@
         "layers": [
           {
             "id": "background",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "paint": {
               "background-color": {
                 "stops": [
@@ -6694,7 +6955,9 @@
           {
             "filter": ["all", ["==", "class", "ice"]],
             "id": "snow",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 24,
             "paint": {
               "fill-antialias": true,
@@ -6713,10 +6976,15 @@
           {
             "filter": ["==", "$type", "Polygon"],
             "id": "aeroway_fill",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "minzoom": 11,
-            "paint": { "fill-color": "hsl(0,0%,93%)", "fill-opacity": 1 },
+            "paint": {
+              "fill-color": "hsl(0,0%,93%)",
+              "fill-opacity": 1
+            },
             "source": "vietnam",
             "source-layer": "aeroway",
             "type": "fill"
@@ -6724,7 +6992,9 @@
           {
             "filter": ["all", ["in", "class", "grass", "sand", "wood"]],
             "id": "landcover",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "fill-antialias": false,
@@ -6748,7 +7018,9 @@
           {
             "filter": ["all", ["in", "class", "industrial", "quarry"]],
             "id": "landuse_industrial",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 24,
             "metadata": {},
             "paint": {
@@ -6797,7 +7069,9 @@
               ["in", "class", "residential", "suburbs", "neighbourhood"]
             ],
             "id": "landuse_residential",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 24,
             "metadata": {},
             "paint": {
@@ -6822,9 +7096,14 @@
               ["in", "subclass", "pedestrian", "platform"]
             ],
             "id": "road_area_pedestrian",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
-            "paint": { "fill-color": "hsl(43,100%,99%)", "fill-opacity": 0.7 },
+            "paint": {
+              "fill-color": "hsl(43,100%,99%)",
+              "fill-opacity": 0.7
+            },
             "source": "vietnam",
             "source-layer": "transportation",
             "type": "fill"
@@ -6847,7 +7126,9 @@
               ]
             ],
             "id": "landuse",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 24,
             "metadata": {},
             "minzoom": 9,
@@ -6884,7 +7165,10 @@
           {
             "filter": ["all", ["==", "brunnel", "tunnel"]],
             "id": "waterway_tunnel",
-            "layout": { "line-cap": "round", "visibility": "visible" },
+            "layout": {
+              "line-cap": "round",
+              "visibility": "visible"
+            },
             "minzoom": 14,
             "paint": {
               "line-color": "hsl(210,73%,78%)",
@@ -6905,7 +7189,10 @@
           {
             "filter": ["all", ["!=", "brunnel", "tunnel"]],
             "id": "waterway_river",
-            "layout": { "line-cap": "round", "visibility": "visible" },
+            "layout": {
+              "line-cap": "round",
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(210,73%,78%)",
@@ -6923,7 +7210,9 @@
           {
             "filter": ["all"],
             "id": "water",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "fill-antialias": true,
@@ -6943,7 +7232,9 @@
           {
             "filter": ["all", ["==", "$type", "LineString"]],
             "id": "aeroway",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "minzoom": 11,
             "paint": {
@@ -6965,10 +7256,15 @@
           {
             "filter": ["all", ["in", "class", "runway"]],
             "id": "aeroway_runway",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "minzoom": 11,
-            "paint": { "fill-color": "hsl(0,0%,97%)", "fill-opacity": 1 },
+            "paint": {
+              "fill-color": "hsl(0,0%,97%)",
+              "fill-opacity": 1
+            },
             "source": "vietnam",
             "source-layer": "aeroway",
             "type": "fill"
@@ -6976,10 +7272,15 @@
           {
             "filter": ["all", ["in", "class", "helipad"]],
             "id": "aeroway_helipad",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "minzoom": 11,
-            "paint": { "fill-color": "hsl(0,0%,100%)", "fill-opacity": 1 },
+            "paint": {
+              "fill-color": "hsl(0,0%,100%)",
+              "fill-opacity": 1
+            },
             "source": "vietnam",
             "source-layer": "aeroway",
             "type": "fill"
@@ -6987,7 +7288,10 @@
           {
             "filter": ["all", ["in", "class", "ferry"]],
             "id": "ferry_line",
-            "layout": { "line-join": "round", "visibility": "visible" },
+            "layout": {
+              "line-join": "round",
+              "visibility": "visible"
+            },
             "paint": {
               "line-color": {
                 "stops": [
@@ -7273,7 +7577,9 @@
               ["in", "class", "rail"]
             ],
             "id": "tunnel_rail",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(0,0%,73%)",
@@ -7298,7 +7604,9 @@
               ["==", "class", "rail"]
             ],
             "id": "tunnel_rail-hatching",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(0,0%,73%)",
@@ -7394,7 +7702,9 @@
               ["==", "class", "pier"]
             ],
             "id": "road_area_pier",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "fill-antialias": true,
@@ -7438,7 +7748,9 @@
               ["==", "brunnel", "bridge"]
             ],
             "id": "road_area_bridge",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "fill-antialias": true,
@@ -7946,7 +8258,9 @@
               ["==", "class", "rail"]
             ],
             "id": "rail_major",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": {
@@ -7976,7 +8290,9 @@
               ["==", "class", "rail"]
             ],
             "id": "rail_major-hatching",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(0,0%,72%)",
@@ -7998,7 +8314,9 @@
           {
             "filter": ["all", ["in", "subclass", "tram", "light_rail"]],
             "id": "rail_minor",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(0,0%,73%)",
@@ -8018,7 +8336,9 @@
           {
             "filter": ["all", ["in", "subclass", "tram", "light_rail"]],
             "id": "rail_minor-hatching",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "paint": {
               "line-color": "hsl(0,0%,73%)",
@@ -8038,7 +8358,9 @@
           },
           {
             "id": "building",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 15,
             "metadata": {},
             "minzoom": 13,
@@ -8060,7 +8382,9 @@
           {
             "filter": ["all", ["!has", "hide_3d"]],
             "id": "building-3d",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "metadata": {},
             "minzoom": 15,
             "paint": {
@@ -8134,7 +8458,10 @@
           {
             "filter": ["==", "class", "aerialway"],
             "id": "cablecar",
-            "layout": { "line-cap": "round", "visibility": "visible" },
+            "layout": {
+              "line-cap": "round",
+              "visibility": "visible"
+            },
             "minzoom": 13,
             "paint": {
               "line-blur": 1,
@@ -8183,7 +8510,9 @@
               ["<", "admin_level", 10]
             ],
             "id": "border_other",
-            "layout": { "visibility": "visible" },
+            "layout": {
+              "visibility": "visible"
+            },
             "maxzoom": 13,
             "minzoom": 3,
             "paint": {
@@ -8525,7 +8854,9 @@
               "visibility": "visible"
             },
             "minzoom": 16,
-            "paint": { "icon-opacity": 0.5 },
+            "paint": {
+              "icon-opacity": 0.5
+            },
             "source": "vietnam",
             "source-layer": "transportation",
             "type": "symbol"
@@ -8644,7 +8975,9 @@
               "visibility": "visible"
             },
             "minzoom": 8,
-            "paint": { "text-color": "hsl(0,0%,18%)" },
+            "paint": {
+              "text-color": "hsl(0,0%,18%)"
+            },
             "source": "vietnam",
             "source-layer": "transportation_name",
             "type": "symbol"
@@ -9439,7 +9772,7 @@
   "rendered": {
     "magellan_strait": {
       "tileJSON": {
-        "tilejson": "2.0.0",
+        "tilejson": "2.2.0",
         "name": "Magellan Strait",
         "attribution": "",
         "minzoom": 0,
@@ -9459,14 +9792,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1716391510631],
-                [null, 1716391510631],
-                [null, 1716391510631],
-                [null, 1716391510631],
-                [null, 1716391510631],
-                [null, 1716391510631],
-                [null, 1716391510631],
-                [null, 1716391510631]
+                [null, 1716660743571],
+                [null, 1716660743571],
+                [null, 1716660743571],
+                [null, 1716660743571],
+                [null, 1716660743571],
+                [null, 1716660743571],
+                [null, 1716660743571],
+                [null, 1716660743571]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -9496,53 +9829,56 @@
                                   "_idleTimeout": 1000,
                                   "_idlePrev": {
                                     "_idleTimeout": 1000,
-                                    "_idleStart": 739,
+                                    "_idleStart": 740,
                                     "_repeat": 1000,
                                     "_destroyed": false
                                   },
-                                  "_idleStart": 719,
+                                  "_idleStart": 712,
                                   "_repeat": 1000,
                                   "_destroyed": false
                                 },
-                                "_idleStart": 687,
+                                "_idleStart": 667,
                                 "_repeat": 1000,
                                 "_destroyed": false
                               },
-                              "_idleStart": 652,
+                              "_idleStart": 638,
                               "_repeat": 1000,
                               "_destroyed": false
                             },
-                            "_idleStart": 643,
+                            "_idleStart": 628,
                             "_repeat": 1000,
                             "_destroyed": false
                           },
-                          "_idleStart": 635,
+                          "_idleStart": 612,
                           "_repeat": 1000,
                           "_destroyed": false
                         },
-                        "_idleStart": 589,
+                        "_idleStart": 511,
                         "_repeat": 1000,
                         "_destroyed": false
                       },
-                      "_idleStart": 539,
+                      "_idleStart": 473,
                       "_repeat": 1000,
                       "_destroyed": false
                     },
-                    "expiry": 1539,
+                    "expiry": 1473,
                     "id": -9007199254740991,
                     "msecs": 1000,
-                    "priorityQueuePosition": 2
+                    "priorityQueuePosition": 1
                   },
-                  "_idleStart": 904,
+                  "_idleStart": 1212,
                   "_repeat": 1000,
                   "_destroyed": false
                 },
-                "_idleStart": 903,
+                "_idleStart": 1211,
                 "_repeat": 1000,
                 "_destroyed": false
               },
               "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
+              "queue": {
+                "queueSize": 0,
+                "queue": []
+              },
               "closed": false
             }
           }
@@ -9555,14 +9891,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1716391510631],
-                [null, 1716391510631],
-                [null, 1716391510631],
-                [null, 1716391510634],
-                [null, 1716391510634],
-                [null, 1716391510634],
-                [null, 1716391510634],
-                [null, 1716391510634]
+                [null, 1716660743571],
+                [null, 1716660743571],
+                [null, 1716660743571],
+                [null, 1716660743571],
+                [null, 1716660743571],
+                [null, 1716660743571],
+                [null, 1716660743571],
+                [null, 1716660743572]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -9572,7 +9908,10 @@
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
               "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
+              "queue": {
+                "queueSize": 0,
+                "queue": []
+              },
               "closed": false
             }
           }
@@ -9582,7 +9921,7 @@
             "_maxListeners": 0,
             "filename": "/home/huy/Downloads/source/tile-server/data/mbtiles/MagellanStrait/MagellanStrait.mbtiles",
             "_batchSize": 100,
-            "_db": { "_eventsCount": 0 },
+            "_db": {},
             "_stat": {
               "dev": 2051,
               "mode": 33204,
@@ -9594,11 +9933,11 @@
               "ino": 674049,
               "size": 84647936,
               "blocks": 165328,
-              "atimeMs": 1716389301463.6719,
+              "atimeMs": 1716659118366.0217,
               "mtimeMs": 1714503714760.164,
               "ctimeMs": 1715491064533.8809,
               "birthtimeMs": 1714503499823.494,
-              "atime": "2024-05-22T14:48:21.464Z",
+              "atime": "2024-05-25T17:45:18.366Z",
               "mtime": "2024-04-30T19:01:54.760Z",
               "ctime": "2024-05-12T05:17:44.534Z",
               "birthtime": "2024-04-30T18:58:19.823Z"
@@ -9619,18 +9958,19 @@
               "minzoom": 8,
               "maxzoom": 16,
               "center": [-67.5, -55.26444781757226, 12]
-            },
-            "_eventsCount": 0
+            }
           }
         },
-        "sourceTypes": { "magellan_strait": "mbtiles" }
+        "sourceTypes": {
+          "magellan_strait": "mbtiles"
+        }
       },
       "dataProjWGStoInternalWGS": null,
       "staticAttributionText": ""
     },
     "zurich_switzerland": {
       "tileJSON": {
-        "tilejson": "2.0.0",
+        "tilejson": "2.2.0",
         "name": "Zurich Switzerland",
         "attribution": "",
         "minzoom": 0,
@@ -9649,14 +9989,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1716391510294],
-                [null, 1716391510298],
-                [null, 1716391510302],
-                [null, 1716391510305],
-                [null, 1716391510308],
-                [null, 1716391510311],
-                [null, 1716391510314],
-                [null, 1716391510317]
+                [null, 1716660742850],
+                [null, 1716660742853],
+                [null, 1716660742855],
+                [null, 1716660742860],
+                [null, 1716660742862],
+                [null, 1716660742865],
+                [null, 1716660742868],
+                [null, 1716660742870]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -9666,7 +10006,10 @@
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
               "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
+              "queue": {
+                "queueSize": 0,
+                "queue": []
+              },
               "closed": false
             }
           }
@@ -9679,14 +10022,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1716391510322],
-                [null, 1716391510325],
-                [null, 1716391510328],
-                [null, 1716391510331],
-                [null, 1716391510333],
-                [null, 1716391510339],
-                [null, 1716391510342],
-                [null, 1716391510345]
+                [null, 1716660742873],
+                [null, 1716660742876],
+                [null, 1716660742878],
+                [null, 1716660742881],
+                [null, 1716660742884],
+                [null, 1716660742886],
+                [null, 1716660742889],
+                [null, 1716660742892]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -9696,7 +10039,10 @@
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
               "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
+              "queue": {
+                "queueSize": 0,
+                "queue": []
+              },
               "closed": false
             }
           }
@@ -9709,7 +10055,7 @@
     },
     "basic": {
       "tileJSON": {
-        "tilejson": "2.0.0",
+        "tilejson": "2.2.0",
         "name": "Basic",
         "attribution": "<a href=\"https://www.maptiler.com/copyright/\" target=\"_blank\">&copy; MapTiler</a> <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\">&copy; OpenStreetMap contributors</a>",
         "minzoom": 0,
@@ -9728,14 +10074,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1716391510364],
-                [null, 1716391510365],
-                [null, 1716391510366],
-                [null, 1716391510367],
-                [null, 1716391510368],
-                [null, 1716391510369],
-                [null, 1716391510370],
-                [null, 1716391510371]
+                [null, 1716660742973],
+                [null, 1716660742975],
+                [null, 1716660742976],
+                [null, 1716660742980],
+                [null, 1716660742981],
+                [null, 1716660742983],
+                [null, 1716660742986],
+                [null, 1716660742987]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -9745,7 +10091,10 @@
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
               "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
+              "queue": {
+                "queueSize": 0,
+                "queue": []
+              },
               "closed": false
             }
           }
@@ -9758,14 +10107,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1716391510372],
-                [null, 1716391510373],
-                [null, 1716391510374],
-                [null, 1716391510375],
-                [null, 1716391510376],
-                [null, 1716391510377],
-                [null, 1716391510378],
-                [null, 1716391510379]
+                [null, 1716660742988],
+                [null, 1716660742990],
+                [null, 1716660742991],
+                [null, 1716660742992],
+                [null, 1716660742993],
+                [null, 1716660742994],
+                [null, 1716660742995],
+                [null, 1716660742997]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -9775,7 +10124,10 @@
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
               "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
+              "queue": {
+                "queueSize": 0,
+                "queue": []
+              },
               "closed": false
             }
           }
@@ -9785,7 +10137,7 @@
             "_maxListeners": 0,
             "filename": "/home/huy/Downloads/source/tile-server/data/mbtiles/vietnam/vietnam.mbtiles",
             "_batchSize": 100,
-            "_db": { "_eventsCount": 0 },
+            "_db": {},
             "_stat": {
               "dev": 2051,
               "mode": 33206,
@@ -9797,11 +10149,11 @@
               "ino": 1599910,
               "size": 458919936,
               "blocks": 896336,
-              "atimeMs": 1716390160434.8284,
+              "atimeMs": 1716656601889.8066,
               "mtimeMs": 1714465291267.8901,
               "ctimeMs": 1715491068446.0078,
               "birthtimeMs": 1714465271652.2068,
-              "atime": "2024-05-22T15:02:40.435Z",
+              "atime": "2024-05-25T17:03:21.890Z",
               "mtime": "2024-04-30T08:21:31.268Z",
               "ctime": "2024-05-12T05:17:48.446Z",
               "birthtime": "2024-04-30T08:21:11.652Z"
@@ -9920,14 +10272,19 @@
                 },
                 {
                   "maxzoom": 14,
-                  "fields": { "class": "String", "subclass": "String" },
+                  "fields": {
+                    "class": "String",
+                    "subclass": "String"
+                  },
                   "minzoom": 0,
                   "id": "landcover",
                   "description": ""
                 },
                 {
                   "maxzoom": 14,
-                  "fields": { "class": "String" },
+                  "fields": {
+                    "class": "String"
+                  },
                   "minzoom": 0,
                   "id": "landuse",
                   "description": ""
@@ -10111,7 +10468,10 @@
                 },
                 {
                   "maxzoom": 14,
-                  "fields": { "ref": "String", "class": "String" },
+                  "fields": {
+                    "ref": "String",
+                    "class": "String"
+                  },
                   "minzoom": 0,
                   "id": "aeroway",
                   "description": ""
@@ -10403,7 +10763,9 @@
                 },
                 {
                   "maxzoom": 14,
-                  "fields": { "housenumber": "String" },
+                  "fields": {
+                    "housenumber": "String"
+                  },
                   "minzoom": 0,
                   "id": "housenumber",
                   "description": ""
@@ -10579,18 +10941,19 @@
                   "description": ""
                 }
               ]
-            },
-            "_eventsCount": 0
+            }
           }
         },
-        "sourceTypes": { "vietnam": "mbtiles" }
+        "sourceTypes": {
+          "vietnam": "mbtiles"
+        }
       },
       "dataProjWGStoInternalWGS": null,
       "staticAttributionText": ""
     },
     "merge": {
       "tileJSON": {
-        "tilejson": "2.0.0",
+        "tilejson": "2.2.0",
         "name": "Merge",
         "attribution": "<a href=\"https://www.maptiler.com/copyright/\" target=\"_blank\">&copy; MapTiler</a> <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\">&copy; OpenStreetMap contributors</a>",
         "minzoom": 0,
@@ -10609,14 +10972,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1716391510383],
-                [null, 1716391510389],
-                [null, 1716391510393],
-                [null, 1716391510398],
-                [null, 1716391510402],
-                [null, 1716391510406],
-                [null, 1716391510409],
-                [null, 1716391510414]
+                [null, 1716660743000],
+                [null, 1716660743006],
+                [null, 1716660743008],
+                [null, 1716660743011],
+                [null, 1716660743015],
+                [null, 1716660743018],
+                [null, 1716660743020],
+                [null, 1716660743027]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -10626,7 +10989,10 @@
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
               "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
+              "queue": {
+                "queueSize": 0,
+                "queue": []
+              },
               "closed": false
             }
           }
@@ -10639,14 +11005,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1716391510417],
-                [null, 1716391510420],
-                [null, 1716391510423],
-                [null, 1716391510427],
-                [null, 1716391510429],
-                [null, 1716391510432],
-                [null, 1716391510442],
-                [null, 1716391510446]
+                [null, 1716660743035],
+                [null, 1716660743044],
+                [null, 1716660743052],
+                [null, 1716660743059],
+                [null, 1716660743062],
+                [null, 1716660743065],
+                [null, 1716660743068],
+                [null, 1716660743071]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -10656,7 +11022,10 @@
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
               "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
+              "queue": {
+                "queueSize": 0,
+                "queue": []
+              },
               "closed": false
             }
           }
@@ -10666,7 +11035,7 @@
             "_maxListeners": 0,
             "filename": "/home/huy/Downloads/source/tile-server/data/mbtiles/vietnam/vietnam.mbtiles",
             "_batchSize": 100,
-            "_db": { "_eventsCount": 0 },
+            "_db": {},
             "_stat": {
               "dev": 2051,
               "mode": 33206,
@@ -10678,11 +11047,11 @@
               "ino": 1599910,
               "size": 458919936,
               "blocks": 896336,
-              "atimeMs": 1716390160434.8284,
+              "atimeMs": 1716656601889.8066,
               "mtimeMs": 1714465291267.8901,
               "ctimeMs": 1715491068446.0078,
               "birthtimeMs": 1714465271652.2068,
-              "atime": "2024-05-22T15:02:40.435Z",
+              "atime": "2024-05-25T17:03:21.890Z",
               "mtime": "2024-04-30T08:21:31.268Z",
               "ctime": "2024-05-12T05:17:48.446Z",
               "birthtime": "2024-04-30T08:21:11.652Z"
@@ -10801,14 +11170,19 @@
                 },
                 {
                   "maxzoom": 14,
-                  "fields": { "class": "String", "subclass": "String" },
+                  "fields": {
+                    "class": "String",
+                    "subclass": "String"
+                  },
                   "minzoom": 0,
                   "id": "landcover",
                   "description": ""
                 },
                 {
                   "maxzoom": 14,
-                  "fields": { "class": "String" },
+                  "fields": {
+                    "class": "String"
+                  },
                   "minzoom": 0,
                   "id": "landuse",
                   "description": ""
@@ -10992,7 +11366,10 @@
                 },
                 {
                   "maxzoom": 14,
-                  "fields": { "ref": "String", "class": "String" },
+                  "fields": {
+                    "ref": "String",
+                    "class": "String"
+                  },
                   "minzoom": 0,
                   "id": "aeroway",
                   "description": ""
@@ -11284,7 +11661,9 @@
                 },
                 {
                   "maxzoom": 14,
-                  "fields": { "housenumber": "String" },
+                  "fields": {
+                    "housenumber": "String"
+                  },
                   "minzoom": 0,
                   "id": "housenumber",
                   "description": ""
@@ -11460,18 +11839,19 @@
                   "description": ""
                 }
               ]
-            },
-            "_eventsCount": 0
+            }
           }
         },
-        "sourceTypes": { "vietnam_1": "mbtiles" }
+        "sourceTypes": {
+          "vietnam_1": "mbtiles"
+        }
       },
       "dataProjWGStoInternalWGS": null,
       "staticAttributionText": ""
     },
     "streets": {
       "tileJSON": {
-        "tilejson": "2.0.0",
+        "tilejson": "2.2.0",
         "name": "Streets",
         "attribution": "<a href=\"https://www.maptiler.com/copyright/\" target=\"_blank\">&copy; MapTiler</a> <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\">&copy; OpenStreetMap contributors</a>",
         "minzoom": 0,
@@ -11490,14 +11870,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1716391510449],
-                [null, 1716391510452],
-                [null, 1716391510454],
-                [null, 1716391510457],
-                [null, 1716391510459],
-                [null, 1716391510462],
-                [null, 1716391510464],
-                [null, 1716391510466]
+                [null, 1716660743074],
+                [null, 1716660743076],
+                [null, 1716660743078],
+                [null, 1716660743088],
+                [null, 1716660743090],
+                [null, 1716660743092],
+                [null, 1716660743095],
+                [null, 1716660743100]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -11507,7 +11887,10 @@
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
               "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
+              "queue": {
+                "queueSize": 0,
+                "queue": []
+              },
               "closed": false
             }
           }
@@ -11520,14 +11903,14 @@
             "priv": {
               "allObjects": [{}, {}, {}, {}, {}, {}, {}, {}],
               "freeObjects": [
-                [null, 1716391510469],
-                [null, 1716391510471],
-                [null, 1716391510487],
-                [null, 1716391510492],
-                [null, 1716391510495],
-                [null, 1716391510498],
-                [null, 1716391510501],
-                [null, 1716391510503]
+                [null, 1716660743103],
+                [null, 1716660743107],
+                [null, 1716660743110],
+                [null, 1716660743113],
+                [null, 1716660743115],
+                [null, 1716660743118],
+                [null, 1716660743124],
+                [null, 1716660743127]
               ],
               "busyObjects": [],
               "name": "pool",
@@ -11537,7 +11920,10 @@
               "idleTimeout": 30000,
               "idleCheckInterval": 1000,
               "isAddObjectIfNeededRegistered": false,
-              "queue": { "queueSize": 0, "queue": [] },
+              "queue": {
+                "queueSize": 0,
+                "queue": []
+              },
               "closed": false
             }
           }
@@ -11547,7 +11933,7 @@
             "_maxListeners": 0,
             "filename": "/home/huy/Downloads/source/tile-server/data/mbtiles/vietnam/vietnam.mbtiles",
             "_batchSize": 100,
-            "_db": { "_eventsCount": 0 },
+            "_db": {},
             "_stat": {
               "dev": 2051,
               "mode": 33206,
@@ -11559,11 +11945,11 @@
               "ino": 1599910,
               "size": 458919936,
               "blocks": 896336,
-              "atimeMs": 1716390160434.8284,
+              "atimeMs": 1716656601889.8066,
               "mtimeMs": 1714465291267.8901,
               "ctimeMs": 1715491068446.0078,
               "birthtimeMs": 1714465271652.2068,
-              "atime": "2024-05-22T15:02:40.435Z",
+              "atime": "2024-05-25T17:03:21.890Z",
               "mtime": "2024-04-30T08:21:31.268Z",
               "ctime": "2024-05-12T05:17:48.446Z",
               "birthtime": "2024-04-30T08:21:11.652Z"
@@ -11682,14 +12068,19 @@
                 },
                 {
                   "maxzoom": 14,
-                  "fields": { "class": "String", "subclass": "String" },
+                  "fields": {
+                    "class": "String",
+                    "subclass": "String"
+                  },
                   "minzoom": 0,
                   "id": "landcover",
                   "description": ""
                 },
                 {
                   "maxzoom": 14,
-                  "fields": { "class": "String" },
+                  "fields": {
+                    "class": "String"
+                  },
                   "minzoom": 0,
                   "id": "landuse",
                   "description": ""
@@ -11873,7 +12264,10 @@
                 },
                 {
                   "maxzoom": 14,
-                  "fields": { "ref": "String", "class": "String" },
+                  "fields": {
+                    "ref": "String",
+                    "class": "String"
+                  },
                   "minzoom": 0,
                   "id": "aeroway",
                   "description": ""
@@ -12165,7 +12559,9 @@
                 },
                 {
                   "maxzoom": 14,
-                  "fields": { "housenumber": "String" },
+                  "fields": {
+                    "housenumber": "String"
+                  },
                   "minzoom": 0,
                   "id": "housenumber",
                   "description": ""
@@ -12341,11 +12737,12 @@
                   "description": ""
                 }
               ]
-            },
-            "_eventsCount": 0
+            }
           }
         },
-        "sourceTypes": { "vietnam": "mbtiles" }
+        "sourceTypes": {
+          "vietnam": "mbtiles"
+        }
       },
       "dataProjWGStoInternalWGS": null,
       "staticAttributionText": ""
@@ -12353,13 +12750,27 @@
   },
   "data": {
     "magellan_strait": {
-      "tileJSON": { "tilejson": "2.0.0" },
+      "tileJSON": {
+        "tilejson": "2.2.0",
+        "basename": "MagellanStrait.mbtiles",
+        "id": "MagellanStrait",
+        "filesize": 84647936,
+        "name": "MagellanStrait",
+        "format": "png",
+        "type": "baselayer",
+        "bounds": [-78.75, -61.60639637138628, -56.25, -48.92249926375824],
+        "date": "20240407-1829",
+        "scheme": "xyz",
+        "minzoom": 8,
+        "maxzoom": 16,
+        "center": [-67.5, -55.26444781757226, 12]
+      },
       "sourceType": "mbtiles",
       "source": {
         "_maxListeners": 0,
         "filename": "/home/huy/Downloads/source/tile-server/data/mbtiles/MagellanStrait/MagellanStrait.mbtiles",
         "_batchSize": 100,
-        "_db": { "_eventsCount": 0 },
+        "_db": {},
         "_stat": {
           "dev": 2051,
           "mode": 33204,
@@ -12371,22 +12782,33 @@
           "ino": 674049,
           "size": 84647936,
           "blocks": 165328,
-          "atimeMs": 1716389301463.6719,
+          "atimeMs": 1716659118366.0217,
           "mtimeMs": 1714503714760.164,
           "ctimeMs": 1715491064533.8809,
           "birthtimeMs": 1714503499823.494,
-          "atime": "2024-05-22T14:48:21.464Z",
+          "atime": "2024-05-25T17:45:18.366Z",
           "mtime": "2024-04-30T19:01:54.760Z",
           "ctime": "2024-05-12T05:17:44.534Z",
           "birthtime": "2024-04-30T18:58:19.823Z"
         },
         "open": true,
-        "_eventsCount": 0
+        "_info": {
+          "basename": "MagellanStrait.mbtiles",
+          "id": "MagellanStrait",
+          "filesize": 84647936,
+          "name": "MagellanStrait",
+          "format": "png",
+          "type": "baselayer",
+          "date": "20240407-1829",
+          "scheme": "xyz",
+          "minzoom": 8,
+          "maxzoom": 16
+        }
       }
     },
     "vietnam": {
       "tileJSON": {
-        "tilejson": "2.0.0",
+        "tilejson": "2.2.0",
         "basename": "asia_vietnam.mbtiles",
         "id": "openmaptiles",
         "filesize": 458919936,
@@ -12499,14 +12921,19 @@
           },
           {
             "maxzoom": 14,
-            "fields": { "class": "String", "subclass": "String" },
+            "fields": {
+              "class": "String",
+              "subclass": "String"
+            },
             "minzoom": 0,
             "id": "landcover",
             "description": ""
           },
           {
             "maxzoom": 14,
-            "fields": { "class": "String" },
+            "fields": {
+              "class": "String"
+            },
             "minzoom": 0,
             "id": "landuse",
             "description": ""
@@ -12690,7 +13117,10 @@
           },
           {
             "maxzoom": 14,
-            "fields": { "ref": "String", "class": "String" },
+            "fields": {
+              "ref": "String",
+              "class": "String"
+            },
             "minzoom": 0,
             "id": "aeroway",
             "description": ""
@@ -12982,7 +13412,9 @@
           },
           {
             "maxzoom": 14,
-            "fields": { "housenumber": "String" },
+            "fields": {
+              "housenumber": "String"
+            },
             "minzoom": 0,
             "id": "housenumber",
             "description": ""
@@ -13164,7 +13596,7 @@
         "_maxListeners": 0,
         "filename": "/home/huy/Downloads/source/tile-server/data/mbtiles/vietnam/vietnam.mbtiles",
         "_batchSize": 100,
-        "_db": { "_eventsCount": 0 },
+        "_db": {},
         "_stat": {
           "dev": 2051,
           "mode": 33206,
@@ -13176,11 +13608,11 @@
           "ino": 1599910,
           "size": 458919936,
           "blocks": 896336,
-          "atimeMs": 1716390160434.8284,
+          "atimeMs": 1716656601889.8066,
           "mtimeMs": 1714465291267.8901,
           "ctimeMs": 1715491068446.0078,
           "birthtimeMs": 1714465271652.2068,
-          "atime": "2024-05-22T15:02:40.435Z",
+          "atime": "2024-05-25T17:03:21.890Z",
           "mtime": "2024-04-30T08:21:31.268Z",
           "ctime": "2024-05-12T05:17:48.446Z",
           "birthtime": "2024-04-30T08:21:11.652Z"
@@ -13201,13 +13633,12 @@
           "planettime": "1581292800000",
           "mtime": "1581445940000",
           "version": "3.11"
-        },
-        "_eventsCount": 0
+        }
       }
     },
     "vietnam_hanoi": {
       "tileJSON": {
-        "tilejson": "2.0.0",
+        "tilejson": "2.2.0",
         "basename": "vietnam_hanoi.mbtiles",
         "id": "openmaptiles",
         "filesize": 28033024,
@@ -13320,14 +13751,19 @@
           },
           {
             "maxzoom": 14,
-            "fields": { "class": "String", "subclass": "String" },
+            "fields": {
+              "class": "String",
+              "subclass": "String"
+            },
             "minzoom": 0,
             "id": "landcover",
             "description": ""
           },
           {
             "maxzoom": 14,
-            "fields": { "class": "String" },
+            "fields": {
+              "class": "String"
+            },
             "minzoom": 0,
             "id": "landuse",
             "description": ""
@@ -13511,7 +13947,10 @@
           },
           {
             "maxzoom": 14,
-            "fields": { "ref": "String", "class": "String" },
+            "fields": {
+              "ref": "String",
+              "class": "String"
+            },
             "minzoom": 0,
             "id": "aeroway",
             "description": ""
@@ -13803,7 +14242,9 @@
           },
           {
             "maxzoom": 14,
-            "fields": { "housenumber": "String" },
+            "fields": {
+              "housenumber": "String"
+            },
             "minzoom": 0,
             "id": "housenumber",
             "description": ""
@@ -13985,7 +14426,7 @@
         "_maxListeners": 0,
         "filename": "/home/huy/Downloads/source/tile-server/data/mbtiles/vietnam_hanoi/vietnam_hanoi.mbtiles",
         "_batchSize": 100,
-        "_db": { "_eventsCount": 0 },
+        "_db": {},
         "_stat": {
           "dev": 2051,
           "mode": 33206,
@@ -13997,11 +14438,11 @@
           "ino": 1599912,
           "size": 28033024,
           "blocks": 54752,
-          "atimeMs": 1716390160434.8284,
+          "atimeMs": 1716659118366.0217,
           "mtimeMs": 1714465300183.75,
           "ctimeMs": 1715491066641.9492,
           "birthtimeMs": 1714465299851.7554,
-          "atime": "2024-05-22T15:02:40.435Z",
+          "atime": "2024-05-25T17:45:18.366Z",
           "mtime": "2024-04-30T08:21:40.184Z",
           "ctime": "2024-05-12T05:17:46.642Z",
           "birthtime": "2024-04-30T08:21:39.852Z"
@@ -14022,13 +14463,12 @@
           "planettime": "1581292800000",
           "mtime": "1581445940000",
           "version": "3.11"
-        },
-        "_eventsCount": 0
+        }
       }
     },
     "zurich_switzerland": {
       "tileJSON": {
-        "tilejson": "2.0.0",
+        "tilejson": "2.2.0",
         "basename": "zurich_switzerland.mbtiles",
         "id": "openmaptiles",
         "filesize": "24244224",
@@ -14041,43 +14481,59 @@
             "id": "water",
             "minzoom": 0,
             "maxzoom": 14,
-            "fields": { "class": "String" }
+            "fields": {
+              "class": "String"
+            }
           },
           {
             "id": "waterway",
             "minzoom": 0,
             "maxzoom": 14,
-            "fields": { "name": "String", "class": "String" }
+            "fields": {
+              "name": "String",
+              "class": "String"
+            }
           },
           {
             "id": "landcover",
             "minzoom": 0,
             "maxzoom": 14,
-            "fields": { "class": "String", "subclass": "String" }
+            "fields": {
+              "class": "String",
+              "subclass": "String"
+            }
           },
           {
             "id": "landuse",
             "minzoom": 0,
             "maxzoom": 14,
-            "fields": { "class": "String" }
+            "fields": {
+              "class": "String"
+            }
           },
           {
             "id": "park",
             "minzoom": 0,
             "maxzoom": 14,
-            "fields": { "class": "String" }
+            "fields": {
+              "class": "String"
+            }
           },
           {
             "id": "boundary",
             "minzoom": 0,
             "maxzoom": 14,
-            "fields": { "admin_level": "Number" }
+            "fields": {
+              "admin_level": "Number"
+            }
           },
           {
             "id": "aeroway",
             "minzoom": 0,
             "maxzoom": 14,
-            "fields": { "class": "String" }
+            "fields": {
+              "class": "String"
+            }
           },
           {
             "id": "transportation",
@@ -14137,7 +14593,9 @@
             "id": "housenumber",
             "minzoom": 0,
             "maxzoom": 14,
-            "fields": { "housenumber": "String" }
+            "fields": {
+              "housenumber": "String"
+            }
           },
           {
             "id": "poi",
@@ -14167,7 +14625,7 @@
         "_maxListeners": 0,
         "filename": "/home/huy/Downloads/source/tile-server/data/mbtiles/zurich_switzerland/zurich_switzerland.mbtiles",
         "_batchSize": 100,
-        "_db": { "_eventsCount": 0 },
+        "_db": {},
         "_stat": {
           "dev": 2051,
           "mode": 33206,
@@ -14179,11 +14637,11 @@
           "ino": 1599913,
           "size": 24244224,
           "blocks": 47352,
-          "atimeMs": 1716390160434.8284,
+          "atimeMs": 1716659118398.023,
           "mtimeMs": 1714465301127.7354,
           "ctimeMs": 1715491071226.0981,
           "birthtimeMs": 1714465300483.7454,
-          "atime": "2024-05-22T15:02:40.435Z",
+          "atime": "2024-05-25T17:45:18.398Z",
           "mtime": "2024-04-30T08:21:41.128Z",
           "ctime": "2024-05-12T05:17:51.226Z",
           "birthtime": "2024-04-30T08:21:40.484Z"
@@ -14204,8 +14662,7 @@
           "name": "OpenMapTiles",
           "version": "3.3",
           "type": "overlay"
-        },
-        "_eventsCount": 0
+        }
       }
     }
   },
@@ -14268,6 +14725,9 @@
     "Roboto Thin": true,
     "Roboto Thin Italic": true
   },
-  "sprites": { "outdoor": true, "streets": true },
+  "sprites": {
+    "outdoor": true,
+    "streets": true
+  },
   "icons": []
 }

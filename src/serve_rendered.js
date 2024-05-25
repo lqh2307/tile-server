@@ -124,8 +124,8 @@ function createEmptyResponse(format, color, callback) {
     },
   })
     .toFormat(format)
-    .toBuffer((err, buffer) => {
-      if (!err) {
+    .toBuffer((error, buffer) => {
+      if (!error) {
         cachedEmptyResponses[cacheKey] = buffer;
       }
 
@@ -428,13 +428,13 @@ const respondImage = (
     pool = item.map.renderersStatic[scale];
   }
 
-  pool.acquire((err, renderer) => {
-    if (err) {
-      printLog("Render error:", err);
+  pool.acquire((error, renderer) => {
+    if (error) {
+      printLog("Render error:", error);
 
       res.header("Content-Type", "text/plain");
 
-      return res.status(500).send(err);
+      return res.status(500).send(error);
     }
 
     // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
@@ -466,14 +466,14 @@ const respondImage = (
       params.height += tileMargin * 2;
     }
 
-    renderer.render(params, (err, data) => {
+    renderer.render(params, (error, data) => {
       pool.release(renderer);
-      if (err) {
-        printLog("Render error:", err);
+      if (error) {
+        printLog("Render error:", error);
 
         res.header("Content-Type", "text/plain");
 
-        return res.status(500).send(err);
+        return res.status(500).send(error);
       }
 
       const image = sharp(data, {
@@ -540,7 +540,7 @@ const respondImage = (
         image.webp({ quality: formatQuality || 90 });
       }
 
-      image.toBuffer((err, buffer, info) => {
+      image.toBuffer((error, buffer, info) => {
         if (!buffer) {
           res.header("Content-Type", "text/plain");
 
@@ -996,8 +996,8 @@ export const serve_rendered = {
               );
               const filePath = path.join(spritePath, file);
 
-              fs.readFile(filePath, (err, data) => {
-                callback(err, {
+              fs.readFile(filePath, (error, data) => {
+                callback(error, {
                   data: data,
                 });
               });
@@ -1010,8 +1010,8 @@ export const serve_rendered = {
                 callback(null, {
                   data: await getFontsPbf(fontPath, fonts, range),
                 });
-              } catch (err) {
-                callback(err, {
+              } catch (error) {
+                callback(error, {
                   data: null,
                 });
               }
@@ -1026,33 +1026,12 @@ export const serve_rendered = {
               const y = Number(parts[5]?.split(".")[0]) || 0;
               const format = parts[5]?.split(".")[1] || "";
 
-              if (sourceType === "pmtiles") {
-                const { data, headers } = await getPMtilesTile(source, z, x, y);
-
-                if (!data) {
-                  printLog(
-                    "warning",
-                    `PMTiles source "${sourceId}" error: ${err}. Serving empty`
-                  );
-
-                  createEmptyResponse(
-                    sourceInfo.format,
-                    sourceInfo.color,
-                    callback
-                  );
-
-                  return;
-                }
-
-                callback(null, {
-                  data: data,
-                });
-              } else if (sourceType === "mbtiles") {
-                source.getTile(z, x, y, (err, data, headers) => {
-                  if (err) {
+              if (sourceType === "mbtiles") {
+                source.getTile(z, x, y, (error, data) => {
+                  if (error) {
                     printLog(
                       "warning",
-                      `MBTiles source "${sourceId}" error: ${err}. Serving empty`
+                      `MBTiles source "${sourceId}" error: ${error}. Serving empty`
                     );
 
                     createEmptyResponse(
@@ -1069,7 +1048,7 @@ export const serve_rendered = {
                   if (format === "pbf") {
                     try {
                       response.data = zlib.unzipSync(data);
-                    } catch (err) {
+                    } catch (error) {
                       printLog(
                         "error",
                         `Skipping incorrect header for tile mbtiles://${style}/${z}/${x}/${y}.pbf`
@@ -1081,10 +1060,31 @@ export const serve_rendered = {
 
                   callback(null, response);
                 });
+              } else if (sourceType === "pmtiles") {
+                const { data } = await getPMtilesTile(source, z, x, y);
+
+                if (!data) {
+                  printLog(
+                    "warning",
+                    `PMTiles source "${sourceId}" error: ${error}. Serving empty`
+                  );
+
+                  createEmptyResponse(
+                    sourceInfo.format,
+                    sourceInfo.color,
+                    callback
+                  );
+
+                  return;
+                }
+
+                callback(null, {
+                  data: data,
+                });
               }
             } else if (protocol === "http" || protocol === "https") {
               try {
-                const { data, headers } = await axios.get(req.url, {
+                const { data } = await axios.get(req.url, {
                   responseType: "arraybuffer",
                 });
 
@@ -1136,7 +1136,7 @@ export const serve_rendered = {
           const styleJSON = JSON.parse(file);
 
           const tileJSON = {
-            tilejson: "2.0.0",
+            tilejson: "2.2.0",
             name: styleJSON.name,
             attribution: "",
             minzoom: 0,
@@ -1207,14 +1207,14 @@ export const serve_rendered = {
                     map.sourceTypes[name] = "mbtiles";
                     map.sources[name] = new MBTiles(
                       inputFile + "?mode=ro",
-                      (err, mbtiles) => {
-                        if (err) {
-                          reject(err);
+                      (error, mbtiles) => {
+                        if (error) {
+                          reject(error);
                         }
 
-                        mbtiles.getInfo((err, info) => {
-                          if (err) {
-                            reject(err);
+                        mbtiles.getInfo((error, info) => {
+                          if (error) {
+                            reject(error);
                           }
 
                           if (!repoobj.dataProjWGStoInternalWGS && info.proj4) {
@@ -1299,8 +1299,6 @@ export const serve_rendered = {
                     tileJSON.attribution += source.attribution;
                   }
                 }
-              } else {
-                throw Error(`Source data "${sourceID}" is not found`);
               }
             }
           }

@@ -13,7 +13,10 @@ import { serve_font } from "./serve_font.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_sprite } from "./serve_sprite.js";
 import { serve_template } from "./serve_template.js";
-import { printLog } from "./utils.js";
+import {
+  // createRepoFile,
+  printLog,
+} from "./utils.js";
 
 const logFormat = `${chalk.gray(":date[iso]")} ${chalk.green("[INFO]")} :method :url :status :res[content-length] :response-time :remote-addr :user-agent`;
 
@@ -129,6 +132,8 @@ export function newServer(opts) {
     .then(() => {
       printLog("info", "Startup complete!");
 
+      // createRepoFile(repo, "./repo.json");
+
       startupComplete = true;
     })
     .catch((error) => {
@@ -167,7 +172,9 @@ export function newServer(opts) {
 
       newChokidar.close();
 
-      server.shutdown((err) => {
+      server.shutdown((error) => {
+        printLog("error", error);
+
         newServer(opts);
       });
     });
@@ -180,7 +187,9 @@ export function newServer(opts) {
       newChokidar.close();
     }
 
-    server.shutdown((err) => {
+    server.shutdown((error) => {
+      printLog("error", error);
+
       newServer(opts);
     });
 
@@ -192,7 +201,9 @@ export function newServer(opts) {
   app.get("/kill", async (req, res, next) => {
     printLog("info", "Killed server!");
 
-    server.shutdown((err) => {
+    server.shutdown((error) => {
+      printLog("error", error);
+
       process.exit(0);
     });
 

@@ -334,3 +334,29 @@ export const validateSprite = (spriteDirPath) => {
 };
 
 export const getScale = (scale = "@1x") => Number(scale.slice(1, -1)) || 1;
+
+export const createRepoFile = (repo, repoFilePath) => {
+  function getCircularReplacer() {
+    const seen = new WeakSet();
+
+    return (key, value) => {
+      if (typeof value === "object" && value !== null) {
+        if (seen.has(value)) {
+          return;
+        }
+
+        seen.add(value);
+      }
+
+      return value;
+    };
+  }
+
+  const jsonData = JSON.stringify(repo, getCircularReplacer(), 2);
+
+  fs.writeFile(repoFilePath, jsonData, "utf8", (error) => {
+    if (error) {
+      throw error;
+    }
+  });
+};

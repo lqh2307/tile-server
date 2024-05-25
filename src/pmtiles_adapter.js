@@ -35,9 +35,9 @@ class PMTilesFileSource {
  */
 async function readFileBytes(fd, buffer, offset) {
   return new Promise((resolve, reject) => {
-    fs.read(fd, buffer, 0, buffer.length, offset, (err) => {
-      if (err) {
-        return reject(err);
+    fs.read(fd, buffer, 0, buffer.length, offset, (error) => {
+      if (error) {
+        return reject(error);
       }
 
       resolve();
@@ -50,18 +50,17 @@ async function readFileBytes(fd, buffer, offset) {
  * @param FilePath
  */
 export function openPMtiles(FilePath) {
-  let pmtiles = undefined;
+  let source;
 
-  if (isValidHttpUrl(FilePath)) {
-    const source = new FetchSource(FilePath);
-    pmtiles = new PMTiles(source);
+  if (isValidHttpUrl(FilePath) === true) {
+    source = new FetchSource(FilePath);
   } else {
     const fd = fs.openSync(FilePath, "r");
-    const source = new PMTilesFileSource(fd);
-    pmtiles = new PMTiles(source);
+
+    source = new PMTilesFileSource(fd);
   }
 
-  return pmtiles;
+  return new PMTiles(source);
 }
 
 /**

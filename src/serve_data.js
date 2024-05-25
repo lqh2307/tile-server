@@ -61,47 +61,7 @@ export const serve_data = {
             throw Error("Data is out of bounds");
           }
 
-          if (item.sourceType === "pmtiles") {
-            let { data, headers } = await getPMtilesTile(item.source, z, x, y);
-
-            if (!data) {
-              throw Error("Data is not found");
-            } else {
-              if (format === "pbf") {
-                headers["Content-Type"] = "application/x-protobuf";
-              } else if (format === "geojson") {
-                headers["Content-Type"] = "application/json";
-
-                const geojson = {
-                  type: "FeatureCollection",
-                  features: [],
-                };
-
-                const tile = new VectorTile(new Pbf(data));
-
-                for (const layerName in tile.layers) {
-                  const layer = tile.layers[layerName];
-
-                  for (let i = 0; i < layer.length; i++) {
-                    const featureGeoJSON = layer.feature(i).toGeoJSON(x, y, z);
-                    featureGeoJSON.properties.layer = layerName;
-
-                    geojson.features.push(featureGeoJSON);
-                  }
-                }
-
-                data = JSON.stringify(geojson);
-              }
-
-              headers["Content-Encoding"] = "gzip";
-
-              res.set(headers);
-
-              data = zlib.gzipSync(data);
-
-              return res.status(200).send(data);
-            }
-          } else if (item.sourceType === "mbtiles") {
+          if (item.sourceType === "mbtiles") {
             item.source.getTile(z, x, y, (error, data, headers) => {
               if (error) {
                 if (/does not exist/.test(error.message)) {
@@ -168,6 +128,46 @@ export const serve_data = {
                 }
               }
             });
+          } else if (item.sourceType === "pmtiles") {
+            let { data, headers } = await getPMtilesTile(item.source, z, x, y);
+
+            if (!data) {
+              throw Error("Data is not found");
+            } else {
+              if (format === "pbf") {
+                headers["Content-Type"] = "application/x-protobuf";
+              } else if (format === "geojson") {
+                headers["Content-Type"] = "application/json";
+
+                const geojson = {
+                  type: "FeatureCollection",
+                  features: [],
+                };
+
+                const tile = new VectorTile(new Pbf(data));
+
+                for (const layerName in tile.layers) {
+                  const layer = tile.layers[layerName];
+
+                  for (let i = 0; i < layer.length; i++) {
+                    const featureGeoJSON = layer.feature(i).toGeoJSON(x, y, z);
+                    featureGeoJSON.properties.layer = layerName;
+
+                    geojson.features.push(featureGeoJSON);
+                  }
+                }
+
+                data = JSON.stringify(geojson);
+              }
+
+              headers["Content-Encoding"] = "gzip";
+
+              res.set(headers);
+
+              data = zlib.gzipSync(data);
+
+              return res.status(200).send(data);
+            }
           }
         } catch (error) {
           printLog("error", `Failed to get data "${id}": ${error}`);
@@ -247,20 +247,12 @@ export const serve_data = {
           const dataInfo = {
             tileJSON: {
               tiles: config.options.domains,
-              tilejson: "2.0.0",
+              tilejson: "2.2.0",
             },
           };
 
-          if (!item.mbtiles && !item.pmtiles) {
-            throw Error(
-              `"pmtiles" or "mbtiles" property for data "${data}" is empty`
-            );
-          } else if (item.mbtiles && item.pmtiles) {
-            throw Error(
-              `"mbtiles" and "pmtiles" properties cannot be used together for data "${data}"`
-            );
-          } else if (item.mbtiles) {
-            if (isValidHttpUrl(item.mbtiles)) {
+          if (item.mbtiles) {
+            if (isValidHttpUrl(item.mbtiles) === true) {
               throw Error(`MBTiles data "${data}" is invalid`);
             } else {
               const inputDataFile = path.join(mbtilesPath, item.mbtiles);
@@ -273,14 +265,14 @@ export const serve_data = {
               dataInfo.sourceType = "mbtiles";
               dataInfo.source = new MBTiles(
                 inputDataFile + "?mode=ro",
-                (err, mbtiles) => {
-                  if (err) {
-                    throw err;
+                (error, mbtiles) => {
+                  if (error) {
+                    throw error;
                   }
 
-                  mbtiles.getInfo((err, info) => {
-                    if (err) {
-                      throw err;
+                  mbtiles.getInfo((error, info) => {
+                    if (error) {
+                      throw error;
                     }
 
                     Object.assign(dataInfo.tileJSON, info);
@@ -291,7 +283,7 @@ export const serve_data = {
           } else if (item.pmtiles) {
             let inputDataFile = "";
 
-            if (isValidHttpUrl(item.pmtiles)) {
+            if (isValidHttpUrl(item.pmtiles) === true) {
               inputDataFile = item.pmtiles;
             } else {
               inputDataFile = path.join(pmtilesPath, item.pmtiles);
@@ -308,6 +300,10 @@ export const serve_data = {
             const info = await getPMtilesInfo(source);
 
             Object.assign(dataInfo.tileJSON, info);
+          } else {
+            throw Error(
+              `"pmtiles" or "mbtiles" property for data "${data}" is empty`
+            );
           }
 
           fixTileJSONCenter(dataInfo.tileJSON);
