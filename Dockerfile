@@ -27,21 +27,16 @@ RUN \
   libpixman-1-dev \
   libpixman-1-0;
 
-RUN \
-  mkdir -p /etc/apt/keyrings; \
-  curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
-  echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list; \
-  apt-get -qq update; \
-  apt-get install -y nodejs;
-
 WORKDIR /tile-server
 
 COPY . .
 
 RUN \
-  npm config set fetch-retries 5; \
-  npm config set fetch-retry-mintimeout 100000; \
-  npm config set fetch-retry-maxtimeout 600000; \
+  mkdir -p /etc/apt/keyrings; \
+  curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
+  echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list; \
+  apt-get -qq update; \
+  apt-get install -y nodejs; \
   npm install --omit=dev;
 
 
@@ -68,6 +63,12 @@ RUN \
   librsvg2-2 \
   libpango-1.0-0;
 
+USER root
+
+WORKDIR /tile-server
+
+COPY --from=builder /tile-server .
+
 RUN \
   mkdir -p /etc/apt/keyrings; \
   curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
@@ -77,15 +78,8 @@ RUN \
   apt-get -y remove curl gnupg; \
   apt-get -y --purge autoremove; \
   apt-get clean; \
-  rm -rf /var/lib/apt/lists/*;
-
-WORKDIR /tile-server
-
-COPY --from=builder /tile-server .
-
-RUN \
-  mv ./data_template ./data; \
-  chmod -R +x .;
+  rm -rf /var/lib/apt/lists/*; \
+  mv ./data_template ./data;
 
 VOLUME /tile-server/data
 
