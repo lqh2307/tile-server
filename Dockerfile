@@ -78,8 +78,7 @@ RUN \
   apt-get -y remove curl gnupg; \
   apt-get -y --purge autoremove; \
   apt-get clean; \
-  rm -rf /var/lib/apt/lists/*; \
-  mv ./data_template ./data;
+  rm -rf /var/lib/apt/lists/*;
 
 VOLUME /tile-server/data
 

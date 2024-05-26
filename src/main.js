@@ -14,10 +14,10 @@ const packageJSON = JSON.parse(
 program
   .description("tile-server startup options")
   .usage("tile-server [options]")
-  .option("-c, --config <path>", "Config file path", "data/config.json")
+  .option("-d, --data-dir <path>", "Data dir path", "data")
   .option("-p, --port <port>", "Port", 8080, parseInt)
-  .option("-r, --refresh", "Refresh server after changing config file")
-  .option("-k, --kill", "Kill server after changing config file")
+  .option("-r, --refresh", "Refresh server after changing config file", false)
+  .option("-k, --kill", "Kill server after changing config file", false)
   .version(packageJSON.version, "-v, --version")
   .showHelpAfterError();
 
@@ -39,7 +39,7 @@ process.on("SIGTERM", () => {
 const startServer = (opts) => {
   newServer({
     port: opts.port,
-    config: path.resolve(opts.config),
+    dataDir: opts.dataDir,
     refresh: opts.refresh,
     kill: opts.kill,
   });

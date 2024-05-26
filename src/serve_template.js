@@ -10,7 +10,7 @@ import { getTileUrls } from "./utils.js";
 const mercator = new SphericalMercator();
 
 export const serve_template = {
-  init: async (config, repo) => {
+  init: async (config) => {
     const app = express().use(
       "/",
       express.static(path.resolve("public", "resources"))
@@ -21,38 +21,40 @@ export const serve_template = {
         const styles = {};
         const datas = {};
 
-        const renderedPromises = Object.keys(repo.rendered).map(async (id) => {
-          const style = repo.rendered[id];
-          const { center, tiles, format = "", name = "" } = style.tileJSON;
-          const tileSize = 256;
-          const xyzLink = getTileUrls(
-            req,
-            tiles,
-            `styles/${id}`,
-            tileSize,
-            format
-          )[0];
+        const renderedPromises = Object.keys(config.repo.rendered).map(
+          async (id) => {
+            const style = config.repo.rendered[id];
+            const { center, tiles, format = "", name = "" } = style.tileJSON;
+            const tileSize = 256;
+            const xyzLink = getTileUrls(
+              req,
+              tiles,
+              `styles/${id}`,
+              tileSize,
+              format
+            )[0];
 
-          let viewer_hash = "";
-          let thumbnail = "";
-          if (center) {
-            viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
+            let viewer_hash = "";
+            let thumbnail = "";
+            if (center) {
+              viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
 
-            const centerPx = mercator.px([center[0], center[1]], center[2]);
+              const centerPx = mercator.px([center[0], center[1]], center[2]);
 
-            thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.png`;
+              thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.png`;
+            }
+
+            styles[id] = {
+              xyz_link: xyzLink,
+              viewer_hash,
+              thumbnail,
+              name,
+            };
           }
+        );
 
-          styles[id] = {
-            xyz_link: xyzLink,
-            viewer_hash,
-            thumbnail,
-            name,
-          };
-        });
-
-        const dataPromises = Object.keys(repo.data).map(async (id) => {
-          const data = repo.data[id];
+        const dataPromises = Object.keys(config.repo.data).map(async (id) => {
+          const data = config.repo.data[id];
           const {
             center,
             filesize,
@@ -134,7 +136,7 @@ export const serve_template = {
 
     app.get("/styles/:id/$", async (req, res, next) => {
       const id = decodeURI(req.params.id);
-      const style = repo.rendered[id];
+      const style = config.repo.rendered[id];
       const { name = "" } = style.tileJSON;
 
       if (!style) {
@@ -165,7 +167,7 @@ export const serve_template = {
 
     app.get("/styles/:id/wmts.xml", async (req, res, next) => {
       const id = decodeURI(req.params.id);
-      const wmts = repo.rendered[id];
+      const wmts = config.repo.rendered[id];
       const { name = "" } = wmts.tileJSON;
 
       if (!wmts) {
@@ -198,7 +200,7 @@ export const serve_template = {
 
     app.use("/data/:id/$", async (req, res, next) => {
       const id = decodeURI(req.params.id);
-      const data = repo.data[id];
+      const data = config.repo.data[id];
       const { name = "", format } = data.tileJSON;
 
       if (!data) {

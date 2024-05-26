@@ -6,7 +6,7 @@ import express from "express";
 import { printLog, getUrl, validateSprite } from "./utils.js";
 
 export const serve_sprite = {
-  init: async (config, repo) => {
+  init: async (config) => {
     const app = express();
     const spritePath = config.options.paths.sprites;
 
@@ -15,7 +15,7 @@ export const serve_sprite = {
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
         const { scale = "", format = "" } = req.params;
-        const item = repo.sprites[id];
+        const item = config.repo.sprites[id];
 
         try {
           if (!item) {
@@ -44,7 +44,7 @@ export const serve_sprite = {
     );
 
     app.get("/sprites.json", async (req, res, next) => {
-      const sprites = Object.keys(repo.sprites);
+      const sprites = Object.keys(config.repo.sprites);
 
       const result = sprites.map((sprite) => {
         return {
@@ -61,11 +61,11 @@ export const serve_sprite = {
     return app;
   },
 
-  remove: (repo, id) => {
-    delete repo.sprites[id];
+  remove: (config, id) => {
+    delete config.repo.sprites[id];
   },
 
-  add: async (config, repo) => {
+  add: async (config) => {
     const spritePath = config.options.paths.sprites;
     const sprites = Object.keys(config.sprites);
 
@@ -77,7 +77,7 @@ export const serve_sprite = {
 
           validateSprite(spriteDirPath);
 
-          repo.sprites[sprite] = true;
+          config.repo.sprites[sprite] = true;
         } catch (error) {
           printLog("error", `Failed to load sprite "${sprite}": ${error}`);
         }

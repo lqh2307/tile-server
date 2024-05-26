@@ -556,14 +556,14 @@ const respondImage = (
 };
 
 export const serve_rendered = {
-  init: async (config, repo) => {
+  init: async (config) => {
     const app = express();
 
     app.get(
       `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(@\\d+x)?.:format(${FORMAT_PATTERN}{1})`,
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
-        const item = repo.rendered[id];
+        const item = config.repo.rendered[id];
         const { format } = req.params;
         const z = Number(req.params.z);
         const x = Number(req.params.x);
@@ -636,7 +636,7 @@ export const serve_rendered = {
     const serveBounds = async (req, res, next) => {
       try {
         const id = decodeURI(req.params.id);
-        const item = repo.rendered[id];
+        const item = config.repo.rendered[id];
 
         if (!item) {
           return res.sendStatus(404);
@@ -721,7 +721,7 @@ export const serve_rendered = {
       async (req, res, next) => {
         try {
           const id = decodeURI(req.params.id);
-          const item = repo.rendered[id];
+          const item = config.repo.rendered[id];
 
           if (!item) {
             return res.sendStatus(404);
@@ -800,10 +800,10 @@ export const serve_rendered = {
 
     app.get("/(:tileSize(256|512)/)?rendered.json", async (req, res, next) => {
       const { tileSize = "" } = req.params;
-      const rendereds = Object.keys(repo.rendered);
+      const rendereds = Object.keys(config.repo.rendered);
 
       const result = rendereds.map((rendered) => {
-        const tileJSON = repo.rendered[rendered].tileJSON;
+        const tileJSON = config.repo.rendered[rendered].tileJSON;
 
         return {
           id: rendered,
@@ -844,7 +844,7 @@ export const serve_rendered = {
     app.get(util.format(staticPattern, "auto"), async (req, res, next) => {
       try {
         const id = decodeURI(req.params.id);
-        const item = repo.rendered[id];
+        const item = config.repo.rendered[id];
 
         if (!item) {
           return res.sendStatus(404);
@@ -941,7 +941,7 @@ export const serve_rendered = {
     app.get("/(:tileSize(256|512)/)?:id.json", async (req, res, next) => {
       const id = decodeURI(req.params.id);
       const tileSize = Number(req.params.tileSize);
-      const item = repo.rendered[id];
+      const item = config.repo.rendered[id];
 
       try {
         if (!item) {
@@ -973,14 +973,14 @@ export const serve_rendered = {
     return app;
   },
 
-  add: async (config, repo) => {
+  add: async (config) => {
     const maxScaleFactor = config.options.maxScaleFactor || 1;
     const mbtilesPath = config.options.paths.mbtiles;
     const pmtilesPath = config.options.paths.pmtiles;
     const stylePath = config.options.paths.styles;
     const spritePath = config.options.paths.sprites;
     const fontPath = config.options.paths.fonts;
-    const styles = Object.keys(repo.styles);
+    const styles = Object.keys(config.repo.styles);
 
     const createPool = (map, style, styleJSON, ratio, mode, min, max) => {
       const createRenderer = (ratio, createCallback) => {
@@ -1169,7 +1169,7 @@ export const serve_rendered = {
               config.options.staticAttributionText,
           };
 
-          repo.rendered[style] = repoobj;
+          config.repo.rendered[style] = repoobj;
 
           const queue = [];
           const sources = Object.keys(styleJSON.sources);
@@ -1191,7 +1191,7 @@ export const serve_rendered = {
 
               const sourceID = sourceURL.slice(1, -1);
 
-              if (repo.data[sourceID]?.sourceType === "mbtiles") {
+              if (config.repo.data[sourceID]?.sourceType === "mbtiles") {
                 queue.push(
                   new Promise((resolve, reject) => {
                     const inputFile = path.resolve(
@@ -1256,7 +1256,7 @@ export const serve_rendered = {
                     );
                   })
                 );
-              } else if (repo.data[sourceID]?.sourceType === "pmtiles") {
+              } else if (config.repo.data[sourceID]?.sourceType === "pmtiles") {
                 const inputFile = path.join(
                   pmtilesPath,
                   config.data[sourceID].pmtiles
@@ -1347,8 +1347,8 @@ export const serve_rendered = {
     );
   },
 
-  remove: (repo, id) => {
-    const item = repo.rendered[id];
+  remove: (config, id) => {
+    const item = config.repo.rendered[id];
 
     if (item) {
       item.map.renderers.forEach((pool) => {
@@ -1360,6 +1360,6 @@ export const serve_rendered = {
       });
     }
 
-    delete repo.rendered[id];
+    delete config.repo.rendered[id];
   },
 };

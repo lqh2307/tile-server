@@ -337,15 +337,20 @@ export const getScale = (scale = "@1x") => Number(scale.slice(1, -1)) || 1;
 
 export const createRepoFile = (repo, repoFilePath) => {
   function getCircularReplacer() {
-    const seen = new WeakSet();
+    const seen = new WeakMap();
+    const paths = new Map();
 
     return (key, value) => {
       if (typeof value === "object" && value !== null) {
         if (seen.has(value)) {
+          console.log(
+            `Circular reference detected at ${paths.get(value)} -> ${key}`
+          );
           return;
         }
 
-        seen.add(value);
+        seen.set(value, true);
+        paths.set(value, key);
       }
 
       return value;

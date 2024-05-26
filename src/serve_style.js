@@ -8,12 +8,12 @@ import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { fixUrl, printLog, getUrl } from "./utils.js";
 
 export const serve_style = {
-  init: async (config, repo) => {
+  init: async (config) => {
     const app = express();
 
     app.get("/:id/style.json", async (req, res, next) => {
       const id = decodeURI(req.params.id);
-      const item = repo.styles[id];
+      const item = config.repo.styles[id];
 
       try {
         if (!item) {
@@ -49,10 +49,10 @@ export const serve_style = {
     });
 
     app.get("/styles.json", async (req, res, next) => {
-      const styles = Object.keys(repo.styles);
+      const styles = Object.keys(config.repo.styles);
 
       const result = styles.map((style) => {
-        const item = repo.styles[style];
+        const item = config.repo.styles[style];
 
         return {
           id: style,
@@ -69,11 +69,11 @@ export const serve_style = {
     return app;
   },
 
-  remove: (repo, id) => {
-    delete repo.styles[id];
+  remove: (config, id) => {
+    delete config.repo.styles[id];
   },
 
-  add: async (config, repo) => {
+  add: async (config) => {
     const stylePath = config.options.paths.styles;
     const styles = Object.keys(config.styles);
 
@@ -119,7 +119,7 @@ export const serve_style = {
 
               const sourceID = sourceURL.slice(1, -1);
 
-              if (!repo.data[sourceID]) {
+              if (!config.repo.data[sourceID]) {
                 throw Error(`Source data "${name}" is not found`);
               }
 
@@ -141,7 +141,7 @@ export const serve_style = {
             );
           }
 
-          repo.styles[style] = {
+          config.repo.styles[style] = {
             styleJSON,
           };
         } catch (error) {

@@ -5,7 +5,7 @@ import express from "express";
 import { getFontsPbf, printLog, getUrl, validatePBFFont } from "./utils.js";
 
 export const serve_font = {
-  init: async (config, repo) => {
+  init: async (config) => {
     const app = express();
     const fontPath = config.options.paths.fonts;
 
@@ -29,7 +29,7 @@ export const serve_font = {
     });
 
     app.get("/fonts.json", async (req, res, next) => {
-      const fonts = Object.keys(repo.fonts);
+      const fonts = Object.keys(config.repo.fonts);
 
       const result = fonts.map((font) => {
         return {
@@ -46,11 +46,11 @@ export const serve_font = {
     return app;
   },
 
-  remove: (repo, id) => {
-    delete repo.fonts[id];
+  remove: (config, id) => {
+    delete config.repo.fonts[id];
   },
 
-  add: async (config, repo) => {
+  add: async (config) => {
     const fontPath = config.options.paths.fonts;
     const fonts = Object.keys(config.fonts);
     const fallbackFont = "Open Sans Regular";
@@ -67,7 +67,7 @@ export const serve_font = {
 
           validatePBFFont(pbfDirPath);
 
-          repo.fonts[font] = true;
+          config.repo.fonts[font] = true;
         } catch (error) {
           printLog(
             "error",

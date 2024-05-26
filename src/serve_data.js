@@ -24,7 +24,7 @@ import {
 const FORMAT_PATTERN = "(pbf|jpg|png|jpeg|webp|geojson)";
 
 export const serve_data = {
-  init: async (config, repo) => {
+  init: async (config) => {
     const app = express();
 
     app.get(
@@ -35,7 +35,7 @@ export const serve_data = {
         const z = Number(req.params.z);
         const x = Number(req.params.x);
         const y = Number(req.params.y);
-        const item = repo.data[id];
+        const item = config.repo.data[id];
 
         try {
           if (!item) {
@@ -180,10 +180,10 @@ export const serve_data = {
     );
 
     app.get("/datas.json", async (req, res, next) => {
-      const datas = Object.keys(repo.data);
+      const datas = Object.keys(config.repo.data);
 
       const result = datas.map((data) => {
-        const item = repo.data[data];
+        const item = config.repo.data[data];
 
         return {
           id: data,
@@ -199,7 +199,7 @@ export const serve_data = {
 
     app.get("/:id.json", async (req, res, next) => {
       const id = decodeURI(req.params.id);
-      const item = repo.data[id];
+      const item = config.repo.data[id];
 
       try {
         if (!item) {
@@ -231,11 +231,11 @@ export const serve_data = {
     return app;
   },
 
-  remove: (repo, id) => {
-    delete repo.data[id];
+  remove: (config, id) => {
+    delete config.repo.data[id];
   },
 
-  add: async (config, repo) => {
+  add: async (config) => {
     const mbtilesPath = config.options.paths.mbtiles;
     const pmtilesPath = config.options.paths.pmtiles;
     const datas = Object.keys(config.data);
@@ -246,8 +246,8 @@ export const serve_data = {
           const item = config.data[data];
           const dataInfo = {
             tileJSON: {
-              tiles: config.options.domains,
               tilejson: "2.2.0",
+              tiles: config.options.domains,
             },
           };
 
@@ -308,7 +308,7 @@ export const serve_data = {
 
           fixTileJSONCenter(dataInfo.tileJSON);
 
-          repo.data[data] = dataInfo;
+          config.repo.data[data] = dataInfo;
         } catch (error) {
           printLog(
             "error",

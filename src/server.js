@@ -20,11 +20,11 @@ import {
 
 const logFormat = `${chalk.gray(":date[iso]")} ${chalk.green("[INFO]")} :method :url :status :res[content-length] :response-time :remote-addr :user-agent`;
 
-function loadConfigFile(configFilePath) {
-  printLog("info", `Load config file: ${configFilePath}`);
-
+function loadConfigFile(dataDir) {
   try {
     /* Read config file */
+    const configFilePath = path.resolve(dataDir, "config.json");
+
     const config = JSON.parse(fs.readFileSync(configFilePath, "utf8"));
 
     /* Add default values */
@@ -34,17 +34,14 @@ function loadConfigFile(configFilePath) {
     config.sprites = config.sprites || {};
     config.icons = config.icons || [];
 
-    const rootPath = config.options.paths?.root || "";
-
     /* Add paths option */
     config.options.paths = {
-      root: path.resolve(rootPath),
-      styles: path.resolve(rootPath, config.options.paths?.styles || ""),
-      fonts: path.resolve(rootPath, config.options.paths?.fonts || ""),
-      sprites: path.resolve(rootPath, config.options.paths?.sprites || ""),
-      mbtiles: path.resolve(rootPath, config.options.paths?.mbtiles || ""),
-      pmtiles: path.resolve(rootPath, config.options.paths?.pmtiles || ""),
-      icons: path.resolve(rootPath, config.options.paths?.icons || ""),
+      styles: path.resolve(dataDir, config.options.paths?.styles || ""),
+      fonts: path.resolve(dataDir, config.options.paths?.fonts || ""),
+      sprites: path.resolve(dataDir, config.options.paths?.sprites || ""),
+      mbtiles: path.resolve(dataDir, config.options.paths?.mbtiles || ""),
+      pmtiles: path.resolve(dataDir, config.options.paths?.pmtiles || ""),
+      icons: path.resolve(dataDir, config.options.paths?.icons || ""),
     };
 
     /* Check paths */
@@ -54,23 +51,22 @@ function loadConfigFile(configFilePath) {
       }
     });
 
+    /* Create repo */
+    config.repo = {
+      styles: {},
+      rendered: {},
+      data: {},
+      fonts: {},
+      sprites: {},
+      icons: [],
+    };
+
     return config;
   } catch (error) {
     printLog("error", `Failed to load config file: ${error}`);
 
     process.exit(1);
   }
-}
-
-function createRepo() {
-  return {
-    styles: {},
-    rendered: {},
-    data: {},
-    fonts: {},
-    sprites: {},
-    icons: [],
-  };
 }
 
 /**
@@ -80,8 +76,11 @@ function createRepo() {
 export function newServer(opts) {
   printLog("info", "Starting server...");
 
-  const config = loadConfigFile(opts.config);
-  const repo = createRepo();
+  const configFilePath = path.resolve(opts.dataDir, "config.json");
+
+  printLog("info", `Load config file: ${configFilePath}`);
+
+  const config = loadConfigFile(opts.dataDir);
   const app = express()
     .disable("x-powered-by")
     .enable("trust proxy")
@@ -101,38 +100,36 @@ export function newServer(opts) {
 
   /*  */
   Promise.all([
-    serve_font.init(config, repo).then((sub) => {
+    serve_font.init(config).then((sub) => {
       app.use("/fonts", sub);
     }),
-    serve_sprite.init(config, repo).then((sub) => {
+    serve_sprite.init(config).then((sub) => {
       app.use("/sprites", sub);
     }),
-    serve_data.init(config, repo).then((sub) => {
+    serve_data.init(config).then((sub) => {
       app.use("/data", sub);
     }),
-    serve_style.init(config, repo).then((sub) => {
+    serve_style.init(config).then((sub) => {
       app.use("/styles", sub);
     }),
-    serve_rendered.init(config, repo).then((sub) => {
+    serve_rendered.init(config).then((sub) => {
       app.use("/styles", sub);
     }),
-    serve_template.init(config, repo).then((sub) => {
+    serve_template.init(config).then((sub) => {
       app.use("/", sub);
     }),
-    serve_font.add(config, repo),
-    serve_sprite.add(config, repo),
+    serve_font.add(config),
+    serve_sprite.add(config),
     serve_data
-      .add(config, repo)
+      .add(config)
       .then(() =>
-        serve_style
-          .add(config, repo)
-          .then(() => serve_rendered.add(config, repo))
+        serve_style.add(config).then(() => serve_rendered.add(config))
       ),
   ])
     .then(() => {
       printLog("info", "Startup complete!");
 
-      // createRepoFile(repo, "./repo.json");
+      // createRepoFile(config, "./repo.json");
 
       startupComplete = true;
     })
@@ -149,7 +146,7 @@ export function newServer(opts) {
   // To gracefully stop serving
   enableShutdown(server);
 
-  const newChokidar = chokidar.watch(opts.config, {
+  const newChokidar = chokidar.watch(configFilePath, {
     persistent: false,
     usePolling: true,
     awaitWriteFinish: true,

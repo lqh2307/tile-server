@@ -4,7 +4,7 @@ import path from "node:path";
 import { printLog, validateSVGIcon } from "./utils.js";
 
 export const serve_icon = {
-  add: async (config, repo) => {
+  add: async (config) => {
     const iconsPath = config.options.paths.icons;
     const icons = config.icons;
 
@@ -16,7 +16,7 @@ export const serve_icon = {
           /* Validate icon */
           validateSVGIcon(iconFilePath);
 
-          repo.icons.push(icon);
+          config.repo.icons.push(icon);
         } catch (error) {
           printLog(
             "error",
