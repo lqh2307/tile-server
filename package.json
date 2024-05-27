@@ -1,6 +1,6 @@
 {
   "name": "tile-server",
-  "version": "1.0.1",
+  "version": "0.0.1",
   "description": "Map tile server",
   "account": "quanghuy2307",
   "main": "src/main.js",
