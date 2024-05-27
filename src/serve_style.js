@@ -22,7 +22,7 @@ export const serve_style = {
 
         const styleJSON = clone(item.styleJSON);
 
-        Object.keys(styleJSON.sources || {}).forEach((name) => {
+        Object.keys(styleJSON.sources).forEach((name) => {
           const source = styleJSON.sources[name];
 
           source.url = fixUrl(req, source.url);
@@ -104,7 +104,7 @@ export const serve_style = {
             throw Error(errString);
           }
 
-          Object.keys(styleJSON.sources || {}).forEach((name) => {
+          Object.keys(styleJSON.sources).forEach((name) => {
             const source = styleJSON.sources[name];
 
             if (
