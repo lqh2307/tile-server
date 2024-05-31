@@ -1,6 +1,6 @@
 {
   "name": "tile-server",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Tile server",
   "account": "quanghuy2307",
   "main": "src/main.js",
@@ -10,7 +10,7 @@
     "start": "node src/main.js",
     "dev": "nodemon src/main.js",
     "build-image": "ACCOUNT=$(grep -oP '(?<=\"account\": \")[^\"]*' package.json) && NAME=$(grep -oP '(?<=\"name\": \")[^\"]*' package.json) && TAG=$(grep -oP '(?<=\"version\": \")[^\"]*' package.json) && docker build -t $ACCOUNT/$NAME:$TAG .",
-    "release-image": "docker push $ACCOUNT/$NAME:$TAG ."
+    "release-image": "ACCOUNT=$(grep -oP '(?<=\"account\": \")[^\"]*' package.json) && NAME=$(grep -oP '(?<=\"name\": \")[^\"]*' package.json) && TAG=$(grep -oP '(?<=\"version\": \")[^\"]*' package.json) && docker push $ACCOUNT/$NAME:$TAG"
   },
   "dependencies": {
     "@mapbox/glyph-pbf-composite": "0.0.3",
