@@ -39,7 +39,7 @@ process.on("SIGTERM", () => {
 const startServer = (opts) => {
   newServer({
     port: opts.port,
-    dataDir: opts.dataDir,
+    dataDir: path.resolve(opts.dataDir),
     refresh: opts.refresh,
     kill: opts.kill,
   });

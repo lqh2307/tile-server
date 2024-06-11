@@ -6,7 +6,6 @@ import chokidar from "chokidar";
 import enableShutdown from "http-shutdown";
 import express from "express";
 import morgan from "morgan";
-import chalk from "chalk";
 import { serve_data } from "./serve_data.js";
 import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
@@ -18,14 +17,13 @@ import {
   printLog,
 } from "./utils.js";
 
-const logFormat = `${chalk.gray(":date[iso]")} ${chalk.green("[INFO]")} :method :url :status :res[content-length] :response-time :remote-addr :user-agent`;
+function loadConfigFile(dataDir, configFilePath) {
+  printLog("info", `Load config file: ${configFilePath}`);
 
-function loadConfigFile(dataDir) {
   try {
     /* Read config file */
-    const configFilePath = path.resolve(dataDir, "config.json");
-
-    const config = JSON.parse(fs.readFileSync(configFilePath, "utf8"));
+    const file = fs.readFileSync(configFilePath, "utf8");
+    const config = JSON.parse(file);
 
     /* Add default values */
     config.options = config.options || {};
@@ -36,12 +34,12 @@ function loadConfigFile(dataDir) {
 
     /* Add paths option */
     config.options.paths = {
-      styles: path.resolve(dataDir, config.options.paths?.styles || ""),
-      fonts: path.resolve(dataDir, config.options.paths?.fonts || ""),
-      sprites: path.resolve(dataDir, config.options.paths?.sprites || ""),
-      mbtiles: path.resolve(dataDir, config.options.paths?.mbtiles || ""),
-      pmtiles: path.resolve(dataDir, config.options.paths?.pmtiles || ""),
-      icons: path.resolve(dataDir, config.options.paths?.icons || ""),
+      styles: path.join(dataDir, config.options.paths?.styles || ""),
+      fonts: path.join(dataDir, config.options.paths?.fonts || ""),
+      sprites: path.join(dataDir, config.options.paths?.sprites || ""),
+      mbtiles: path.join(dataDir, config.options.paths?.mbtiles || ""),
+      pmtiles: path.join(dataDir, config.options.paths?.pmtiles || ""),
+      icons: path.join(dataDir, config.options.paths?.icons || ""),
     };
 
     /* Check paths */
@@ -75,18 +73,19 @@ function loadConfigFile(dataDir) {
  */
 export function newServer(opts) {
   printLog("info", "Starting server...");
+  printLog("info", `Load data dir: ${opts.dataDir}`);
 
+  let startupComplete = false;
   const configFilePath = path.resolve(opts.dataDir, "config.json");
-
-  printLog("info", `Load config file: ${configFilePath}`);
-
-  const config = loadConfigFile(opts.dataDir);
+  const config = loadConfigFile(opts.dataDir, configFilePath);
   const app = express()
     .disable("x-powered-by")
     .enable("trust proxy")
-    .use(morgan(logFormat));
-
-  let startupComplete = false;
+    .use(
+      morgan(
+        ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent"
+      )
+    );
 
   app.get("/health", async (req, res, next) => {
     res.header("Content-Type", "text/plain");

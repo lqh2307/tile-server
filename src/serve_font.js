@@ -53,11 +53,6 @@ export const serve_font = {
   add: async (config) => {
     const fontPath = config.options.paths.fonts;
     const fonts = Object.keys(config.fonts);
-    const fallbackFont = "Open Sans Regular";
-
-    if (!fonts.includes(fallbackFont)) {
-      throw Error(`Fallback font "${fallbackFont}" is not found`);
-    }
 
     await Promise.all(
       fonts.map(async (font) => {

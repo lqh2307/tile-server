@@ -3,7 +3,6 @@
 import path from "node:path";
 import fs from "node:fs";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
-import chalk from "chalk";
 import { pngValidator } from "png-validator";
 
 export const httpTester = /^https?:\/\//i;
@@ -147,13 +146,14 @@ export const getFontsPbf = async (fontPath, names, range) => {
         return getFontPbf(fontPath, font, range);
       } catch (error) {
         const fallbackFont = "Open Sans Regular";
+        const fallbackFontPath = path.resolve("public", "resources", "fonts");
 
         printLog(
           "warning",
-          `Failed to load font "${font}": ${error.message}. Trying to use fallback font ${fallbackFont}`
+          `Failed to load font "${font}": ${error.message}. Trying to use fallback font "${fallbackFont}"`
         );
 
-        return getFontPbf(fontPath, fallbackFont, range);
+        return getFontPbf(fallbackFontPath, fallbackFont, range);
       }
     })
   );
@@ -224,7 +224,7 @@ export const findDirs = (dirPath, regex) => {
 export const printLog = (level, msg) => {
   switch (level) {
     case "debug": {
-      const logFormat = `${chalk.gray(new Date().toISOString())} ${chalk.magenta(`[DEBUG] ${msg}`)}`;
+      const logFormat = `${new Date().toISOString()} ${`[DEBUG] ${msg}`}`;
 
       console.debug(logFormat);
 
@@ -232,7 +232,7 @@ export const printLog = (level, msg) => {
     }
 
     case "warning": {
-      const logFormat = `${chalk.gray(new Date().toISOString())} ${chalk.yellow(`[WARNING] ${msg}`)}`;
+      const logFormat = `${new Date().toISOString()} ${`[WARNING] ${msg}`}`;
 
       console.warn(logFormat);
 
@@ -240,7 +240,7 @@ export const printLog = (level, msg) => {
     }
 
     case "error": {
-      const logFormat = `${chalk.gray(new Date().toISOString())} ${chalk.red(`[ERROR] ${msg}`)}`;
+      const logFormat = `${new Date().toISOString()} ${`[ERROR] ${msg}`}`;
 
       console.error(logFormat);
 
@@ -248,7 +248,7 @@ export const printLog = (level, msg) => {
     }
 
     default: {
-      const logFormat = `${chalk.gray(new Date().toISOString())} ${chalk.green(`[INFO] ${msg}`)}`;
+      const logFormat = `${new Date().toISOString()} ${`[INFO] ${msg}`}`;
 
       console.info(logFormat);
 
