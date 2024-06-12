@@ -142,7 +142,8 @@ export const getFontsPbf = async (fontPath, names, range) => {
           "public",
           "resources",
           "fonts",
-          fallbackFont
+          fallbackFont,
+          `${range}.pbf`
         );
 
         printLog(
