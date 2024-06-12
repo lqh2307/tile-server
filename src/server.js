@@ -73,7 +73,6 @@ function loadConfigFile(dataDir, configFilePath) {
  */
 export function newServer(opts) {
   printLog("info", "Starting server...");
-  printLog("info", `Load data dir: ${opts.dataDir}`);
 
   let startupComplete = false;
   const configFilePath = path.resolve(opts.dataDir, "config.json");
