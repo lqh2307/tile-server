@@ -127,33 +127,30 @@ export const fixTileJSONCenter = (tileJSON) => {
   }
 };
 
-const getFontPbf = (fontPath, name, range) => {
-  const filePath = path.join(fontPath, name, `${range}.pbf`);
-
-  try {
-    return fs.readFileSync(filePath);
-  } catch (error) {
-    throw error;
-  }
-};
-
 export const getFontsPbf = async (fontPath, names, range) => {
   const fonts = names.split(",");
 
   const values = await Promise.all(
     fonts.map(async (font) => {
       try {
-        return getFontPbf(fontPath, font, range);
+        const filePath = path.join(fontPath, font, `${range}.pbf`);
+
+        return fs.readFileSync(filePath);
       } catch (error) {
         const fallbackFont = "Open Sans Regular";
-        const fallbackFontPath = path.resolve("public", "resources", "fonts");
+        const filePath = path.resolve(
+          "public",
+          "resources",
+          "fonts",
+          fallbackFont
+        );
 
         printLog(
           "warning",
           `Failed to load font "${font}": ${error.message}. Trying to use fallback font "${fallbackFont}"`
         );
 
-        return getFontPbf(fallbackFontPath, fallbackFont, range);
+        return fs.readFileSync(filePath);
       }
     })
   );
