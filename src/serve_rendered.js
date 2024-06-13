@@ -564,22 +564,21 @@ export const serve_rendered = {
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
         const item = config.repo.rendered[id];
-        const { format } = req.params;
-        const z = Number(req.params.z);
-        const x = Number(req.params.x);
-        const y = Number(req.params.y);
-        const scale = getScale(req.params.scale);
-        const tileSize = Number(req.params.tileSize) || 256;
 
         try {
           if (!item) {
             throw Error("Rendered data is not found");
           }
 
+          const z = Number(req.params.z);
+          const x = Number(req.params.x);
+          const y = Number(req.params.y);
+          const maxXY = Math.pow(2, z);
+
           if (
             !(0 <= z && z <= 22) ||
-            !(0 <= x && x < Math.pow(2, z)) ||
-            !(0 <= y && y < Math.pow(2, z))
+            !(0 <= x && x < maxXY) ||
+            !(0 <= y && y < maxXY)
           ) {
             throw Error("Rendered data is out of bounds");
           }
@@ -592,6 +591,8 @@ export const serve_rendered = {
             z
           );
 
+          const tileSize = Number(req.params.tileSize) || 256;
+
           return respondImage(
             config,
             item,
@@ -602,8 +603,8 @@ export const serve_rendered = {
             0,
             tileSize,
             tileSize,
-            scale,
-            format,
+            getScale(req.params.scale),
+            req.params.format,
             res
           );
         } catch (error) {
@@ -650,7 +651,6 @@ export const serve_rendered = {
           const maxy = Number(req.params.maxy) || 0;
           const width = Number(req.params.width);
           const height = Number(req.params.height);
-
           const bbox = [minx, miny, maxx, maxy];
           let center = [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2];
 
@@ -674,7 +674,6 @@ export const serve_rendered = {
           const y = center[1];
           const bearing = 0;
           const pitch = 0;
-
           const paths = extractPathsFromQuery(req.query, transformer);
           const markers = extractMarkersFromQuery(
             req.query,
@@ -945,7 +944,6 @@ export const serve_rendered = {
 
     app.get("/(:tileSize(256|512)/)?:id.json", async (req, res, next) => {
       const id = decodeURI(req.params.id);
-      const tileSize = Number(req.params.tileSize);
       const item = config.repo.rendered[id];
 
       try {
@@ -959,7 +957,7 @@ export const serve_rendered = {
           req,
           info.tiles,
           `styles/${id}`,
-          tileSize,
+          Number(req.params.tileSize),
           info.format
         );
 
@@ -1100,9 +1098,8 @@ export const serve_rendered = {
                 const ext = path
                   .extname(url.parse(req.url).pathname)
                   .toLowerCase();
-                const format = extensionToFormat[ext] || "";
 
-                createEmptyResponse(format, "", callback);
+                createEmptyResponse(extensionToFormat[ext], "", callback);
               }
             }
           },
@@ -1134,9 +1131,7 @@ export const serve_rendered = {
         };
 
         try {
-          const styleJSONPath = path.join(stylePath, item.style);
-
-          const file = fs.readFileSync(styleJSONPath);
+          const file = fs.readFileSync(path.join(stylePath, item.style));
 
           const styleJSON = JSON.parse(file);
 

@@ -86,9 +86,7 @@ export const serve_style = {
             throw Error(`"style" property for style "${style}" is empty`);
           }
 
-          const styleFilePath = path.resolve(stylePath, item.style);
-
-          const file = fs.readFileSync(styleFilePath);
+          const file = fs.readFileSync(path.resolve(stylePath, item.style));
 
           const styleJSON = JSON.parse(file);
 

@@ -11,12 +11,14 @@ const mercator = new SphericalMercator();
 
 export const serve_template = {
   init: async (config) => {
+    const serveWMTS = config.options.serveWMTS === true;
+    const serveFrontPage = config.options.frontPage === true;
     const app = express().use(
       "/",
       express.static(path.resolve("public", "resources"))
     );
 
-    if (config.options.frontPage === true) {
+    if (serveFrontPage) {
       app.get("/$", async (req, res, next) => {
         const styles = {};
         const datas = {};
@@ -24,7 +26,7 @@ export const serve_template = {
         const renderedPromises = Object.keys(config.repo.rendered).map(
           async (id) => {
             const style = config.repo.rendered[id];
-            const { center, tiles, format = "", name = "" } = style.tileJSON;
+            const { center, tiles, format, name = "" } = style.tileJSON;
             const tileSize = 256;
             const xyzLink = getTileUrls(
               req,
@@ -49,20 +51,14 @@ export const serve_template = {
               viewer_hash: viewerHash,
               thumbnail: thumbnail,
               name: name,
-              serve_wmts: config.options.serveWMTS === true,
+              serve_wmts: serveWMTS,
             };
           }
         );
 
         const dataPromises = Object.keys(config.repo.data).map(async (id) => {
           const data = config.repo.data[id];
-          const {
-            center,
-            filesize,
-            format = "",
-            tiles,
-            name = "",
-          } = data.tileJSON;
+          const { center, filesize, format, tiles, name = "" } = data.tileJSON;
           const tileSize = 256;
           const xyzLink = getTileUrls(
             req,
@@ -126,19 +122,19 @@ export const serve_template = {
             : "",
         };
 
-        const templatePath = path.resolve("public", "templates", "index.tmpl");
-        const file = fs.readFileSync(templatePath);
+        const file = fs
+          .readFileSync(path.resolve("public", "templates", "index.tmpl"))
+          .toString();
 
-        const compiled = handlebars.compile(file.toString());
+        const compiled = handlebars.compile(file)(serveData);
 
-        return res.status(200).send(compiled(serveData));
+        return res.status(200).send(compiled);
       });
     }
 
     app.get("/styles/:id/$", async (req, res, next) => {
       const id = decodeURI(req.params.id);
       const style = config.repo.rendered[id];
-      const { name = "" } = style.tileJSON;
 
       if (!style) {
         res.header("Content-Type", "text/plain");
@@ -148,7 +144,7 @@ export const serve_template = {
 
       const serveData = {
         id: id,
-        name: name,
+        name: style.tileJSON.name || "",
         key_query_part: req.query.key
           ? `key=${encodeURIComponent(req.query.key)}&amp;`
           : "",
@@ -157,20 +153,19 @@ export const serve_template = {
           : "",
       };
 
-      const templatePath = path.resolve("public", "templates", "viewer.tmpl");
+      const file = fs
+        .readFileSync(path.resolve("public", "templates", "viewer.tmpl"))
+        .toString();
 
-      const file = fs.readFileSync(templatePath);
+      const compiled = handlebars.compile(file)(serveData);
 
-      const compiled = handlebars.compile(file.toString());
-
-      return res.status(200).send(compiled(serveData));
+      return res.status(200).send(compiled);
     });
 
-    if (config.options.serveWMTS === true) {
+    if (serveWMTS) {
       app.get("/styles/:id/wmts.xml", async (req, res, next) => {
         const id = decodeURI(req.params.id);
         const wmts = config.repo.rendered[id];
-        const { name = "" } = wmts.tileJSON;
 
         if (!wmts) {
           res.header("Content-Type", "text/plain");
@@ -180,7 +175,7 @@ export const serve_template = {
 
         const serveData = {
           id: id,
-          name: name,
+          name: wmts.tileJSON.name || "",
           base_url: `${req.get("X-Forwarded-Protocol") ? req.get("X-Forwarded-Protocol") : req.protocol}://${req.get("host")}/`,
           key_query_part: req.query.key
             ? `key=${encodeURIComponent(req.query.key)}&amp;`
@@ -190,21 +185,21 @@ export const serve_template = {
             : "",
         };
 
-        const templatePath = path.resolve("public", "templates", "wmts.tmpl");
-        const file = fs.readFileSync(templatePath);
+        const file = fs
+          .readFileSync(path.resolve("public", "templates", "wmts.tmpl"))
+          .toString();
 
-        const compiled = handlebars.compile(file.toString());
+        const compiled = handlebars.compile(file)(serveData);
 
         res.header("Content-Type", "text/xml");
 
-        return res.status(200).send(compiled(serveData));
+        return res.status(200).send(compiled);
       });
     }
 
     app.use("/data/:id/$", async (req, res, next) => {
       const id = decodeURI(req.params.id);
       const data = config.repo.data[id];
-      const { name = "", format } = data.tileJSON;
 
       if (!data) {
         res.header("Content-Type", "text/plain");
@@ -214,8 +209,8 @@ export const serve_template = {
 
       const serveData = {
         id: id,
-        name: name,
-        is_vector: format === "pbf",
+        name: data.tileJSON.name || "",
+        is_vector: data.tileJSON.format === "pbf",
         key_query_part: req.query.key
           ? `key=${encodeURIComponent(req.query.key)}&amp;`
           : "",
@@ -224,12 +219,13 @@ export const serve_template = {
           : "",
       };
 
-      const templatePath = path.resolve("public", "templates", "data.tmpl");
-      const file = fs.readFileSync(templatePath);
+      const file = fs
+        .readFileSync(path.resolve("public", "templates", "data.tmpl"))
+        .toString();
 
-      const compiled = handlebars.compile(file.toString());
+      const compiled = handlebars.compile(file)(serveData);
 
-      return res.status(200).send(compiled(serveData));
+      return res.status(200).send(compiled);
     });
 
     return app;

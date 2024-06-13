@@ -11,10 +11,8 @@ export const serve_icon = {
     await Promise.all(
       icons.map(async (icon) => {
         try {
-          const iconFilePath = path.resolve(iconsPath, icon);
-
           /* Validate icon */
-          validateSVGIcon(iconFilePath);
+          validateSVGIcon(path.resolve(iconsPath, icon));
 
           config.repo.icons.push(icon);
         } catch (error) {

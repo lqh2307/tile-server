@@ -106,7 +106,7 @@ export const getTileUrls = (req, domains, path, tileSize, format) => {
   const xForwardedPath = `${req.get("X-Forwarded-Path") ? "/" + req.get("X-Forwarded-Path") : ""}`;
   const uris = domains.map(
     (domain) =>
-      `${req.protocol}://${domain}${xForwardedPath}/${path}/${tileParams}.${format}${query}`
+      `${req.protocol}://${domain}${xForwardedPath}/${path}/${tileParams}.${format || ""}${query}`
   );
 
   return uris;
@@ -133,25 +133,24 @@ export const getFontsPbf = async (fontPath, names, range) => {
   const values = await Promise.all(
     fonts.map(async (font) => {
       try {
-        const filePath = path.join(fontPath, font, `${range}.pbf`);
-
-        return fs.readFileSync(filePath);
+        return fs.readFileSync(path.join(fontPath, font, `${range}.pbf`));
       } catch (error) {
         const fallbackFont = "Open Sans Regular";
-        const filePath = path.resolve(
-          "public",
-          "resources",
-          "fonts",
-          fallbackFont,
-          `${range}.pbf`
-        );
 
         printLog(
           "warning",
           `Failed to load font "${font}": ${error.message}. Trying to use fallback font "${fallbackFont}"`
         );
 
-        return fs.readFileSync(filePath);
+        return fs.readFileSync(
+          path.resolve(
+            "public",
+            "resources",
+            "fonts",
+            fallbackFont,
+            `${range}.pbf`
+          )
+        );
       }
     })
   );
@@ -296,14 +295,14 @@ export const validateSprite = (spriteDirPath) => {
     }
 
     fileNameWoExts.forEach((fileNameWoExt) => {
-      const jsonFilePath = path.join(spriteDirPath, `${fileNameWoExt}.json`);
-      const pngFilePath = path.join(spriteDirPath, `${fileNameWoExt}.png`);
-
-      const jsonFile = fs.readFileSync(jsonFilePath, "utf8");
+      /* Validate JSON sprite */
+      const jsonFile = fs.readFileSync(
+        path.join(spriteDirPath, `${fileNameWoExt}.json`),
+        "utf8"
+      );
 
       const jsonData = JSON.parse(jsonFile);
 
-      /* Validate JSON sprite */
       Object.keys(jsonData).forEach((key) => {
         const value = jsonData[key];
 
@@ -322,7 +321,9 @@ export const validateSprite = (spriteDirPath) => {
       });
 
       /* Validate PNG sprite */
-      const pngData = fs.readFileSync(pngFilePath);
+      const pngData = fs.readFileSync(
+        path.join(spriteDirPath, `${fileNameWoExt}.png`)
+      );
 
       pngValidator(pngData);
     });

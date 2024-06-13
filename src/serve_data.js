@@ -31,16 +31,14 @@ export const serve_data = {
       `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(${FORMAT_PATTERN}{1})`,
       async (req, res, next) => {
         const id = decodeURI(req.params.id);
-        const { format } = req.params;
-        const z = Number(req.params.z);
-        const x = Number(req.params.x);
-        const y = Number(req.params.y);
         const item = config.repo.data[id];
 
         try {
           if (!item) {
             throw Error("Data is not found");
           }
+
+          const format = req.params.format;
 
           if (
             !(format === "geojson" && item.tileJSON.format === "pbf") &&
@@ -49,14 +47,19 @@ export const serve_data = {
             throw Error("Data is invalid format");
           }
 
+          const z = Number(req.params.z);
+          const x = Number(req.params.x);
+          const y = Number(req.params.y);
+          const maxXY = Math.pow(2, z);
+
           if (
             !(
               0 <= z &&
               item.tileJSON.minzoom <= z &&
               z <= item.tileJSON.maxzoom
             ) ||
-            !(0 <= x && x < Math.pow(2, z)) ||
-            !(0 <= y && y < Math.pow(2, z))
+            !(0 <= x && x < maxXY) ||
+            !(0 <= y && y < maxXY)
           ) {
             throw Error("Data is out of bounds");
           }

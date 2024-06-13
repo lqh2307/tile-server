@@ -58,9 +58,7 @@ export const serve_font = {
       fonts.map(async (font) => {
         try {
           /* Validate font */
-          const pbfDirPath = path.join(fontPath, font);
-
-          validatePBFFont(pbfDirPath);
+          validatePBFFont(path.join(fontPath, font));
 
           config.repo.fonts[font] = true;
         } catch (error) {

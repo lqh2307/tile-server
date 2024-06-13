@@ -22,9 +22,9 @@ export const serve_sprite = {
             throw Error("Sprite is not found");
           }
 
-          const filePath = `${path.join(spritePath, id, "sprite")}${scale}.${format}`;
-
-          const data = fs.readFileSync(filePath);
+          const data = fs.readFileSync(
+            `${path.join(spritePath, id, "sprite")}${scale}.${format}`
+          );
 
           if (format === "json") {
             res.header("Content-type", "application/json");
@@ -73,9 +73,7 @@ export const serve_sprite = {
       sprites.map(async (sprite) => {
         try {
           /* Validate sprite */
-          const spriteDirPath = path.join(spritePath, sprite);
-
-          validateSprite(spriteDirPath);
+          validateSprite(path.join(spritePath, sprite));
 
           config.repo.sprites[sprite] = true;
         } catch (error) {
