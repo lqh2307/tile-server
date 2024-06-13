@@ -5,14 +5,66 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Preview - Tile Server</title>
   <link rel="stylesheet" type="text/css" href="/index.css{{&key_query}}" />
-  <script>
-    function toggle_xyz(id) {
-      var el = document.getElementById(id);
-      var s = el.style;
-      s.display = s.display === 'none' ? 'inline-block' : 'none';
-      el.setSelectionRange(0, el.value.length);
-      return false;
+  <style>
+    .back-to-top {
+      position: fixed;
+      bottom: 15px;
+      right: 20px;
+      border: 1px solid #ddd;
+      padding: 10px 20px;
+      border-radius: 25px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      font-size: 13px;
+      background: #fff;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
     }
+    .back-to-top:hover {
+      background-color: #f0f0f0;
+    }
+  </style>
+  <script>
+    function toggleXYZ(id, event) {
+      event.preventDefault();
+
+      const el = document.getElementById(id);
+
+      if (el.style.display === 'none') {
+        el.style.display = 'inline-block';
+      } else {
+        el.style.display = 'none';
+      }
+    }
+
+    function copyToClipboard(el) {
+      el.select();
+
+      document.execCommand('copy');
+
+      setTimeout(() => {
+        el.style.display = 'none';
+      }, 500);
+    }
+
+    function scrollToTop(event) {
+      event.preventDefault();
+
+      window.scrollTo({ 
+        top: 0,
+        behavior: 'smooth',
+      });
+    }
+
+    window.addEventListener('scroll', () => {
+      const backToTopButton = document.querySelector('.back-to-top');
+
+      if (window.scrollY > 200) {
+        backToTopButton.style.display = 'flex';
+      } else {
+        backToTopButton.style.display = 'none';
+      }
+    });
   </script>
 </head>
 <body>
@@ -36,10 +88,13 @@
             <h3>{{name}}</h3>
             <p class="identifier">identifier: {{@key}}</p>
             <p class="services">
-              services: <a href="/styles/{{@key}}/style.json{{&../key_query}}">GL Style</a> | <a href="/styles/256/{{@key}}.json{{&../key_query}}">TileJSON</a> | <a href="/styles/{{@key}}/wmts.xml{{&../key_query}}">WMTS</a>
+              services: <a href="/styles/{{@key}}/style.json{{&../key_query}}">Style</a> | <a href="/styles/{{@key}}.json{{&../key_query}}">TileJSON</a>
+              {{#if serve_wmts}}
+                | <a href="/styles/{{@key}}/wmts.xml{{&../key_query}}">WMTS</a>
+              {{/if}}
               {{#if xyz_link}}
-                | <a href="#" onclick="return toggle_xyz('xyz_style_{{@key}}');">XYZ</a>
-                  <input id="xyz_style_{{@key}}" type="text" value="{{&xyz_link}}" style="display:none;" />
+                | <a href="#" onclick="toggleXYZ('xyz_style_{{@key}}', event);">XYZ</a>
+                <input id="xyz_style_{{@key}}" type="text" value="{{&xyz_link}}" style="display:none;cursor:pointer;" onclick="copyToClipboard(this);" />
               {{/if}}
             </p>
           </div>
@@ -72,7 +127,7 @@
               identifier: {{@key}}
             </div>
             <div class="identifier">
-              size: {{#if formatted_filesize}}{{formatted_filesize}}{{else}}unknown{{/if}}
+              size: {{formatted_filesize}}
             </div>
             <div class="identifier">
               type: {{#if is_vector}}vector{{else}}raster{{/if}} {{#if source_type}} | ext: {{source_type}}{{/if}}
@@ -80,8 +135,8 @@
             <p class="services">
               services: <a href="/data/{{@key}}.json{{&../key_query}}">TileJSON</a>
               {{#if xyz_link}}
-                | <a href="#" onclick="return toggle_xyz('xyz_data_{{@key}}');">XYZ</a>
-                  <input id="xyz_data_{{@key}}" type="text" value="{{&xyz_link}}" style="display:none;" />
+                | <a href="#" onclick="toggleXYZ('xyz_data_{{@key}}', event);">XYZ</a>
+                <input id="xyz_data_{{@key}}" type="text" value="{{&xyz_link}}" style="display:none;cursor:pointer;" onclick="copyToClipboard(this);" />
               {{/if}}
             </p>
           </div>
@@ -97,5 +152,6 @@
       </div>
     {{/if}}
   </section>
+  <a href="#" class="back-to-top" onclick="scrollToTop(event);">Back to top</a>
 </body>
 </html>

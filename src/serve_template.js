@@ -16,7 +16,7 @@ export const serve_template = {
       express.static(path.resolve("public", "resources"))
     );
 
-    if (config.options.frontPage) {
+    if (config.options.frontPage === true) {
       app.get("/$", async (req, res, next) => {
         const styles = {};
         const datas = {};
@@ -34,10 +34,10 @@ export const serve_template = {
               format
             )[0];
 
-            let viewer_hash = "";
+            let viewerHash = "";
             let thumbnail = "";
             if (center) {
-              viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
+              viewerHash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
 
               const centerPx = mercator.px([center[0], center[1]], center[2]);
 
@@ -46,9 +46,10 @@ export const serve_template = {
 
             styles[id] = {
               xyz_link: xyzLink,
-              viewer_hash,
-              thumbnail,
-              name,
+              viewer_hash: viewerHash,
+              thumbnail: thumbnail,
+              name: name,
+              serve_wmts: config.options.serveWMTS === true,
             };
           }
         );
@@ -71,10 +72,10 @@ export const serve_template = {
             format
           )[0];
 
-          let viewer_hash = "";
+          let viewerHash = "";
           let thumbnail = "";
           if (center) {
-            viewer_hash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
+            viewerHash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
 
             if (format !== "pbf") {
               const centerPx = mercator.px([center[0], center[1]], center[2]);
@@ -83,7 +84,7 @@ export const serve_template = {
             }
           }
 
-          let formatted_filesize = "";
+          let formattedFilesize = "unknown";
           if (filesize) {
             let suffix = "kB";
             let size = parseInt(filesize, 10) / 1024;
@@ -98,16 +99,16 @@ export const serve_template = {
               size /= 1024;
             }
 
-            formatted_filesize = `${size.toFixed(2)} ${suffix}`;
+            formattedFilesize = `${size.toFixed(2)} ${suffix}`;
           }
 
           datas[id] = {
             xyz_link: xyzLink,
-            viewer_hash,
-            thumbnail,
+            viewer_hash: viewerHash,
+            thumbnail: thumbnail,
             source_type: data.sourceType,
             is_vector: format === "pbf",
-            formatted_filesize,
+            formatted_filesize: formattedFilesize,
             name: name,
           };
         });
@@ -146,8 +147,8 @@ export const serve_template = {
       }
 
       const serveData = {
-        id,
-        name,
+        id: id,
+        name: name,
         key_query_part: req.query.key
           ? `key=${encodeURIComponent(req.query.key)}&amp;`
           : "",
@@ -165,38 +166,40 @@ export const serve_template = {
       return res.status(200).send(compiled(serveData));
     });
 
-    app.get("/styles/:id/wmts.xml", async (req, res, next) => {
-      const id = decodeURI(req.params.id);
-      const wmts = config.repo.rendered[id];
-      const { name = "" } = wmts.tileJSON;
+    if (config.options.serveWMTS === true) {
+      app.get("/styles/:id/wmts.xml", async (req, res, next) => {
+        const id = decodeURI(req.params.id);
+        const wmts = config.repo.rendered[id];
+        const { name = "" } = wmts.tileJSON;
 
-      if (!wmts) {
-        res.header("Content-Type", "text/plain");
+        if (!wmts) {
+          res.header("Content-Type", "text/plain");
 
-        return res.status(404).send("WMTS is not found");
-      }
+          return res.status(404).send("WMTS is not found");
+        }
 
-      const serveData = {
-        id,
-        name,
-        base_url: `${req.get("X-Forwarded-Protocol") ? req.get("X-Forwarded-Protocol") : req.protocol}://${req.get("host")}/`,
-        key_query_part: req.query.key
-          ? `key=${encodeURIComponent(req.query.key)}&amp;`
-          : "",
-        key_query: req.query.key
-          ? `?key=${encodeURIComponent(req.query.key)}`
-          : "",
-      };
+        const serveData = {
+          id: id,
+          name: name,
+          base_url: `${req.get("X-Forwarded-Protocol") ? req.get("X-Forwarded-Protocol") : req.protocol}://${req.get("host")}/`,
+          key_query_part: req.query.key
+            ? `key=${encodeURIComponent(req.query.key)}&amp;`
+            : "",
+          key_query: req.query.key
+            ? `?key=${encodeURIComponent(req.query.key)}`
+            : "",
+        };
 
-      const templatePath = path.resolve("public", "templates", "wmts.tmpl");
-      const file = fs.readFileSync(templatePath);
+        const templatePath = path.resolve("public", "templates", "wmts.tmpl");
+        const file = fs.readFileSync(templatePath);
 
-      const compiled = handlebars.compile(file.toString());
+        const compiled = handlebars.compile(file.toString());
 
-      res.header("Content-Type", "text/xml");
+        res.header("Content-Type", "text/xml");
 
-      return res.status(200).send(compiled(serveData));
-    });
+        return res.status(200).send(compiled(serveData));
+      });
+    }
 
     app.use("/data/:id/$", async (req, res, next) => {
       const id = decodeURI(req.params.id);
@@ -210,8 +213,8 @@ export const serve_template = {
       }
 
       const serveData = {
-        id,
-        name,
+        id: id,
+        name: name,
         is_vector: format === "pbf",
         key_query_part: req.query.key
           ? `key=${encodeURIComponent(req.query.key)}&amp;`
