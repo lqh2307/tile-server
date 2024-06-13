@@ -69,7 +69,10 @@
               {{name}}
             </h3>
             <div class="identifier">
-              identifier: {{@key}}{{#if formatted_filesize}} | size: {{formatted_filesize}}{{/if}}
+              identifier: {{@key}}
+            </div>
+            <div class="identifier">
+              size: {{#if formatted_filesize}}{{formatted_filesize}}{{else}}unknown{{/if}}
             </div>
             <div class="identifier">
               type: {{#if is_vector}}vector{{else}}raster{{/if}} {{#if source_type}} | ext: {{source_type}}{{/if}}
