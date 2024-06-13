@@ -19,14 +19,18 @@ RUN \
   libglfw3-dev \
   libuv1-dev \
   libjpeg-turbo8 \
-  libicu-dev \
+  libicu70 \
   libcairo2-dev \
   libpango1.0-dev \
   libjpeg-dev \
   libgif-dev \
   librsvg2-dev \
+  gir1.2-rsvg-2.0 \
+  librsvg2-2 \
+  librsvg2-common \
   libcurl4-openssl-dev \
-  libpixman-1-dev;
+  libpixman-1-dev \
+  libpixman-1-0;
 
 RUN \
   mkdir -p /etc/apt/keyrings; \
