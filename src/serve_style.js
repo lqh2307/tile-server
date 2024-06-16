@@ -3,7 +3,6 @@
 import path from "node:path";
 import fs from "node:fs";
 import express from "express";
-import clone from "clone";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { fixUrl, printLog, getUrl } from "./utils.js";
 
@@ -20,21 +19,20 @@ export const serve_style = {
           throw Error("Style is not found");
         }
 
-        const styleJSON = clone(item.styleJSON);
-
-        Object.keys(styleJSON.sources).forEach((name) => {
-          const source = styleJSON.sources[name];
-
-          source.url = fixUrl(req, source.url);
+        const sources = {};
+        Object.keys(item.styleJSON.sources).forEach((name) => {
+          sources[name] = {
+            ...item.styleJSON.sources[name],
+            url: fixUrl(req, item.styleJSON.sources[name].url),
+          };
         });
 
-        if (styleJSON.sprite) {
-          styleJSON.sprite = fixUrl(req, styleJSON.sprite);
-        }
-
-        if (styleJSON.glyphs) {
-          styleJSON.glyphs = fixUrl(req, styleJSON.glyphs);
-        }
+        const styleJSON = {
+          ...item.styleJSON,
+          sources: sources,
+          sprite: fixUrl(req, item.styleJSON.sprite),
+          glyphs: fixUrl(req, item.styleJSON.glyphs),
+        };
 
         res.header("Content-Type", "application/json");
 
