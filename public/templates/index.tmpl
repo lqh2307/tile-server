@@ -17,11 +17,15 @@
       font-size: 13px;
       background: #fff;
       text-decoration: none;
-      display: flex;
+      display: none;
       align-items: center;
     }
     .back-to-top:hover {
       background-color: #f0f0f0;
+    }
+    .xyz-link {
+      display: none;
+      cursor: pointer;
     }
   </style>
   <script>
@@ -94,7 +98,7 @@
               {{/if}}
               {{#if xyz_link}}
                 | <a href="#" onclick="toggleXYZ('xyz_style_{{@key}}', event);">XYZ</a>
-                <input id="xyz_style_{{@key}}" type="text" value="{{&xyz_link}}" style="display:none;cursor:pointer;" onclick="copyToClipboard(this);" />
+                <input id="xyz_style_{{@key}}" class="xyz-link" type="text" value="{{&xyz_link}}" onclick="copyToClipboard(this);" />
               {{/if}}
             </p>
           </div>
@@ -136,7 +140,7 @@
               services: <a href="/data/{{@key}}.json{{&../key_query}}">TileJSON</a>
               {{#if xyz_link}}
                 | <a href="#" onclick="toggleXYZ('xyz_data_{{@key}}', event);">XYZ</a>
-                <input id="xyz_data_{{@key}}" type="text" value="{{&xyz_link}}" style="display:none;cursor:pointer;" onclick="copyToClipboard(this);" />
+                <input id="xyz_data_{{@key}}" class="xyz-link" type="text" value="{{&xyz_link}}" onclick="copyToClipboard(this);" />
               {{/if}}
             </p>
           </div>
