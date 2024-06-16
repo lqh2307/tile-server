@@ -151,16 +151,22 @@ export function newServer(opts) {
     interval: 1000,
     binaryInterval: 1000,
   });
-  if (opts.kill) {
-    printLog("info", "Enable killing server after changing config file");
+  if (opts.kill > 0) {
+    printLog(
+      "info",
+      `Monitor config file changes each ${opts.kill}ms to killing server`
+    );
 
     newChokidar.on("change", () => {
       printLog("info", `Config file has changed. Killed server!`);
 
       process.exit(0);
     });
-  } else if (opts.refresh) {
-    printLog("info", "Enable refreshing server after changing config file");
+  } else if (opts.refresh > 0) {
+    printLog(
+      "info",
+      `Monitor config file changes each ${opts.refresh}ms to refreshing server`
+    );
 
     newChokidar.on("change", () => {
       printLog("info", `Config file has changed. Refreshing server...`);

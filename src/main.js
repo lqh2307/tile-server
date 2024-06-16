@@ -16,8 +16,18 @@ program
   .usage("tile-server [options]")
   .option("-d, --data-dir <path>", "Data dir path", "data")
   .option("-p, --port <port>", "Port", 8080, parseInt)
-  .option("-r, --refresh", "Refresh server after changing config file", false)
-  .option("-k, --kill", "Kill server after changing config file", false)
+  .option(
+    "-r, --refresh <interval>",
+    "Monitor config file changes to refreshing server",
+    0,
+    parseInt
+  )
+  .option(
+    "-k, --kill <interval>",
+    "Monitor config file changes to killing server",
+    0,
+    parseInt
+  )
   .version(packageJSON.version, "-v, --version")
   .showHelpAfterError();
 

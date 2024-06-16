@@ -5,6 +5,7 @@ body {
   font-size: 14px;
   margin: 0;
 }
+
 a {
   color: #499dce;
   transition: color 0.2s;
@@ -12,6 +13,7 @@ a {
 a:hover {
   color: #395d73;
 }
+
 section {
   margin: 15px auto;
   width: 930px;
@@ -25,15 +27,7 @@ section {
   text-align: center;
   margin: 10px 0 55px 0;
 }
-.box-header {
-  text-align: left;
-  text-transform: uppercase;
-  border: 1px solid #ededed;
-  margin: 25px 0 0 0;
-  padding: 12px 30px;
-  font-size: 20px;
-  background: #fff;
-}
+
 .item {
   background: #fff;
   height: 191px;
@@ -51,6 +45,7 @@ section {
   height: 128px;
   border: 1px solid #ccc;
 }
+
 .details {
   float: left;
   height: 128px;
@@ -64,6 +59,7 @@ section {
   padding: 0;
   margin: 18px 0;
 }
+
 .viewers {
   float: right;
   text-align: center;
@@ -71,6 +67,7 @@ section {
   margin-top: 25px;
   padding-right: 30px;
 }
+
 .btn {
   display: block;
   margin: 0;
@@ -90,10 +87,54 @@ section {
 .btn:first-child:hover {
   background: #395d73;
 }
+
 .details h3,
 .identifier {
   max-width: 550px;
   word-break: break-all;
+}
+
+.tabs {
+  display: flex;
+  cursor: pointer;
+}
+.tab {
+  border: 1px solid #ddd;
+  background: #f9f9f9;
+  margin-right: 2px;
+  user-select: none;
+  padding: 10px 25px;
+  font-size: 18px;
+}
+.tab.active {
+  background: #fff;
+  font-weight: 700;
+  border-bottom: 1px solid #fff;
+}
+.tab-content {
+  display: none;
+  border: 1px solid #ddd;
+  background: #fff;
+}
+.tab-content.active {
+  display: block;
+}
+.back-to-top {
+  position: fixed;
+  bottom: 15px;
+  right: 20px;
+  border: 1px solid #ddd;
+  padding: 10px 20px;
+  border-radius: 25px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  font-size: 13px;
+  background: #fff;
+  text-decoration: none;
+  display: none;
+  align-items: center;
+}
+.back-to-top:hover {
+  background-color: #f0f0f0;
 }
 
 /* Responsive */
