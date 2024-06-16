@@ -66,10 +66,10 @@
 </head>
 <body>
   <section>
-    <h1 class="title">Style and Tileset preview</h1>
+    <h1 class="title">Styles and Datas preview</h1>
     <div class="tabs">
-      <div class="tab active" onclick="switchTab(event, 'styles-tab')">STYLES</div>
-      <div class="tab" onclick="switchTab(event, 'data-tab')">DATA</div>
+      <div class="tab active" onclick="switchTab(event, 'styles-tab')">STYLES ({{style_count}})</div>
+      <div class="tab" onclick="switchTab(event, 'data-tab')">DATA ({{data_count}})</div>
     </div>
     <div id="styles-tab" class="tab-content active">
       {{#if styles}}

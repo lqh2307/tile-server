@@ -42,7 +42,6 @@ import {
   getPMtilesTile,
 } from "./pmtiles_adapter.js";
 import { renderOverlay, renderWatermark, renderAttribution } from "./render.js";
-import clone from "clone";
 
 const FLOAT_PATTERN = "[+-]?(?:\\d+|\\d+.?\\d+)";
 const PATH_PATTERN =
@@ -951,15 +950,16 @@ export const serve_rendered = {
           throw Error("Rendered data is not found");
         }
 
-        const info = clone(item.tileJSON);
-
-        info.tiles = getTileUrls(
-          req,
-          info.tiles,
-          `styles/${id}`,
-          Number(req.params.tileSize),
-          info.format
-        );
+        const info = {
+          ...item.tileJSON,
+          tiles: getTileUrls(
+            req,
+            item.tileJSON.tiles,
+            `styles/${id}`,
+            Number(req.params.tileSize),
+            item.tileJSON.format
+          ),
+        };
 
         res.header("Content-type", "application/json");
 

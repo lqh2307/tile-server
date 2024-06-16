@@ -6,7 +6,6 @@ import zlib from "zlib";
 import express from "express";
 import MBTiles from "@mapbox/mbtiles";
 import Pbf from "pbf";
-import clone from "clone";
 import { VectorTile } from "@mapbox/vector-tile";
 import {
   getTileUrls,
@@ -209,15 +208,16 @@ export const serve_data = {
           throw Error("Data is not found");
         }
 
-        const info = clone(item.tileJSON);
-
-        info.tiles = getTileUrls(
-          req,
-          info.tiles,
-          `data/${id}`,
-          undefined,
-          info.format
-        );
+        const info = {
+          ...item.tileJSON,
+          tiles: getTileUrls(
+            req,
+            item.tileJSON.tiles,
+            `data/${id}`,
+            undefined,
+            item.tileJSON.format
+          ),
+        };
 
         res.header("Content-type", "application/json");
 

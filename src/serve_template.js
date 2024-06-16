@@ -111,9 +111,14 @@ export const serve_template = {
 
         await Promise.all([...renderedPromises, ...dataPromises]);
 
+        const styleCount = Object.keys(styles).length;
+        const dataCount = Object.keys(datas).length;
+
         const serveData = {
-          styles: Object.keys(styles).length ? styles : null,
-          data: Object.keys(datas).length ? datas : null,
+          styles: styleCount ? styles : null,
+          data: dataCount ? datas : null,
+          style_count: styleCount,
+          data_count: dataCount,
           key_query_part: req.query.key
             ? `key=${encodeURIComponent(req.query.key)}&amp;`
             : "",

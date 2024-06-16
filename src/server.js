@@ -144,19 +144,20 @@ export function newServer(opts) {
   // To gracefully stop serving
   enableShutdown(server);
 
-  const newChokidar = chokidar.watch(configFilePath, {
-    persistent: false,
-    usePolling: true,
-    awaitWriteFinish: true,
-    interval: 1000,
-    binaryInterval: 1000,
-  });
+  let newChokidar;
   if (opts.kill > 0) {
     printLog(
       "info",
       `Monitor config file changes each ${opts.kill}ms to killing server`
     );
 
+    newChokidar = chokidar.watch(configFilePath, {
+      persistent: true,
+      usePolling: true,
+      awaitWriteFinish: true,
+      interval: opts.kill,
+      binaryInterval: opts.kill,
+    });
     newChokidar.on("change", () => {
       printLog("info", `Config file has changed. Killed server!`);
 
@@ -168,13 +169,22 @@ export function newServer(opts) {
       `Monitor config file changes each ${opts.refresh}ms to refreshing server`
     );
 
+    newChokidar = chokidar.watch(configFilePath, {
+      persistent: true,
+      usePolling: true,
+      awaitWriteFinish: true,
+      interval: opts.refresh,
+      binaryInterval: opts.refresh,
+    });
     newChokidar.on("change", () => {
       printLog("info", `Config file has changed. Refreshing server...`);
 
       newChokidar.close();
 
       server.shutdown((error) => {
-        printLog("error", error);
+        if (error) {
+          printLog("error", error);
+        }
 
         newServer(opts);
       });
@@ -184,12 +194,14 @@ export function newServer(opts) {
   app.get("/refresh", async (req, res, next) => {
     printLog("info", "Refreshing server...");
 
-    if (opts.autoRefresh) {
+    if (opts.refresh > 0 && !(opts.kill > 0)) {
       newChokidar.close();
     }
 
     server.shutdown((error) => {
-      printLog("error", error);
+      if (error) {
+        printLog("error", error);
+      }
 
       newServer(opts);
     });
@@ -202,8 +214,14 @@ export function newServer(opts) {
   app.get("/kill", async (req, res, next) => {
     printLog("info", "Killed server!");
 
+    if (opts.kill > 0) {
+      newChokidar.close();
+    }
+
     server.shutdown((error) => {
-      printLog("error", error);
+      if (error) {
+        printLog("error", error);
+      }
 
       process.exit(0);
     });

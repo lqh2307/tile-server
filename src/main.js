@@ -12,21 +12,19 @@ const packageJSON = JSON.parse(
 );
 
 program
-  .description("tile-server startup options")
+  .description("===== Tile server startup options =====")
   .usage("tile-server [options]")
-  .option("-d, --data-dir <path>", "Data dir path", "data")
-  .option("-p, --port <port>", "Port", 8080, parseInt)
+  .option("-d, --data-dir <path>", "data dir path", "data")
+  .option("-p, --port <port>", "listening port", "8080")
   .option(
     "-r, --refresh <interval>",
-    "Monitor config file changes to refreshing server",
-    0,
-    parseInt
+    "monitor config file changes to refreshing server",
+    "0"
   )
   .option(
     "-k, --kill <interval>",
-    "Monitor config file changes to killing server",
-    0,
-    parseInt
+    "monitor config file changes to killing server",
+    "0"
   )
   .version(packageJSON.version, "-v, --version")
   .showHelpAfterError();
@@ -48,10 +46,10 @@ process.on("SIGTERM", () => {
 
 const startServer = (opts) => {
   newServer({
-    port: opts.port,
+    port: Number(opts.port),
     dataDir: path.resolve(opts.dataDir),
-    refresh: opts.refresh,
-    kill: opts.kill,
+    refresh: Number(opts.refresh),
+    kill: Number(opts.kill),
   });
 };
 
