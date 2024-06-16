@@ -12,7 +12,7 @@ Chuyển sang nhánh dev:
 
 Build image:
 
-  docker build -t quanghuy2307/tile-server:latest .
+	docker build -t quanghuy2307/tile-server:latest .
 
 Run container:
 
