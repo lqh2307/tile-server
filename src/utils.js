@@ -36,7 +36,7 @@ export function fixUrl(req, url) {
  * @params {object} req - Express request
  * @returns {URL} object
  */
-const getUrlObject = (req) => {
+function getUrlObject(req) {
   const urlObject = new URL(`${req.protocol}://${req.headers.host}/`);
 
   // support overriding hostname by sending X-Forwarded-Host http header
@@ -49,13 +49,13 @@ const getUrlObject = (req) => {
   }
 
   return urlObject;
-};
+}
 
-export const getUrl = (req) => {
+export function getUrl(req) {
   return getUrlObject(req).toString();
-};
+}
 
-export const getTileUrls = (req, domains, path, tileSize, format) => {
+export function getTileUrls(req, domains, path, tileSize, format) {
   const urlObject = getUrlObject(req);
 
   if (domains) {
@@ -110,9 +110,9 @@ export const getTileUrls = (req, domains, path, tileSize, format) => {
   );
 
   return uris;
-};
+}
 
-export const fixTileJSONCenter = (tileJSON) => {
+export function fixTileJSONCenter(tileJSON) {
   if (tileJSON.bounds && !tileJSON.center) {
     const tiles = 4;
 
@@ -125,9 +125,9 @@ export const fixTileJSONCenter = (tileJSON) => {
       ),
     ];
   }
-};
+}
 
-export const getFontsPbf = async (fontPath, names, range) => {
+export async function getFontsPbf(fontPath, names, range) {
   const fonts = names.split(",");
 
   const values = await Promise.all(
@@ -156,9 +156,9 @@ export const getFontsPbf = async (fontPath, names, range) => {
   );
 
   return glyphCompose.combine(values);
-};
+}
 
-export const isValidHttpUrl = (string) => {
+export function isValidHttpUrl(string) {
   try {
     const url = new URL(string);
 
@@ -166,14 +166,14 @@ export const isValidHttpUrl = (string) => {
   } catch (_) {
     return false;
   }
-};
+}
 
-export const findFiles = (
+export function findFiles(
   dirPath,
   regex,
   isRecurse = false,
   isJustBaseName = false
-) => {
+) {
   if (isRecurse) {
     const files = fs.readdirSync(dirPath);
     const results = [];
@@ -206,9 +206,9 @@ export const findFiles = (
         fs.statSync(path.join(dirPath, fileName)).isFile()
     );
   }
-};
+}
 
-export const findDirs = (dirPath, regex) => {
+export function findDirs(dirPath, regex) {
   const dirNames = fs.readdirSync(dirPath);
 
   return dirNames.filter(
@@ -216,9 +216,9 @@ export const findDirs = (dirPath, regex) => {
       regex.test(dirName) &&
       fs.statSync(path.join(dirPath, dirName)).isDirectory()
   );
-};
+}
 
-export const printLog = (level, msg) => {
+export function printLog(level, msg) {
   switch (level) {
     case "debug": {
       const logFormat = `${new Date().toISOString()} ${`[DEBUG] ${msg}`}`;
@@ -252,9 +252,9 @@ export const printLog = (level, msg) => {
       break;
     }
   }
-};
+}
 
-export const validatePBFFont = (pbfDirPath) => {
+export function validatePBFFont(pbfDirPath) {
   try {
     const fileNames = findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf{1}$/);
 
@@ -264,9 +264,9 @@ export const validatePBFFont = (pbfDirPath) => {
   } catch (error) {
     throw error;
   }
-};
+}
 
-export const validateSVGIcon = (svgFilePath) => {
+export function validateSVGIcon(svgFilePath) {
   const fileName = path.basename(svgFilePath);
 
   try {
@@ -276,9 +276,9 @@ export const validateSVGIcon = (svgFilePath) => {
   } catch (error) {
     throw error;
   }
-};
+}
 
-export const validateSprite = (spriteDirPath) => {
+export function validateSprite(spriteDirPath) {
   try {
     const spritePattern = /^sprite(@\d+x)?\.(png|json){1}$/;
 
@@ -330,11 +330,11 @@ export const validateSprite = (spriteDirPath) => {
   } catch (error) {
     throw error;
   }
-};
+}
 
 export const getScale = (scale = "@1x") => Number(scale.slice(1, -1)) || 1;
 
-export const createRepoFile = (repo, repoFilePath) => {
+export function createRepoFile(repo, repoFilePath) {
   function getCircularReplacer() {
     const seen = new WeakMap();
     const paths = new Map();
@@ -363,4 +363,34 @@ export const createRepoFile = (repo, repoFilePath) => {
       throw error;
     }
   });
-};
+}
+
+export function findCircularReferences(obj, parentName = "root") {
+  const visited = new Set();
+  const paths = new Map();
+
+  function detectCycles(obj, path) {
+    if (typeof obj !== "object" || obj === null) return;
+
+    if (visited.has(obj)) {
+      console.log(
+        `Circular reference detected at path: ${paths.get(obj)} -> ${path}`
+      );
+      return;
+    }
+
+    visited.add(obj);
+    paths.set(obj, path);
+
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        detectCycles(obj[key], `${path}.${key}`);
+      }
+    }
+
+    visited.delete(obj);
+    paths.delete(obj);
+  }
+
+  detectCycles(obj, parentName);
+}

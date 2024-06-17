@@ -1336,19 +1336,21 @@ export const serve_rendered = {
     );
   },
 
-  remove: async (config, id) => {
-    const item = config.repo.rendered[id];
+  remove: async (config) => {
+    const rendereds = Object.keys(config.repo.rendered);
 
-    if (item) {
-      item.map.renderers.forEach((pool) => {
-        pool.close();
-      });
+    await Promise.all(
+      rendereds.map(async (rendered) => {
+        config.repo.rendered[rendered].map.renderers.forEach((pool) => {
+          pool.close();
+        });
 
-      item.map.renderersStatic.forEach((pool) => {
-        pool.close();
-      });
-    }
+        config.repo.rendered[rendered].map.renderersStatic.forEach((pool) => {
+          pool.close();
+        });
+      })
+    );
 
-    delete config.repo.rendered[id];
+    config.repo.rendered = {};
   },
 };
