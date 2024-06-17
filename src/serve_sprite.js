@@ -8,7 +8,6 @@ import { printLog, getUrl, validateSprite } from "./utils.js";
 export const serve_sprite = {
   init: async (config) => {
     const app = express();
-    const spritePath = config.options.paths.sprites;
 
     app.get(
       "/:id/sprite:scale(@\\d+x)?.:format((png|json){1})",
@@ -23,7 +22,7 @@ export const serve_sprite = {
           }
 
           const data = fs.readFileSync(
-            `${path.join(spritePath, id, "sprite")}${scale}.${format}`
+            `${path.join(config.options.paths.sprites, id, "sprite")}${scale}.${format}`
           );
 
           if (format === "json") {
@@ -61,19 +60,18 @@ export const serve_sprite = {
     return app;
   },
 
-  remove: (config, id) => {
-    delete config.repo.sprites[id];
+  remove: async (config) => {
+    config.repo.sprites = {};
   },
 
   add: async (config) => {
-    const spritePath = config.options.paths.sprites;
     const sprites = Object.keys(config.sprites);
 
     await Promise.all(
       sprites.map(async (sprite) => {
         try {
           /* Validate sprite */
-          validateSprite(path.join(spritePath, sprite));
+          validateSprite(path.join(config.options.paths.sprites, sprite));
 
           config.repo.sprites[sprite] = true;
         } catch (error) {

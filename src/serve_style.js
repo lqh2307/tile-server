@@ -67,12 +67,11 @@ export const serve_style = {
     return app;
   },
 
-  remove: (config, id) => {
-    delete config.repo.styles[id];
+  remove: async (config) => {
+    config.repo.styles = {};
   },
 
   add: async (config) => {
-    const stylePath = config.options.paths.styles;
     const styles = Object.keys(config.styles);
 
     await Promise.all(
@@ -84,7 +83,9 @@ export const serve_style = {
             throw Error(`"style" property for style "${style}" is empty`);
           }
 
-          const file = fs.readFileSync(path.resolve(stylePath, item.style));
+          const file = fs.readFileSync(
+            path.resolve(config.options.paths.styles, item.style)
+          );
 
           const styleJSON = JSON.parse(file);
 

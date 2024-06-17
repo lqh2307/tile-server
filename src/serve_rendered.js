@@ -1,17 +1,7 @@
 "use strict";
 
-// SECTION START
-//
-// The order of the two imports below is important.
-// For an unknown reason, if the order is reversed, rendering can crash.
-// This happens on ARM:
-//  > terminate called after throwing an instance of 'std::runtime_error'
-//  > what():  Cannot read GLX extensions.
 import "canvas";
 import "@maplibre/maplibre-gl-native";
-//
-// SECTION END
-
 import advancedPool from "advanced-pool";
 import fs from "node:fs";
 import path from "node:path";
@@ -359,9 +349,7 @@ const extractMarkersFromQuery = (query, options, transformer) => {
 
 const calcZForBBox = (bbox, w, h, query) => {
   let z = 25;
-
   const padding = query.padding !== undefined ? parseFloat(query.padding) : 0.1;
-
   const minCorner = mercator.px([bbox[0], bbox[3]], z);
   const maxCorner = mercator.px([bbox[2], bbox[1]], z);
   const w_ = w / (1 + 2 * padding);
@@ -556,6 +544,7 @@ const respondImage = (
 
 export const serve_rendered = {
   init: async (config) => {
+    const serveStaticMaps = config.options.serveStaticMaps === true;
     const app = express();
 
     app.get(
@@ -616,7 +605,7 @@ export const serve_rendered = {
       }
     );
 
-    if (config.options.serveStaticMaps) {
+    if (serveStaticMaps) {
       const staticPattern = `/:id/static/:raw(raw)?/%s/:width(\\d+)x:height(\\d+):scale(@\\d+x)?.:format(${FORMAT_PATTERN}{1})`;
       const centerPattern = util.format(
         ":x(%s),:y(%s),:z(%s)(@:bearing(%s)(,:pitch(%s))?)?",
@@ -977,14 +966,6 @@ export const serve_rendered = {
   },
 
   add: async (config) => {
-    const maxScaleFactor = config.options.maxScaleFactor || 1;
-    const mbtilesPath = config.options.paths.mbtiles;
-    const pmtilesPath = config.options.paths.pmtiles;
-    const stylePath = config.options.paths.styles;
-    const spritePath = config.options.paths.sprites;
-    const fontPath = config.options.paths.fonts;
-    const styles = Object.keys(config.repo.styles);
-
     const createPool = (map, style, styleJSON, ratio, mode, min, max) => {
       const createRenderer = (ratio, createCallback) => {
         const renderer = new mlgl.Map({
@@ -994,10 +975,10 @@ export const serve_rendered = {
             const protocol = req.url.split(":")[0];
 
             if (protocol === "sprites") {
-              const file = decodeURIComponent(req.url).substring(
-                protocol.length + 3
+              const filePath = path.join(
+                config.options.paths.sprites,
+                decodeURIComponent(req.url).substring(protocol.length + 3)
               );
-              const filePath = path.join(spritePath, file);
 
               fs.readFile(filePath, (error, data) => {
                 callback(error, {
@@ -1011,7 +992,11 @@ export const serve_rendered = {
 
               try {
                 callback(null, {
-                  data: await getFontsPbf(fontPath, fonts, range),
+                  data: await getFontsPbf(
+                    config.options.paths.fonts,
+                    fonts,
+                    range
+                  ),
                 });
               } catch (error) {
                 callback(error, {
@@ -1120,6 +1105,8 @@ export const serve_rendered = {
       });
     };
 
+    const styles = Object.keys(config.repo.styles);
+
     await Promise.all(
       styles.map(async (style) => {
         const item = config.styles[style];
@@ -1131,7 +1118,9 @@ export const serve_rendered = {
         };
 
         try {
-          const file = fs.readFileSync(path.join(stylePath, item.style));
+          const file = fs.readFileSync(
+            path.join(config.options.paths.styles, item.style)
+          );
 
           const styleJSON = JSON.parse(file);
 
@@ -1195,7 +1184,7 @@ export const serve_rendered = {
                 queue.push(
                   new Promise((resolve, reject) => {
                     const inputFile = path.resolve(
-                      mbtilesPath,
+                      config.options.paths.mbtiles,
                       config.data[sourceID].mbtiles
                     );
 
@@ -1258,7 +1247,7 @@ export const serve_rendered = {
                 );
               } else if (config.repo.data[sourceID]?.sourceType === "pmtiles") {
                 const inputFile = path.join(
-                  pmtilesPath,
+                  config.options.paths.pmtiles,
                   config.data[sourceID].pmtiles
                 );
 
@@ -1311,7 +1300,7 @@ export const serve_rendered = {
             16, 8, 4,
           ];
 
-          for (let s = 1; s <= maxScaleFactor; s++) {
+          for (let s = 1; s <= (config.options.maxScaleFactor || 1); s++) {
             const i = Math.min(minPoolSizes.length - 1, s - 1);
             const j = Math.min(maxPoolSizes.length - 1, s - 1);
             const minPoolSize = minPoolSizes[i];
@@ -1347,7 +1336,7 @@ export const serve_rendered = {
     );
   },
 
-  remove: (config, id) => {
+  remove: async (config, id) => {
     const item = config.repo.rendered[id];
 
     if (item) {

@@ -7,25 +7,19 @@ import { getFontsPbf, printLog, getUrl, validatePBFFont } from "./utils.js";
 export const serve_font = {
   init: async (config) => {
     const app = express();
-    const fontPath = config.options.paths.fonts;
 
     app.get("/:id/:range(\\d{1,5}-\\d{1,5}).pbf", async (req, res, next) => {
       const id = decodeURI(req.params.id);
-      const { range = "" } = req.params;
 
-      try {
-        const concatenated = await getFontsPbf(fontPath, id, range);
+      const concatenated = await getFontsPbf(
+        config.options.paths.fonts,
+        id,
+        req.params.range
+      );
 
-        res.header("Content-type", "application/x-protobuf");
+      res.header("Content-type", "application/x-protobuf");
 
-        return res.status(200).send(concatenated);
-      } catch (error) {
-        printLog("error", `Failed to get font "${id}": ${error}`);
-
-        res.header("Content-Type", "text/plain");
-
-        return res.status(404).send("Font is not found");
-      }
+      return res.status(200).send(concatenated);
     });
 
     app.get("/fonts.json", async (req, res, next) => {
@@ -46,19 +40,18 @@ export const serve_font = {
     return app;
   },
 
-  remove: (config, id) => {
-    delete config.repo.fonts[id];
+  remove: async (config) => {
+    config.repo.fonts = {};
   },
 
   add: async (config) => {
-    const fontPath = config.options.paths.fonts;
     const fonts = Object.keys(config.fonts);
 
     await Promise.all(
       fonts.map(async (font) => {
         try {
           /* Validate font */
-          validatePBFFont(path.join(fontPath, font));
+          validatePBFFont(path.join(config.options.paths.fonts, font));
 
           config.repo.fonts[font] = true;
         } catch (error) {

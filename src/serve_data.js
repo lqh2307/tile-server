@@ -234,13 +234,11 @@ export const serve_data = {
     return app;
   },
 
-  remove: (config, id) => {
-    delete config.repo.data[id];
+  remove: async (config) => {
+    config.repo.data = {};
   },
 
   add: async (config) => {
-    const mbtilesPath = config.options.paths.mbtiles;
-    const pmtilesPath = config.options.paths.pmtiles;
     const datas = Object.keys(config.data);
 
     await Promise.all(
@@ -258,7 +256,10 @@ export const serve_data = {
             if (isValidHttpUrl(item.mbtiles) === true) {
               throw Error(`MBTiles data "${data}" is invalid`);
             } else {
-              const inputDataFile = path.join(mbtilesPath, item.mbtiles);
+              const inputDataFile = path.join(
+                config.options.paths.mbtiles,
+                item.mbtiles
+              );
 
               const stat = fs.statSync(inputDataFile);
               if (stat.isFile() === false || stat.size === 0) {
@@ -289,7 +290,10 @@ export const serve_data = {
             if (isValidHttpUrl(item.pmtiles) === true) {
               inputDataFile = item.pmtiles;
             } else {
-              inputDataFile = path.join(pmtilesPath, item.pmtiles);
+              inputDataFile = path.join(
+                config.options.paths.pmtiles,
+                item.pmtiles
+              );
 
               const stat = fs.statSync(inputDataFile);
               if (stat.isFile() === false || stat.size === 0) {

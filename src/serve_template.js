@@ -7,8 +7,6 @@ import handlebars from "handlebars";
 import SphericalMercator from "@mapbox/sphericalmercator";
 import { getTileUrls } from "./utils.js";
 
-const mercator = new SphericalMercator();
-
 export const serve_template = {
   init: async (config) => {
     const serveWMTS = config.options.serveWMTS === true;
@@ -20,9 +18,9 @@ export const serve_template = {
 
     if (serveFrontPage) {
       app.get("/$", async (req, res, next) => {
-        const styles = {};
-        const datas = {};
+        const mercator = new SphericalMercator();
 
+        const styles = {};
         const renderedPromises = Object.keys(config.repo.rendered).map(
           async (id) => {
             const style = config.repo.rendered[id];
@@ -56,6 +54,7 @@ export const serve_template = {
           }
         );
 
+        const datas = {};
         const dataPromises = Object.keys(config.repo.data).map(async (id) => {
           const data = config.repo.data[id];
           const { center, filesize, format, tiles, name = "" } = data.tileJSON;
