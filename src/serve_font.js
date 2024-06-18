@@ -11,15 +11,23 @@ export const serve_font = {
     app.get("/:id/:range(\\d{1,5}-\\d{1,5}).pbf", async (req, res, next) => {
       const id = decodeURI(req.params.id);
 
-      const concatenated = await getFontsPbf(
-        config.options.paths.fonts,
-        id,
-        req.params.range
-      );
+      try {
+        const concatenated = await getFontsPbf(
+          config.options.paths.fonts,
+          id,
+          req.params.range
+        );
 
-      res.header("Content-type", "application/x-protobuf");
+        res.header("Content-type", "application/x-protobuf");
 
-      return res.status(200).send(concatenated);
+        return res.status(200).send(concatenated);
+      } catch (error) {
+        printLog("error", `Failed to get font "${id}": ${error}`);
+
+        res.header("Content-Type", "text/plain");
+
+        return res.status(404).send("Font is not found");
+      }
     });
 
     app.get("/fonts.json", async (req, res, next) => {
