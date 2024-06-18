@@ -17,13 +17,13 @@ program
   .option("-d, --data-dir <path>", "data dir path", "data")
   .option("-p, --port <port>", "listening port", "8080")
   .option(
-    "-r, --refresh <interval>",
-    "monitor config file changes to refreshing server",
+    "-r, --reload <interval>",
+    "monitor config file changes to reload server",
     "0"
   )
   .option(
     "-k, --kill <interval>",
-    "monitor config file changes to killing server",
+    "monitor config file changes to kill server",
     "0"
   )
   .version(packageJSON.version, "-v, --version")
@@ -48,7 +48,7 @@ const startServer = (opts) => {
   newServer({
     port: Number(opts.port),
     dataDir: path.resolve(opts.dataDir),
-    refresh: Number(opts.refresh),
+    reload: Number(opts.reload),
     kill: Number(opts.kill),
   });
 };
