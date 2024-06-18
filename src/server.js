@@ -58,6 +58,16 @@ function loadConfigFile(opts) {
   }
 }
 
+function removeRoute(app) {
+  const routes = app._router.stack;
+
+  for (let i = 0; i < routes.length; i++) {
+    if (routes[i].name === "mounted_app") {
+      routes.splice(i, 1);
+    }
+  }
+}
+
 export function newServer(opts) {
   printLog("info", "Starting server...");
 
@@ -85,7 +95,7 @@ export function newServer(opts) {
   app.get("/reload", async (req, res, next) => {
     printLog("info", "Reloading server...");
 
-    removeRoute();
+    removeRoute(app);
 
     initService();
 
@@ -105,16 +115,6 @@ export function newServer(opts) {
 
     return res.status(200).send("OK");
   });
-
-  const removeRoute = () => {
-    const routes = app._router.stack;
-
-    for (let i = 0; i < routes.length; i++) {
-      if (routes[i].name === "mounted_app") {
-        routes.splice(i, 1);
-      }
-    }
-  };
 
   const initService = async () => {
     const config = loadConfigFile(opts);
@@ -194,7 +194,7 @@ export function newServer(opts) {
 
       startupComplete = false;
 
-      removeRoute();
+      removeRoute(app);
 
       initService();
     });
