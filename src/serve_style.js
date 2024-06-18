@@ -7,7 +7,7 @@ import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { fixUrl, printLog, getUrl } from "./utils.js";
 
 export const serve_style = {
-  init: async (config) => {
+  init: (config) => {
     const app = express();
 
     app.get("/:id/style.json", async (req, res, next) => {

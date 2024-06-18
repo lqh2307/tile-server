@@ -119,13 +119,14 @@ export function newServer(opts) {
   const initService = async () => {
     const config = loadConfigFile(opts);
 
+    app.use("/fonts", serve_font.init(config));
+    app.use("/sprites", serve_sprite.init(config));
+    app.use("/data", serve_data.init(config));
+    app.use("/styles", serve_style.init(config));
+    app.use("/styles", serve_rendered.init(config));
+    app.use("/", serve_template.init(config));
+
     await Promise.all([
-      serve_font.init(config).then((sub) => app.use("/fonts", sub)),
-      serve_sprite.init(config).then((sub) => app.use("/sprites", sub)),
-      serve_data.init(config).then((sub) => app.use("/data", sub)),
-      serve_style.init(config).then((sub) => app.use("/styles", sub)),
-      serve_rendered.init(config).then((sub) => app.use("/styles", sub)),
-      serve_template.init(config).then((sub) => app.use("/", sub)),
       serve_font.add(config),
       serve_sprite.add(config),
       serve_data

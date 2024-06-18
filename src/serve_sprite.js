@@ -6,7 +6,7 @@ import express from "express";
 import { printLog, getUrl, validateSprite } from "./utils.js";
 
 export const serve_sprite = {
-  init: async (config) => {
+  init: (config) => {
     const app = express();
 
     app.get(

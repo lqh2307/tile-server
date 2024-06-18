@@ -8,7 +8,7 @@ import SphericalMercator from "@mapbox/sphericalmercator";
 import { getTileUrls } from "./utils.js";
 
 export const serve_template = {
-  init: async (config) => {
+  init: (config) => {
     const serveWMTS = config.options.serveWMTS === true;
     const serveFrontPage = config.options.frontPage === true;
     const app = express().use(

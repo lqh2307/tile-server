@@ -23,7 +23,7 @@ import {
 const FORMAT_PATTERN = "(pbf|jpg|png|jpeg|webp|geojson)";
 
 export const serve_data = {
-  init: async (config) => {
+  init: (config) => {
     const app = express();
 
     app.get(

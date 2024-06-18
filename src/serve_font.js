@@ -5,7 +5,7 @@ import express from "express";
 import { getFontsPbf, printLog, getUrl, validatePBFFont } from "./utils.js";
 
 export const serve_font = {
-  init: async (config) => {
+  init: (config) => {
     const app = express();
 
     app.get("/:id/:range(\\d{1,5}-\\d{1,5}).pbf", async (req, res, next) => {

@@ -543,7 +543,7 @@ const respondImage = (
 };
 
 export const serve_rendered = {
-  init: async (config) => {
+  init: (config) => {
     const serveStaticMaps = config.options.serveStaticMaps === true;
     const app = express();
 
