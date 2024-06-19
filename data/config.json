@@ -4,7 +4,6 @@
       "root": "data",
       "fonts": "fonts",
       "sprites": "sprites",
-      "icons": "icons",
       "styles": "styles",
       "mbtiles": "mbtiles",
       "pmtiles": "pmtiles"
@@ -14,20 +13,13 @@
       "jpeg": 100,
       "webp": 100
     },
-    "maxScaleFactor": 1,
-    "maxSize": 2048,
-    "pbfAlias": "pbf",
     "frontPage": true,
-    "serveStaticMaps": true,
-    "allowRemoteMarkerIcons": true,
-    "allowInlineMarkerImages": true,
-    "staticAttributionText": "",
     "serveWMTS": true,
-    "tileMargin": 0
+    "minPoolSize": 8,
+    "maxPoolSize": 16
   },
   "styles": {},
   "data": {},
   "sprites": {},
-  "fonts": {},
-  "icons": []
+  "fonts": {}
 }

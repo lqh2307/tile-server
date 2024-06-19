@@ -5,8 +5,6 @@ import fs from "node:fs";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
 import { pngValidator } from "png-validator";
 
-export const httpTester = /^https?:\/\//i;
-
 /**
  * Replace local:// urls with public http(s):// urls
  * @param req
@@ -266,18 +264,6 @@ export function validatePBFFont(pbfDirPath) {
   }
 }
 
-export function validateSVGIcon(svgFilePath) {
-  const fileName = path.basename(svgFilePath);
-
-  try {
-    if (!/^\w+.svg{1}$/.test(fileName) || !fs.statSync(svgFilePath).isFile()) {
-      throw Error(`Icon is invalid`);
-    }
-  } catch (error) {
-    throw error;
-  }
-}
-
 export function validateSprite(spriteDirPath) {
   try {
     const spritePattern = /^sprite(@\d+x)?\.(png|json){1}$/;
@@ -342,7 +328,8 @@ export function createRepoFile(repo, repoFilePath) {
     return (key, value) => {
       if (typeof value === "object" && value !== null) {
         if (seen.has(value)) {
-          console.log(
+          printLog(
+            "info",
             `Circular reference detected at ${paths.get(value)} -> ${key}`
           );
           return;
@@ -373,7 +360,8 @@ export function findCircularReferences(obj, parentName = "root") {
     if (typeof obj !== "object" || obj === null) return;
 
     if (visited.has(obj)) {
-      console.log(
+      printLog(
+        "info",
         `Circular reference detected at path: ${paths.get(obj)} -> ${path}`
       );
       return;

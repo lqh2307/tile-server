@@ -24,7 +24,6 @@ function loadConfigFile(opts) {
     config.styles = config.styles || {};
     config.data = config.data || {};
     config.sprites = config.sprites || {};
-    config.icons = config.icons || [];
 
     config.options.paths = {
       styles: path.join(opts.dataDir, config.options.paths?.styles || ""),
@@ -32,7 +31,6 @@ function loadConfigFile(opts) {
       sprites: path.join(opts.dataDir, config.options.paths?.sprites || ""),
       mbtiles: path.join(opts.dataDir, config.options.paths?.mbtiles || ""),
       pmtiles: path.join(opts.dataDir, config.options.paths?.pmtiles || ""),
-      icons: path.join(opts.dataDir, config.options.paths?.icons || ""),
     };
 
     Object.keys(config.options.paths).forEach((key) => {
@@ -47,7 +45,6 @@ function loadConfigFile(opts) {
       data: {},
       fonts: {},
       sprites: {},
-      icons: [],
     };
 
     return config;
@@ -55,16 +52,6 @@ function loadConfigFile(opts) {
     printLog("error", `Failed to load config file: ${error}`);
 
     process.exit(1);
-  }
-}
-
-function removeRoute(app) {
-  const routes = app._router.stack;
-
-  for (let i = 0; i < routes.length; i++) {
-    if (routes[i].name === "mounted_app") {
-      routes.splice(i, 1);
-    }
   }
 }
 
@@ -81,6 +68,9 @@ export function newServer(opts) {
     );
 
   let startupComplete = false;
+  let config = loadConfigFile(opts);
+
+  const getConfig = () => config;
 
   app.get("/health", async (req, res, next) => {
     res.header("Content-Type", "text/plain");
@@ -95,8 +85,7 @@ export function newServer(opts) {
   app.get("/reload", async (req, res, next) => {
     printLog("info", "Reloading server...");
 
-    removeRoute(app);
-
+    config = loadConfigFile(opts);
     initService();
 
     res.header("Content-Type", "text/plain");
@@ -116,16 +105,14 @@ export function newServer(opts) {
     return res.status(200).send("OK");
   });
 
+  app.use("/fonts", serve_font.init(getConfig));
+  app.use("/sprites", serve_sprite.init(getConfig));
+  app.use("/data", serve_data.init(getConfig));
+  app.use("/styles", serve_style.init(getConfig));
+  app.use("/styles", serve_rendered.init(getConfig));
+  app.use("/", serve_template.init(getConfig));
+
   const initService = async () => {
-    const config = loadConfigFile(opts);
-
-    app.use("/fonts", serve_font.init(config));
-    app.use("/sprites", serve_sprite.init(config));
-    app.use("/data", serve_data.init(config));
-    app.use("/styles", serve_style.init(config));
-    app.use("/styles", serve_rendered.init(config));
-    app.use("/", serve_template.init(config));
-
     await Promise.all([
       serve_font.add(config),
       serve_sprite.add(config),
@@ -154,9 +141,7 @@ export function newServer(opts) {
   });
 
   const configFilePath = path.resolve(opts.dataDir, "config.json");
-
   let newChokidar;
-
   if (opts.kill > 0) {
     printLog(
       "info",
@@ -195,8 +180,7 @@ export function newServer(opts) {
 
       startupComplete = false;
 
-      removeRoute(app);
-
+      config = loadConfigFile(opts);
       initService();
     });
   }

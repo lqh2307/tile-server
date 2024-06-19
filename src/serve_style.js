@@ -6,63 +6,73 @@ import express from "express";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { fixUrl, printLog, getUrl } from "./utils.js";
 
-export const serve_style = {
-  init: (config) => {
-    const app = express();
+function getStyleHandler(getConfig) {
+  return async (req, res, next) => {
+    const config = getConfig()
+    const id = decodeURI(req.params.id);
+    const item = config.repo.styles[id];
 
-    app.get("/:id/style.json", async (req, res, next) => {
-      const id = decodeURI(req.params.id);
-      const item = config.repo.styles[id];
-
-      try {
-        if (!item) {
-          throw Error("Style is not found");
-        }
-
-        const sources = {};
-        Object.keys(item.styleJSON.sources).forEach((name) => {
-          sources[name] = {
-            ...item.styleJSON.sources[name],
-            url: fixUrl(req, item.styleJSON.sources[name].url),
-          };
-        });
-
-        const styleJSON = {
-          ...item.styleJSON,
-          sources: sources,
-          sprite: fixUrl(req, item.styleJSON.sprite),
-          glyphs: fixUrl(req, item.styleJSON.glyphs),
-        };
-
-        res.header("Content-Type", "application/json");
-
-        return res.status(200).send(styleJSON);
-      } catch (error) {
-        printLog("error", `Failed to get style "${id}": ${error}`);
-
-        res.header("Content-Type", "text/plain");
-
-        return res.status(404).send("Style is not found");
+    try {
+      if (!item) {
+        throw Error("Style is not found");
       }
-    });
 
-    app.get("/styles.json", async (req, res, next) => {
-      const styles = Object.keys(config.repo.styles);
-
-      const result = styles.map((style) => {
-        const item = config.repo.styles[style];
-
-        return {
-          id: style,
-          name: item.styleJSON.name,
-          url: `${getUrl(req)}styles/${style}/style.json`,
+      const sources = {};
+      Object.keys(item.styleJSON.sources).forEach((name) => {
+        sources[name] = {
+          ...item.styleJSON.sources[name],
+          url: fixUrl(req, item.styleJSON.sources[name].url),
         };
       });
 
+      const styleJSON = {
+        ...item.styleJSON,
+        sources: sources,
+        sprite: fixUrl(req, item.styleJSON.sprite),
+        glyphs: fixUrl(req, item.styleJSON.glyphs),
+      };
+
+      res.header("Content-Type", "application/json");
+
+      return res.status(200).send(styleJSON);
+    } catch (error) {
+      printLog("error", `Failed to get style "${id}": ${error}`);
+
       res.header("Content-Type", "text/plain");
 
-      return res.status(200).send(result);
+      return res.status(404).send("Style is not found");
+    }
+  }
+}
+
+function getStylesListHandler(getConfig) {
+  return async (req, res, next) => {
+    const config = getConfig()
+    const styles = Object.keys(config.repo.styles);
+
+    const result = styles.map((style) => {
+      const item = config.repo.styles[style];
+
+      return {
+        id: style,
+        name: item.styleJSON.name,
+        url: `${getUrl(req)}styles/${style}/style.json`,
+      };
     });
+
+    res.header("Content-Type", "text/plain");
+
+    return res.status(200).send(result);
+  }
+}
+
+export const serve_style = {
+  init: (getConfig) => {
+    const app = express();
+
+    app.get("/:id/style.json", getStyleHandler(getConfig));
+
+    app.get("/styles.json", getStylesListHandler(getConfig));
 
     return app;
   },

@@ -20,122 +20,64 @@ import {
   getPMtilesTile,
 } from "./pmtiles_adapter.js";
 
-const FORMAT_PATTERN = "(pbf|jpg|png|jpeg|webp|geojson)";
+function getDataTileHandler(getConfig) {
+  return async (req, res, next) => {
+    const config = getConfig()
+    const id = decodeURI(req.params.id);
+    const item = config.repo.data[id];
 
-export const serve_data = {
-  init: (config) => {
-    const app = express();
+    try {
+      if (!item) {
+        throw Error("Data is not found");
+      }
 
-    app.get(
-      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(${FORMAT_PATTERN}{1})`,
-      async (req, res, next) => {
-        const id = decodeURI(req.params.id);
-        const item = config.repo.data[id];
+      const format = req.params.format;
 
-        try {
-          if (!item) {
-            throw Error("Data is not found");
-          }
+      if (
+        !(format === "geojson" && item.tileJSON.format === "pbf") &&
+        format !== item.tileJSON.format
+      ) {
+        throw Error("Data is invalid format");
+      }
 
-          const format = req.params.format;
+      const z = Number(req.params.z);
+      const x = Number(req.params.x);
+      const y = Number(req.params.y);
+      const maxXY = Math.pow(2, z);
 
-          if (
-            !(format === "geojson" && item.tileJSON.format === "pbf") &&
-            format !== item.tileJSON.format
-          ) {
-            throw Error("Data is invalid format");
-          }
+      if (
+        !(
+          0 <= z &&
+          item.tileJSON.minzoom <= z &&
+          z <= item.tileJSON.maxzoom
+        ) ||
+        !(0 <= x && x < maxXY) ||
+        !(0 <= y && y < maxXY)
+      ) {
+        throw Error("Data is out of bounds");
+      }
 
-          const z = Number(req.params.z);
-          const x = Number(req.params.x);
-          const y = Number(req.params.y);
-          const maxXY = Math.pow(2, z);
-
-          if (
-            !(
-              0 <= z &&
-              item.tileJSON.minzoom <= z &&
-              z <= item.tileJSON.maxzoom
-            ) ||
-            !(0 <= x && x < maxXY) ||
-            !(0 <= y && y < maxXY)
-          ) {
-            throw Error("Data is out of bounds");
-          }
-
-          if (item.sourceType === "mbtiles") {
-            item.source.getTile(z, x, y, (error, data, headers) => {
-              if (error) {
-                if (/does not exist/.test(error.message)) {
-                  return res.status(204).send();
-                } else {
-                  throw error;
-                }
-              } else {
-                if (!data) {
-                  throw Error("Data is not found");
-                } else {
-                  let isGzipped = false;
-
-                  if (
-                    item.tileJSON.format === "pbf" &&
-                    data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0
-                  ) {
-                    isGzipped = true;
-                  }
-
-                  if (format === "pbf") {
-                    headers["Content-Type"] = "application/x-protobuf";
-                  } else if (format === "geojson") {
-                    headers["Content-Type"] = "application/json";
-
-                    const geojson = {
-                      type: "FeatureCollection",
-                      features: [],
-                    };
-
-                    if (isGzipped) {
-                      data = zlib.unzipSync(data);
-
-                      isGzipped = false;
-                    }
-
-                    const tile = new VectorTile(new Pbf(data));
-
-                    for (const layerName in tile.layers) {
-                      const layer = tile.layers[layerName];
-
-                      for (let i = 0; i < layer.length; i++) {
-                        const featureGeoJSON = layer
-                          .feature(i)
-                          .toGeoJSON(x, y, z);
-                        featureGeoJSON.properties.layer = layerName;
-
-                        geojson.features.push(featureGeoJSON);
-                      }
-                    }
-
-                    data = JSON.stringify(geojson);
-                  }
-
-                  headers["Content-Encoding"] = "gzip";
-
-                  res.set(headers);
-
-                  if (!isGzipped) {
-                    data = zlib.gzipSync(data);
-                  }
-
-                  return res.status(200).send(data);
-                }
-              }
-            });
-          } else if (item.sourceType === "pmtiles") {
-            let { data, headers } = await getPMtilesTile(item.source, z, x, y);
-
+      if (item.sourceType === "mbtiles") {
+        item.source.getTile(z, x, y, (error, data, headers) => {
+          if (error) {
+            if (/does not exist/.test(error.message)) {
+              return res.status(204).send();
+            } else {
+              throw error;
+            }
+          } else {
             if (!data) {
               throw Error("Data is not found");
             } else {
+              let isGzipped = false;
+
+              if (
+                item.tileJSON.format === "pbf" &&
+                data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0
+              ) {
+                isGzipped = true;
+              }
+
               if (format === "pbf") {
                 headers["Content-Type"] = "application/x-protobuf";
               } else if (format === "geojson") {
@@ -146,13 +88,21 @@ export const serve_data = {
                   features: [],
                 };
 
+                if (isGzipped) {
+                  data = zlib.unzipSync(data);
+
+                  isGzipped = false;
+                }
+
                 const tile = new VectorTile(new Pbf(data));
 
                 for (const layerName in tile.layers) {
                   const layer = tile.layers[layerName];
 
                   for (let i = 0; i < layer.length; i++) {
-                    const featureGeoJSON = layer.feature(i).toGeoJSON(x, y, z);
+                    const featureGeoJSON = layer
+                      .feature(i)
+                      .toGeoJSON(x, y, z);
                     featureGeoJSON.properties.layer = layerName;
 
                     geojson.features.push(featureGeoJSON);
@@ -166,70 +116,133 @@ export const serve_data = {
 
               res.set(headers);
 
-              data = zlib.gzipSync(data);
+              if (!isGzipped) {
+                data = zlib.gzipSync(data);
+              }
 
               return res.status(200).send(data);
             }
           }
-        } catch (error) {
-          printLog("error", `Failed to get data "${id}": ${error}`);
+        });
+      } else if (item.sourceType === "pmtiles") {
+        let { data, headers } = await getPMtilesTile(item.source, z, x, y);
 
-          res.header("Content-Type", "text/plain");
+        if (!data) {
+          throw Error("Data is not found");
+        } else {
+          if (format === "pbf") {
+            headers["Content-Type"] = "application/x-protobuf";
+          } else if (format === "geojson") {
+            headers["Content-Type"] = "application/json";
 
-          return res.status(404).send("Data is not found");
+            const geojson = {
+              type: "FeatureCollection",
+              features: [],
+            };
+
+            const tile = new VectorTile(new Pbf(data));
+
+            for (const layerName in tile.layers) {
+              const layer = tile.layers[layerName];
+
+              for (let i = 0; i < layer.length; i++) {
+                const featureGeoJSON = layer.feature(i).toGeoJSON(x, y, z);
+                featureGeoJSON.properties.layer = layerName;
+
+                geojson.features.push(featureGeoJSON);
+              }
+            }
+
+            data = JSON.stringify(geojson);
+          }
+
+          headers["Content-Encoding"] = "gzip";
+
+          res.set(headers);
+
+          data = zlib.gzipSync(data);
+
+          return res.status(200).send(data);
         }
       }
-    );
-
-    app.get("/datas.json", async (req, res, next) => {
-      const datas = Object.keys(config.repo.data);
-
-      const result = datas.map((data) => {
-        const item = config.repo.data[data];
-
-        return {
-          id: data,
-          name: item.tileJSON.name,
-          url: `${getUrl(req)}data/${data}/data.json`,
-        };
-      });
+    } catch (error) {
+      printLog("error", `Failed to get data "${id}": ${error}`);
 
       res.header("Content-Type", "text/plain");
 
-      return res.status(200).send(result);
-    });
+      return res.status(404).send("Data is not found");
+    }
+  }
+}
 
-    app.get("/:id.json", async (req, res, next) => {
-      const id = decodeURI(req.params.id);
-      const item = config.repo.data[id];
+function getDataHandler(getConfig) {
+  return async (req, res, next) => {
+    const config = getConfig()
+    const id = decodeURI(req.params.id);
+    const item = config.repo.data[id];
 
-      try {
-        if (!item) {
-          throw Error("Data is not found");
-        }
-
-        const info = {
-          ...item.tileJSON,
-          tiles: getTileUrls(
-            req,
-            item.tileJSON.tiles,
-            `data/${id}`,
-            undefined,
-            item.tileJSON.format
-          ),
-        };
-
-        res.header("Content-type", "application/json");
-
-        return res.status(200).send(info);
-      } catch (error) {
-        printLog("error", `Failed to get data "${id}": ${error}`);
-
-        res.header("Content-Type", "text/plain");
-
-        return res.status(404).send("Data is not found");
+    try {
+      if (!item) {
+        throw Error("Data is not found");
       }
+
+      const info = {
+        ...item.tileJSON,
+        tiles: getTileUrls(
+          req,
+          item.tileJSON.tiles,
+          `data/${id}`,
+          undefined,
+          item.tileJSON.format
+        ),
+      };
+
+      res.header("Content-type", "application/json");
+
+      return res.status(200).send(info);
+    } catch (error) {
+      printLog("error", `Failed to get data "${id}": ${error}`);
+
+      res.header("Content-Type", "text/plain");
+
+      return res.status(404).send("Data is not found");
+    }
+  }
+}
+
+function getDatasListHandler(getConfig) {
+  return async (req, res, next) => {
+    const config = getConfig()
+    const datas = Object.keys(config.repo.data);
+
+    const result = datas.map((data) => {
+      const item = config.repo.data[data];
+
+      return {
+        id: data,
+        name: item.tileJSON.name,
+        url: `${getUrl(req)}data/${data}/data.json`,
+      };
     });
+
+    res.header("Content-Type", "text/plain");
+
+    return res.status(200).send(result);
+  }
+}
+
+export const serve_data = {
+  init: (getConfig) => {
+    const app = express();
+
+    app.get(
+      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format((pbf|jpg|png|jpeg|webp|geojson){1})`,
+      getDataTileHandler(getConfig)
+    );
+
+    app.get("/datas.json", getDatasListHandler(getConfig));
+
+    app.get("/:id.json", getDataHandler(getConfig));
 
     return app;
   },
