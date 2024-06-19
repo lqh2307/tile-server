@@ -28,10 +28,6 @@ RUN \
   libpango1.0-dev \
   libjpeg-dev \
   libgif-dev \
-  librsvg2-dev \
-  gir1.2-rsvg-2.0 \
-  librsvg2-2 \
-  librsvg2-common \
   libcurl4-openssl-dev \
   libpixman-1-dev \
   libpixman-1-0;
@@ -76,7 +72,6 @@ RUN \
   libopengl0 \
   libpixman-1-0 \
   libcurl4 \
-  librsvg2-2 \
   libpango-1.0-0; \
   apt-get -y --purge autoremove; \
   apt-get clean; \
