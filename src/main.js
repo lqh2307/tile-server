@@ -44,13 +44,11 @@ process.on("SIGTERM", () => {
   process.exit(0);
 });
 
-const startServer = (opts) => {
-  newServer({
-    port: Number(opts.port),
-    dataDir: path.resolve(opts.dataDir),
-    reload: Number(opts.reload),
-    kill: Number(opts.kill),
-  });
-};
+const opts = program.opts();
 
-startServer(program.opts());
+newServer({
+  port: Number(opts.port),
+  dataDir: path.resolve(opts.dataDir),
+  reload: Number(opts.reload),
+  kill: Number(opts.kill),
+});
