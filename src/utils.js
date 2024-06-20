@@ -6,27 +6,39 @@ import glyphCompose from "@mapbox/glyph-pbf-composite";
 import { pngValidator } from "png-validator";
 import { PMTiles, FetchSource } from "pmtiles";
 
-/**
- * Replace local:// urls with public http(s):// urls
- * @param req
- * @param url
- */
-export function fixUrl(req, url) {
-  if (!url || typeof url !== "string" || url.indexOf("local://") !== 0) {
-    return url;
-  }
+function findFiles(dirPath, regex, isRecurse = false, isJustBaseName = false) {
+  if (isRecurse) {
+    const files = fs.readdirSync(dirPath);
+    const results = [];
 
-  const queryParams = [];
-  if (req.query.key) {
-    queryParams.unshift(`key=${encodeURIComponent(req.query.key)}`);
-  }
+    for (const file of files) {
+      const filePath = path.join(dirPath, file);
 
-  let query = "";
-  if (queryParams.length) {
-    query = `?${queryParams.join("&")}`;
-  }
+      if (regex.test(file) && fs.statSync(filePath).isDirectory()) {
+        const subResults = findFiles(filePath, regex, true);
 
-  return url.replace("local://", getUrl(req)) + query;
+        results.push(
+          ...subResults.map((subResult) => path.join(file, subResult))
+        );
+      } else if (regex.test(file) && fs.statSync(filePath).isFile()) {
+        results.push(file);
+      }
+    }
+
+    if (isJustBaseName) {
+      return results.map((result) => path.basename(result));
+    }
+
+    return results;
+  } else {
+    const fileNames = fs.readdirSync(dirPath);
+
+    return fileNames.filter(
+      (fileName) =>
+        regex.test(fileName) &&
+        fs.statSync(path.join(dirPath, fileName)).isFile()
+    );
+  }
 }
 
 /**
@@ -48,6 +60,29 @@ function getUrlObject(req) {
   }
 
   return urlObject;
+}
+
+/**
+ * Replace local:// urls with public http(s):// urls
+ * @param req
+ * @param url
+ */
+export function fixUrl(req, url) {
+  if (!url || typeof url !== "string" || url.indexOf("local://") !== 0) {
+    return url;
+  }
+
+  const queryParams = [];
+  if (req.query.key) {
+    queryParams.unshift(`key=${encodeURIComponent(req.query.key)}`);
+  }
+
+  let query = "";
+  if (queryParams.length) {
+    query = `?${queryParams.join("&")}`;
+  }
+
+  return url.replace("local://", getUrl(req)) + query;
 }
 
 export function getUrl(req) {
@@ -167,56 +202,6 @@ export function isValidHttpUrl(string) {
   }
 }
 
-export function findFiles(
-  dirPath,
-  regex,
-  isRecurse = false,
-  isJustBaseName = false
-) {
-  if (isRecurse) {
-    const files = fs.readdirSync(dirPath);
-    const results = [];
-
-    for (const file of files) {
-      const filePath = path.join(dirPath, file);
-
-      if (regex.test(file) && fs.statSync(filePath).isDirectory()) {
-        const subResults = findFiles(filePath, regex, true);
-
-        results.push(
-          ...subResults.map((subResult) => path.join(file, subResult))
-        );
-      } else if (regex.test(file) && fs.statSync(filePath).isFile()) {
-        results.push(file);
-      }
-    }
-
-    if (isJustBaseName) {
-      return results.map((result) => path.basename(result));
-    }
-
-    return results;
-  } else {
-    const fileNames = fs.readdirSync(dirPath);
-
-    return fileNames.filter(
-      (fileName) =>
-        regex.test(fileName) &&
-        fs.statSync(path.join(dirPath, fileName)).isFile()
-    );
-  }
-}
-
-export function findDirs(dirPath, regex) {
-  const dirNames = fs.readdirSync(dirPath);
-
-  return dirNames.filter(
-    (dirName) =>
-      regex.test(dirName) &&
-      fs.statSync(path.join(dirPath, dirName)).isDirectory()
-  );
-}
-
 export function printLog(level, msg) {
   switch (level) {
     case "debug": {
@@ -319,8 +304,6 @@ export function validateSprite(spriteDirPath) {
   }
 }
 
-export const getScale = (scale = "@1x") => Number(scale.slice(1, -1)) || 1;
-
 export function createRepoFile(repo, repoFilePath) {
   function getCircularReplacer() {
     const seen = new WeakMap();
@@ -353,37 +336,6 @@ export function createRepoFile(repo, repoFilePath) {
   });
 }
 
-export function findCircularReferences(obj, parentName = "root") {
-  const visited = new Set();
-  const paths = new Map();
-
-  function detectCycles(obj, path) {
-    if (typeof obj !== "object" || obj === null) return;
-
-    if (visited.has(obj)) {
-      printLog(
-        "info",
-        `Circular reference detected at path: ${paths.get(obj)} -> ${path}`
-      );
-      return;
-    }
-
-    visited.add(obj);
-    paths.set(obj, path);
-
-    for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        detectCycles(obj[key], `${path}.${key}`);
-      }
-    }
-
-    visited.delete(obj);
-    paths.delete(obj);
-  }
-
-  detectCycles(obj, parentName);
-}
-
 class PMTilesFileSource {
   constructor(fd) {
     this.fd = fd;
@@ -407,6 +359,52 @@ class PMTilesFileSource {
       data: data,
     };
   }
+}
+
+/**
+ *
+ * @param typenum
+ */
+function getPmtilesTileType(typenum) {
+  const header = {};
+  let tileType;
+
+  switch (typenum) {
+    case 0:
+      tileType = "Unknown";
+
+      break;
+    case 1:
+      tileType = "pbf";
+      header["Content-Type"] = "application/x-protobuf";
+
+      break;
+    case 2:
+      tileType = "png";
+      header["Content-Type"] = "image/png";
+
+      break;
+    case 3:
+      tileType = "jpeg";
+      header["Content-Type"] = "image/jpeg";
+
+      break;
+    case 4:
+      tileType = "webp";
+      header["Content-Type"] = "image/webp";
+
+      break;
+    case 5:
+      tileType = "avif";
+      header["Content-Type"] = "image/avif";
+
+      break;
+  }
+
+  return {
+    type: tileType,
+    header: header,
+  };
 }
 
 /**
@@ -489,51 +487,5 @@ export async function getPMtilesTile(pmtiles, z, x, y) {
   return {
     data: zxyTile,
     header: tileType.header,
-  };
-}
-
-/**
- *
- * @param typenum
- */
-function getPmtilesTileType(typenum) {
-  const header = {};
-  let tileType;
-
-  switch (typenum) {
-    case 0:
-      tileType = "Unknown";
-
-      break;
-    case 1:
-      tileType = "pbf";
-      header["Content-Type"] = "application/x-protobuf";
-
-      break;
-    case 2:
-      tileType = "png";
-      header["Content-Type"] = "image/png";
-
-      break;
-    case 3:
-      tileType = "jpeg";
-      header["Content-Type"] = "image/jpeg";
-
-      break;
-    case 4:
-      tileType = "webp";
-      header["Content-Type"] = "image/webp";
-
-      break;
-    case 5:
-      tileType = "avif";
-      header["Content-Type"] = "image/avif";
-
-      break;
-  }
-
-  return {
-    type: tileType,
-    header: header,
   };
 }

@@ -6,7 +6,7 @@ import { getFontsPbf, printLog, getUrl, validatePBFFont } from "./utils.js";
 
 function getFontHandler(getConfig) {
   return async (req, res, next) => {
-    const config = getConfig()
+    const config = getConfig();
     const id = decodeURI(req.params.id);
 
     try {
@@ -26,12 +26,12 @@ function getFontHandler(getConfig) {
 
       return res.status(404).send("Font is not found");
     }
-  }
+  };
 }
 
 function getFontsListHandler(getConfig) {
   return async (req, res, next) => {
-    const config = getConfig()
+    const config = getConfig();
     const fonts = Object.keys(config.repo.fonts);
 
     const result = fonts.map((font) => {
@@ -44,7 +44,7 @@ function getFontsListHandler(getConfig) {
     res.header("Content-Type", "text/plain");
 
     return res.status(200).send(result);
-  }
+  };
 }
 
 export const serve_font = {

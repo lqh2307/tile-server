@@ -7,7 +7,7 @@ import { printLog, getUrl, validateSprite } from "./utils.js";
 
 function getSpriteHandler(getConfig) {
   return async (req, res, next) => {
-    const config = getConfig()
+    const config = getConfig();
     const id = decodeURI(req.params.id);
     const item = config.repo.sprites[id];
 
@@ -36,12 +36,12 @@ function getSpriteHandler(getConfig) {
 
       return res.status(404).send("Sprite is not found");
     }
-  }
+  };
 }
 
 function getSpritesListHandler(getConfig) {
   return async (req, res, next) => {
-    const config = getConfig()
+    const config = getConfig();
     const sprites = Object.keys(config.repo.sprites);
 
     const result = sprites.map((sprite) => {
@@ -54,7 +54,7 @@ function getSpritesListHandler(getConfig) {
     res.header("Content-Type", "text/plain");
 
     return res.status(200).send(result);
-  }
+  };
 }
 
 export const serve_sprite = {

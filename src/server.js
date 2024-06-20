@@ -72,6 +72,28 @@ export function newServer(opts) {
 
   const getConfig = () => config;
 
+  const initService = async () => {
+    await Promise.all([
+      serve_font.add(config),
+      serve_sprite.add(config),
+      serve_data
+        .add(config)
+        .then(() =>
+          serve_style.add(config).then(() => serve_rendered.add(config))
+        ),
+    ])
+      .then(() => {
+        printLog("info", "Start service complete!");
+
+        startupComplete = true;
+      })
+      .catch((error) => {
+        printLog("error", `Failed to start service: ${error}`);
+
+        process.exit(1);
+      });
+  };
+
   app.get("/health", async (req, res, next) => {
     res.header("Content-Type", "text/plain");
 
@@ -112,28 +134,6 @@ export function newServer(opts) {
   app.use("/styles", serve_rendered.init(getConfig));
   app.use("/", serve_template.init(getConfig));
 
-  const initService = async () => {
-    await Promise.all([
-      serve_font.add(config),
-      serve_sprite.add(config),
-      serve_data
-        .add(config)
-        .then(() =>
-          serve_style.add(config).then(() => serve_rendered.add(config))
-        ),
-    ])
-      .then(() => {
-        printLog("info", "Start service complete!");
-
-        startupComplete = true;
-      })
-      .catch((error) => {
-        printLog("error", `Failed to start service: ${error}`);
-
-        process.exit(1);
-      });
-  };
-
   initService();
 
   app.listen(opts.port, () => {
@@ -142,6 +142,7 @@ export function newServer(opts) {
 
   const configFilePath = path.resolve(opts.dataDir, "config.json");
   let newChokidar;
+
   if (opts.kill > 0) {
     printLog(
       "info",

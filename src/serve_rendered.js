@@ -569,14 +569,11 @@ export const serve_rendered = {
                             `mbtiles://${name}/{z}/{x}/{y}.${info.format || "pbf"}`,
                           ];
 
-                          if (
-                            !attributionOverride &&
-                            source.attribution?.length > 0
-                          ) {
+                          if (!attributionOverride && source.attribution) {
                             if (
                               !tileJSON.attribution.includes(source.attribution)
                             ) {
-                              if (tileJSON.attribution.length > 0) {
+                              if (tileJSON.attribution) {
                                 tileJSON.attribution += " | ";
                               }
 
@@ -624,9 +621,9 @@ export const serve_rendered = {
                   `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || "pbf"}`,
                 ];
 
-                if (!attributionOverride && source.attribution?.length > 0) {
+                if (!attributionOverride && source.attribution) {
                   if (!tileJSON.attribution.includes(source.attribution)) {
-                    if (tileJSON.attribution.length > 0) {
+                    if (tileJSON.attribution) {
                       tileJSON.attribution += " | ";
                     }
 

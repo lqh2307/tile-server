@@ -9,7 +9,7 @@ import { getTileUrls } from "./utils.js";
 
 function serveFrontPageHandler(getConfig) {
   return async (req, res, next) => {
-    const config = getConfig()
+    const config = getConfig();
 
     if (config.options.frontPage === false) {
       res.header("Content-Type", "text/plain");
@@ -48,7 +48,7 @@ function serveFrontPageHandler(getConfig) {
           viewer_hash: viewerHash,
           thumbnail: thumbnail,
           name: name,
-          serve_wmts: config.options.serveWMTS === true
+          serve_wmts: config.options.serveWMTS === true,
         };
       }
     );
@@ -132,12 +132,12 @@ function serveFrontPageHandler(getConfig) {
     const compiled = handlebars.compile(file)(serveData);
 
     return res.status(200).send(compiled);
-  }
+  };
 }
 
 function serveStyleHandler(getConfig) {
   return async (req, res, next) => {
-    const config = getConfig()
+    const config = getConfig();
     const id = decodeURI(req.params.id);
     const style = config.repo.rendered[id];
 
@@ -165,12 +165,12 @@ function serveStyleHandler(getConfig) {
     const compiled = handlebars.compile(file)(serveData);
 
     return res.status(200).send(compiled);
-  }
+  };
 }
 
 function serveDataHandler(getConfig) {
   return async (req, res, next) => {
-    const config = getConfig()
+    const config = getConfig();
     const id = decodeURI(req.params.id);
     const data = config.repo.data[id];
 
@@ -199,16 +199,16 @@ function serveDataHandler(getConfig) {
     const compiled = handlebars.compile(file)(serveData);
 
     return res.status(200).send(compiled);
-  }
+  };
 }
 
 function serveWMTSHandler(getConfig) {
   return async (req, res, next) => {
-    const config = getConfig()
+    const config = getConfig();
 
     if (config.options.frontPage === false) {
       res.header("Content-Type", "text/plain");
-  
+
       return res.status(404).send("WMTS is not support");
     }
 
@@ -242,7 +242,7 @@ function serveWMTSHandler(getConfig) {
     res.header("Content-Type", "text/xml");
 
     return res.status(200).send(compiled);
-  }
+  };
 }
 
 export const serve_template = {
@@ -254,7 +254,7 @@ export const serve_template = {
 
     app.get("/$", serveFrontPageHandler(getConfig));
 
-    app.get("/styles/:id/wmts.xml", serveWMTSHandler(getConfig))
+    app.get("/styles/:id/wmts.xml", serveWMTSHandler(getConfig));
 
     app.get("/styles/:id/$", serveStyleHandler(getConfig));
 

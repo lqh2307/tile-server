@@ -8,7 +8,7 @@ import { fixUrl, printLog, getUrl } from "./utils.js";
 
 function getStyleHandler(getConfig) {
   return async (req, res, next) => {
-    const config = getConfig()
+    const config = getConfig();
     const id = decodeURI(req.params.id);
     const item = config.repo.styles[id];
 
@@ -42,12 +42,12 @@ function getStyleHandler(getConfig) {
 
       return res.status(404).send("Style is not found");
     }
-  }
+  };
 }
 
 function getStylesListHandler(getConfig) {
   return async (req, res, next) => {
-    const config = getConfig()
+    const config = getConfig();
     const styles = Object.keys(config.repo.styles);
 
     const result = styles.map((style) => {
@@ -63,7 +63,7 @@ function getStylesListHandler(getConfig) {
     res.header("Content-Type", "text/plain");
 
     return res.status(200).send(result);
-  }
+  };
 }
 
 export const serve_style = {
