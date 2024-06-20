@@ -4,6 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
 import { pngValidator } from "png-validator";
+import { PMTiles, FetchSource } from "pmtiles";
 
 /**
  * Replace local:// urls with public http(s):// urls
@@ -381,4 +382,158 @@ export function findCircularReferences(obj, parentName = "root") {
   }
 
   detectCycles(obj, parentName);
+}
+
+class PMTilesFileSource {
+  constructor(fd) {
+    this.fd = fd;
+  }
+
+  getKey() {
+    return this.fd;
+  }
+
+  async getBytes(offset, length) {
+    const buffer = Buffer.alloc(length);
+
+    fs.readSync(this.fd, buffer, 0, buffer.length, offset);
+
+    const data = buffer.buffer.slice(
+      buffer.byteOffset,
+      buffer.byteOffset + buffer.byteLength
+    );
+
+    return {
+      data: data,
+    };
+  }
+}
+
+/**
+ *
+ * @param filePath
+ */
+export function openPMtiles(filePath) {
+  let source;
+
+  if (isValidHttpUrl(filePath) === true) {
+    source = new FetchSource(filePath);
+  } else {
+    const fd = fs.openSync(filePath, "r");
+
+    source = new PMTilesFileSource(fd);
+  }
+
+  return new PMTiles(source);
+}
+
+/**
+ *
+ * @param pmtiles
+ */
+export async function getPMtilesInfo(pmtiles) {
+  const header = await pmtiles.getHeader();
+  const metadata = await pmtiles.getMetadata();
+
+  //Add missing metadata from header
+  metadata["format"] = getPmtilesTileType(header.tileType).type;
+  metadata["minzoom"] = header.minZoom;
+  metadata["maxzoom"] = header.maxZoom;
+
+  if (header.minLon && header.minLat && header.maxLon && header.maxLat) {
+    metadata["bounds"] = [
+      header.minLon,
+      header.minLat,
+      header.maxLon,
+      header.maxLat,
+    ];
+  } else {
+    metadata["bounds"] = [-180, -85.05112877980659, 180, 85.0511287798066];
+  }
+
+  if (header.centerZoom) {
+    metadata["center"] = [
+      header.centerLon,
+      header.centerLat,
+      header.centerZoom,
+    ];
+  } else {
+    metadata["center"] = [
+      header.centerLon,
+      header.centerLat,
+      parseInt(metadata["maxzoom"]) / 2,
+    ];
+  }
+
+  return metadata;
+}
+
+/**
+ *
+ * @param pmtiles
+ * @param z
+ * @param x
+ * @param y
+ */
+export async function getPMtilesTile(pmtiles, z, x, y) {
+  const header = await pmtiles.getHeader();
+  const tileType = getPmtilesTileType(header.tileType);
+  let zxyTile = await pmtiles.getZxy(z, x, y);
+
+  if (zxyTile && zxyTile.data) {
+    zxyTile = Buffer.from(zxyTile.data);
+  } else {
+    zxyTile = undefined;
+  }
+
+  return {
+    data: zxyTile,
+    header: tileType.header,
+  };
+}
+
+/**
+ *
+ * @param typenum
+ */
+function getPmtilesTileType(typenum) {
+  const header = {};
+  let tileType;
+
+  switch (typenum) {
+    case 0:
+      tileType = "Unknown";
+
+      break;
+    case 1:
+      tileType = "pbf";
+      header["Content-Type"] = "application/x-protobuf";
+
+      break;
+    case 2:
+      tileType = "png";
+      header["Content-Type"] = "image/png";
+
+      break;
+    case 3:
+      tileType = "jpeg";
+      header["Content-Type"] = "image/jpeg";
+
+      break;
+    case 4:
+      tileType = "webp";
+      header["Content-Type"] = "image/webp";
+
+      break;
+    case 5:
+      tileType = "avif";
+      header["Content-Type"] = "image/avif";
+
+      break;
+  }
+
+  return {
+    type: tileType,
+    header: header,
+  };
 }

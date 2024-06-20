@@ -11,18 +11,16 @@ import {
   getTileUrls,
   isValidHttpUrl,
   fixTileJSONCenter,
-  printLog,
-  getUrl,
-} from "./utils.js";
-import {
   openPMtiles,
   getPMtilesInfo,
   getPMtilesTile,
-} from "./pmtiles_adapter.js";
+  printLog,
+  getUrl,
+} from "./utils.js";
 
 function getDataTileHandler(getConfig) {
   return async (req, res, next) => {
-    const config = getConfig()
+    const config = getConfig();
     const id = decodeURI(req.params.id);
     const item = config.repo.data[id];
 
@@ -46,11 +44,7 @@ function getDataTileHandler(getConfig) {
       const maxXY = Math.pow(2, z);
 
       if (
-        !(
-          0 <= z &&
-          item.tileJSON.minzoom <= z &&
-          z <= item.tileJSON.maxzoom
-        ) ||
+        !(0 <= z && item.tileJSON.minzoom <= z && z <= item.tileJSON.maxzoom) ||
         !(0 <= x && x < maxXY) ||
         !(0 <= y && y < maxXY)
       ) {
@@ -100,9 +94,7 @@ function getDataTileHandler(getConfig) {
                   const layer = tile.layers[layerName];
 
                   for (let i = 0; i < layer.length; i++) {
-                    const featureGeoJSON = layer
-                      .feature(i)
-                      .toGeoJSON(x, y, z);
+                    const featureGeoJSON = layer.feature(i).toGeoJSON(x, y, z);
                     featureGeoJSON.properties.layer = layerName;
 
                     geojson.features.push(featureGeoJSON);
@@ -125,7 +117,7 @@ function getDataTileHandler(getConfig) {
           }
         });
       } else if (item.sourceType === "pmtiles") {
-        let { data, headers } = await getPMtilesTile(item.source, z, x, y);
+        let { data, headers = {} } = await getPMtilesTile(item.source, z, x, y);
 
         if (!data) {
           throw Error("Data is not found");
@@ -172,12 +164,12 @@ function getDataTileHandler(getConfig) {
 
       return res.status(404).send("Data is not found");
     }
-  }
+  };
 }
 
 function getDataHandler(getConfig) {
   return async (req, res, next) => {
-    const config = getConfig()
+    const config = getConfig();
     const id = decodeURI(req.params.id);
     const item = config.repo.data[id];
 
@@ -207,12 +199,12 @@ function getDataHandler(getConfig) {
 
       return res.status(404).send("Data is not found");
     }
-  }
+  };
 }
 
 function getDatasListHandler(getConfig) {
   return async (req, res, next) => {
-    const config = getConfig()
+    const config = getConfig();
     const datas = Object.keys(config.repo.data);
 
     const result = datas.map((data) => {
@@ -228,7 +220,7 @@ function getDatasListHandler(getConfig) {
     res.header("Content-Type", "text/plain");
 
     return res.status(200).send(result);
-  }
+  };
 }
 
 export const serve_data = {
@@ -317,7 +309,7 @@ export const serve_data = {
             dataInfo.sourceType = "pmtiles";
             dataInfo.source = openPMtiles(inputDataFile);
 
-            const info = await getPMtilesInfo(source);
+            const info = await getPMtilesInfo(dataInfo.source);
 
             Object.assign(dataInfo.tileJSON, info);
           } else {

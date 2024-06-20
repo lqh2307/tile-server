@@ -17,14 +17,12 @@ import {
   getFontsPbf,
   getTileUrls,
   fixTileJSONCenter,
-  printLog,
-  getUrl,
-} from "./utils.js";
-import {
   openPMtiles,
   getPMtilesInfo,
   getPMtilesTile,
-} from "./pmtiles_adapter.js";
+  printLog,
+  getUrl,
+} from "./utils.js";
 
 /**
  * Lookup of sharp output formats by file extension.
