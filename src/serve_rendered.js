@@ -126,9 +126,7 @@ function respondImage(config, item, z, lon, lat, tileSize, format, res) {
     return res.status(400).send("Invalid format");
   }
 
-  const pool = item.map.renderers;
-
-  pool.acquire((error, renderer) => {
+  item.map.renderers.acquire((error, renderer) => {
     // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
     let mlglZ;
     if (tileSize === 512) {
@@ -154,7 +152,7 @@ function respondImage(config, item, z, lon, lat, tileSize, format, res) {
     // END HACK(Part 1)
 
     renderer.render(params, (error, data) => {
-      pool.release(renderer);
+      item.map.renderers.release(renderer);
 
       const image = sharp(data, {
         raw: {
@@ -464,7 +462,6 @@ export const serve_rendered = {
       styles.map(async (style) => {
         const item = config.styles[style];
         const map = {
-          renderers: null,
           sources: {},
           sourceTypes: {},
         };
