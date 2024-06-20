@@ -55,7 +55,7 @@ function loadConfigFile(opts) {
   }
 }
 
-export function newServer(opts) {
+export function startServer(opts) {
   printLog("info", "Starting server...");
 
   const app = express()

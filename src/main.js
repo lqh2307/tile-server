@@ -3,7 +3,7 @@
 import os from "os";
 import fs from "node:fs";
 import path from "node:path";
-import { newServer } from "./server.js";
+import { startServer } from "./server.js";
 import { program } from "commander";
 import { printLog } from "./utils.js";
 
@@ -46,7 +46,7 @@ process.on("SIGTERM", () => {
 
 const opts = program.opts();
 
-newServer({
+startServer({
   port: Number(opts.port),
   dataDir: path.resolve(opts.dataDir),
   reload: Number(opts.reload),
