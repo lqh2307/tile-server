@@ -14,11 +14,9 @@ RUN \
   export DEBIAN_FRONTEND=noninteractive; \
   apt-get -qq update; \
   apt-get -y --no-install-recommends install \
-  pkg-config \
   build-essential \
   ca-certificates \
-  curl \
-  gnupg \
+  wget \
   xvfb \
   libglfw3-dev \
   libuv1-dev \
@@ -37,14 +35,12 @@ RUN \
   libpixman-1-0;
 
 RUN \
-  mkdir -p /etc/apt/keyrings; \
-  curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg; \
-  echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list; \
-  apt-get -qq update; \
-  apt-get install -y nodejs; \
+  wget -c https://nodejs.org/dist/v20.14.0/node-v20.14.0-linux-x64.tar.xz; \
+  tar -xvf node-v20.14.0-linux-x64.tar.xz; \
+  cp -r node-v20.14.0-linux-x64/bin node-v20.14.0-linux-x64/include node-v20.14.0-linux-x64/lib node-v20.14.0-linux-x64/share /usr/; \
   apt-get -y --purge autoremove; \
   apt-get clean; \
-  rm -rf /var/lib/apt/lists/*;
+  rm -rf /var/lib/apt/lists/* node-v20.14.0-linux-x64*;
 
 WORKDIR /tile-server
 
