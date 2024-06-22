@@ -308,7 +308,7 @@ export const serve_rendered = {
   init: (getConfig) => {
     const app = express();
 
-    app.get("/rendered.json", getRenderedsListHandler(getConfig));
+    app.get("/rendereds.json", getRenderedsListHandler(getConfig));
 
     app.get("/(:tileSize(256|512)/)?:id.json", getRenderedHandler(getConfig));
 
