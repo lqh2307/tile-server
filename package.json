@@ -1,6 +1,6 @@
 {
   "name": "tile-server",
-  "version": "1.0.2",
+  "version": "1.0.5",
   "description": "Tile server",
   "account": "quanghuy2307",
   "main": "src/main.js",

@@ -61,12 +61,12 @@ export const serve_sprite = {
   init: (getConfig) => {
     const app = express();
 
+    app.get("/sprites.json", getSpritesListHandler(getConfig));
+
     app.get(
       "/:id/sprite:scale(@\\d+x)?.:format((png|json){1})",
       getSpriteHandler(getConfig)
     );
-
-    app.get("/sprites.json", getSpritesListHandler(getConfig));
 
     return app;
   },

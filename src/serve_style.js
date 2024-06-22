@@ -70,9 +70,9 @@ export const serve_style = {
   init: (getConfig) => {
     const app = express();
 
-    app.get("/:id/style.json", getStyleHandler(getConfig));
-
     app.get("/styles.json", getStylesListHandler(getConfig));
+
+    app.get("/:id/style.json", getStyleHandler(getConfig));
 
     return app;
   },

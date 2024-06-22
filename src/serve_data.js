@@ -30,10 +30,11 @@ function getDataTileHandler(getConfig) {
       }
 
       const format = req.params.format;
+      const tileJSONFormat = item.tileJSON.format;
 
       if (
-        !(format === "geojson" && item.tileJSON.format === "pbf") &&
-        format !== item.tileJSON.format
+        !(format === "geojson" && tileJSONFormat === "pbf") &&
+        format !== tileJSONFormat
       ) {
         throw Error("Data is invalid format");
       }
@@ -52,7 +53,7 @@ function getDataTileHandler(getConfig) {
       }
 
       if (item.sourceType === "mbtiles") {
-        item.source.getTile(z, x, y, (error, data, headers) => {
+        item.source.getTile(z, x, y, (error, data, headers = {}) => {
           if (error) {
             if (/does not exist/.test(error.message)) {
               return res.status(204).send();
@@ -66,7 +67,7 @@ function getDataTileHandler(getConfig) {
               let isGzipped = false;
 
               if (
-                item.tileJSON.format === "pbf" &&
+                tileJSONFormat === "pbf" &&
                 data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0
               ) {
                 isGzipped = true;
@@ -82,7 +83,7 @@ function getDataTileHandler(getConfig) {
                   features: [],
                 };
 
-                if (isGzipped) {
+                if (isGzipped == true) {
                   data = zlib.unzipSync(data);
 
                   isGzipped = false;
@@ -108,7 +109,7 @@ function getDataTileHandler(getConfig) {
 
               res.set(headers);
 
-              if (!isGzipped) {
+              if (isGzipped == false) {
                 data = zlib.gzipSync(data);
               }
 
@@ -213,7 +214,7 @@ function getDatasListHandler(getConfig) {
       return {
         id: data,
         name: item.tileJSON.name,
-        url: `${getUrl(req)}data/${data}/data.json`,
+        url: `${getUrl(req)}data/${data}.json`,
       };
     });
 
@@ -227,14 +228,14 @@ export const serve_data = {
   init: (getConfig) => {
     const app = express();
 
+    app.get("/datas.json", getDatasListHandler(getConfig));
+
+    app.get("/:id.json", getDataHandler(getConfig));
+
     app.get(
       `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format((pbf|jpg|png|jpeg|webp|geojson){1})`,
       getDataTileHandler(getConfig)
     );
-
-    app.get("/datas.json", getDatasListHandler(getConfig));
-
-    app.get("/:id.json", getDataHandler(getConfig));
 
     return app;
   },

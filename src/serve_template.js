@@ -252,13 +252,13 @@ export const serve_template = {
       express.static(path.resolve("public", "resources"))
     );
 
-    app.get("/$", serveFrontPageHandler(getConfig));
-
     app.get("/styles/:id/wmts.xml", serveWMTSHandler(getConfig));
 
     app.get("/styles/:id/$", serveStyleHandler(getConfig));
 
     app.use("/data/:id/$", serveDataHandler(getConfig));
+
+    app.get("/$", serveFrontPageHandler(getConfig));
 
     return app;
   },

@@ -17,22 +17,12 @@ RUN \
   build-essential \
   ca-certificates \
   wget \
-  xvfb \
   libglfw3-dev \
   libuv1-dev \
-  libjpeg-turbo8 \
-  libicu70 \
-  libcairo2-dev \
-  libpango1.0-dev \
-  libjpeg-dev \
-  libgif-dev \
-  librsvg2-dev \
-  gir1.2-rsvg-2.0 \
-  librsvg2-2 \
-  librsvg2-common \
-  libcurl4-openssl-dev \
-  libpixman-1-dev \
-  libpixman-1-0;
+  libjpeg-turbo8-dev \
+  libicu-dev \
+  libvips-dev \
+  libcurl4-openssl-dev;
 
 RUN \
   wget -c https://nodejs.org/dist/v20.14.0/node-v20.14.0-linux-x64.tar.xz; \
@@ -67,13 +57,9 @@ RUN \
   libuv1 \
   libjpeg-turbo8 \
   libicu70 \
-  libcairo2 \
-  libgif7 \
   libopengl0 \
-  libpixman-1-0 \
   libcurl4 \
-  librsvg2-2 \
-  libpango-1.0-0; \
+  libvips42; \
   apt-get -y --purge autoremove; \
   apt-get clean; \
   rm -rf /var/lib/apt/lists/*;

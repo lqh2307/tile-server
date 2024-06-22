@@ -29,20 +29,20 @@ program
   .version(packageJSON.version, "-v, --version")
   .showHelpAfterError();
 
-program.parse(process.argv);
-
 process.env.UV_THREADPOOL_SIZE = Math.ceil(Math.max(4, os.cpus().length * 1.5)); // For libuv
 
 process.on("SIGINT", () => {
-  printLog("info", "Killed server!");
+  printLog("info", `Received "SIGINT" signal. Killed server!`);
 
   process.exit(0);
 });
 process.on("SIGTERM", () => {
-  printLog("info", "Killed server!");
+  printLog("info", `Received "SIGTERM" signal. Killed server!`);
 
   process.exit(0);
 });
+
+program.parse(process.argv);
 
 const opts = program.opts();
 

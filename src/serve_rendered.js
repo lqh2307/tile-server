@@ -261,7 +261,7 @@ function getRenderedHandler(getConfig) {
           req,
           item.tileJSON.tiles,
           `styles/${id}`,
-          Number(req.params.tileSize),
+          req.params.tileSize || 256,
           item.tileJSON.format
         ),
       };
@@ -290,7 +290,11 @@ function getRenderedsListHandler(getConfig) {
       return {
         id: rendered,
         name: tileJSON.name,
-        url: `${getUrl(req)}styles/${rendered}/${req.params || ""}{z}/{x}/{y}.${tileJSON.format}`,
+        urls: [
+          `${getUrl(req)}styles/${rendered}.json`,
+          `${getUrl(req)}styles/256/${rendered}.json`,
+          `${getUrl(req)}styles/512/${rendered}.json`,
+        ],
       };
     });
 
@@ -304,17 +308,14 @@ export const serve_rendered = {
   init: (getConfig) => {
     const app = express();
 
-    app.get(
-      "/(:tileSize(256|512)/)?rendered.json",
-      getRenderedsListHandler(getConfig)
-    );
+    app.get("/rendered.json", getRenderedsListHandler(getConfig));
+
+    app.get("/(:tileSize(256|512)/)?:id.json", getRenderedHandler(getConfig));
 
     app.get(
       `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+).:format((pbf|jpg|png|jpeg|webp|geojson){1})`,
       getRenderedTileHandler(getConfig)
     );
-
-    app.get("/(:tileSize(256|512)/)?:id.json", getRenderedHandler(getConfig));
 
     return app;
   },
