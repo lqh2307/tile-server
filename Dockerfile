@@ -14,13 +14,16 @@ RUN \
   export DEBIAN_FRONTEND=noninteractive; \
   apt-get -qq update; \
   apt-get -y --no-install-recommends install \
+  pkg-config \
   build-essential \
   ca-certificates \
   wget \
+  xvfb \
   libglfw3-dev \
   libuv1-dev \
   libjpeg-turbo8-dev \
   libicu-dev \
+  libopengl-dev \
   libvips-dev \
   libcurl4-openssl-dev;
 
