@@ -1,16 +1,18 @@
 {
   "name": "tile-server",
-  "version": "1.0.5",
-  "description": "Tile server",
-  "account": "quanghuy2307",
+  "description": "Vector and raster tile server",
+  "keywords": [
+    "maplibre-gl",
+    "tile-server"
+  ],
+  "license": "BSD-2-Clause",
   "main": "src/main.js",
-  "bin": "src/main.js",
   "type": "module",
   "scripts": {
     "start": "node src/main.js",
     "dev": "nodemon src/main.js",
-    "build-image": "ACCOUNT=$(grep -oP '(?<=\"account\": \")[^\"]*' package.json) && NAME=$(grep -oP '(?<=\"name\": \")[^\"]*' package.json) && TAG=$(grep -oP '(?<=\"version\": \")[^\"]*' package.json) && docker build -t $ACCOUNT/$NAME:$TAG .",
-    "release-image": "ACCOUNT=$(grep -oP '(?<=\"account\": \")[^\"]*' package.json) && NAME=$(grep -oP '(?<=\"name\": \")[^\"]*' package.json) && TAG=$(grep -oP '(?<=\"version\": \")[^\"]*' package.json) && docker push $ACCOUNT/$NAME:$TAG"
+    "build-image": "DOCKER_HUB_ACCOUNT=$(grep -oP '(?<=\"dockerHubAccount\": \")[^\"]*' package.json) && DOCKER_IMAGE_NAME=$(grep -oP '(?<=\"dockerImageName\": \")[^\"]*' package.json) && DOCKER_IMAGE_TAG=$(grep -oP '(?<=\"version\": \")[^\"]*' package.json) && docker build -t $DOCKER_HUB_ACCOUNT/$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG .",
+    "release-image": "DOCKER_HUB_ACCOUNT=$(grep -oP '(?<=\"dockerHubAccount\": \")[^\"]*' package.json) && DOCKER_IMAGE_NAME=$(grep -oP '(?<=\"dockerImageName\": \")[^\"]*' package.json) && DOCKER_IMAGE_TAG=$(grep -oP '(?<=\"version\": \")[^\"]*' package.json) && docker push $DOCKER_HUB_ACCOUNT/$DOCKER_IMAGE_NAME:$DOCKER_IMAGE_TAG"
   },
   "dependencies": {
     "@mapbox/glyph-pbf-composite": "0.0.3",
@@ -44,12 +46,14 @@
     "nodemon": "3.1.3",
     "prettier": "3.3.2"
   },
-  "keywords": [
-    "maplibre-gl",
-    "tile-server"
-  ],
-  "license": "BSD-2-Clause",
   "engines": {
     "node": ">=19 <21"
+  },
+  "params": {
+    "dockerHubAccount": "quanghuy2307",
+    "dockerImageName": "tile-server",
+    "version": "1.0.5",
+    "defaultListeningPort": "8080",
+    "defaultDataDir": "data"
   }
 }

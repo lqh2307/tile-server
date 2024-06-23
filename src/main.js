@@ -14,19 +14,22 @@ const packageJSON = JSON.parse(
 program
   .description("===== Tile server startup options =====")
   .usage("tile-server [options]")
-  .option("-d, --data-dir <path>", "data dir path", "data")
-  .option("-p, --port <port>", "listening port", "8080")
+  .option(
+    "-d, --data-dir <path>",
+    "data dir path",
+    packageJSON.params.defaultDataDir
+  )
+  .option(
+    "-p, --port <port>",
+    "listening port",
+    packageJSON.params.defaultListeningPort
+  )
   .option(
     "-r, --reload <interval>",
-    "monitor config file changes to reload server",
-    "0"
+    "monitor config file changes to reload data"
   )
-  .option(
-    "-k, --kill <interval>",
-    "monitor config file changes to kill server",
-    "0"
-  )
-  .version(packageJSON.version, "-v, --version")
+  .option("-k, --kill <interval>", "monitor config file changes to kill server")
+  .version(packageJSON.params.version, "-v, --version")
   .showHelpAfterError();
 
 process.env.UV_THREADPOOL_SIZE = Math.ceil(Math.max(4, os.cpus().length * 1.5)); // For libuv
