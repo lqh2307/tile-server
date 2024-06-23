@@ -8,12 +8,13 @@ import MBTiles from "@mapbox/mbtiles";
 import Pbf from "pbf";
 import { VectorTile } from "@mapbox/vector-tile";
 import {
-  getTileUrls,
-  isValidHttpUrl,
   fixTileJSONCenter,
-  openPMtiles,
+  isValidHttpUrl,
   getPMtilesInfo,
   getPMtilesTile,
+  downloadFile,
+  getTileUrls,
+  openPMtiles,
   printLog,
   getUrl,
 } from "./utils.js";
@@ -259,10 +260,17 @@ export const serve_data = {
           };
 
           if (item.mbtiles) {
+            let inputDataFile = "";
+
             if (isValidHttpUrl(item.mbtiles) === true) {
-              throw Error(`MBTiles data "${data}" is invalid`);
+              inputDataFile = path.join(
+                config.options.paths.mbtiles,
+                `${data}.mbtiles`
+              );
+
+              await downloadFile(item.mbtiles, inputDataFile);
             } else {
-              const inputDataFile = path.join(
+              inputDataFile = path.join(
                 config.options.paths.mbtiles,
                 item.mbtiles
               );
@@ -271,25 +279,25 @@ export const serve_data = {
               if (stat.isFile() === false || stat.size === 0) {
                 throw Error(`MBTiles data "${data}" is invalid`);
               }
+            }
 
-              dataInfo.sourceType = "mbtiles";
-              dataInfo.source = new MBTiles(
-                inputDataFile + "?mode=ro",
-                (error, mbtiles) => {
+            dataInfo.sourceType = "mbtiles";
+            dataInfo.source = new MBTiles(
+              inputDataFile + "?mode=ro",
+              (error, mbtiles) => {
+                if (error) {
+                  throw error;
+                }
+
+                mbtiles.getInfo((error, info) => {
                   if (error) {
                     throw error;
                   }
 
-                  mbtiles.getInfo((error, info) => {
-                    if (error) {
-                      throw error;
-                    }
-
-                    Object.assign(dataInfo.tileJSON, info);
-                  });
-                }
-              );
-            }
+                  Object.assign(dataInfo.tileJSON, info);
+                });
+              }
+            );
           } else if (item.pmtiles) {
             let inputDataFile = "";
 

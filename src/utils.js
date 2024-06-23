@@ -2,6 +2,7 @@
 
 import path from "node:path";
 import fs from "node:fs";
+import axios from "axios";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
 import { pngValidator } from "png-validator";
 import { PMTiles, FetchSource } from "pmtiles";
@@ -333,6 +334,43 @@ export function createRepoFile(repo, repoFilePath) {
     if (error) {
       throw error;
     }
+  });
+}
+
+export async function downloadFile(url, outputPath) {
+  if (fs.existsSync(outputPath) === true) {
+    const stat = fs.statSync(outputPath);
+    if (stat.isFile() && stat.size > 0) {
+      return outputPath;
+    }
+  }
+
+  const response = await axios({
+    url,
+    method: "GET",
+    responseType: "stream",
+  });
+
+  return new Promise((resolve, reject) => {
+    const writer = fs.createWriteStream(outputPath);
+
+    response.data.pipe(writer);
+
+    let error = null;
+
+    writer.on("error", (err) => {
+      error = err;
+
+      writer.close();
+
+      reject(err);
+    });
+
+    writer.on("close", () => {
+      if (!error) {
+        resolve(outputPath);
+      }
+    });
   });
 }
 

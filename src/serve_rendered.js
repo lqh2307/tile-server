@@ -14,12 +14,12 @@ import MBTiles from "@mapbox/mbtiles";
 import proj4 from "proj4";
 import axios from "axios";
 import {
-  getFontsPbf,
-  getTileUrls,
   fixTileJSONCenter,
-  openPMtiles,
   getPMtilesInfo,
   getPMtilesTile,
+  getFontsPbf,
+  getTileUrls,
+  openPMtiles,
   printLog,
   getUrl,
 } from "./utils.js";
