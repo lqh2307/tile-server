@@ -270,6 +270,8 @@ export const serve_data = {
               );
 
               await downloadFile(item.mbtiles, inputDataFile);
+
+              item.mbtiles = path.join(data, `${data}.mbtiles`);
             } else {
               inputDataFile = path.join(
                 config.options.paths.mbtiles,
