@@ -24,7 +24,8 @@ RUN \
   libjpeg-turbo8-dev \
   libicu-dev \
   libopengl-dev \
-  libvips-dev \
+  libpng-dev \
+  libwebp-dev \
   libcurl4-openssl-dev;
 
 RUN \
@@ -61,8 +62,9 @@ RUN \
   libjpeg-turbo8 \
   libicu70 \
   libopengl0 \
-  libcurl4 \
-  libvips42; \
+  libpng16-16 \
+  libwebp7 \
+  libcurl4; \
   apt-get -y --purge autoremove; \
   apt-get clean; \
   rm -rf /var/lib/apt/lists/*;
