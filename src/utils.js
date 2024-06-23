@@ -337,8 +337,8 @@ export function createRepoFile(repo, repoFilePath) {
   });
 }
 
-export async function downloadFile(url, outputPath) {
-  if (fs.existsSync(outputPath) === true) {
+export async function downloadFile(url, outputPath, overwrite = false) {
+  if (fs.existsSync(outputPath) === true && overwrite === false) {
     const stat = fs.statSync(outputPath);
     if (stat.isFile() && stat.size > 0) {
       return outputPath;
@@ -352,6 +352,13 @@ export async function downloadFile(url, outputPath) {
   });
 
   return new Promise((resolve, reject) => {
+    const dir = path.dirname(outputPath);
+    if (fs.existsSync(dir) === false) {
+      fs.mkdirSync(dir, {
+        recursive: true,
+      });
+    }
+
     const writer = fs.createWriteStream(outputPath);
 
     response.data.pipe(writer);

@@ -265,6 +265,7 @@ export const serve_data = {
             if (isValidHttpUrl(item.mbtiles) === true) {
               inputDataFile = path.join(
                 config.options.paths.mbtiles,
+                data,
                 `${data}.mbtiles`
               );
 
