@@ -260,6 +260,19 @@ export function createRepoFile(repo, repoFilePath) {
   });
 }
 
+export function printUsedMemory(interval) {
+  setInterval(() => {
+    const memoryUsage = process.memoryUsage();
+
+    console.log(`===============================`);
+
+    console.log(`RSS: ${memoryUsage.rss}`);
+    console.log(`Heap Total: ${memoryUsage.heapTotal}`);
+    console.log(`Heap Used: ${memoryUsage.heapUsed}`);
+    console.log(`External: ${memoryUsage.external}`);
+  }, interval);
+}
+
 export async function downloadFile(url, outputPath, overwrite = false) {
   if (fs.existsSync(outputPath) === true && overwrite === false) {
     const stat = fs.statSync(outputPath);

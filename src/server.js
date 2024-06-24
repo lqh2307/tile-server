@@ -72,6 +72,16 @@ export function startServer(opts) {
     startupComplete = false;
 
     try {
+      /*
+      await Promise.all([
+        serve_font.remove(config),
+        serve_sprite.remove(config),
+        serve_data.remove(config),
+        serve_style.remove(config),
+        serve_rendered.remove(config),
+      ]);
+      */
+
       await Promise.all([
         serve_font.add(config),
         serve_sprite.add(config),
