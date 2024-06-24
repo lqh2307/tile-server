@@ -26,15 +26,17 @@ RUN \
   libopengl-dev \
   libpng-dev \
   libwebp-dev \
-  libcurl4-openssl-dev;
+  libcurl4-openssl-dev; \
+  apt-get -y --purge autoremove; \
+  apt-get clean; \
+  rm -rf /var/lib/apt/lists/*;
 
 RUN \
   wget -c https://nodejs.org/dist/v20.14.0/node-v20.14.0-linux-x64.tar.xz; \
   tar -xvf node-v20.14.0-linux-x64.tar.xz; \
   cp -r node-v20.14.0-linux-x64/bin node-v20.14.0-linux-x64/include node-v20.14.0-linux-x64/lib node-v20.14.0-linux-x64/share /usr/; \
-  apt-get -y --purge autoremove; \
-  apt-get clean; \
-  rm -rf /var/lib/apt/lists/* node-v20.14.0-linux-x64*;
+  npm i npm@latest; \
+  rm -rf node-v20.14.0-linux-x64*;
 
 WORKDIR /tile-server
 

@@ -16,15 +16,13 @@ function getSpriteHandler(getConfig) {
         throw Error("Sprite is not found");
       }
 
-      const format = req.params.format || "";
-
       const data = fs.readFileSync(
-        `${path.join(config.options.paths.sprites, id, "sprite")}${req.params.scale || ""}.${format}`
+        `${path.join(config.options.paths.sprites, id, "sprite")}${req.params.scale || ""}.${req.params.format}`
       );
 
-      if (format === "json") {
+      if (req.params.format === "json") {
         res.header("Content-type", "application/json");
-      } else if (format === "png") {
+      } else if (req.params.format === "png") {
         res.header("Content-type", "image/png");
       }
 

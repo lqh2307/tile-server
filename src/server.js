@@ -10,6 +10,7 @@ import { serve_rendered } from "./serve_rendered.js";
 import { serve_sprite } from "./serve_sprite.js";
 import { serve_template } from "./serve_template.js";
 import { printLog } from "./utils.js";
+import { Mutex } from "async-mutex";
 
 function loadConfigFile(opts) {
   const configFilePath = path.resolve(opts.dataDir, "config.json");
@@ -59,32 +60,38 @@ export function startServer(opts) {
 
   let startupComplete = false;
 
+  const mutex = new Mutex();
+
   const getConfig = () => config;
 
   const loadData = async () => {
+    const release = await mutex.acquire();
+
     printLog("info", "Loading data...");
 
     startupComplete = false;
 
-    await Promise.all([
-      serve_font.add(config),
-      serve_sprite.add(config),
-      serve_data
-        .add(config)
-        .then(() =>
-          serve_style.add(config).then(() => serve_rendered.add(config))
-        ),
-    ])
-      .then(() => {
-        printLog("info", "Load data complete!");
+    try {
+      await Promise.all([
+        serve_font.add(config),
+        serve_sprite.add(config),
+        serve_data
+          .add(config)
+          .then(() =>
+            serve_style.add(config).then(() => serve_rendered.add(config))
+          ),
+      ]);
 
-        startupComplete = true;
-      })
-      .catch((error) => {
-        printLog("error", `Failed to load data: ${error}`);
+      printLog("info", "Load data complete!");
 
-        process.exit(1);
-      });
+      startupComplete = true;
+    } catch (error) {
+      printLog("error", `Failed to load data: ${error}`);
+
+      process.exit(1);
+    } finally {
+      release();
+    }
   };
 
   loadData();
