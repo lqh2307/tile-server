@@ -18,7 +18,6 @@ import {
   getPMtilesInfo,
   getPMtilesTile,
   getFontsPbf,
-  getTileUrls,
   openPMtiles,
   printLog,
   getUrl,
@@ -257,13 +256,9 @@ function getRenderedHandler(getConfig) {
 
       const info = {
         ...item.tileJSON,
-        tiles: getTileUrls(
-          req,
-          item.tileJSON.tiles,
-          `styles/${id}`,
-          req.params.tileSize || 256,
-          item.tileJSON.format
-        ),
+        tiles: [
+          `${getUrl(req)}styles/${id}/${req.params.tileSize || 256}/{z}/{x}/{y}.${item.tileJSON.format}`,
+        ],
       };
 
       res.header("Content-type", "application/json");
@@ -483,7 +478,6 @@ export const serve_rendered = {
             bounds: [-180, -85.0511, 180, 85.0511],
             format: "png",
             type: "baselayer",
-            tiles: config.options.domains,
           };
 
           const attributionOverride = !!item.tilejson?.attribution;
@@ -566,7 +560,6 @@ export const serve_rendered = {
 
                           source.type = type;
                           source.tiles = [
-                            // meta url which will be detected when requested
                             `mbtiles://${name}/{z}/{x}/{y}.${info.format || "pbf"}`,
                           ];
 
@@ -618,7 +611,6 @@ export const serve_rendered = {
 
                 source.type = type;
                 source.tiles = [
-                  // meta url which will be detected when requested
                   `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || "pbf"}`,
                 ];
 

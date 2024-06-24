@@ -5,7 +5,7 @@ import path from "node:path";
 import express from "express";
 import handlebars from "handlebars";
 import SphericalMercator from "@mapbox/sphericalmercator";
-import { getTileUrls } from "./utils.js";
+import { getUrl } from "./utils.js";
 
 function serveFrontPageHandler(getConfig) {
   return async (req, res, next) => {
@@ -23,15 +23,8 @@ function serveFrontPageHandler(getConfig) {
     const renderedPromises = Object.keys(config.repo.rendered).map(
       async (id) => {
         const style = config.repo.rendered[id];
-        const { center, tiles, format, name = "" } = style.tileJSON;
+        const center = style.tileJSON.center;
         const tileSize = 256;
-        const xyzLink = getTileUrls(
-          req,
-          tiles,
-          `styles/${id}`,
-          tileSize,
-          format
-        )[0];
 
         let viewerHash = "";
         let thumbnail = "";
@@ -44,10 +37,10 @@ function serveFrontPageHandler(getConfig) {
         }
 
         styles[id] = {
-          xyz_link: xyzLink,
+          name: style.tileJSON.name || "",
+          xyz_link: `${getUrl(req)}styles/${id}/${tileSize}/{z}/{x}/{y}.${style.tileJSON.format}`,
           viewer_hash: viewerHash,
           thumbnail: thumbnail,
-          name: name,
           serve_wmts: config.options.serveWMTS === true,
         };
       }
@@ -56,19 +49,13 @@ function serveFrontPageHandler(getConfig) {
     const datas = {};
     const dataPromises = Object.keys(config.repo.data).map(async (id) => {
       const data = config.repo.data[id];
-      const { center, filesize, format, tiles, name = "" } = data.tileJSON;
-      const tileSize = 256;
-      const xyzLink = getTileUrls(
-        req,
-        tiles,
-        `data/${id}`,
-        undefined,
-        format
-      )[0];
+      const { center, format } = data.tileJSON;
 
       let viewerHash = "";
       let thumbnail = "";
       if (center) {
+        const tileSize = 256;
+
         viewerHash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
 
         if (format !== "pbf") {
@@ -79,9 +66,9 @@ function serveFrontPageHandler(getConfig) {
       }
 
       let formattedFilesize = "unknown";
-      if (filesize) {
+      if (data.tileJSON.filesize) {
         let suffix = "kB";
-        let size = parseInt(filesize, 10) / 1024;
+        let size = parseInt(data.tileJSON.filesize, 10) / 1024;
 
         if (size > 1024) {
           suffix = "MB";
@@ -97,13 +84,13 @@ function serveFrontPageHandler(getConfig) {
       }
 
       datas[id] = {
-        xyz_link: xyzLink,
+        xyz_link: `${getUrl(req)}data/${id}/{z}/{x}/{y}.${format}`,
         viewer_hash: viewerHash,
         thumbnail: thumbnail,
         source_type: data.sourceType,
         is_vector: format === "pbf",
         formatted_filesize: formattedFilesize,
-        name: name,
+        name: data.tileJSON.name || "",
       };
     });
 
@@ -117,12 +104,6 @@ function serveFrontPageHandler(getConfig) {
       data: dataCount ? datas : null,
       style_count: styleCount,
       data_count: dataCount,
-      key_query_part: req.query.key
-        ? `key=${encodeURIComponent(req.query.key)}&amp;`
-        : "",
-      key_query: req.query.key
-        ? `?key=${encodeURIComponent(req.query.key)}`
-        : "",
     };
 
     const file = fs
@@ -150,12 +131,6 @@ function serveStyleHandler(getConfig) {
     const serveData = {
       id: id,
       name: style.tileJSON.name || "",
-      key_query_part: req.query.key
-        ? `key=${encodeURIComponent(req.query.key)}&amp;`
-        : "",
-      key_query: req.query.key
-        ? `?key=${encodeURIComponent(req.query.key)}`
-        : "",
     };
 
     const file = fs
@@ -184,12 +159,6 @@ function serveDataHandler(getConfig) {
       id: id,
       name: data.tileJSON.name || "",
       is_vector: data.tileJSON.format === "pbf",
-      key_query_part: req.query.key
-        ? `key=${encodeURIComponent(req.query.key)}&amp;`
-        : "",
-      key_query: req.query.key
-        ? `?key=${encodeURIComponent(req.query.key)}`
-        : "",
     };
 
     const file = fs
@@ -225,12 +194,6 @@ function serveWMTSHandler(getConfig) {
       id: id,
       name: wmts.tileJSON.name || "",
       base_url: `${req.get("X-Forwarded-Protocol") ? req.get("X-Forwarded-Protocol") : req.protocol}://${req.get("host")}/`,
-      key_query_part: req.query.key
-        ? `key=${encodeURIComponent(req.query.key)}&amp;`
-        : "",
-      key_query: req.query.key
-        ? `?key=${encodeURIComponent(req.query.key)}`
-        : "",
     };
 
     const file = fs

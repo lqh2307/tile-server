@@ -43,12 +43,19 @@ function findFiles(dirPath, regex, isRecurse = false, isJustBaseName = false) {
 }
 
 /**
- * Generate new URL object
+ * Replace local:// urls with public http(s):// urls
  * @param req
- * @params {object} req - Express request
- * @returns {URL} object
+ * @param url
  */
-function getUrlObject(req) {
+export function fixUrl(req, url) {
+  if (!url || typeof url !== "string" || url.indexOf("local://") !== 0) {
+    return url;
+  }
+
+  return url.replace("local://", getUrl(req));
+}
+
+export function getUrl(req) {
   const urlObject = new URL(`${req.protocol}://${req.headers.host}/`);
 
   // support overriding hostname by sending X-Forwarded-Host http header
@@ -60,91 +67,7 @@ function getUrlObject(req) {
     urlObject.pathname = path.posix.join(xForwardedPath, urlObject.pathname);
   }
 
-  return urlObject;
-}
-
-/**
- * Replace local:// urls with public http(s):// urls
- * @param req
- * @param url
- */
-export function fixUrl(req, url) {
-  if (!url || typeof url !== "string" || url.indexOf("local://") !== 0) {
-    return url;
-  }
-
-  const queryParams = [];
-  if (req.query.key) {
-    queryParams.unshift(`key=${encodeURIComponent(req.query.key)}`);
-  }
-
-  let query = "";
-  if (queryParams.length) {
-    query = `?${queryParams.join("&")}`;
-  }
-
-  return url.replace("local://", getUrl(req)) + query;
-}
-
-export function getUrl(req) {
-  return getUrlObject(req).toString();
-}
-
-export function getTileUrls(req, domains, path, tileSize, format) {
-  const urlObject = getUrlObject(req);
-
-  if (domains) {
-    if (domains.constructor === String && domains.length > 0) {
-      domains = domains.split(",");
-    }
-
-    const hostParts = urlObject.host.split(".");
-    const relativeSubdomainsUsable =
-      hostParts.length > 1 &&
-      !/^([0-9]{1,3}\.){3}[0-9]{1,3}(\:[0-9]+)?$/.test(urlObject.host);
-    const newDomains = [];
-    for (const domain of domains) {
-      if (domain.indexOf("*") !== -1) {
-        if (relativeSubdomainsUsable) {
-          const newParts = hostParts.slice(1);
-          newParts.unshift(domain.replace("*", hostParts[0]));
-          newDomains.push(newParts.join("."));
-        }
-      } else {
-        newDomains.push(domain);
-      }
-    }
-
-    domains = newDomains;
-  }
-
-  if (!domains || domains.length === 0) {
-    domains = [urlObject.host];
-  }
-
-  const queryParams = [];
-  if (req.query.key) {
-    queryParams.push(`key=${encodeURIComponent(req.query.key)}`);
-  }
-
-  if (req.query.style) {
-    queryParams.push(`style=${encodeURIComponent(req.query.style)}`);
-  }
-
-  const query = queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
-
-  let tileParams = `{z}/{x}/{y}`;
-  if (tileSize && ["png", "jpg", "jpeg", "webp"].includes(format)) {
-    tileParams = `${tileSize}/{z}/{x}/{y}`;
-  }
-
-  const xForwardedPath = `${req.get("X-Forwarded-Path") ? "/" + req.get("X-Forwarded-Path") : ""}`;
-  const uris = domains.map(
-    (domain) =>
-      `${req.protocol}://${domain}${xForwardedPath}/${path}/${tileParams}.${format || ""}${query}`
-  );
-
-  return uris;
+  return urlObject.toString();
 }
 
 export function fixTileJSONCenter(tileJSON) {

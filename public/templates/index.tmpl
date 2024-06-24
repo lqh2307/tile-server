@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Preview - Tile Server</title>
-  <link rel="stylesheet" type="text/css" href="/index.css{{&key_query}}" />
+  <link rel="stylesheet" type="text/css" href="/index.css" />
   <script>
     function toggleXYZ(id, event) {
       event.preventDefault();
@@ -77,17 +77,17 @@
         {{#each styles}}
           <div class="item">
             {{#if thumbnail}}
-              <img src="/styles/{{@key}}/{{thumbnail}}{{&../key_query}}" alt="{{name}} preview" />
+              <img src="/styles/{{@key}}/{{thumbnail}}" alt="{{name}} preview" />
             {{else}}
-              <img src="/images/placeholder.png{{&key_query}}" alt="{{name}} preview" />
+              <img src="/images/placeholder.png" alt="{{name}} preview" />
             {{/if}}
             <div class="details">
               <h3>{{name}}</h3>
               <p class="identifier">identifier: {{@key}}</p>
               <p class="services">
-                services: <a href="/styles/{{@key}}/style.json{{&../key_query}}">Style</a> | <a href="/styles/{{@key}}.json{{&../key_query}}">TileJSON</a>
+                services: <a href="/styles/{{@key}}/style.json">Style</a> | <a href="/styles/{{@key}}.json">TileJSON</a>
                 {{#if serve_wmts}}
-                  | <a href="/styles/{{@key}}/wmts.xml{{&../key_query}}">WMTS</a>
+                  | <a href="/styles/{{@key}}/wmts.xml">WMTS</a>
                 {{/if}}
                 {{#if xyz_link}}
                   | <a href="#" onclick="toggleXYZ('xyz_style_{{@key}}', event);">XYZ</a>
@@ -96,9 +96,9 @@
               </p>
             </div>
             <div class="viewers">
-                <a class="btn" href="/styles/{{@key}}/{{&../key_query}}{{viewer_hash}}">Viewer</a>
-                <a class="btn" href="/styles/{{@key}}/?{{&../key_query_part}}raster{{viewer_hash}}">Raster</a>
-                <a class="btn" href="/styles/{{@key}}/?{{&../key_query_part}}vector{{viewer_hash}}">Vector</a>
+                <a class="btn" href="/styles/{{@key}}/{{viewer_hash}}">Viewer</a>
+                <a class="btn" href="/styles/{{@key}}/?raster{{viewer_hash}}">Raster</a>
+                <a class="btn" href="/styles/{{@key}}/?vector{{viewer_hash}}">Vector</a>
             </div>
           </div>
         {{/each}}
@@ -111,9 +111,9 @@
         {{#each data}}
           <div class="item">
             {{#if thumbnail}}
-              <img src="/data/{{@key}}/{{thumbnail}}{{&../key_query}}" alt="{{name}} preview" />
+              <img src="/data/{{@key}}/{{thumbnail}}" alt="{{name}} preview" />
             {{else}}
-              <img src="/images/placeholder.png{{&key_query}}" alt="{{name}} preview" />
+              <img src="/images/placeholder.png" alt="{{name}} preview" />
             {{/if}}
             <div class="details">
               <h3>{{name}}</h3>
@@ -121,7 +121,7 @@
               <div class="identifier">size: {{formatted_filesize}}</div>
               <div class="identifier">type: {{#if is_vector}}vector{{else}}raster{{/if}} {{#if source_type}} | ext: {{source_type}}{{/if}}</div>
               <p class="services">
-                services: <a href="/data/{{@key}}.json{{&../key_query}}">TileJSON</a>
+                services: <a href="/data/{{@key}}.json">TileJSON</a>
                 {{#if xyz_link}}
                   | <a href="#" onclick="toggleXYZ('xyz_data_{{@key}}', event);">XYZ</a>
                   <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{&xyz_link}}" onclick="copyToClipboard(this);" />
@@ -130,9 +130,9 @@
             </div>
             <div class="viewers">
               {{#if is_vector}}
-                  <a class="btn" href="/data/{{@key}}/{{&../key_query}}{{viewer_hash}}">Inspect</a>
+                  <a class="btn" href="/data/{{@key}}/{{viewer_hash}}">Inspect</a>
               {{else}}
-                  <a class="btn" href="/data/{{@key}}/{{&../key_query}}{{viewer_hash}}">View</a>
+                  <a class="btn" href="/data/{{@key}}/{{viewer_hash}}">View</a>
               {{/if}}
             </div>
           </div>

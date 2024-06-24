@@ -8,7 +8,6 @@
       "mbtiles": "mbtiles",
       "pmtiles": "pmtiles"
     },
-    "domains": [],
     "formatQuality": {
       "jpeg": 100,
       "webp": 100

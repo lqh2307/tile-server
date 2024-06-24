@@ -13,7 +13,6 @@ import {
   getPMtilesInfo,
   getPMtilesTile,
   downloadFile,
-  getTileUrls,
   openPMtiles,
   printLog,
   getUrl,
@@ -182,13 +181,7 @@ function getDataHandler(getConfig) {
 
       const info = {
         ...item.tileJSON,
-        tiles: getTileUrls(
-          req,
-          item.tileJSON.tiles,
-          `data/${id}`,
-          undefined,
-          item.tileJSON.format
-        ),
+        tiles: [`${getUrl(req)}data/${id}/{z}/{x}/{y}.${item.tileJSON.format}`],
       };
 
       res.header("Content-type", "application/json");
@@ -255,7 +248,6 @@ export const serve_data = {
           const dataInfo = {
             tileJSON: {
               tilejson: "2.2.0",
-              tiles: config.options.domains,
             },
           };
 
