@@ -12,8 +12,6 @@ function serveFrontPageHandler(getConfig) {
     const config = getConfig();
 
     if (config.options.frontPage === false) {
-      res.header("Content-Type", "text/plain");
-
       return res.status(404).send("Front page is not support");
     }
 
@@ -98,7 +96,6 @@ function serveFrontPageHandler(getConfig) {
 
     const styleCount = Object.keys(styles).length;
     const dataCount = Object.keys(datas).length;
-
     const serveData = {
       styles: styleCount ? styles : null,
       data: dataCount ? datas : null,
@@ -106,11 +103,11 @@ function serveFrontPageHandler(getConfig) {
       data_count: dataCount,
     };
 
-    const file = fs
-      .readFileSync(path.resolve("public", "templates", "index.tmpl"))
-      .toString();
-
-    const compiled = handlebars.compile(file)(serveData);
+    const compiled = handlebars.compile(
+      fs
+        .readFileSync(path.resolve("public", "templates", "index.tmpl"))
+        .toString()
+    )(serveData);
 
     return res.status(200).send(compiled);
   };
@@ -123,8 +120,6 @@ function serveStyleHandler(getConfig) {
     const style = config.repo.rendered[id];
 
     if (!style) {
-      res.header("Content-Type", "text/plain");
-
       return res.status(404).send("Style is not found");
     }
 
@@ -133,11 +128,11 @@ function serveStyleHandler(getConfig) {
       name: style.tileJSON.name || "",
     };
 
-    const file = fs
-      .readFileSync(path.resolve("public", "templates", "viewer.tmpl"))
-      .toString();
-
-    const compiled = handlebars.compile(file)(serveData);
+    const compiled = handlebars.compile(
+      fs
+        .readFileSync(path.resolve("public", "templates", "viewer.tmpl"))
+        .toString()
+    )(serveData);
 
     return res.status(200).send(compiled);
   };
@@ -150,8 +145,6 @@ function serveDataHandler(getConfig) {
     const data = config.repo.data[id];
 
     if (!data) {
-      res.header("Content-Type", "text/plain");
-
       return res.status(404).send("Data is not found");
     }
 
@@ -161,11 +154,11 @@ function serveDataHandler(getConfig) {
       is_vector: data.tileJSON.format === "pbf",
     };
 
-    const file = fs
-      .readFileSync(path.resolve("public", "templates", "data.tmpl"))
-      .toString();
-
-    const compiled = handlebars.compile(file)(serveData);
+    const compiled = handlebars.compile(
+      fs
+        .readFileSync(path.resolve("public", "templates", "data.tmpl"))
+        .toString()
+    )(serveData);
 
     return res.status(200).send(compiled);
   };
@@ -176,8 +169,6 @@ function serveWMTSHandler(getConfig) {
     const config = getConfig();
 
     if (config.options.frontPage === false) {
-      res.header("Content-Type", "text/plain");
-
       return res.status(404).send("WMTS is not support");
     }
 
@@ -185,8 +176,6 @@ function serveWMTSHandler(getConfig) {
     const wmts = config.repo.rendered[id];
 
     if (!wmts) {
-      res.header("Content-Type", "text/plain");
-
       return res.status(404).send("WMTS is not found");
     }
 
@@ -196,11 +185,11 @@ function serveWMTSHandler(getConfig) {
       base_url: `${req.get("X-Forwarded-Protocol") ? req.get("X-Forwarded-Protocol") : req.protocol}://${req.get("host")}/`,
     };
 
-    const file = fs
-      .readFileSync(path.resolve("public", "templates", "wmts.tmpl"))
-      .toString();
-
-    const compiled = handlebars.compile(file)(serveData);
+    const compiled = handlebars.compile(
+      fs
+        .readFileSync(path.resolve("public", "templates", "wmts.tmpl"))
+        .toString()
+    )(serveData);
 
     res.header("Content-Type", "text/xml");
 
@@ -216,11 +205,8 @@ export const serve_template = {
     );
 
     app.get("/styles/:id/wmts.xml", serveWMTSHandler(getConfig));
-
     app.get("/styles/:id/$", serveStyleHandler(getConfig));
-
     app.use("/data/:id/$", serveDataHandler(getConfig));
-
     app.get("/$", serveFrontPageHandler(getConfig));
 
     return app;

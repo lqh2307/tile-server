@@ -11,11 +11,11 @@ function getSpriteHandler(getConfig) {
     const id = decodeURI(req.params.id);
     const item = config.repo.sprites[id];
 
-    try {
-      if (!item) {
-        throw Error("Sprite is not found");
-      }
+    if (!item) {
+      return res.status(404).send("Sprite is not found");
+    }
 
+    try {
       const data = fs.readFileSync(
         `${path.join(config.options.paths.sprites, id, "sprite")}${req.params.scale || ""}.${req.params.format}`
       );
@@ -29,8 +29,6 @@ function getSpriteHandler(getConfig) {
       return res.status(200).send(data);
     } catch (error) {
       printLog("error", `Failed to get sprite "${id}": ${error}`);
-
-      res.header("Content-Type", "text/plain");
 
       return res.status(404).send("Sprite is not found");
     }
@@ -49,8 +47,6 @@ function getSpritesListHandler(getConfig) {
       };
     });
 
-    res.header("Content-Type", "text/plain");
-
     return res.status(200).send(result);
   };
 }
@@ -60,7 +56,6 @@ export const serve_sprite = {
     const app = express();
 
     app.get("/sprites.json", getSpritesListHandler(getConfig));
-
     app.get(
       "/:id/sprite:scale(@\\d+x)?.:format((png|json){1})",
       getSpriteHandler(getConfig)

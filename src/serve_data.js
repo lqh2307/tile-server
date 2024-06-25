@@ -24,34 +24,34 @@ function getDataTileHandler(getConfig) {
     const id = decodeURI(req.params.id);
     const item = config.repo.data[id];
 
+    if (!item) {
+      return res.status(404).send("Data is not found");
+    }
+
+    const format = req.params.format;
+    const tileJSONFormat = item.tileJSON.format;
+
+    if (
+      !(format === "geojson" && tileJSONFormat === "pbf") &&
+      format !== tileJSONFormat
+    ) {
+      return res.status(400).send("Data format is invalid");
+    }
+
+    const z = Number(req.params.z);
+    const x = Number(req.params.x);
+    const y = Number(req.params.y);
+    const maxXY = Math.pow(2, z);
+
+    if (
+      !(0 <= z && item.tileJSON.minzoom <= z && z <= item.tileJSON.maxzoom) ||
+      !(0 <= x && x < maxXY) ||
+      !(0 <= y && y < maxXY)
+    ) {
+      return res.status(400).send("Data is out of bounds");
+    }
+
     try {
-      if (!item) {
-        throw Error("Data is not found");
-      }
-
-      const format = req.params.format;
-      const tileJSONFormat = item.tileJSON.format;
-
-      if (
-        !(format === "geojson" && tileJSONFormat === "pbf") &&
-        format !== tileJSONFormat
-      ) {
-        throw Error("Data is invalid format");
-      }
-
-      const z = Number(req.params.z);
-      const x = Number(req.params.x);
-      const y = Number(req.params.y);
-      const maxXY = Math.pow(2, z);
-
-      if (
-        !(0 <= z && item.tileJSON.minzoom <= z && z <= item.tileJSON.maxzoom) ||
-        !(0 <= x && x < maxXY) ||
-        !(0 <= y && y < maxXY)
-      ) {
-        throw Error("Data is out of bounds");
-      }
-
       if (item.sourceType === "mbtiles") {
         item.source.getTile(z, x, y, (error, data, headers = {}) => {
           if (error) {
@@ -83,7 +83,7 @@ function getDataTileHandler(getConfig) {
                   features: [],
                 };
 
-                if (isGzipped == true) {
+                if (isGzipped === true) {
                   data = zlib.unzipSync(data);
 
                   isGzipped = false;
@@ -109,7 +109,7 @@ function getDataTileHandler(getConfig) {
 
               res.set(headers);
 
-              if (isGzipped == false) {
+              if (isGzipped === false) {
                 data = zlib.gzipSync(data);
               }
 
@@ -161,8 +161,6 @@ function getDataTileHandler(getConfig) {
     } catch (error) {
       printLog("error", `Failed to get data "${id}": ${error}`);
 
-      res.header("Content-Type", "text/plain");
-
       return res.status(404).send("Data is not found");
     }
   };
@@ -174,11 +172,11 @@ function getDataHandler(getConfig) {
     const id = decodeURI(req.params.id);
     const item = config.repo.data[id];
 
-    try {
-      if (!item) {
-        throw Error("Data is not found");
-      }
+    if (!item) {
+      return res.status(404).send("Data is not found");
+    }
 
+    try {
       const info = {
         ...item.tileJSON,
         tiles: [`${getUrl(req)}data/${id}/{z}/{x}/{y}.${item.tileJSON.format}`],
@@ -189,8 +187,6 @@ function getDataHandler(getConfig) {
       return res.status(200).send(info);
     } catch (error) {
       printLog("error", `Failed to get data "${id}": ${error}`);
-
-      res.header("Content-Type", "text/plain");
 
       return res.status(404).send("Data is not found");
     }
@@ -207,12 +203,10 @@ function getDatasListHandler(getConfig) {
 
       return {
         id: data,
-        name: item.tileJSON.name,
+        name: item.tileJSON.name || "",
         url: `${getUrl(req)}data/${data}.json`,
       };
     });
-
-    res.header("Content-Type", "text/plain");
 
     return res.status(200).send(result);
   };
@@ -223,9 +217,7 @@ export const serve_data = {
     const app = express();
 
     app.get("/datas.json", getDatasListHandler(getConfig));
-
     app.get("/:id.json", getDataHandler(getConfig));
-
     app.get(
       `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format((pbf|jpg|png|jpeg|webp|geojson){1})`,
       getDataTileHandler(getConfig)
@@ -243,14 +235,14 @@ export const serve_data = {
 
     await Promise.all(
       datas.map(async (data) => {
-        try {
-          const item = config.data[data];
-          const dataInfo = {
-            tileJSON: {
-              tilejson: "2.2.0",
-            },
-          };
+        const item = config.data[data];
+        const dataInfo = {
+          tileJSON: {
+            tilejson: "2.2.0",
+          },
+        };
 
+        try {
           if (item.mbtiles) {
             let inputDataFile = "";
 
@@ -318,7 +310,7 @@ export const serve_data = {
             Object.assign(dataInfo.tileJSON, info);
           } else {
             throw Error(
-              `"pmtiles" or "mbtiles" property for data "${data}" is empty`
+              `"pmtiles" or "mbtiles" property of data "${data}" is empty`
             );
           }
 

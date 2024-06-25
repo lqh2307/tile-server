@@ -26,7 +26,7 @@ function findFiles(dirPath, regex, isRecurse = false, isJustBaseName = false) {
       }
     }
 
-    if (isJustBaseName) {
+    if (isJustBaseName === true) {
       return results.map((result) => path.basename(result));
     }
 
@@ -398,9 +398,7 @@ export function openPMtiles(filePath) {
   if (isValidHttpUrl(filePath) === true) {
     source = new FetchSource(filePath);
   } else {
-    const fd = fs.openSync(filePath, "r");
-
-    source = new PMTilesFileSource(fd);
+    source = new PMTilesFileSource(fs.openSync(filePath, "r"));
   }
 
   return new PMTiles(source);

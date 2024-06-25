@@ -53,7 +53,7 @@
   "params": {
     "dockerHubAccount": "quanghuy2307",
     "dockerImageName": "tile-server",
-    "version": "1.0.6",
+    "version": "1.0.0",
     "defaultListeningPort": "8080",
     "defaultDataDir": "data"
   }

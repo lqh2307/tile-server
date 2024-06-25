@@ -59,6 +59,7 @@ export function startServer(opts) {
   let config = loadConfigFile(opts);
 
   let startupComplete = false;
+  let start = true;
 
   const mutex = new Mutex();
 
@@ -67,12 +68,15 @@ export function startServer(opts) {
   const loadData = async () => {
     const release = await mutex.acquire();
 
-    printLog("info", "Loading data...");
-
     startupComplete = false;
 
-    try {
-      /*
+    if (start === true) {
+      start = false;
+
+      printLog("info", "Loading data...");
+    } else {
+      printLog("info", "Reloading data...");
+
       await Promise.all([
         serve_font.remove(config),
         serve_sprite.remove(config),
@@ -80,8 +84,11 @@ export function startServer(opts) {
         serve_style.remove(config),
         serve_rendered.remove(config),
       ]);
-      */
 
+      config = loadConfigFile(opts);
+    }
+
+    try {
       await Promise.all([
         serve_font.add(config),
         serve_sprite.add(config),
@@ -148,7 +155,6 @@ export function startServer(opts) {
     newChokidar.on("change", () => {
       printLog("info", `Config file has changed. Reloading data...`);
 
-      config = loadConfigFile(opts);
       loadData();
     });
   }
@@ -162,8 +168,6 @@ export function startServer(opts) {
       )
     )
     .get("/health", async (req, res, next) => {
-      res.header("Content-Type", "text/plain");
-
       if (startupComplete === true) {
         return res.status(200).send("OK");
       } else {
@@ -173,10 +177,7 @@ export function startServer(opts) {
     .get("/reload", async (req, res, next) => {
       printLog("info", "Received reload request. Reloading data...");
 
-      config = loadConfigFile(opts);
       loadData();
-
-      res.header("Content-Type", "text/plain");
 
       return res.status(200).send("OK");
     })
@@ -186,8 +187,6 @@ export function startServer(opts) {
 
         process.exit(0);
       }, 0);
-
-      res.header("Content-Type", "text/plain");
 
       return res.status(200).send("OK");
     })

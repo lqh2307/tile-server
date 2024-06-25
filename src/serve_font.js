@@ -2,7 +2,7 @@
 
 import path from "node:path";
 import express from "express";
-import { getFontsPbf, printLog, getUrl, validatePBFFont } from "./utils.js";
+import { validatePBFFont, getFontsPbf, printLog, getUrl } from "./utils.js";
 
 function getFontHandler(getConfig) {
   return async (req, res, next) => {
@@ -22,8 +22,6 @@ function getFontHandler(getConfig) {
     } catch (error) {
       printLog("error", `Failed to get font "${id}": ${error}`);
 
-      res.header("Content-Type", "text/plain");
-
       return res.status(404).send("Font is not found");
     }
   };
@@ -41,8 +39,6 @@ function getFontsListHandler(getConfig) {
       };
     });
 
-    res.header("Content-Type", "text/plain");
-
     return res.status(200).send(result);
   };
 }
@@ -52,7 +48,6 @@ export const serve_font = {
     const app = express();
 
     app.get("/fonts.json", getFontsListHandler(getConfig));
-
     app.get("/:id/:range(\\d{1,5}-\\d{1,5}).pbf", getFontHandler(getConfig));
 
     return app;

@@ -12,36 +12,28 @@ function getStyleHandler(getConfig) {
     const id = decodeURI(req.params.id);
     const item = config.repo.styles[id];
 
-    try {
-      if (!item) {
-        throw Error("Style is not found");
-      }
-
-      const sources = {};
-      Object.keys(item.styleJSON.sources).forEach((name) => {
-        sources[name] = {
-          ...item.styleJSON.sources[name],
-          url: fixUrl(req, item.styleJSON.sources[name].url),
-        };
-      });
-
-      const styleJSON = {
-        ...item.styleJSON,
-        sources: sources,
-        sprite: fixUrl(req, item.styleJSON.sprite),
-        glyphs: fixUrl(req, item.styleJSON.glyphs),
-      };
-
-      res.header("Content-Type", "application/json");
-
-      return res.status(200).send(styleJSON);
-    } catch (error) {
-      printLog("error", `Failed to get style "${id}": ${error}`);
-
-      res.header("Content-Type", "text/plain");
-
+    if (!item) {
       return res.status(404).send("Style is not found");
     }
+
+    const sources = {};
+    Object.keys(item.styleJSON.sources).forEach((name) => {
+      sources[name] = {
+        ...item.styleJSON.sources[name],
+        url: fixUrl(req, item.styleJSON.sources[name].url),
+      };
+    });
+
+    const styleJSON = {
+      ...item.styleJSON,
+      sources: sources,
+      sprite: fixUrl(req, item.styleJSON.sprite),
+      glyphs: fixUrl(req, item.styleJSON.glyphs),
+    };
+
+    res.header("Content-Type", "application/json");
+
+    return res.status(200).send(styleJSON);
   };
 }
 
@@ -55,12 +47,10 @@ function getStylesListHandler(getConfig) {
 
       return {
         id: style,
-        name: item.styleJSON.name,
+        name: item.styleJSON.name || "",
         url: `${getUrl(req)}styles/${style}/style.json`,
       };
     });
-
-    res.header("Content-Type", "text/plain");
 
     return res.status(200).send(result);
   };
@@ -71,7 +61,6 @@ export const serve_style = {
     const app = express();
 
     app.get("/styles.json", getStylesListHandler(getConfig));
-
     app.get("/:id/style.json", getStyleHandler(getConfig));
 
     return app;
@@ -86,18 +75,18 @@ export const serve_style = {
 
     await Promise.all(
       styles.map(async (style) => {
-        try {
-          const item = config.styles[style];
+        const item = config.styles[style];
 
+        try {
           if (!item.style) {
-            throw Error(`"style" property for style "${style}" is empty`);
+            throw Error(`"style" property of style "${style}" is empty`);
           }
 
-          const file = fs.readFileSync(
-            path.resolve(config.options.paths.styles, item.style)
+          const styleJSON = JSON.parse(
+            fs.readFileSync(
+              path.resolve(config.options.paths.styles, item.style)
+            )
           );
-
-          const styleJSON = JSON.parse(file);
 
           /* Validate style */
           const validationErrors = validateStyleMin(styleJSON);
@@ -115,12 +104,15 @@ export const serve_style = {
             const source = styleJSON.sources[name];
 
             if (
-              source.url?.startsWith("pmtiles://") ||
-              source.url?.startsWith("mbtiles://")
+              source.url?.startsWith("pmtiles://") === true ||
+              source.url?.startsWith("mbtiles://") === true
             ) {
               const sourceURL = source.url.slice(10);
 
-              if (!sourceURL.startsWith("{") || !sourceURL.endsWith("}")) {
+              if (
+                sourceURL.startsWith("{") === false ||
+                sourceURL.endsWith("}") === false
+              ) {
                 throw Error(`Source data "${name}" is invalid`);
               }
 
@@ -134,14 +126,14 @@ export const serve_style = {
             }
           });
 
-          if (styleJSON.sprite?.startsWith("sprites://")) {
+          if (styleJSON.sprite?.startsWith("sprites://") === true) {
             styleJSON.sprite = styleJSON.sprite.replace(
               "sprites://",
               "local://sprites/"
             );
           }
 
-          if (styleJSON.glyphs?.startsWith("fonts://")) {
+          if (styleJSON.glyphs?.startsWith("fonts://") === true) {
             styleJSON.glyphs = styleJSON.glyphs.replace(
               "fonts://",
               "local://fonts/"
