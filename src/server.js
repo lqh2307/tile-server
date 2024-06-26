@@ -29,13 +29,11 @@ function loadConfigFile(opts) {
 
     const paths = config.options.paths;
 
-    paths = {
-      styles: path.join(dataDir, paths?.styles || ""),
-      fonts: path.join(dataDir, paths?.fonts || ""),
-      sprites: path.join(dataDir, paths?.sprites || ""),
-      mbtiles: path.join(dataDir, paths?.mbtiles || ""),
-      pmtiles: path.join(dataDir, paths?.pmtiles || ""),
-    };
+    paths.styles = path.join(dataDir, paths?.styles || "");
+    paths.fonts = path.join(dataDir, paths?.fonts || "");
+    paths.sprites = path.join(dataDir, paths?.sprites || "");
+    paths.mbtiles = path.join(dataDir, paths?.mbtiles || "");
+    paths.pmtiles = path.join(dataDir, paths?.pmtiles || "");
 
     Object.keys(paths).forEach((key) => {
       if (fs.statSync(paths[key]).isDirectory() === false) {
