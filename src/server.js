@@ -172,13 +172,6 @@ export function startServer(opts) {
         ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent"
       )
     )
-    .use(async (req, res, next) => {
-      if (startupComplete === true) {
-        return next();
-      } else {
-        return res.status(503).send("Starting");
-      }
-    })
     .get("/health", async (req, res, next) => {
       if (startupComplete === true) {
         return res.status(200).send("OK");

@@ -93,8 +93,10 @@ function createEmptyResponse(format, color, callback) {
     });
 }
 
-function respondImage(config, item, z, lon, lat, tileSize, format, res) {
-  item.renderers.acquire().then((renderer) => {
+async function respondImage(config, item, z, lon, lat, tileSize, format, res) {
+  try {
+    const renderer = await item.renderers.acquire();
+
     // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
     const params = {
       zoom: tileSize === 512 ? Math.max(0, z) : Math.max(0, z - 1),
@@ -115,64 +117,60 @@ function respondImage(config, item, z, lon, lat, tileSize, format, res) {
     // END HACK(Part 1)
 
     renderer.render(params, (error, data) => {
-      try {
+      item.renderers.release(renderer);
+
+      if (error) {
+        throw error;
+      }
+
+      const image = sharp(data, {
+        raw: {
+          premultiplied: true,
+          width: params.width,
+          height: params.height,
+          channels: 4,
+        },
+      });
+
+      // HACK(Part 2) 256px tiles are a zoom level lower than maplibre-native default tiles.
+      // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
+      // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
+      if (z === 0 && tileSize === 256) {
+        image.resize(tileSize, tileSize);
+      }
+      // END HACK(Part 2)
+
+      if (format === "png") {
+        image.png({
+          adaptiveFiltering: false,
+        });
+      } else if (format === "jpeg") {
+        image.jpeg({
+          quality: config.options.formatQuality?.[format] || 80,
+        });
+      } else if (format === "webp") {
+        image.webp({
+          quality: config.options.formatQuality?.[format] || 90,
+        });
+      }
+
+      image.toBuffer((error, buffer, info) => {
         if (error) {
           throw error;
         }
 
-        const image = sharp(data, {
-          raw: {
-            premultiplied: true,
-            width: params.width,
-            height: params.height,
-            channels: 4,
-          },
-        });
-  
-        // HACK(Part 2) 256px tiles are a zoom level lower than maplibre-native default tiles.
-        // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-        // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
-        if (z === 0 && tileSize === 256) {
-          image.resize(tileSize, tileSize);
+        if (!buffer) {
+          return res.status(404).send("Rendered data is not found");
         }
-        // END HACK(Part 2)
-  
-        if (format === "png") {
-          image.png({
-            adaptiveFiltering: false,
-          });
-        } else if (format === "jpeg") {
-          image.jpeg({
-            quality: config.options.formatQuality?.[format] || 80,
-          });
-        } else if (format === "webp") {
-          image.webp({
-            quality: config.options.formatQuality?.[format] || 90,
-          });
-        }
-  
-        image.toBuffer((error, buffer, info) => {
-          if (error) {
-            throw error;
-          }
-  
-          if (!buffer) {
-            return res.status(404).send("Rendered data is not found");
-          }
-  
-          res.header("Content-Type", `image/${format}`);
-  
-          return res.status(200).send(buffer);
-        });
-      } catch (error) {
-        throw error;
-      } finally {
-        item.renderers.release(renderer);
-      }
-    });
-  }).catch((error) => {
+
+        res.header("Content-Type", `image/${format}`);
+
+        return res.status(200).send(buffer);
+      });
+    })
+  } catch (error) {
     throw error;
-  });
+  }
 }
 
 function getRenderedTileHandler(getConfig) {
