@@ -488,8 +488,6 @@ export const serve_rendered = {
             sourceTypes: {},
           };
 
-          config.repo.rendered[style] = repoobj;
-
           const queue = [];
           const sources = Object.keys(styleJSON.sources);
           for (const name of sources) {
@@ -499,12 +497,13 @@ export const serve_rendered = {
               source.url?.startsWith("pmtiles://") === true ||
               source.url?.startsWith("mbtiles://") === true
             ) {
-              const sourceID = source.url.slice(10).slice(1, -1);
+              const sourceID = source.url.slice(11, -1);
+              const sourceType = source.url.slice(0, 7)
 
               // found pmtiles or mbtiles source, replace with info from local file
               delete source.url;
 
-              if (config.repo.data[sourceID].sourceType === "mbtiles") {
+              if (sourceType === "mbtiles") {
                 queue.push(
                   new Promise((resolve, reject) => {
                     const inputFile = path.resolve(
@@ -552,7 +551,7 @@ export const serve_rendered = {
                     );
                   })
                 );
-              } else if (config.repo.data[sourceID].sourceType === "pmtiles") {
+              } else if (sourceType === "pmtiles") {
                 const inputFile = path.join(
                   config.options.paths.pmtiles,
                   config.data[sourceID].pmtiles
@@ -590,6 +589,8 @@ export const serve_rendered = {
           await Promise.all(queue);
 
           repoobj.renderers = createPool(repoobj, styleJSON);
+
+          config.repo.rendered[style] = repoobj;
         } catch (error) {
           printLog(
             "error",
