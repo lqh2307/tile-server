@@ -109,11 +109,7 @@ function createEmptyResponse(format, color, callback) {
 }
 
 function respondImage(config, item, z, lon, lat, tileSize, format, res) {
-  item.renderers.acquire((error, renderer) => {
-    if (error) {
-      throw error;
-    }
-
+  item.renderers.acquire().then((renderer) => {
     // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
     const params = {
       zoom: tileSize === 512 ? Math.max(0, z) : Math.max(0, z - 1),
@@ -185,6 +181,8 @@ function respondImage(config, item, z, lon, lat, tileSize, format, res) {
         return res.status(200).send(buffer);
       });
     });
+  }).catch((error) => {
+    throw error;
   });
 }
 
@@ -314,9 +312,10 @@ export const serve_rendered = {
 
     await Promise.all(
       rendereds.map(async (rendered) => {
-        config.repo.rendered[rendered].renderers
-          ?.drain()
-          .then(() => config.repo.rendered[rendered].renderers.clear());
+        const renderer = config.repo.rendered[rendered].renderers;
+        if (renderer) {
+          renderer.drain().then(() => renderer.clear());
+        }
       })
     );
 
@@ -324,10 +323,10 @@ export const serve_rendered = {
   },
 
   add: async (config) => {
-    const createPool = (repoobj, style, styleJSON, min, max) => {
+    const createPool = (repoobj, styleJSON) => {
       return genericPool.createPool(
         {
-          create: (createCallback) => {
+          create: async () => {
             const renderer = new mlgl.Map({
               mode: "tile",
               request: async (req, callback) => {
@@ -378,7 +377,7 @@ export const serve_rendered = {
                       if (error) {
                         printLog(
                           "warning",
-                          `MBTiles source "${sourceId}" error: ${error}. Serving empty`
+                          `MBTiles source "${sourceId}": ${error}. Serving empty...`
                         );
 
                         createEmptyResponse(
@@ -398,7 +397,7 @@ export const serve_rendered = {
                         } catch (error) {
                           printLog(
                             "error",
-                            `Skipping incorrect header for tile mbtiles://${style}/${z}/${x}/${y}.pbf`
+                            `MBTiles source "${sourceId}": ${error}. Skipping...`
                           );
                         }
                       } else {
@@ -413,7 +412,7 @@ export const serve_rendered = {
                     if (!data) {
                       printLog(
                         "warning",
-                        `PMTiles source "${sourceId}" error: ${error}. Serving empty`
+                        `PMTiles source "${sourceId}": ${error}. Serving empty...`
                       );
 
                       createEmptyResponse(
@@ -451,15 +450,15 @@ export const serve_rendered = {
 
             renderer.load(styleJSON);
 
-            createCallback(null, renderer);
+            return renderer;
           },
-          destroy: (renderer) => {
+          destroy: async (renderer) => {
             renderer.release();
           },
         },
         {
-          min,
-          max,
+          min: config.options.minPoolSize || 8,
+          max: config.options.maxPoolSize || 16,
         }
       );
     };
@@ -601,13 +600,7 @@ export const serve_rendered = {
 
           await Promise.all(queue);
 
-          repoobj.renderers = createPool(
-            repoobj,
-            style,
-            styleJSON,
-            config.options.minPoolSize || 8,
-            config.options.maxPoolSize || 16
-          );
+          repoobj.renderers = createPool(repoobj, styleJSON);
         } catch (error) {
           printLog(
             "error",
