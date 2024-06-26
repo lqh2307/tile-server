@@ -13,7 +13,9 @@ import { printLog } from "./utils.js";
 import { Mutex } from "async-mutex";
 
 function loadConfigFile(opts) {
-  const configFilePath = path.resolve(opts.dataDir, "config.json");
+  const dataDir = opts.dataDir;
+
+  const configFilePath = path.resolve(dataDir, "config.json");
 
   printLog("info", `Load config file: ${configFilePath}`);
 
@@ -25,16 +27,18 @@ function loadConfigFile(opts) {
     config.data = config.data || {};
     config.sprites = config.sprites || {};
 
-    config.options.paths = {
-      styles: path.join(opts.dataDir, config.options.paths?.styles || ""),
-      fonts: path.join(opts.dataDir, config.options.paths?.fonts || ""),
-      sprites: path.join(opts.dataDir, config.options.paths?.sprites || ""),
-      mbtiles: path.join(opts.dataDir, config.options.paths?.mbtiles || ""),
-      pmtiles: path.join(opts.dataDir, config.options.paths?.pmtiles || ""),
+    const paths = config.options.paths;
+
+    paths = {
+      styles: path.join(dataDir, paths?.styles || ""),
+      fonts: path.join(dataDir, paths?.fonts || ""),
+      sprites: path.join(dataDir, paths?.sprites || ""),
+      mbtiles: path.join(dataDir, paths?.mbtiles || ""),
+      pmtiles: path.join(dataDir, paths?.pmtiles || ""),
     };
 
-    Object.keys(config.options.paths).forEach((key) => {
-      if (fs.statSync(config.options.paths[key]).isDirectory() === false) {
+    Object.keys(paths).forEach((key) => {
+      if (fs.statSync(paths[key]).isDirectory() === false) {
         throw Error(`"${key}" dir does not exist`);
       }
     });
@@ -57,7 +61,6 @@ function loadConfigFile(opts) {
 
 export function startServer(opts) {
   let config = loadConfigFile(opts);
-
   let startupComplete = false;
   let start = true;
 
@@ -171,6 +174,13 @@ export function startServer(opts) {
         ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent"
       )
     )
+    .use(async (req, res, next) => {
+      if (startupComplete === true) {
+        return next();
+      } else {
+        return res.status(503).send("Starting");
+      }
+    })
     .get("/health", async (req, res, next) => {
       if (startupComplete === true) {
         return res.status(200).send("OK");

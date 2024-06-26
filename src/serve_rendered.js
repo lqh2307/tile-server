@@ -3,7 +3,6 @@
 import * as genericPool from "generic-pool";
 import fs from "node:fs";
 import path from "node:path";
-import url from "url";
 import zlib from "zlib";
 import sharp from "sharp";
 import Color from "color";
@@ -22,18 +21,6 @@ import {
   printLog,
   getUrl,
 } from "./utils.js";
-
-/**
- * Lookup of sharp output formats by file extension.
- */
-const extensionToFormat = {
-  ".jpg": "jpeg",
-  ".jpeg": "jpeg",
-  ".png": "png",
-  ".webp": "webp",
-  ".pbf": "pbf",
-  ".geojson": "geojson",
-};
 
 const mercator = new SphericalMercator();
 
@@ -60,16 +47,14 @@ const cachedEmptyResponses = {
  * @param {Function} callback The mlgl callback.
  */
 function createEmptyResponse(format, color, callback) {
-  if (!format || format === "pbf") {
+  if (format === "jpg") {
+    format = "jpeg";
+  } else if (format === "pbf" || ["jpeg", "png", "webp", "geojson"].includes(format) === false) {
     callback(null, {
       data: cachedEmptyResponses[""],
     });
 
     return;
-  }
-
-  if (format === "jpg") {
-    format = "jpeg";
   }
 
   if (!color) {
@@ -427,11 +412,9 @@ export const serve_rendered = {
                       data: data,
                     });
                   } catch (error) {
-                    const ext = path
-                      .extname(url.parse(req.url).pathname)
-                      .toLowerCase();
+                    const format = req.originalUrl?.slice(req.originalUrl.lastIndexOf("."), -1);
 
-                    createEmptyResponse(extensionToFormat[ext], "", callback);
+                    createEmptyResponse(format, "", callback);
                   }
                 }
               },
