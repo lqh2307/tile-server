@@ -64,6 +64,10 @@ export const serve_sprite = {
     return app;
   },
 
+  remove: async (config) => {
+    config.repo.sprites = {};
+  },
+
   add: async (config) => {
     const sprites = Object.keys(config.sprites);
 

@@ -226,6 +226,10 @@ export const serve_data = {
     return app;
   },
 
+  remove: async (config) => {
+    config.repo.data = {};
+  },
+
   add: async (config) => {
     const datas = Object.keys(config.data);
 

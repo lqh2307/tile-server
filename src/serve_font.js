@@ -53,6 +53,10 @@ export const serve_font = {
     return app;
   },
 
+  remove: async (config) => {
+    config.repo.fonts = {};
+  },
+
   add: async (config) => {
     const fonts = Object.keys(config.fonts);
 

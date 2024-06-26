@@ -97,7 +97,7 @@ export async function getFontsPbf(fontPath, names, range) {
 
         printLog(
           "warning",
-          `Failed to load font "${font}": ${error.message}. Trying to use fallback font "${fallbackFont}"`
+          `Font "${font}" is not found. Using fallback font "${fallbackFont}"...`
         );
 
         return fs.readFileSync(
@@ -236,10 +236,6 @@ export function createRepoFile(repo, repoFilePath) {
     return (key, value) => {
       if (typeof value === "object" && value !== null) {
         if (seen.has(value)) {
-          printLog(
-            "info",
-            `Circular reference detected at ${paths.get(value)} -> ${key}`
-          );
           return;
         }
 

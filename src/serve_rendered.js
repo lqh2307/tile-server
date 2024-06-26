@@ -94,31 +94,29 @@ function createEmptyResponse(format, color, callback) {
 }
 
 async function respondImage(config, item, z, lon, lat, tileSize, format, res) {
-  try {
-    const renderer = await item.renderers.acquire();
+  // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
+  const params = {
+    zoom: tileSize === 512 ? Math.max(0, z) : Math.max(0, z - 1),
+    center: [lon, lat],
+    bearing: 0,
+    pitch: 0,
+    width: tileSize,
+    height: tileSize,
+  };
 
-    // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
-    const params = {
-      zoom: tileSize === 512 ? Math.max(0, z) : Math.max(0, z - 1),
-      center: [lon, lat],
-      bearing: 0,
-      pitch: 0,
-      width: tileSize,
-      height: tileSize,
-    };
+  // HACK(Part 1) 256px tiles are a zoom level lower than maplibre-native default tiles.
+  // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
+  // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in Part 2.
+  if (z === 0 && tileSize === 256) {
+    params.width *= 2;
+    params.height *= 2;
+  }
+  // END HACK(Part 1)
 
-    // HACK(Part 1) 256px tiles are a zoom level lower than maplibre-native default tiles.
-    // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-    // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in Part 2.
-    if (z === 0 && tileSize === 256) {
-      params.width *= 2;
-      params.height *= 2;
-    }
-    // END HACK(Part 1)
+  const renderer = await item.renderers.acquire();
 
-    renderer.render(params, (error, data) => {
-      item.renderers.release(renderer);
-
+  renderer.render(params, (error, data) => {
+    try {
       if (error) {
         throw error;
       }
@@ -167,10 +165,12 @@ async function respondImage(config, item, z, lon, lat, tileSize, format, res) {
 
         return res.status(200).send(buffer);
       });
-    })
-  } catch (error) {
-    throw error;
-  }
+    } catch (error) {
+      throw error;
+    } finally {
+      item.renderers.release(renderer);
+    }
+  });
 }
 
 function getRenderedTileHandler(getConfig) {
@@ -294,6 +294,22 @@ export const serve_rendered = {
     return app;
   },
 
+  remove: async (config) => {
+    const rendereds = config.repo.rendered;
+
+    config.repo.rendered = {};
+
+    await Promise.all(
+      Object.keys(rendereds).map(async (rendered) => {
+        const renderer = rendereds[rendered].renderers;
+        if (renderer) {
+          await renderer.drain();
+          await renderer.clear();
+        }
+      })
+    );
+  },
+
   add: async (config) => {
     const createPool = (repoobj, styleJSON) => {
       return genericPool.createPool(
@@ -310,11 +326,17 @@ export const serve_rendered = {
                     decodeURIComponent(req.url).substring(protocol.length + 3)
                   );
 
-                  fs.readFile(filePath, (error, data) => {
-                    callback(error, {
-                      data: data,
+                  try {
+                    fs.readFile(filePath, (error, data) => {
+                      callback(error, {
+                        data: data,
+                      });
                     });
-                  });
+                  } catch (error) {
+                    callback(error, {
+                      data: null,
+                    });
+                  }
                 } else if (protocol === "fonts") {
                   const parts = decodeURIComponent(req.url).split("/");
                   const fonts = parts[2];

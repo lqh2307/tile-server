@@ -66,6 +66,10 @@ export const serve_style = {
     return app;
   },
 
+  remove: async (config) => {
+    config.repo.styles = {};
+  },
+
   add: async (config) => {
     const styles = Object.keys(config.styles);
 

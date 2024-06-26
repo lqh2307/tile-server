@@ -10,7 +10,7 @@ import { serve_rendered } from "./serve_rendered.js";
 import { serve_sprite } from "./serve_sprite.js";
 import { serve_template } from "./serve_template.js";
 import { printLog } from "./utils.js";
-import { Mutex } from "async-mutex";
+// import { Mutex } from "async-mutex";
 
 function loadConfigFile(opts) {
   const dataDir = opts.dataDir;
@@ -62,12 +62,12 @@ export function startServer(opts) {
   let startupComplete = false;
   let start = true;
 
-  const mutex = new Mutex();
+  // const mutex = new Mutex();
 
   const getConfig = () => config;
 
   const loadData = async () => {
-    const release = await mutex.acquire();
+    // const release = await mutex.acquire();
 
     startupComplete = false;
 
@@ -79,17 +79,13 @@ export function startServer(opts) {
       } else {
         printLog("info", "Reloading data...");
 
-        const rendereds = config.repo.rendered;
-
-        await Promise.all(
-          Object.keys(rendereds).map(async (rendered) => {
-            const renderer = rendereds[rendered].renderers;
-            if (renderer) {
-              await renderer.drain();
-              await renderer.clear();
-            }
-          })
-        );
+        await Promise.all([
+          serve_font.remove(config),
+          serve_sprite.remove(config),
+          serve_data.remove(config),
+          serve_style.remove(config),
+          serve_rendered.remove(config),
+        ]);
 
         config = loadConfigFile(opts);
       }
@@ -112,7 +108,7 @@ export function startServer(opts) {
 
       process.exit(1);
     } finally {
-      release();
+      // release();
     }
   };
 
