@@ -70,25 +70,29 @@ export function startServer(opts) {
 
     startupComplete = false;
 
-    if (start === true) {
-      start = false;
-
-      printLog("info", "Loading data...");
-    } else {
-      printLog("info", "Reloading data...");
-
-      await Promise.all([
-        serve_font.remove(config),
-        serve_sprite.remove(config),
-        serve_data.remove(config),
-        serve_style.remove(config),
-        serve_rendered.remove(config),
-      ]);
-
-      config = loadConfigFile(opts);
-    }
-
     try {
+      if (start === true) {
+        start = false;
+
+        printLog("info", "Loading data...");
+      } else {
+        printLog("info", "Reloading data...");
+
+        const rendereds = config.repo.rendered;
+
+        await Promise.all(
+          Object.keys(rendereds).map(async (rendered) => {
+            const renderer = rendereds[rendered].renderers;
+            if (renderer) {
+              await renderer.drain();
+              await renderer.clear();
+            }
+          })
+        );
+
+        config = loadConfigFile(opts);
+      }
+
       await Promise.all([
         serve_font.add(config),
         serve_sprite.add(config),

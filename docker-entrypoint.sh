@@ -1,13 +1,5 @@
 #!/bin/sh
 
-if ! which -- "${1}"; then
-  if [ -e /tmp/.X99-lock ]; then
-    rm /tmp/.X99-lock -f;
-  fi
+export DISPLAY=:99
 
-  export DISPLAY=:99
-
-  Xvfb "${DISPLAY}" -nolisten unix & exec node src/main.js "$@"
-fi
-
-exec "$@"
+Xvfb "${DISPLAY}" -nolisten unix & exec node src/main.js "$@"

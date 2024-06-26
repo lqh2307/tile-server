@@ -130,56 +130,60 @@ function respondImage(config, item, z, lon, lat, tileSize, format, res) {
     // END HACK(Part 1)
 
     renderer.render(params, (error, data) => {
-      item.renderers.release(renderer);
-
-      if (error) {
-        throw error;
-      }
-
-      const image = sharp(data, {
-        raw: {
-          premultiplied: true,
-          width: params.width,
-          height: params.height,
-          channels: 4,
-        },
-      });
-
-      // HACK(Part 2) 256px tiles are a zoom level lower than maplibre-native default tiles.
-      // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-      // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
-      if (z === 0 && tileSize === 256) {
-        image.resize(tileSize, tileSize);
-      }
-      // END HACK(Part 2)
-
-      if (format === "png") {
-        image.png({
-          adaptiveFiltering: false,
-        });
-      } else if (format === "jpeg") {
-        image.jpeg({
-          quality: config.options.formatQuality?.[format] || 80,
-        });
-      } else if (format === "webp") {
-        image.webp({
-          quality: config.options.formatQuality?.[format] || 90,
-        });
-      }
-
-      image.toBuffer((error, buffer, info) => {
+      try {
         if (error) {
           throw error;
         }
 
-        if (!buffer) {
-          return res.status(404).send("Rendered data is not found");
+        const image = sharp(data, {
+          raw: {
+            premultiplied: true,
+            width: params.width,
+            height: params.height,
+            channels: 4,
+          },
+        });
+  
+        // HACK(Part 2) 256px tiles are a zoom level lower than maplibre-native default tiles.
+        // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
+        // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
+        if (z === 0 && tileSize === 256) {
+          image.resize(tileSize, tileSize);
         }
-
-        res.header("Content-Type", `image/${format}`);
-
-        return res.status(200).send(buffer);
-      });
+        // END HACK(Part 2)
+  
+        if (format === "png") {
+          image.png({
+            adaptiveFiltering: false,
+          });
+        } else if (format === "jpeg") {
+          image.jpeg({
+            quality: config.options.formatQuality?.[format] || 80,
+          });
+        } else if (format === "webp") {
+          image.webp({
+            quality: config.options.formatQuality?.[format] || 90,
+          });
+        }
+  
+        image.toBuffer((error, buffer, info) => {
+          if (error) {
+            throw error;
+          }
+  
+          if (!buffer) {
+            return res.status(404).send("Rendered data is not found");
+          }
+  
+          res.header("Content-Type", `image/${format}`);
+  
+          return res.status(200).send(buffer);
+        });
+      } catch (error) {
+        throw error;
+      } finally {
+        item.renderers.release(renderer);
+      }
     });
   }).catch((error) => {
     throw error;
@@ -305,21 +309,6 @@ export const serve_rendered = {
     );
 
     return app;
-  },
-
-  remove: async (config) => {
-    const rendereds = Object.keys(config.repo.rendered);
-
-    await Promise.all(
-      rendereds.map(async (rendered) => {
-        const renderer = config.repo.rendered[rendered].renderers;
-        if (renderer) {
-          renderer.drain().then(() => renderer.clear());
-        }
-      })
-    );
-
-    config.repo.rendered = {};
   },
 
   add: async (config) => {
