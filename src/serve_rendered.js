@@ -1,6 +1,6 @@
 "use strict";
 
-import advancedPool from "advanced-pool";
+import * as genericPool from "generic-pool";
 import fs from "node:fs";
 import path from "node:path";
 import url from "url";
@@ -314,7 +314,9 @@ export const serve_rendered = {
 
     await Promise.all(
       rendereds.map(async (rendered) => {
-        config.repo.rendered[rendered].renderers?.close();
+        config.repo.rendered[rendered].renderers
+          ?.drain()
+          .then(() => config.repo.rendered[rendered].renderers.clear());
       })
     );
 
@@ -323,61 +325,95 @@ export const serve_rendered = {
 
   add: async (config) => {
     const createPool = (repoobj, style, styleJSON, min, max) => {
-      return new advancedPool.Pool({
-        min,
-        max,
-        create: (createCallback) => {
-          const renderer = new mlgl.Map({
-            mode: "tile",
-            request: async (req, callback) => {
-              const protocol = req.url.split(":")[0];
+      return genericPool.createPool(
+        {
+          create: (createCallback) => {
+            const renderer = new mlgl.Map({
+              mode: "tile",
+              request: async (req, callback) => {
+                const protocol = req.url.split(":")[0];
 
-              if (protocol === "sprites") {
-                const filePath = path.join(
-                  config.options.paths.sprites,
-                  decodeURIComponent(req.url).substring(protocol.length + 3)
-                );
+                if (protocol === "sprites") {
+                  const filePath = path.join(
+                    config.options.paths.sprites,
+                    decodeURIComponent(req.url).substring(protocol.length + 3)
+                  );
 
-                fs.readFile(filePath, (error, data) => {
-                  callback(error, {
-                    data: data,
+                  fs.readFile(filePath, (error, data) => {
+                    callback(error, {
+                      data: data,
+                    });
                   });
-                });
-              } else if (protocol === "fonts") {
-                const parts = decodeURIComponent(req.url).split("/");
-                const fonts = parts[2];
-                const range = parts[3].split(".")[0];
+                } else if (protocol === "fonts") {
+                  const parts = decodeURIComponent(req.url).split("/");
+                  const fonts = parts[2];
+                  const range = parts[3].split(".")[0];
 
-                try {
-                  callback(null, {
-                    data: await getFontsPbf(
-                      config.options.paths.fonts,
-                      fonts,
-                      range
-                    ),
-                  });
-                } catch (error) {
-                  callback(error, {
-                    data: null,
-                  });
-                }
-              } else if (protocol === "mbtiles" || protocol === "pmtiles") {
-                const parts = decodeURIComponent(req.url).split("/");
-                const sourceId = parts[2];
-                const source = repoobj.sources[sourceId];
-                const sourceType = repoobj.sourceTypes[sourceId];
-                const sourceInfo = styleJSON.sources[sourceId];
-                const z = Number(parts[3]) || 0;
-                const x = Number(parts[4]) || 0;
-                const y = Number(parts[5]?.split(".")[0]) || 0;
-                const format = parts[5]?.split(".")[1] || "";
+                  try {
+                    callback(null, {
+                      data: await getFontsPbf(
+                        config.options.paths.fonts,
+                        fonts,
+                        range
+                      ),
+                    });
+                  } catch (error) {
+                    callback(error, {
+                      data: null,
+                    });
+                  }
+                } else if (protocol === "mbtiles" || protocol === "pmtiles") {
+                  const parts = decodeURIComponent(req.url).split("/");
+                  const sourceId = parts[2];
+                  const source = repoobj.sources[sourceId];
+                  const sourceType = repoobj.sourceTypes[sourceId];
+                  const sourceInfo = styleJSON.sources[sourceId];
+                  const z = Number(parts[3]) || 0;
+                  const x = Number(parts[4]) || 0;
+                  const y = Number(parts[5]?.split(".")[0]) || 0;
+                  const format = parts[5]?.split(".")[1] || "";
 
-                if (sourceType === "mbtiles") {
-                  source.getTile(z, x, y, (error, data) => {
-                    if (error) {
+                  if (sourceType === "mbtiles") {
+                    source.getTile(z, x, y, (error, data) => {
+                      if (error) {
+                        printLog(
+                          "warning",
+                          `MBTiles source "${sourceId}" error: ${error}. Serving empty`
+                        );
+
+                        createEmptyResponse(
+                          sourceInfo.format,
+                          sourceInfo.color,
+                          callback
+                        );
+
+                        return;
+                      }
+
+                      const response = {};
+
+                      if (format === "pbf") {
+                        try {
+                          response.data = zlib.unzipSync(data);
+                        } catch (error) {
+                          printLog(
+                            "error",
+                            `Skipping incorrect header for tile mbtiles://${style}/${z}/${x}/${y}.pbf`
+                          );
+                        }
+                      } else {
+                        response.data = data;
+                      }
+
+                      callback(null, response);
+                    });
+                  } else if (sourceType === "pmtiles") {
+                    const { data } = await getPMtilesTile(source, z, x, y);
+
+                    if (!data) {
                       printLog(
                         "warning",
-                        `MBTiles source "${sourceId}" error: ${error}. Serving empty`
+                        `PMTiles source "${sourceId}" error: ${error}. Serving empty`
                       );
 
                       createEmptyResponse(
@@ -389,73 +425,43 @@ export const serve_rendered = {
                       return;
                     }
 
-                    const response = {};
-
-                    if (format === "pbf") {
-                      try {
-                        response.data = zlib.unzipSync(data);
-                      } catch (error) {
-                        printLog(
-                          "error",
-                          `Skipping incorrect header for tile mbtiles://${style}/${z}/${x}/${y}.pbf`
-                        );
-                      }
-                    } else {
-                      response.data = data;
-                    }
-
-                    callback(null, response);
-                  });
-                } else if (sourceType === "pmtiles") {
-                  const { data } = await getPMtilesTile(source, z, x, y);
-
-                  if (!data) {
-                    printLog(
-                      "warning",
-                      `PMTiles source "${sourceId}" error: ${error}. Serving empty`
-                    );
-
-                    createEmptyResponse(
-                      sourceInfo.format,
-                      sourceInfo.color,
-                      callback
-                    );
-
-                    return;
+                    callback(null, {
+                      data: data,
+                    });
                   }
+                } else if (protocol === "http" || protocol === "https") {
+                  try {
+                    const { data } = await axios.get(req.url, {
+                      responseType: "arraybuffer",
+                    });
 
-                  callback(null, {
-                    data: data,
-                  });
+                    callback(null, {
+                      data: data,
+                    });
+                  } catch (error) {
+                    const ext = path
+                      .extname(url.parse(req.url).pathname)
+                      .toLowerCase();
+
+                    createEmptyResponse(extensionToFormat[ext], "", callback);
+                  }
                 }
-              } else if (protocol === "http" || protocol === "https") {
-                try {
-                  const { data } = await axios.get(req.url, {
-                    responseType: "arraybuffer",
-                  });
+              },
+            });
 
-                  callback(null, {
-                    data: data,
-                  });
-                } catch (error) {
-                  const ext = path
-                    .extname(url.parse(req.url).pathname)
-                    .toLowerCase();
+            renderer.load(styleJSON);
 
-                  createEmptyResponse(extensionToFormat[ext], "", callback);
-                }
-              }
-            },
-          });
-
-          renderer.load(styleJSON);
-
-          createCallback(null, renderer);
+            createCallback(null, renderer);
+          },
+          destroy: (renderer) => {
+            renderer.release();
+          },
         },
-        destroy: (renderer) => {
-          renderer.release();
-        },
-      });
+        {
+          min,
+          max,
+        }
+      );
     };
 
     const styles = Object.keys(config.repo.styles);
