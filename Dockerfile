@@ -13,7 +13,7 @@ RUN \
   set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
   apt-get -qq update; \
-  apt-get -y --no-install-recommends install \
+  apt-get -y install \
   pkg-config \
   build-essential \
   ca-certificates \
@@ -57,7 +57,7 @@ RUN \
   set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
   apt-get -qq update; \
-  apt-get -y --no-install-recommends install \
+  apt-get -y install \
   xvfb \
   libglfw3 \
   libuv1 \
@@ -75,6 +75,8 @@ COPY --from=builder /tile-server /tile-server
 COPY --from=builder /usr/bin/node /usr/bin/node
 COPY --from=builder /usr/include/node /usr/include/node
 COPY --from=builder /usr/share/doc/node /usr/share/doc/node
+
+RUN chmod +x /tile-server/docker-entrypoint.sh
 
 WORKDIR /tile-server
 

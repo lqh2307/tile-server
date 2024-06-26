@@ -10,7 +10,7 @@ import { serve_rendered } from "./serve_rendered.js";
 import { serve_sprite } from "./serve_sprite.js";
 import { serve_template } from "./serve_template.js";
 import { printLog } from "./utils.js";
-// import { Mutex } from "async-mutex";
+import { Mutex } from "async-mutex";
 
 function loadConfigFile(opts) {
   const dataDir = opts.dataDir;
@@ -62,12 +62,12 @@ export function startServer(opts) {
   let startupComplete = false;
   let start = true;
 
-  // const mutex = new Mutex();
+  const mutex = new Mutex();
 
   const getConfig = () => config;
 
   const loadData = async () => {
-    // const release = await mutex.acquire();
+    const release = await mutex.acquire();
 
     startupComplete = false;
 
@@ -108,7 +108,7 @@ export function startServer(opts) {
 
       process.exit(1);
     } finally {
-      // release();
+      release();
     }
   };
 
