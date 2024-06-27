@@ -3,6 +3,7 @@ import path from "node:path";
 import chokidar from "chokidar";
 import express from "express";
 import morgan from "morgan";
+import cors from "cors";
 import { serve_data } from "./serve_data.js";
 import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
@@ -167,6 +168,12 @@ export function startServer(opts) {
       morgan(
         ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent"
       )
+    )
+    .use(
+      cors({
+        origin: "*",
+        methods: "GET",
+      })
     )
     .get("/health", async (req, res, next) => {
       if (startupComplete === true) {
