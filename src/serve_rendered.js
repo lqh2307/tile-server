@@ -49,7 +49,10 @@ const cachedEmptyResponses = {
 function createEmptyResponse(format, color, callback) {
   if (format === "jpg") {
     format = "jpeg";
-  } else if (format === "pbf" || ["jpeg", "png", "webp", "geojson"].includes(format) === false) {
+  } else if (
+    format === "pbf" ||
+    ["jpeg", "png", "webp"].includes(format) === false
+  ) {
     callback(null, {
       data: cachedEmptyResponses[""],
     });
@@ -117,7 +120,7 @@ async function respondImage(config, item, z, lon, lat, tileSize, format, res) {
 
   renderer.render(params, (error, data) => {
     try {
-      item.renderers.release(renderer)
+      item.renderers.release(renderer);
 
       if (error) {
         throw error;
@@ -173,9 +176,8 @@ async function respondImage(config, item, z, lon, lat, tileSize, format, res) {
   });
 }
 
-function getRenderedTileHandler(getConfig) {
+function getRenderedTileHandler(config) {
   return async (req, res, next) => {
-    const config = getConfig();
     const id = decodeURI(req.params.id);
     const item = config.repo.rendered[id];
 
@@ -208,7 +210,7 @@ function getRenderedTileHandler(getConfig) {
     }
 
     const format = req.params.format;
-    
+
     if (format === "png" || format === "webp") {
     } else if (format === "jpg" || format === "jpeg") {
       format = "jpeg";
@@ -217,7 +219,7 @@ function getRenderedTileHandler(getConfig) {
     }
 
     try {
-      return respondImage(
+      return await respondImage(
         config,
         item,
         z,
@@ -235,9 +237,8 @@ function getRenderedTileHandler(getConfig) {
   };
 }
 
-function getRenderedHandler(getConfig) {
+function getRenderedHandler(config) {
   return async (req, res, next) => {
-    const config = getConfig();
     const id = decodeURI(req.params.id);
     const item = config.repo.rendered[id];
 
@@ -258,9 +259,8 @@ function getRenderedHandler(getConfig) {
   };
 }
 
-function getRenderedsListHandler(getConfig) {
+function getRenderedsListHandler(config) {
   return async (req, res, next) => {
-    const config = getConfig();
     const rendereds = Object.keys(config.repo.rendered);
 
     const result = rendereds.map((rendered) => {
@@ -282,14 +282,14 @@ function getRenderedsListHandler(getConfig) {
 }
 
 export const serve_rendered = {
-  init: (getConfig) => {
+  init: (config) => {
     const app = express();
 
-    app.get("/rendereds.json", getRenderedsListHandler(getConfig));
-    app.get("/(:tileSize(256|512)/)?:id.json", getRenderedHandler(getConfig));
+    app.get("/rendereds.json", getRenderedsListHandler(config));
+    app.get("/(:tileSize(256|512)/)?:id.json", getRenderedHandler(config));
     app.get(
-      `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+).:format((pbf|jpg|png|jpeg|webp|geojson){1})`,
-      getRenderedTileHandler(getConfig)
+      `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+).:format((pbf|jpg|png|jpeg|webp){1})`,
+      getRenderedTileHandler(config)
     );
 
     return app;
@@ -433,7 +433,10 @@ export const serve_rendered = {
                       data: data,
                     });
                   } catch (error) {
-                    const format = req.originalUrl?.slice(req.originalUrl.lastIndexOf("."), -1);
+                    const format = req.originalUrl?.slice(
+                      req.originalUrl.lastIndexOf("."),
+                      -1
+                    );
 
                     createEmptyResponse(format, "", callback);
                   }
@@ -502,7 +505,7 @@ export const serve_rendered = {
               source.url?.startsWith("mbtiles://") === true
             ) {
               const sourceID = source.url.slice(11, -1);
-              const sourceType = source.url.slice(0, 7)
+              const sourceType = source.url.slice(0, 7);
 
               // found pmtiles or mbtiles source, replace with info from local file
               delete source.url;

@@ -5,8 +5,6 @@ import path from "node:path";
 import zlib from "zlib";
 import express from "express";
 import MBTiles from "@mapbox/mbtiles";
-import Pbf from "pbf";
-import { VectorTile } from "@mapbox/vector-tile";
 import {
   fixTileJSONCenter,
   isValidHttpUrl,
@@ -18,24 +16,13 @@ import {
   getUrl,
 } from "./utils.js";
 
-function getDataTileHandler(getConfig) {
+function getDataTileHandler(config) {
   return async (req, res, next) => {
-    const config = getConfig();
     const id = decodeURI(req.params.id);
     const item = config.repo.data[id];
 
     if (!item) {
       return res.status(404).send("Data is not found");
-    }
-
-    const format = req.params.format;
-    const tileJSONFormat = item.tileJSON.format;
-
-    if (
-      !(format === "geojson" && tileJSONFormat === "pbf") &&
-      format !== tileJSONFormat
-    ) {
-      return res.status(400).send("Data format is invalid");
     }
 
     const z = Number(req.params.z);
@@ -66,52 +53,21 @@ function getDataTileHandler(getConfig) {
             } else {
               let isGzipped = false;
 
-              if (
-                tileJSONFormat === "pbf" &&
-                data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0
-              ) {
-                isGzipped = true;
+              if (req.params.format === "pbf") {
+                if (data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0) {
+                  isGzipped = true;
+                }
+
+                headers["Content-Type"] = "application/x-protobuf";
               }
 
-              if (format === "pbf") {
-                headers["Content-Type"] = "application/x-protobuf";
-              } else if (format === "geojson") {
-                headers["Content-Type"] = "application/json";
-
-                const geojson = {
-                  type: "FeatureCollection",
-                  features: [],
-                };
-
-                if (isGzipped === true) {
-                  data = zlib.unzipSync(data);
-
-                  isGzipped = false;
-                }
-
-                const tile = new VectorTile(new Pbf(data));
-
-                for (const layerName in tile.layers) {
-                  const layer = tile.layers[layerName];
-
-                  for (let i = 0; i < layer.length; i++) {
-                    const featureGeoJSON = layer.feature(i).toGeoJSON(x, y, z);
-                    featureGeoJSON.properties.layer = layerName;
-
-                    geojson.features.push(featureGeoJSON);
-                  }
-                }
-
-                data = JSON.stringify(geojson);
+              if (isGzipped === false) {
+                data = zlib.gzipSync(data);
               }
 
               headers["Content-Encoding"] = "gzip";
 
               res.set(headers);
-
-              if (isGzipped === false) {
-                data = zlib.gzipSync(data);
-              }
 
               return res.status(200).send(data);
             }
@@ -123,37 +79,15 @@ function getDataTileHandler(getConfig) {
         if (!data) {
           throw Error("Data is not found");
         } else {
-          if (format === "pbf") {
+          if (req.params.format === "pbf") {
             headers["Content-Type"] = "application/x-protobuf";
-          } else if (format === "geojson") {
-            headers["Content-Type"] = "application/json";
-
-            const geojson = {
-              type: "FeatureCollection",
-              features: [],
-            };
-
-            const tile = new VectorTile(new Pbf(data));
-
-            for (const layerName in tile.layers) {
-              const layer = tile.layers[layerName];
-
-              for (let i = 0; i < layer.length; i++) {
-                const featureGeoJSON = layer.feature(i).toGeoJSON(x, y, z);
-                featureGeoJSON.properties.layer = layerName;
-
-                geojson.features.push(featureGeoJSON);
-              }
-            }
-
-            data = JSON.stringify(geojson);
           }
+
+          data = zlib.gzipSync(data);
 
           headers["Content-Encoding"] = "gzip";
 
           res.set(headers);
-
-          data = zlib.gzipSync(data);
 
           return res.status(200).send(data);
         }
@@ -166,9 +100,8 @@ function getDataTileHandler(getConfig) {
   };
 }
 
-function getDataHandler(getConfig) {
+function getDataHandler(config) {
   return async (req, res, next) => {
-    const config = getConfig();
     const id = decodeURI(req.params.id);
     const item = config.repo.data[id];
 
@@ -193,9 +126,8 @@ function getDataHandler(getConfig) {
   };
 }
 
-function getDatasListHandler(getConfig) {
+function getDatasListHandler(config) {
   return async (req, res, next) => {
-    const config = getConfig();
     const datas = Object.keys(config.repo.data);
 
     const result = datas.map((data) => {
@@ -213,14 +145,14 @@ function getDatasListHandler(getConfig) {
 }
 
 export const serve_data = {
-  init: (getConfig) => {
+  init: (config) => {
     const app = express();
 
-    app.get("/datas.json", getDatasListHandler(getConfig));
-    app.get("/:id.json", getDataHandler(getConfig));
+    app.get("/datas.json", getDatasListHandler(config));
+    app.get("/:id.json", getDataHandler(config));
     app.get(
-      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format((pbf|jpg|png|jpeg|webp|geojson){1})`,
-      getDataTileHandler(getConfig)
+      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format((pbf|jpg|png|jpeg|webp){1})`,
+      getDataTileHandler(config)
     );
 
     return app;

@@ -76,7 +76,7 @@ COPY --from=builder /usr/bin/node /usr/bin/node
 COPY --from=builder /usr/include/node /usr/include/node
 COPY --from=builder /usr/share/doc/node /usr/share/doc/node
 
-RUN chmod +x /tile-server/docker-entrypoint.sh
+RUN chmod +x /tile-server/entrypoint.sh
 
 WORKDIR /tile-server
 
@@ -84,4 +84,4 @@ VOLUME /tile-server/data
 
 EXPOSE 8080
 
-ENTRYPOINT ["./docker-entrypoint.sh"]
+ENTRYPOINT ["./entrypoint.sh"]

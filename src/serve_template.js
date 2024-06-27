@@ -7,10 +7,8 @@ import handlebars from "handlebars";
 import SphericalMercator from "@mapbox/sphericalmercator";
 import { getUrl } from "./utils.js";
 
-function serveFrontPageHandler(getConfig) {
+function serveFrontPageHandler(config) {
   return async (req, res, next) => {
-    const config = getConfig();
-
     if (config.options.frontPage === false) {
       return res.status(404).send("Front page is not support");
     }
@@ -113,9 +111,8 @@ function serveFrontPageHandler(getConfig) {
   };
 }
 
-function serveStyleHandler(getConfig) {
+function serveStyleHandler(config) {
   return async (req, res, next) => {
-    const config = getConfig();
     const id = decodeURI(req.params.id);
     const style = config.repo.rendered[id];
 
@@ -138,9 +135,8 @@ function serveStyleHandler(getConfig) {
   };
 }
 
-function serveDataHandler(getConfig) {
+function serveDataHandler(config) {
   return async (req, res, next) => {
-    const config = getConfig();
     const id = decodeURI(req.params.id);
     const data = config.repo.data[id];
 
@@ -164,10 +160,8 @@ function serveDataHandler(getConfig) {
   };
 }
 
-function serveWMTSHandler(getConfig) {
+function serveWMTSHandler(config) {
   return async (req, res, next) => {
-    const config = getConfig();
-
     if (config.options.frontPage === false) {
       return res.status(404).send("WMTS is not support");
     }
@@ -198,16 +192,16 @@ function serveWMTSHandler(getConfig) {
 }
 
 export const serve_template = {
-  init: (getConfig) => {
+  init: (config) => {
     const app = express().use(
       "/",
       express.static(path.resolve("public", "resources"))
     );
 
-    app.get("/styles/:id/wmts.xml", serveWMTSHandler(getConfig));
-    app.get("/styles/:id/$", serveStyleHandler(getConfig));
-    app.use("/data/:id/$", serveDataHandler(getConfig));
-    app.get("/$", serveFrontPageHandler(getConfig));
+    app.get("/styles/:id/wmts.xml", serveWMTSHandler(config));
+    app.get("/styles/:id/$", serveStyleHandler(config));
+    app.use("/data/:id/$", serveDataHandler(config));
+    app.get("/$", serveFrontPageHandler(config));
 
     return app;
   },

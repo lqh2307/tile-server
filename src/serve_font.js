@@ -4,9 +4,8 @@ import path from "node:path";
 import express from "express";
 import { validatePBFFont, getFontsPbf, printLog, getUrl } from "./utils.js";
 
-function getFontHandler(getConfig) {
+function getFontHandler(config) {
   return async (req, res, next) => {
-    const config = getConfig();
     const id = decodeURI(req.params.id);
 
     try {
@@ -27,9 +26,8 @@ function getFontHandler(getConfig) {
   };
 }
 
-function getFontsListHandler(getConfig) {
+function getFontsListHandler(config) {
   return async (req, res, next) => {
-    const config = getConfig();
     const fonts = Object.keys(config.repo.fonts);
 
     const result = fonts.map((font) => {
@@ -44,11 +42,11 @@ function getFontsListHandler(getConfig) {
 }
 
 export const serve_font = {
-  init: (getConfig) => {
+  init: (config) => {
     const app = express();
 
-    app.get("/fonts.json", getFontsListHandler(getConfig));
-    app.get("/:id/:range(\\d{1,5}-\\d{1,5}).pbf", getFontHandler(getConfig));
+    app.get("/fonts.json", getFontsListHandler(config));
+    app.get("/:id/:range(\\d{1,5}-\\d{1,5}).pbf", getFontHandler(config));
 
     return app;
   },

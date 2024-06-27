@@ -5,9 +5,8 @@ import path from "node:path";
 import express from "express";
 import { printLog, getUrl, validateSprite } from "./utils.js";
 
-function getSpriteHandler(getConfig) {
+function getSpriteHandler(config) {
   return async (req, res, next) => {
-    const config = getConfig();
     const id = decodeURI(req.params.id);
     const item = config.repo.sprites[id];
 
@@ -35,9 +34,8 @@ function getSpriteHandler(getConfig) {
   };
 }
 
-function getSpritesListHandler(getConfig) {
+function getSpritesListHandler(config) {
   return async (req, res, next) => {
-    const config = getConfig();
     const sprites = Object.keys(config.repo.sprites);
 
     const result = sprites.map((sprite) => {
@@ -52,13 +50,13 @@ function getSpritesListHandler(getConfig) {
 }
 
 export const serve_sprite = {
-  init: (getConfig) => {
+  init: (config) => {
     const app = express();
 
-    app.get("/sprites.json", getSpritesListHandler(getConfig));
+    app.get("/sprites.json", getSpritesListHandler(config));
     app.get(
       "/:id/sprite:scale(@\\d+x)?.:format((png|json){1})",
-      getSpriteHandler(getConfig)
+      getSpriteHandler(config)
     );
 
     return app;

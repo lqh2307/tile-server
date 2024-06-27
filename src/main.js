@@ -25,8 +25,8 @@ program
     packageJSON.params.defaultListeningPort
   )
   .option(
-    "-r, --reload <interval>",
-    "monitor config file changes to reload data"
+    "-r, --restart <interval>",
+    "monitor config file changes to restart server"
   )
   .option("-k, --kill <interval>", "monitor config file changes to kill server")
   .version(packageJSON.params.version, "-v, --version")
@@ -52,6 +52,6 @@ const opts = program.opts();
 startServer({
   port: Number(opts.port),
   dataDir: path.resolve(opts.dataDir),
-  reload: Number(opts.reload),
+  restart: Number(opts.restart),
   kill: Number(opts.kill),
 });

@@ -6,9 +6,8 @@ import express from "express";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { fixUrl, printLog, getUrl } from "./utils.js";
 
-function getStyleHandler(getConfig) {
+function getStyleHandler(config) {
   return async (req, res, next) => {
-    const config = getConfig();
     const id = decodeURI(req.params.id);
     const item = config.repo.styles[id];
 
@@ -37,9 +36,8 @@ function getStyleHandler(getConfig) {
   };
 }
 
-function getStylesListHandler(getConfig) {
+function getStylesListHandler(config) {
   return async (req, res, next) => {
-    const config = getConfig();
     const styles = Object.keys(config.repo.styles);
 
     const result = styles.map((style) => {
@@ -57,11 +55,11 @@ function getStylesListHandler(getConfig) {
 }
 
 export const serve_style = {
-  init: (getConfig) => {
+  init: (config) => {
     const app = express();
 
-    app.get("/styles.json", getStylesListHandler(getConfig));
-    app.get("/:id/style.json", getStyleHandler(getConfig));
+    app.get("/styles.json", getStylesListHandler(config));
+    app.get("/:id/style.json", getStyleHandler(config));
 
     return app;
   },

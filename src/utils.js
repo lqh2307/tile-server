@@ -97,7 +97,7 @@ export async function getFontsPbf(fontPath, names, range) {
 
         printLog(
           "warning",
-          `Font "${font}" is not found. Using fallback font "${fallbackFont}"...`
+          `Failed to get font "${font}": ${error}. Using fallback font "${fallbackFont}"...`
         );
 
         return fs.readFileSync(

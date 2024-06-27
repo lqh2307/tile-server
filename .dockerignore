@@ -3,5 +3,5 @@
 !src
 !public
 !package.json
-!docker-entrypoint.sh
+!entrypoint.sh
 !data

@@ -11,7 +11,6 @@ import { serve_rendered } from "./serve_rendered.js";
 import { serve_sprite } from "./serve_sprite.js";
 import { serve_template } from "./serve_template.js";
 import { printLog } from "./utils.js";
-import { Mutex } from "async-mutex";
 
 function loadConfigFile(opts) {
   const dataDir = opts.dataDir;
@@ -54,66 +53,13 @@ function loadConfigFile(opts) {
   } catch (error) {
     printLog("error", `Failed to load config file: ${error}`);
 
-    process.exit(1);
+    process.exit(0);
   }
 }
 
 export function startServer(opts) {
-  let config = loadConfigFile(opts);
+  const config = loadConfigFile(opts);
   let startupComplete = false;
-  let start = true;
-
-  const mutex = new Mutex();
-
-  const getConfig = () => config;
-
-  const loadData = async () => {
-    const release = await mutex.acquire();
-
-    startupComplete = false;
-
-    try {
-      if (start === true) {
-        start = false;
-
-        printLog("info", "Loading data...");
-      } else {
-        printLog("info", "Reloading data...");
-
-        await Promise.all([
-          serve_font.remove(config),
-          serve_sprite.remove(config),
-          serve_data.remove(config),
-          serve_style.remove(config),
-          serve_rendered.remove(config),
-        ]);
-
-        config = loadConfigFile(opts);
-      }
-
-      await Promise.all([
-        serve_font.add(config),
-        serve_sprite.add(config),
-        serve_data
-          .add(config)
-          .then(() =>
-            serve_style.add(config).then(() => serve_rendered.add(config))
-          ),
-      ]);
-
-      printLog("info", "Load data complete!");
-
-      startupComplete = true;
-    } catch (error) {
-      printLog("error", `Failed to load data: ${error}`);
-
-      process.exit(1);
-    } finally {
-      release();
-    }
-  };
-
-  loadData();
 
   if (opts.kill > 0) {
     printLog(
@@ -137,10 +83,10 @@ export function startServer(opts) {
 
       process.exit(0);
     });
-  } else if (opts.reload > 0) {
+  } else if (opts.restart > 0) {
     printLog(
       "info",
-      `Monitor config file changes each ${opts.reload}ms to reload data`
+      `Monitor config file changes each ${opts.restart}ms to restart server`
     );
 
     const newChokidar = chokidar.watch(
@@ -149,17 +95,37 @@ export function startServer(opts) {
         persistent: true,
         usePolling: true,
         awaitWriteFinish: true,
-        interval: opts.reload,
-        binaryInterval: opts.reload,
+        interval: opts.restart,
+        binaryInterval: opts.restart,
       }
     );
 
     newChokidar.on("change", () => {
-      printLog("info", `Config file has changed. Reloading data...`);
+      printLog("info", `Config file has changed. Restarting server...`);
 
-      loadData();
+      process.exit(1);
     });
   }
+
+  Promise.all([
+    serve_font.add(config),
+    serve_sprite.add(config),
+    serve_data
+      .add(config)
+      .then(() =>
+        serve_style.add(config).then(() => serve_rendered.add(config))
+      ),
+  ])
+    .then(() => {
+      printLog("info", "Load data complete!");
+
+      startupComplete = true;
+    })
+    .catch(() => {
+      printLog("error", `Failed to load data: ${error}`);
+
+      process.exit(0);
+    });
 
   express()
     .disable("x-powered-by")
@@ -182,28 +148,30 @@ export function startServer(opts) {
         return res.status(503).send("Starting");
       }
     })
-    .get("/reload", async (req, res, next) => {
-      printLog("info", "Received reload request. Reloading data...");
+    .get("/restart", async (req, res, next) => {
+      printLog("info", "Received restart request. Restarting server...");
 
-      loadData();
+      setTimeout(() => {
+        process.exit(1);
+      }, 0);
 
       return res.status(200).send("OK");
     })
     .get("/kill", async (req, res, next) => {
-      setTimeout(() => {
-        printLog("info", "Received kill request. Killed server!");
+      printLog("info", "Received kill request. Killed server!");
 
+      setTimeout(() => {
         process.exit(0);
       }, 0);
 
       return res.status(200).send("OK");
     })
-    .use("/fonts", serve_font.init(getConfig))
-    .use("/sprites", serve_sprite.init(getConfig))
-    .use("/data", serve_data.init(getConfig))
-    .use("/styles", serve_style.init(getConfig))
-    .use("/styles", serve_rendered.init(getConfig))
-    .use("/", serve_template.init(getConfig))
+    .use("/fonts", serve_font.init(config))
+    .use("/sprites", serve_sprite.init(config))
+    .use("/data", serve_data.init(config))
+    .use("/styles", serve_style.init(config))
+    .use("/styles", serve_rendered.init(config))
+    .use("/", serve_template.init(config))
     .listen(opts.port, () => {
       printLog("info", `Listening on port: ${opts.port}`);
     });
