@@ -47,7 +47,7 @@ function serveFrontPageHandler(getConfig) {
     const datas = {};
     const dataPromises = Object.keys(config.repo.data).map(async (id) => {
       const data = config.repo.data[id];
-      const { center, format } = data.tileJSON;
+      const { center, format, filesize, name = "" } = data.tileJSON;
 
       let viewerHash = "";
       let thumbnail = "";
@@ -64,9 +64,9 @@ function serveFrontPageHandler(getConfig) {
       }
 
       let formattedFilesize = "unknown";
-      if (data.tileJSON.filesize) {
+      if (filesize) {
         let suffix = "kB";
-        let size = parseInt(data.tileJSON.filesize, 10) / 1024;
+        let size = filesize / 1024;
 
         if (size > 1024) {
           suffix = "MB";
@@ -88,7 +88,7 @@ function serveFrontPageHandler(getConfig) {
         source_type: data.sourceType,
         is_vector: format === "pbf",
         formatted_filesize: formattedFilesize,
-        name: data.tileJSON.name || "",
+        name: name,
       };
     });
 

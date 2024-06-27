@@ -117,6 +117,8 @@ async function respondImage(config, item, z, lon, lat, tileSize, format, res) {
 
   renderer.render(params, (error, data) => {
     try {
+      item.renderers.release(renderer)
+
       if (error) {
         throw error;
       }
@@ -167,8 +169,6 @@ async function respondImage(config, item, z, lon, lat, tileSize, format, res) {
       });
     } catch (error) {
       throw error;
-    } finally {
-      item.renderers.release(renderer);
     }
   });
 }
@@ -178,7 +178,6 @@ function getRenderedTileHandler(getConfig) {
     const config = getConfig();
     const id = decodeURI(req.params.id);
     const item = config.repo.rendered[id];
-    const format = req.params.format;
 
     if (!item) {
       return res.status(404).send("Rendered data is not found");
@@ -205,9 +204,11 @@ function getRenderedTileHandler(getConfig) {
       z
     );
     if (Math.abs(tileCenter[0]) > 180 || Math.abs(tileCenter[1]) > 85.06) {
-      return res.status(400).send("Invalid center");
+      return res.status(400).send("Rendered data center is invalid");
     }
 
+    const format = req.params.format;
+    
     if (format === "png" || format === "webp") {
     } else if (format === "jpg" || format === "jpeg") {
       format = "jpeg";
