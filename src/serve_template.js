@@ -7,13 +7,13 @@ import handlebars from "handlebars";
 import SphericalMercator from "@mapbox/sphericalmercator";
 import { getUrl } from "./utils.js";
 
+const mercator = new SphericalMercator();
+
 function serveFrontPageHandler(config) {
   return async (req, res, next) => {
     if (config.options.frontPage === false) {
       return res.status(404).send("Front page is not support");
     }
-
-    const mercator = new SphericalMercator();
 
     const styles = {};
     const renderedPromises = Object.keys(config.repo.rendered).map(

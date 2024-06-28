@@ -22,8 +22,6 @@ import {
   getUrl,
 } from "./utils.js";
 
-const mercator = new SphericalMercator();
-
 mlgl.on("message", (error) => {
   if (error.severity === "ERROR") {
     printLog("error", `mlgl: ${JSON.stringify(error)}`);
@@ -31,6 +29,8 @@ mlgl.on("message", (error) => {
     printLog("warning", `mlgl: ${JSON.stringify(error)}`);
   }
 });
+
+const mercator = new SphericalMercator();
 
 /**
  * Cache of response data by sharp output format and color. Entry for empty
