@@ -19,7 +19,7 @@ function serveFrontPageHandler(config) {
     const renderedPromises = Object.keys(config.repo.rendered).map(
       async (id) => {
         const style = config.repo.rendered[id];
-        const center = style.tileJSON.center;
+        const { center, format, name = "" } = style.tileJSON;
         const tileSize = 256;
 
         let viewerHash = "";
@@ -33,8 +33,8 @@ function serveFrontPageHandler(config) {
         }
 
         styles[id] = {
-          name: style.tileJSON.name || "",
-          xyz_link: `${getUrl(req)}styles/${id}/${tileSize}/{z}/{x}/{y}.${style.tileJSON.format}`,
+          name: name,
+          xyz_link: `${getUrl(req)}styles/${id}/${tileSize}/{z}/{x}/{y}.${format}`,
           viewer_hash: viewerHash,
           thumbnail: thumbnail,
           serve_wmts: config.options.serveWMTS === true,
