@@ -96,86 +96,6 @@ function createEmptyResponse(format, color, callback) {
     });
 }
 
-async function respondImage(config, item, z, lon, lat, tileSize, format, res) {
-  // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
-  const params = {
-    zoom: tileSize === 512 ? Math.max(0, z) : Math.max(0, z - 1),
-    center: [lon, lat],
-    bearing: 0,
-    pitch: 0,
-    width: tileSize,
-    height: tileSize,
-  };
-
-  // HACK(Part 1) 256px tiles are a zoom level lower than maplibre-native default tiles.
-  // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-  // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in Part 2.
-  if (z === 0 && tileSize === 256) {
-    params.width *= 2;
-    params.height *= 2;
-  }
-  // END HACK(Part 1)
-
-  const renderer = await item.renderers.acquire();
-
-  renderer.render(params, (error, data) => {
-    try {
-      item.renderers.release(renderer);
-
-      if (error) {
-        throw error;
-      }
-
-      const image = sharp(data, {
-        raw: {
-          premultiplied: true,
-          width: params.width,
-          height: params.height,
-          channels: 4,
-        },
-      });
-
-      // HACK(Part 2) 256px tiles are a zoom level lower than maplibre-native default tiles.
-      // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-      // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
-      if (z === 0 && tileSize === 256) {
-        image.resize(tileSize, tileSize);
-      }
-      // END HACK(Part 2)
-
-      if (format === "png") {
-        image.png({
-          adaptiveFiltering: false,
-        });
-      } else if (format === "jpeg") {
-        image.jpeg({
-          quality: config.options.formatQuality?.[format] || 80,
-        });
-      } else if (format === "webp") {
-        image.webp({
-          quality: config.options.formatQuality?.[format] || 90,
-        });
-      }
-
-      image.toBuffer((error, buffer, info) => {
-        if (error) {
-          throw error;
-        }
-
-        if (!buffer) {
-          return res.status(404).send("Rendered data is not found");
-        }
-
-        res.header("Content-Type", `image/${format}`);
-
-        return res.status(200).send(buffer);
-      });
-    } catch (error) {
-      throw error;
-    }
-  });
-}
-
 function getRenderedTileHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
@@ -218,17 +138,82 @@ function getRenderedTileHandler(config) {
       return res.status(400).send("Rendered data format is invalid");
     }
 
+    const tileSize = Number(req.params.tileSize) || 256;
+
+    // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
+    const params = {
+      zoom: tileSize === 512 ? Math.max(0, z) : Math.max(0, z - 1),
+      center: tileCenter,
+      bearing: 0,
+      pitch: 0,
+      width: tileSize,
+      height: tileSize,
+    };
+
+    // HACK(Part 1) 256px tiles are a zoom level lower than maplibre-native default tiles.
+    // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
+    // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in Part 2.
+    if (z === 0 && tileSize === 256) {
+      params.width *= 2;
+      params.height *= 2;
+    }
+    // END HACK(Part 1)
+
     try {
-      return await respondImage(
-        config,
-        item,
-        z,
-        tileCenter[0],
-        tileCenter[1],
-        Number(req.params.tileSize) || 256,
-        format,
-        res
-      );
+      const renderer = await item.renderers.acquire();
+
+      renderer.render(params, (error, data) => {
+        item.renderers.release(renderer);
+
+        if (error) {
+          throw error;
+        }
+
+        const image = sharp(data, {
+          raw: {
+            premultiplied: true,
+            width: params.width,
+            height: params.height,
+            channels: 4,
+          },
+        });
+
+        // HACK(Part 2) 256px tiles are a zoom level lower than maplibre-native default tiles.
+        // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
+        // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
+        if (z === 0 && tileSize === 256) {
+          image.resize(tileSize, tileSize);
+        }
+        // END HACK(Part 2)
+
+        if (format === "png") {
+          image.png({
+            adaptiveFiltering: false,
+          });
+        } else if (format === "jpeg") {
+          image.jpeg({
+            quality: config.options.formatQuality.jpeg,
+          });
+        } else if (format === "webp") {
+          image.webp({
+            quality: config.options.formatQuality.webp,
+          });
+        }
+
+        image.toBuffer((error, buffer, info) => {
+          if (error) {
+            throw error;
+          }
+
+          if (!buffer) {
+            return res.status(404).send("Rendered data is not found");
+          }
+
+          res.header("Content-Type", `image/${format}`);
+
+          return res.status(200).send(buffer);
+        });
+      });
     } catch (error) {
       printLog("error", `Failed to get rendered data "${id}": ${error}`);
 
@@ -453,8 +438,8 @@ export const serve_rendered = {
           },
         },
         {
-          min: config.options.minPoolSize || 8,
-          max: config.options.maxPoolSize || 16,
+          min: config.options.minPoolSize,
+          max: config.options.maxPoolSize,
         }
       );
     };
@@ -475,7 +460,7 @@ export const serve_rendered = {
             name: styleJSON.name || "",
             attribution: "",
             minzoom: 0,
-            maxzoom: 24,
+            maxzoom: 22,
             bounds: [-180, -85.0511, 180, 85.0511],
             format: "png",
             type: "baselayer",

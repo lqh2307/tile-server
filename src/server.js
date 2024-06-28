@@ -13,34 +13,63 @@ import { serve_template } from "./serve_template.js";
 import { printLog } from "./utils.js";
 
 function loadConfigFile(opts) {
-  const dataDir = opts.dataDir;
-
-  const configFilePath = path.resolve(dataDir, "config.json");
+  const configFilePath = path.resolve(opts.dataDir, "config.json");
 
   printLog("info", `Load config file: ${configFilePath}`);
 
   try {
+    /* Read config.json file */
     const config = JSON.parse(fs.readFileSync(configFilePath, "utf8"));
 
     config.options = config.options || {};
-    config.styles = config.styles || {};
-    config.data = config.data || {};
-    config.sprites = config.sprites || {};
 
-    const paths = config.options.paths;
+    /* Asign resource path */
+    config.options.paths = config.options.paths || {};
+    config.options.paths.styles = path.join(
+      opts.dataDir,
+      config.options.paths.styles || ""
+    );
+    config.options.paths.fonts = path.join(
+      opts.dataDir,
+      config.options.paths.fonts || ""
+    );
+    config.options.paths.sprites = path.join(
+      opts.dataDir,
+      config.options.paths.sprites || ""
+    );
+    config.options.paths.mbtiles = path.join(
+      opts.dataDir,
+      config.options.paths.mbtiles || ""
+    );
+    config.options.paths.pmtiles = path.join(
+      opts.dataDir,
+      config.options.paths.pmtiles || ""
+    );
 
-    paths.styles = path.join(dataDir, paths?.styles || "");
-    paths.fonts = path.join(dataDir, paths?.fonts || "");
-    paths.sprites = path.join(dataDir, paths?.sprites || "");
-    paths.mbtiles = path.join(dataDir, paths?.mbtiles || "");
-    paths.pmtiles = path.join(dataDir, paths?.pmtiles || "");
-
-    Object.keys(paths).forEach((key) => {
-      if (fs.statSync(paths[key]).isDirectory() === false) {
+    Object.keys(config.options.paths).forEach((key) => {
+      if (fs.statSync(config.options.paths[key]).isDirectory() === false) {
         throw Error(`"${key}" dir does not exist`);
       }
     });
 
+    /* Asign format quality */
+    config.options.formatQuality = config.options.formatQuality || {};
+    config.options.formatQuality.jpeg =
+      config.options.formatQuality.jpeg || 100;
+    config.options.formatQuality.webp =
+      config.options.formatQuality.webp || 100;
+
+    /* Asign pool size */
+    config.options.minPoolSize = config.options.minPoolSize || 8;
+    config.options.maxPoolSize = config.options.maxPoolSize || 16;
+
+    /* Asign resource */
+    config.styles = config.styles || {};
+    config.data = config.data || {};
+    config.sprites = config.sprites || {};
+    config.fonts = config.fonts || {};
+
+    /* Asign repo */
     config.repo = {
       styles: {},
       rendered: {},
@@ -59,6 +88,7 @@ function loadConfigFile(opts) {
 
 export function startServer(opts) {
   const config = loadConfigFile(opts);
+
   let startupComplete = false;
 
   if (opts.kill > 0) {

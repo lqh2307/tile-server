@@ -1,7 +1,6 @@
 {
   "options": {
     "paths": {
-      "root": "data",
       "fonts": "fonts",
       "sprites": "sprites",
       "styles": "styles",
