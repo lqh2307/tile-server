@@ -13,7 +13,7 @@ while true; do
     break
   else
     if [ $EXIT_CODE -ne 1 ]; then
-      echo "Exited with code: $EXIT_CODE. Restarting after 5 seconds..."
+      echo "Server exited with code: $EXIT_CODE. Restarting server after 5 seconds..."
 
       sleep 5
     fi
