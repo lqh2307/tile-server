@@ -188,16 +188,16 @@ export const serve_data = {
               await downloadFile(item.mbtiles, inputDataFile);
 
               item.mbtiles = path.join(data, `${data}.mbtiles`);
-            } else {
-              inputDataFile = path.join(
-                config.options.paths.mbtiles,
-                item.mbtiles
-              );
+            }
 
-              const stat = fs.statSync(inputDataFile);
-              if (stat.isFile() === false || stat.size === 0) {
-                throw Error(`MBTiles data "${data}" is invalid`);
-              }
+            inputDataFile = path.join(
+              config.options.paths.mbtiles,
+              item.mbtiles
+            );
+
+            const stat = fs.statSync(inputDataFile);
+            if (stat.isFile() === false || stat.size === 0) {
+              throw Error(`MBTiles data is invalid`);
             }
 
             dataInfo.sourceType = "mbtiles";
@@ -230,7 +230,7 @@ export const serve_data = {
 
               const stat = fs.statSync(inputDataFile);
               if (stat.isFile() === false || stat.size === 0) {
-                throw Error(`PMTiles data "${data}" is invalid`);
+                throw Error(`PMTiles data is invalid`);
               }
             }
 
@@ -241,9 +241,7 @@ export const serve_data = {
 
             Object.assign(dataInfo.tileJSON, info);
           } else {
-            throw Error(
-              `"pmtiles" or "mbtiles" property of data "${data}" is empty`
-            );
+            throw Error(`"pmtiles" or "mbtiles" property is empty`);
           }
 
           fixTileJSONCenter(dataInfo.tileJSON);

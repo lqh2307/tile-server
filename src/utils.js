@@ -262,10 +262,12 @@ export function printUsedMemory(interval) {
 
     console.log(`===============================`);
 
-    console.log(`RSS: ${memoryUsage.rss}`);
-    console.log(`Heap Total: ${memoryUsage.heapTotal}`);
-    console.log(`Heap Used: ${memoryUsage.heapUsed}`);
-    console.log(`External: ${memoryUsage.external}`);
+    console.log({
+      rss: memoryUsage.rss,
+      heapTotal: memoryUsage.heapTotal,
+      heapUsed: memoryUsage.heapUsed,
+      external: memoryUsage.external,
+    });
   }, interval);
 }
 

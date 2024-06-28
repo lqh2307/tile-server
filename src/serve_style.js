@@ -77,7 +77,7 @@ export const serve_style = {
 
         try {
           if (!item.style) {
-            throw Error(`"style" property of style "${style}" is empty`);
+            throw Error(`"style" property is empty`);
           }
 
           const styleJSON = JSON.parse(

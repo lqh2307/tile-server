@@ -347,14 +347,13 @@ export const serve_rendered = {
                   const source = repoobj.sources[sourceId];
                   const sourceType = repoobj.sourceTypes[sourceId];
                   const sourceInfo = styleJSON.sources[sourceId];
-                  const z = Number(parts[3]) || 0;
-                  const x = Number(parts[4]) || 0;
-                  const y = Number(parts[5]?.split(".")[0]) || 0;
-                  const format = parts[5]?.split(".")[1] || "";
+                  const z = Number(parts[3]);
+                  const x = Number(parts[4]);
+                  const y = Number(parts[5].split(".")[0]);
 
                   if (sourceType === "mbtiles") {
                     source.getTile(z, x, y, (error, data) => {
-                      if (error) {
+                      if (error || !data) {
                         printLog(
                           "warning",
                           `MBTiles source "${sourceId}": ${error}. Serving empty...`
@@ -369,22 +368,17 @@ export const serve_rendered = {
                         return;
                       }
 
-                      const response = {};
-
-                      if (format === "pbf") {
+                      if (sourceInfo.format === "pbf") {
                         try {
-                          response.data = zlib.unzipSync(data);
+                          data = zlib.unzipSync(data);
                         } catch (error) {
-                          printLog(
-                            "error",
-                            `MBTiles source "${sourceId}": ${error}. Skipping...`
-                          );
+                          data = null;
                         }
-                      } else {
-                        response.data = data;
                       }
 
-                      callback(null, response);
+                      callback(null, {
+                        data: data,
+                      });
                     });
                   } else if (sourceType === "pmtiles") {
                     const { data } = await getPMtilesTile(source, z, x, y);
@@ -530,7 +524,7 @@ export const serve_rendered = {
 
                           source.type = type;
                           source.tiles = [
-                            `mbtiles://${name}/{z}/{x}/{y}.${info.format || "pbf"}`,
+                            `mbtiles://${name}/{z}/{x}/{y}.${info.format}`,
                           ];
 
                           if (source.attribution) {
@@ -568,7 +562,7 @@ export const serve_rendered = {
 
                 source.type = type;
                 source.tiles = [
-                  `pmtiles://${name}/{z}/{x}/{y}.${metadata.format || "pbf"}`,
+                  `pmtiles://${name}/{z}/{x}/{y}.${metadata.format}`,
                 ];
 
                 if (source.attribution) {
