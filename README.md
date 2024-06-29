@@ -40,6 +40,7 @@ Example config.json:
 			"restartEndpoint": true,
 			"frontPage": true,
 			"serveWMTS": true,
+			"maxScaleRender": 1,
 			"minPoolSize": 8,
 			"maxPoolSize": 16
 		},
