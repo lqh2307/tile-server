@@ -11,6 +11,11 @@
       "jpeg": 100,
       "webp": 100
     },
+    "listenPort": 8080,
+    "watchToKill": 0,
+    "watchToRestart": 1000,
+    "killEndpoint": true,
+    "restartEndpoint": true,
     "frontPage": true,
     "serveWMTS": true,
     "minPoolSize": 8,

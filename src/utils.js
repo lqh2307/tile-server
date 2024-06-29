@@ -1,9 +1,9 @@
 "use strict";
 
+import glyphCompose from "@mapbox/glyph-pbf-composite";
+import axios from "axios";
 import path from "node:path";
 import fs from "node:fs";
-import axios from "axios";
-import glyphCompose from "@mapbox/glyph-pbf-composite";
 import { pngValidator } from "png-validator";
 import { PMTiles, FetchSource } from "pmtiles";
 

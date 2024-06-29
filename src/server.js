@@ -1,15 +1,15 @@
-import fs from "node:fs";
-import path from "node:path";
 import chokidar from "chokidar";
 import express from "express";
 import morgan from "morgan";
+import path from "node:path";
 import cors from "cors";
-import { serve_data } from "./serve_data.js";
+import fs from "node:fs";
+import { serve_rendered } from "./serve_rendered.js";
+import { serve_template } from "./serve_template.js";
+import { serve_sprite } from "./serve_sprite.js";
 import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
-import { serve_rendered } from "./serve_rendered.js";
-import { serve_sprite } from "./serve_sprite.js";
-import { serve_template } from "./serve_template.js";
+import { serve_data } from "./serve_data.js";
 import { printLog } from "./utils.js";
 
 function loadConfigFile(opts) {
@@ -59,6 +59,9 @@ function loadConfigFile(opts) {
     config.options.formatQuality.webp =
       config.options.formatQuality.webp || 100;
 
+    /* Asign listen port */
+    config.options.listenPort = config.options.listenPort || 8080;
+
     /* Asign pool size */
     config.options.minPoolSize = config.options.minPoolSize || 8;
     config.options.maxPoolSize = config.options.maxPoolSize || 16;
@@ -87,24 +90,21 @@ function loadConfigFile(opts) {
 }
 
 export function startServer(opts) {
+  /* Load config file */
   const config = loadConfigFile(opts);
 
-  let startupComplete = false;
-
-  if (opts.kill > 0) {
+  if (config.options.watchToKill > 0) {
     printLog(
       "info",
-      `Monitor config file changes each ${opts.kill}ms to kill server`
+      `Watch config file changes interval ${config.options.watchToKill}ms to kill server`
     );
 
     const newChokidar = chokidar.watch(
       path.resolve(opts.dataDir, "config.json"),
       {
-        persistent: true,
         usePolling: true,
         awaitWriteFinish: true,
-        interval: opts.kill,
-        binaryInterval: opts.kill,
+        interval: config.options.watchToKill,
       }
     );
 
@@ -113,20 +113,18 @@ export function startServer(opts) {
 
       process.exit(0);
     });
-  } else if (opts.restart > 0) {
+  } else if (config.options.watchToRestart > 0) {
     printLog(
       "info",
-      `Monitor config file changes each ${opts.restart}ms to restart server`
+      `Watch config file changes interval ${config.options.watchToRestart}ms to restart server`
     );
 
     const newChokidar = chokidar.watch(
       path.resolve(opts.dataDir, "config.json"),
       {
-        persistent: true,
         usePolling: true,
         awaitWriteFinish: true,
-        interval: opts.restart,
-        binaryInterval: opts.restart,
+        interval: config.options.watchToRestart,
       }
     );
 
@@ -137,6 +135,9 @@ export function startServer(opts) {
     });
   }
 
+  let startupComplete = false;
+
+  /* Load data */
   Promise.all([
     serve_font.add(config),
     serve_sprite.add(config),
@@ -157,7 +158,8 @@ export function startServer(opts) {
       process.exit(0);
     });
 
-  express()
+  /* Init server */
+  const app = express()
     .disable("x-powered-by")
     .enable("trust proxy")
     .use(
@@ -170,15 +172,19 @@ export function startServer(opts) {
         origin: "*",
         methods: "GET",
       })
-    )
-    .get("/health", async (req, res, next) => {
-      if (startupComplete === true) {
-        return res.status(200).send("OK");
-      } else {
-        return res.status(503).send("Starting");
-      }
-    })
-    .get("/restart", async (req, res, next) => {
+    );
+
+  /* Asign endpoint */
+  app.get("/health", async (req, res, next) => {
+    if (startupComplete === true) {
+      return res.status(200).send("OK");
+    } else {
+      return res.status(503).send("Starting");
+    }
+  });
+
+  if (config.options.restartEndpoint === true) {
+    app.get("/restart", async (req, res, next) => {
       printLog("info", "Received restart request. Restarting server...");
 
       setTimeout(() => {
@@ -186,8 +192,11 @@ export function startServer(opts) {
       }, 0);
 
       return res.status(200).send("OK");
-    })
-    .get("/kill", async (req, res, next) => {
+    });
+  }
+
+  if (config.options.killEndpoint === true) {
+    app.get("/kill", async (req, res, next) => {
       printLog("info", "Received kill request. Killed server!");
 
       setTimeout(() => {
@@ -195,14 +204,18 @@ export function startServer(opts) {
       }, 0);
 
       return res.status(200).send("OK");
-    })
-    .use("/fonts", serve_font.init(config))
-    .use("/sprites", serve_sprite.init(config))
-    .use("/data", serve_data.init(config))
-    .use("/styles", serve_style.init(config))
-    .use("/styles", serve_rendered.init(config))
-    .use("/", serve_template.init(config))
-    .listen(opts.port, () => {
-      printLog("info", `Listening on port: ${opts.port}`);
     });
+  }
+
+  app.use("/fonts", serve_font.init(config));
+  app.use("/sprites", serve_sprite.init(config));
+  app.use("/data", serve_data.init(config));
+  app.use("/styles", serve_style.init(config));
+  app.use("/styles", serve_rendered.init(config));
+  app.use("/", serve_template.init(config));
+
+  /* Start listen */
+  app.listen(config.options.listenPort, () => {
+    printLog("info", `Listening on port: ${config.options.listenPort}`);
+  });
 }

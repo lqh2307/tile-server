@@ -11,10 +11,6 @@ const mercator = new SphericalMercator();
 
 function serveFrontPageHandler(config) {
   return async (req, res, next) => {
-    if (config.options.frontPage === false) {
-      return res.status(404).send("Front page is not support");
-    }
-
     const styles = {};
     const renderedPromises = Object.keys(config.repo.rendered).map(
       async (id) => {
@@ -162,10 +158,6 @@ function serveDataHandler(config) {
 
 function serveWMTSHandler(config) {
   return async (req, res, next) => {
-    if (config.options.frontPage === false) {
-      return res.status(404).send("WMTS is not support");
-    }
-
     const id = decodeURI(req.params.id);
     const wmts = config.repo.rendered[id];
 
@@ -198,10 +190,16 @@ export const serve_template = {
       express.static(path.resolve("public", "resources"))
     );
 
-    app.get("/styles/:id/wmts.xml", serveWMTSHandler(config));
+    if (config.options.serveWMTS === true) {
+      app.get("/styles/:id/wmts.xml", serveWMTSHandler(config));
+    }
+
     app.get("/styles/:id/$", serveStyleHandler(config));
     app.use("/data/:id/$", serveDataHandler(config));
-    app.get("/$", serveFrontPageHandler(config));
+
+    if (config.options.frontPage === true) {
+      app.get("/$", serveFrontPageHandler(config));
+    }
 
     return app;
   },

@@ -372,7 +372,9 @@ export const serve_rendered = {
                         try {
                           data = zlib.unzipSync(data);
                         } catch (error) {
-                          data = null;
+                          callback(error, {
+                            data: nul,
+                          });
                         }
                       }
 
