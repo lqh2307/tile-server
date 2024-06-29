@@ -19,7 +19,7 @@ import {
 function getDataTileHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
-    const item = config.repo.data[id];
+    const item = config.repo.datas[id];
 
     if (!item) {
       return res.status(404).send("Data is not found");
@@ -28,12 +28,12 @@ function getDataTileHandler(config) {
     const z = Number(req.params.z);
     const x = Number(req.params.x);
     const y = Number(req.params.y);
-    const maxXY = Math.pow(2, z);
 
     if (
-      !(0 <= z && item.tileJSON.minzoom <= z && z <= item.tileJSON.maxzoom) ||
-      !(0 <= x && x < maxXY) ||
-      !(0 <= y && y < maxXY)
+      z < item.tileJSON.minzoom ||
+      z > item.tileJSON.maxzoom ||
+      x >= Math.pow(2, z) ||
+      y >= Math.pow(2, z)
     ) {
       return res.status(400).send("Data is out of bounds");
     }
@@ -103,7 +103,7 @@ function getDataTileHandler(config) {
 function getDataHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
-    const item = config.repo.data[id];
+    const item = config.repo.datas[id];
 
     if (!item) {
       return res.status(404).send("Data is not found");
@@ -128,10 +128,10 @@ function getDataHandler(config) {
 
 function getDatasListHandler(config) {
   return async (req, res, next) => {
-    const datas = Object.keys(config.repo.data);
+    const datas = Object.keys(config.repo.datas);
 
     const result = datas.map((data) => {
-      const item = config.repo.data[data];
+      const item = config.repo.datas[data];
 
       return {
         id: data,
@@ -151,15 +151,11 @@ export const serve_data = {
     app.get("/datas.json", getDatasListHandler(config));
     app.get("/:id.json", getDataHandler(config));
     app.get(
-      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format((pbf|jpg|png|jpeg|webp){1})`,
+      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(pbf|jpg|png|jpeg|webp)`,
       getDataTileHandler(config)
     );
 
     return app;
-  },
-
-  remove: async (config) => {
-    config.repo.data = {};
   },
 
   add: async (config) => {
@@ -246,7 +242,7 @@ export const serve_data = {
 
           fixTileJSONCenter(dataInfo.tileJSON);
 
-          config.repo.data[data] = dataInfo;
+          config.repo.datas[data] = dataInfo;
         } catch (error) {
           printLog(
             "error",

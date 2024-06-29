@@ -12,9 +12,9 @@ const mercator = new SphericalMercator();
 function serveFrontPageHandler(config) {
   return async (req, res, next) => {
     const styles = {};
-    const renderedPromises = Object.keys(config.repo.rendered).map(
+    const renderedPromises = Object.keys(config.repo.rendereds).map(
       async (id) => {
-        const style = config.repo.rendered[id];
+        const style = config.repo.rendereds[id];
         const { center, format, name = "" } = style.tileJSON;
         const tileSize = 256;
 
@@ -39,8 +39,8 @@ function serveFrontPageHandler(config) {
     );
 
     const datas = {};
-    const dataPromises = Object.keys(config.repo.data).map(async (id) => {
-      const data = config.repo.data[id];
+    const dataPromises = Object.keys(config.repo.datas).map(async (id) => {
+      const data = config.repo.datas[id];
       const { center, format, filesize, name = "" } = data.tileJSON;
 
       let viewerHash = "";
@@ -110,7 +110,7 @@ function serveFrontPageHandler(config) {
 function serveStyleHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
-    const style = config.repo.rendered[id];
+    const style = config.repo.rendereds[id];
 
     if (!style) {
       return res.status(404).send("Style is not found");
@@ -134,7 +134,7 @@ function serveStyleHandler(config) {
 function serveDataHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
-    const data = config.repo.data[id];
+    const data = config.repo.datas[id];
 
     if (!data) {
       return res.status(404).send("Data is not found");
@@ -159,7 +159,7 @@ function serveDataHandler(config) {
 function serveWMTSHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
-    const wmts = config.repo.rendered[id];
+    const wmts = config.repo.rendereds[id];
 
     if (!wmts) {
       return res.status(404).send("WMTS is not found");

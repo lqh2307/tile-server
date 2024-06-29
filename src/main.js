@@ -14,7 +14,11 @@ const packageJSON = JSON.parse(
 program
   .description("===== Tile server startup options =====")
   .usage("tile-server [options]")
-  .option("-d, --data-dir <path>", "data directory path", "data")
+  .option(
+    "-d, --data-dir <path>",
+    "data directory path (include config.json file)",
+    "data"
+  )
   .version(packageJSON.version, "-v, --version")
   .showHelpAfterError();
 

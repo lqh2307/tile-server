@@ -55,15 +55,11 @@ export const serve_sprite = {
 
     app.get("/sprites.json", getSpritesListHandler(config));
     app.get(
-      "/:id/sprite:scale(@\\d+x)?.:format((png|json){1})",
+      "/:id/sprite:scale(@\\d+x)?.:format(png|json)",
       getSpriteHandler(config)
     );
 
     return app;
-  },
-
-  remove: async (config) => {
-    config.repo.sprites = {};
   },
 
   add: async (config) => {
@@ -77,7 +73,10 @@ export const serve_sprite = {
 
           config.repo.sprites[sprite] = true;
         } catch (error) {
-          printLog("error", `Failed to load sprite "${sprite}": ${error}`);
+          printLog(
+            "error",
+            `Failed to load sprite "${sprite}": ${error}. Skipping...`
+          );
         }
       })
     );

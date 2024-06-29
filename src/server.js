@@ -10,8 +10,13 @@ import { serve_sprite } from "./serve_sprite.js";
 import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
-import { printLog } from "./utils.js";
+import { createRepoFile, printLog } from "./utils.js";
 
+/**
+ * Load config file and assign default
+ * @param {object} opts
+ * @returns {object}
+ */
 function loadConfigFile(opts) {
   const configFilePath = path.resolve(opts.dataDir, "config.json");
 
@@ -62,6 +67,19 @@ function loadConfigFile(opts) {
     /* Asign listen port */
     config.options.listenPort = config.options.listenPort || 8080;
 
+    /* Asign action with server */
+    config.options.watchToKill = config.options.watchToKill || 0;
+    config.options.watchToRestart = config.options.watchToRestart || 1000;
+
+    /* Asign enable endpoint */
+    config.options.killEndpoint = config.options.killEndpoint || true;
+    config.options.restartEndpoint = config.options.restartEndpoint || true;
+    config.options.frontPage = config.options.frontPage || true;
+    config.options.serveWMTS = config.options.serveWMTS || true;
+
+    /* Asign scale render */
+    config.options.maxScaleRender = config.options.maxScaleRender || 1;
+
     /* Asign pool size */
     config.options.minPoolSize = config.options.minPoolSize || 8;
     config.options.maxPoolSize = config.options.maxPoolSize || 16;
@@ -75,8 +93,8 @@ function loadConfigFile(opts) {
     /* Asign repo */
     config.repo = {
       styles: {},
-      rendered: {},
-      data: {},
+      rendereds: {},
+      datas: {},
       fonts: {},
       sprites: {},
     };
@@ -89,6 +107,11 @@ function loadConfigFile(opts) {
   }
 }
 
+/**
+ * Start server
+ * @param {object} opts
+ * @returns {void}
+ */
 export function startServer(opts) {
   /* Load config file */
   const config = loadConfigFile(opts);
@@ -149,7 +172,7 @@ export function startServer(opts) {
   ])
     .then(() => {
       printLog("info", "Load data complete!");
-
+      createRepoFile(config, "./config.json");
       startupComplete = true;
     })
     .catch(() => {

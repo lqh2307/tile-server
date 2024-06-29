@@ -7,39 +7,14 @@ import fs from "node:fs";
 import { pngValidator } from "png-validator";
 import { PMTiles, FetchSource } from "pmtiles";
 
-function findFiles(dirPath, regex, isRecurse = false, isJustBaseName = false) {
-  if (isRecurse) {
-    const files = fs.readdirSync(dirPath);
-    const results = [];
-
-    for (const file of files) {
-      const filePath = path.join(dirPath, file);
-
-      if (regex.test(file) && fs.statSync(filePath).isDirectory()) {
-        const subResults = findFiles(filePath, regex, true);
-
-        results.push(
-          ...subResults.map((subResult) => path.join(file, subResult))
-        );
-      } else if (regex.test(file) && fs.statSync(filePath).isFile()) {
-        results.push(file);
-      }
-    }
-
-    if (isJustBaseName === true) {
-      return results.map((result) => path.basename(result));
-    }
-
-    return results;
-  } else {
-    const fileNames = fs.readdirSync(dirPath);
-
-    return fileNames.filter(
+function findFiles(dirPath, regex) {
+  return fs
+    .readdirSync(dirPath)
+    .filter(
       (fileName) =>
         regex.test(fileName) &&
         fs.statSync(path.join(dirPath, fileName)).isFile()
     );
-  }
 }
 
 /**
@@ -164,10 +139,10 @@ export function printLog(level, msg) {
 
 export function validatePBFFont(pbfDirPath) {
   try {
-    const fileNames = findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf{1}$/);
+    const pbfFileNames = findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
 
-    if (fileNames.length !== 256) {
-      throw Error(`Font is invalid`);
+    if (pbfFileNames.length !== 256) {
+      throw Error(`Pbf file count is not equal 256`);
     }
   } catch (error) {
     throw error;
@@ -176,24 +151,19 @@ export function validatePBFFont(pbfDirPath) {
 
 export function validateSprite(spriteDirPath) {
   try {
-    const spritePattern = /^sprite(@\d+x)?\.(png|json){1}$/;
+    const jsonSpriteFileNames = findFiles(
+      spriteDirPath,
+      /^sprite(@\d+x)?\.json$/
+    );
 
-    const fileNameWoExts = [
-      ...new Set(
-        findFiles(spriteDirPath, spritePattern).map((fileName) =>
-          path.basename(fileName, path.extname(fileName))
-        )
-      ),
-    ];
-
-    if (fileNameWoExts.length === 0) {
-      throw Error(`Sprite is empty`);
+    if (jsonSpriteFileNames.length === 0) {
+      throw Error(`Json file count is equal 0`);
     }
 
-    fileNameWoExts.forEach((fileNameWoExt) => {
+    jsonSpriteFileNames.forEach((jsonSpriteFileName) => {
       /* Validate JSON sprite */
       const jsonFile = fs.readFileSync(
-        path.join(spriteDirPath, `${fileNameWoExt}.json`),
+        path.join(spriteDirPath, jsonSpriteFileName),
         "utf8"
       );
 
@@ -204,21 +174,24 @@ export function validateSprite(spriteDirPath) {
 
         if (
           typeof value !== "object" ||
-          !("height" in value) ||
-          !("pixelRatio" in value) ||
-          !("width" in value) ||
-          !("x" in value) ||
-          !("y" in value)
+          "height" in value === false ||
+          "pixelRatio" in value === false ||
+          "width" in value === false ||
+          "x" in value === false ||
+          "y" in value === false
         ) {
           throw Error(
-            `One of properties "height", "pixelRatio", "width", "x", "y" for sprite "${key}" is empty`
+            `One of properties ("height", "pixelRatio", "width", "x", "y") is empty`
           );
         }
       });
 
       /* Validate PNG sprite */
       const pngData = fs.readFileSync(
-        path.join(spriteDirPath, `${fileNameWoExt}.png`)
+        path.join(
+          spriteDirPath,
+          `${jsonSpriteFileName.slice(0, jsonSpriteFileName.lastIndexOf(".json"))}.png`
+        )
       );
 
       pngValidator(pngData);

@@ -64,10 +64,6 @@ export const serve_style = {
     return app;
   },
 
-  remove: async (config) => {
-    config.repo.styles = {};
-  },
-
   add: async (config) => {
     const styles = Object.keys(config.styles);
 
@@ -116,7 +112,7 @@ export const serve_style = {
 
               const sourceID = sourceURL.slice(1, -1);
 
-              if (!config.repo.data[sourceID]) {
+              if (!config.repo.datas[sourceID]) {
                 throw Error(`Source data "${name}" is not found`);
               }
 
