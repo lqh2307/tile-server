@@ -101,15 +101,10 @@ export const serve_style = {
               source.url?.startsWith("pmtiles://") === true ||
               source.url?.startsWith("mbtiles://") === true
             ) {
-              const sourceType = source.url.slice(0, 7);
               const sourceID = source.url.slice(11, -1);
 
               if (!config.repo.datas[sourceID]) {
-                if (sourceType === "mbtiles") {
-                  throw Error(`MBTiles source data "${name}" is not found`);
-                } else {
-                  throw Error(`PMTiles source data "${name}" is not found`);
-                }
+                throw Error(`Source data "${name}" is not found`);
               }
             }
           });

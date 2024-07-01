@@ -14,11 +14,11 @@ import { printLog } from "./utils.js";
 
 /**
  * Load config file and assign default
- * @param {object} opts
+ * @param {string} dataDir
  * @returns {object}
  */
-function loadConfigFile(opts) {
-  const configFilePath = path.resolve(opts.dataDir, "config.json");
+function loadConfigFile(dataDir) {
+  const configFilePath = path.resolve(dataDir, "config.json");
 
   printLog("info", `Load config file: ${configFilePath}`);
 
@@ -31,23 +31,23 @@ function loadConfigFile(opts) {
     /* Asign resource path */
     config.options.paths = config.options.paths || {};
     config.options.paths.styles = path.join(
-      opts.dataDir,
+      dataDir,
       config.options.paths.styles || ""
     );
     config.options.paths.fonts = path.join(
-      opts.dataDir,
+      dataDir,
       config.options.paths.fonts || ""
     );
     config.options.paths.sprites = path.join(
-      opts.dataDir,
+      dataDir,
       config.options.paths.sprites || ""
     );
     config.options.paths.mbtiles = path.join(
-      opts.dataDir,
+      dataDir,
       config.options.paths.mbtiles || ""
     );
     config.options.paths.pmtiles = path.join(
-      opts.dataDir,
+      dataDir,
       config.options.paths.pmtiles || ""
     );
 
@@ -109,27 +109,25 @@ function loadConfigFile(opts) {
 
 /**
  * Start server
- * @param {object} opts
+ * @param {string} dataDir
  * @returns {void}
  */
-export function startServer(opts) {
+export function startServer(dataDir) {
   /* Load config file */
-  const config = loadConfigFile(opts);
+  const config = loadConfigFile(dataDir);
 
+  /* Setup watch config file */
   if (config.options.watchToKill > 0) {
     printLog(
       "info",
       `Watch config file changes interval ${config.options.watchToKill}ms to kill server`
     );
 
-    const newChokidar = chokidar.watch(
-      path.resolve(opts.dataDir, "config.json"),
-      {
-        usePolling: true,
-        awaitWriteFinish: true,
-        interval: config.options.watchToKill,
-      }
-    );
+    const newChokidar = chokidar.watch(path.resolve(dataDir, "config.json"), {
+      usePolling: true,
+      awaitWriteFinish: true,
+      interval: config.options.watchToKill,
+    });
 
     newChokidar.on("change", () => {
       printLog("info", `Config file has changed. Killed server!`);
@@ -142,14 +140,11 @@ export function startServer(opts) {
       `Watch config file changes interval ${config.options.watchToRestart}ms to restart server`
     );
 
-    const newChokidar = chokidar.watch(
-      path.resolve(opts.dataDir, "config.json"),
-      {
-        usePolling: true,
-        awaitWriteFinish: true,
-        interval: config.options.watchToRestart,
-      }
-    );
+    const newChokidar = chokidar.watch(path.resolve(dataDir, "config.json"), {
+      usePolling: true,
+      awaitWriteFinish: true,
+      interval: config.options.watchToRestart,
+    });
 
     newChokidar.on("change", () => {
       printLog("info", `Config file has changed. Restarting server...`);

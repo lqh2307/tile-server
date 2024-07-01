@@ -333,52 +333,33 @@ class PMTilesFileSource {
   }
 }
 
-/**
- *
- * @param typenum
- */
-function getPmtilesTileType(typenum) {
-  const header = {};
+function getPMTilesTileType(typenum) {
+  const headers = {};
   let tileType;
 
-  switch (typenum) {
-    case 0:
-      tileType = "";
-
-      break;
-    case 1:
-      tileType = "pbf";
-      header["Content-Type"] = "application/x-protobuf";
-
-      break;
-    case 2:
-      tileType = "png";
-      header["Content-Type"] = "image/png";
-
-      break;
-    case 3:
-      tileType = "jpeg";
-      header["Content-Type"] = "image/jpeg";
-
-      break;
-    case 4:
-      tileType = "webp";
-      header["Content-Type"] = "image/webp";
-
-      break;
+  if (typenum === 0) {
+    tileType = "";
+  } else if (typenum === 1) {
+    tileType = "pbf";
+    headers["Content-Type"] = "application/x-protobuf";
+  } else if (typenum === 2) {
+    tileType = "png";
+    headers["Content-Type"] = "image/png";
+  } else if (typenum === 3) {
+    tileType = "jpeg";
+    headers["Content-Type"] = "image/jpeg";
+  } else if (typenum === 4) {
+    tileType = "webp";
+    headers["Content-Type"] = "image/webp";
   }
 
   return {
     type: tileType,
-    header: header,
+    headers: headers,
   };
 }
 
-/**
- *
- * @param filePath
- */
-export function openPMtiles(filePath) {
+export async function openPMTiles(filePath) {
   let source;
 
   if (isValidHttpUrl(filePath) === true) {
@@ -390,16 +371,12 @@ export function openPMtiles(filePath) {
   return new PMTiles(source);
 }
 
-/**
- *
- * @param pmtiles
- */
-export async function getPMtilesInfo(pmtiles) {
-  const header = await pmtiles.getHeader();
-  const metadata = await pmtiles.getMetadata();
+export async function getPMTilesInfo(mbtilesSource) {
+  const header = await mbtilesSource.getHeader();
+  const metadata = await mbtilesSource.getMetadata();
 
   //Add missing metadata from header
-  metadata["format"] = getPmtilesTileType(header.tileType).type;
+  metadata["format"] = getPMTilesTileType(header.tileType).type;
   metadata["minzoom"] = header.minZoom;
   metadata["maxzoom"] = header.maxZoom;
 
@@ -431,16 +408,9 @@ export async function getPMtilesInfo(pmtiles) {
   return metadata;
 }
 
-/**
- *
- * @param pmtiles
- * @param z
- * @param x
- * @param y
- */
-export async function getPMtilesTile(pmtiles, z, x, y) {
+export async function getPMTilesTile(pmtiles, z, x, y) {
   const header = await pmtiles.getHeader();
-  const tileType = getPmtilesTileType(header.tileType);
+  const tileType = getPMTilesTileType(header.tileType);
   let zxyTile = await pmtiles.getZxy(z, x, y);
 
   if (zxyTile && zxyTile.data) {
@@ -451,7 +421,7 @@ export async function getPMtilesTile(pmtiles, z, x, y) {
 
   return {
     data: zxyTile,
-    header: tileType.header,
+    headers: tileType.headers,
   };
 }
 

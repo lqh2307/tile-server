@@ -39,6 +39,4 @@ program.parse(process.argv);
 
 const opts = program.opts();
 
-startServer({
-  dataDir: path.resolve(opts.dataDir),
-});
+startServer(path.resolve(opts.dataDir));

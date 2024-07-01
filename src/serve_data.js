@@ -6,13 +6,13 @@ import express from "express";
 import {
   fixTileJSONCenter,
   isValidHttpUrl,
-  getPMtilesInfo,
-  getPMtilesTile,
+  getPMTilesInfo,
+  getPMTilesTile,
   getMBTilesTile,
   getMBTilesInfo,
   downloadFile,
   openMBTiles,
-  openPMtiles,
+  openPMTiles,
   printLog,
   getUrl,
 } from "./utils.js";
@@ -76,7 +76,7 @@ function getDataTileHandler(config) {
           }
         }
       } else {
-        let { data, headers = {} } = await getPMtilesTile(item.source, z, x, y);
+        let { data, headers = {} } = await getPMTilesTile(item.source, z, x, y);
 
         if (data === undefined) {
           return res.status(204).send("Data is empty");
@@ -212,9 +212,9 @@ export const serve_data = {
             }
 
             dataInfo.sourceType = "pmtiles";
-            dataInfo.source = openPMtiles(inputDataFile);
+            dataInfo.source = await openPMTiles(inputDataFile);
 
-            const info = await getPMtilesInfo(dataInfo.source);
+            const info = await getPMTilesInfo(dataInfo.source);
 
             Object.assign(dataInfo.tileJSON, info);
           } else {

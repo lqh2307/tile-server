@@ -12,7 +12,7 @@ import mlgl from "@maplibre/maplibre-gl-native";
 import axios from "axios";
 import {
   fixTileJSONCenter,
-  getPMtilesTile,
+  getPMTilesTile,
   getMBTilesTile,
   getFontsPbf,
   printLog,
@@ -35,29 +35,26 @@ const mercator = new SphericalMercator();
  * @param {Function} callback The mlgl callback.
  */
 function createEmptyResponse(format, callback) {
-  if (format === "pbf") {
+  if (format !== "pbf") {
+    const color = new Color("rgba(255,255,255,0)");
+    sharp(Buffer.from(color.array()), {
+      raw: {
+        width: 1,
+        height: 1,
+        channels: format !== "jpeg" && format !== "jpg" ? 4 : 3,
+      },
+    })
+      .toFormat(format)
+      .toBuffer((_, buffer) => {
+        callback(null, {
+          data: buffer,
+        });
+      });
+  } else {
     callback(null, {
       data: Buffer.alloc(0),
     });
-
-    return;
   }
-
-  // Create an empty response image
-  const color = new Color("rgba(255,255,255,0)");
-  sharp(Buffer.from(color.array()), {
-    raw: {
-      width: 1,
-      height: 1,
-      channels: format !== "jpeg" && format !== "jpg" ? 4 : 3,
-    },
-  })
-    .toFormat(format)
-    .toBuffer((_, buffer) => {
-      callback(null, {
-        data: buffer,
-      });
-    });
 }
 
 function getRenderedTileHandler(config) {
@@ -411,7 +408,7 @@ export const serve_rendered = {
                               );
                             }
                           } else {
-                            const { data } = await getPMtilesTile(
+                            const { data } = await getPMTilesTile(
                               source,
                               z,
                               x,
