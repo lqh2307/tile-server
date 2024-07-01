@@ -1,12 +1,19 @@
 "use strict";
 
 import glyphCompose from "@mapbox/glyph-pbf-composite";
-import axios from "axios";
+import MBTiles from "@mapbox/mbtiles";
 import path from "node:path";
+import axios from "axios";
 import fs from "node:fs";
 import { pngValidator } from "png-validator";
 import { PMTiles, FetchSource } from "pmtiles";
 
+/**
+ * Find files in directory
+ * @param {string} dirPath
+ * @param {RegExp} regex
+ * @returns {string[]}
+ */
 function findFiles(dirPath, regex) {
   return fs
     .readdirSync(dirPath)
@@ -18,18 +25,31 @@ function findFiles(dirPath, regex) {
 }
 
 /**
- * Replace local:// urls with public http(s):// urls
- * @param req
- * @param url
+ * Replace local:// url with public http(s):// url
+ * @param {Request} req
+ * @param {string} url
+ * @Returns {string}
  */
 export function fixUrl(req, url) {
-  if (!url || typeof url !== "string" || url.indexOf("local://") !== 0) {
-    return url;
+  if (
+    url?.startsWith("mbtiles://") === true ||
+    url?.startsWith("pmtiles://") === true
+  ) {
+    return `${getUrl(req)}data/${url.slice(11, -1)}.json`;
+  } else if (url?.startsWith("sprites://") === true) {
+    return url.replace("sprites://", `${getUrl(req)}sprites/`);
+  } else if (url?.startsWith("fonts://") === true) {
+    return url.replace("fonts://", `${getUrl(req)}fonts/`);
   }
 
-  return url.replace("local://", getUrl(req));
+  return url;
 }
 
+/**
+ * Get host URL from request
+ * @param {Request} req
+ * @returns {string}
+ */
 export function getUrl(req) {
   const urlObject = new URL(`${req.protocol}://${req.headers.host}/`);
 
@@ -101,36 +121,36 @@ export function isValidHttpUrl(string) {
   }
 }
 
+/**
+ * Print log to console
+ * @param {"debug"|"info"|"warning"|"error"} level
+ * @param {string} msg
+ * @returns {void}
+ */
 export function printLog(level, msg) {
+  const dateTime = new Date().toISOString();
+
   switch (level) {
     case "debug": {
-      const logFormat = `${new Date().toISOString()} ${`[DEBUG] ${msg}`}`;
-
-      console.debug(logFormat);
+      console.debug(`${dateTime} ${`[DEBUG] ${msg}`}`);
 
       break;
     }
 
     case "warning": {
-      const logFormat = `${new Date().toISOString()} ${`[WARNING] ${msg}`}`;
-
-      console.warn(logFormat);
+      console.warn(`${dateTime} ${`[WARNING] ${msg}`}`);
 
       break;
     }
 
     case "error": {
-      const logFormat = `${new Date().toISOString()} ${`[ERROR] ${msg}`}`;
-
-      console.error(logFormat);
+      console.error(`${dateTime} ${`[ERROR] ${msg}`}`);
 
       break;
     }
 
     default: {
-      const logFormat = `${new Date().toISOString()} ${`[INFO] ${msg}`}`;
-
-      console.info(logFormat);
+      console.info(`${dateTime} ${`[INFO] ${msg}`}`);
 
       break;
     }
@@ -323,7 +343,7 @@ function getPmtilesTileType(typenum) {
 
   switch (typenum) {
     case 0:
-      tileType = "Unknown";
+      tileType = "";
 
       break;
     case 1:
@@ -344,11 +364,6 @@ function getPmtilesTileType(typenum) {
     case 4:
       tileType = "webp";
       header["Content-Type"] = "image/webp";
-
-      break;
-    case 5:
-      tileType = "avif";
-      header["Content-Type"] = "image/avif";
 
       break;
   }
@@ -438,4 +453,43 @@ export async function getPMtilesTile(pmtiles, z, x, y) {
     data: zxyTile,
     header: tileType.header,
   };
+}
+
+export async function openMBTiles(filePath) {
+  return new Promise((resolve, reject) => {
+    new MBTiles(filePath + "?mode=ro", (error, mbtiles) => {
+      if (error) {
+        return reject(error);
+      }
+
+      resolve(mbtiles);
+    });
+  });
+}
+
+export async function getMBTilesInfo(mbtilesSource) {
+  return new Promise((resolve, reject) => {
+    mbtilesSource.getInfo((error, info) => {
+      if (error) {
+        return reject(error);
+      }
+
+      resolve(info);
+    });
+  });
+}
+
+export async function getMBTilesTile(mbtilesSource, z, x, y) {
+  return new Promise((resolve, reject) => {
+    mbtilesSource.getTile(z, x, y, (error, data, headers) => {
+      if (error) {
+        reject(error);
+      }
+
+      resolve({
+        data: data,
+        headers: headers,
+      });
+    });
+  });
 }

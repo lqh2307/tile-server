@@ -41,7 +41,10 @@ function getSpritesListHandler(config) {
     const result = sprites.map((sprite) => {
       return {
         name: sprite,
-        url: `${getUrl(req)}sprites/${sprite}/sprite`,
+        urls: [
+          `${getUrl(req)}sprites/${sprite}/sprite.json`,
+          `${getUrl(req)}sprites/${sprite}/sprite.png`,
+        ],
       };
     });
 

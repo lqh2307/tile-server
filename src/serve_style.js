@@ -101,41 +101,21 @@ export const serve_style = {
               source.url?.startsWith("pmtiles://") === true ||
               source.url?.startsWith("mbtiles://") === true
             ) {
-              const sourceURL = source.url.slice(10);
-
-              if (
-                sourceURL.startsWith("{") === false ||
-                sourceURL.endsWith("}") === false
-              ) {
-                throw Error(`Source data "${name}" is invalid`);
-              }
-
-              const sourceID = sourceURL.slice(1, -1);
+              const sourceType = source.url.slice(0, 7);
+              const sourceID = source.url.slice(11, -1);
 
               if (!config.repo.datas[sourceID]) {
-                throw Error(`Source data "${name}" is not found`);
+                if (sourceType === "mbtiles") {
+                  throw Error(`MBTiles source data "${name}" is not found`);
+                } else {
+                  throw Error(`PMTiles source data "${name}" is not found`);
+                }
               }
-
-              source.url = `local://data/${sourceID}.json`;
             }
           });
 
-          if (styleJSON.sprite?.startsWith("sprites://") === true) {
-            styleJSON.sprite = styleJSON.sprite.replace(
-              "sprites://",
-              "local://sprites/"
-            );
-          }
-
-          if (styleJSON.glyphs?.startsWith("fonts://") === true) {
-            styleJSON.glyphs = styleJSON.glyphs.replace(
-              "fonts://",
-              "local://fonts/"
-            );
-          }
-
           config.repo.styles[style] = {
-            styleJSON,
+            styleJSON: styleJSON,
           };
         } catch (error) {
           printLog(

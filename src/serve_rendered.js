@@ -9,15 +9,12 @@ import Color from "color";
 import express from "express";
 import SphericalMercator from "@mapbox/sphericalmercator";
 import mlgl from "@maplibre/maplibre-gl-native";
-import MBTiles from "@mapbox/mbtiles";
-import proj4 from "proj4";
 import axios from "axios";
 import {
   fixTileJSONCenter,
-  getPMtilesInfo,
   getPMtilesTile,
+  getMBTilesTile,
   getFontsPbf,
-  openPMtiles,
   printLog,
   getUrl,
 } from "./utils.js";
@@ -33,63 +30,30 @@ mlgl.on("message", (error) => {
 const mercator = new SphericalMercator();
 
 /**
- * Cache of response data by sharp output format and color.
- * Entry for empty string is for unknown or unsupported formats.
- */
-const cachedEmptyResponses = {
-  "": Buffer.alloc(0),
-};
-
-/**
  * Create an appropriate mlgl response for http errors.
  * @param {string} format The format (a sharp format or 'pbf').
- * @param {string} color The background color (or empty string for transparent).
  * @param {Function} callback The mlgl callback.
  */
-function createEmptyResponse(format, color, callback) {
-  if (format === "jpg") {
-    format = "jpeg";
-  } else if (
-    format === "pbf" ||
-    ["jpeg", "png", "webp"].includes(format) === false
-  ) {
+function createEmptyResponse(format, callback) {
+  if (format === "pbf") {
     callback(null, {
-      data: cachedEmptyResponses[""],
-    });
-
-    return;
-  }
-
-  if (!color) {
-    color = "rgba(255,255,255,0)";
-  }
-
-  const cacheKey = `${format},${color}`;
-  const data = cachedEmptyResponses[cacheKey];
-  if (data) {
-    callback(null, {
-      data: data,
+      data: Buffer.alloc(0),
     });
 
     return;
   }
 
   // Create an empty response image
-  color = new Color(color);
-  const array = color.array();
-  sharp(Buffer.from(array), {
+  const color = new Color("rgba(255,255,255,0)");
+  sharp(Buffer.from(color.array()), {
     raw: {
       width: 1,
       height: 1,
-      channels: array.length === 4 && format !== "jpeg" ? 4 : 3,
+      channels: format !== "jpeg" && format !== "jpg" ? 4 : 3,
     },
   })
     .toFormat(format)
-    .toBuffer((error, buffer) => {
-      if (!error) {
-        cachedEmptyResponses[cacheKey] = buffer;
-      }
-
+    .toBuffer((_, buffer) => {
       callback(null, {
         data: buffer,
       });
@@ -165,7 +129,9 @@ function getRenderedTileHandler(config) {
         item.renderers[scale - 1].release(renderer);
 
         if (error) {
-          throw error;
+          printLog("error", `Failed to get data "${id}": ${error}`);
+
+          return res.status(404).send("Data is not found");
         }
 
         const image = sharp(data, {
@@ -199,12 +165,10 @@ function getRenderedTileHandler(config) {
           });
         }
 
-        image.toBuffer((error, buffer, info) => {
+        image.toBuffer((error, buffer) => {
           if (error) {
-            throw error;
-          }
+            printLog("error", `Failed to get rendered data "${id}": ${error}`);
 
-          if (!buffer) {
             return res.status(404).send("Rendered data is not found");
           }
 
@@ -309,271 +273,215 @@ export const serve_rendered = {
 
           fixTileJSONCenter(tileJSON);
 
-          const repoobj = {
-            tileJSON,
-            sources: {},
-            sourceTypes: {},
-            renderers: [],
-          };
-
-          const queue = [];
           const sources = Object.keys(styleJSON.sources);
-          for (const name of sources) {
-            const source = styleJSON.sources[name];
 
-            if (
-              source.url?.startsWith("pmtiles://") === true ||
-              source.url?.startsWith("mbtiles://") === true
-            ) {
-              const sourceID = source.url.slice(11, -1);
-              const sourceType = source.url.slice(0, 7);
+          await Promise.all(
+            sources.map(async (name) => {
+              const source = styleJSON.sources[name];
 
-              // found pmtiles or mbtiles source, replace with info from local file
-              delete source.url;
+              if (
+                source.url?.startsWith("pmtiles://") === true ||
+                source.url?.startsWith("mbtiles://") === true
+              ) {
+                const sourceID = source.url.slice(11, -1);
+                const sourceData = config.repo.datas[sourceID];
 
-              if (sourceType === "mbtiles") {
-                queue.push(
-                  new Promise((resolve, reject) => {
-                    const inputFile = path.resolve(
-                      config.options.paths.mbtiles,
-                      config.data[sourceID].mbtiles
-                    );
+                Object.assign(source, {
+                  ...sourceData.tileJSON,
+                  type: source.type,
+                  tiles: [
+                    `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`,
+                  ],
+                });
 
-                    repoobj.sourceTypes[name] = "mbtiles";
-                    repoobj.sources[name] = new MBTiles(
-                      inputFile + "?mode=ro",
-                      (error, mbtiles) => {
-                        if (error) {
-                          reject(error);
-                        }
+                if (
+                  source.attribution &&
+                  tileJSON.attribution.includes(source.attribution) === false
+                ) {
+                  if (tileJSON.attribution !== "") {
+                    tileJSON.attribution += " | ";
+                  }
 
-                        mbtiles.getInfo((error, info) => {
-                          if (error) {
-                            reject(error);
-                          }
-
-                          if (info.proj4) {
-                            // how to do this for multiple sources with different proj4 defs?
-                            const to3857 = proj4("EPSG:3857");
-                            const toDataProj = proj4(info.proj4);
-                            repoobj.dataProjWGStoInternalWGS = (xy) =>
-                              to3857.inverse(toDataProj.forward(xy));
-                          }
-
-                          const type = source.type;
-
-                          Object.assign(source, info);
-
-                          source.type = type;
-                          source.tiles = [
-                            `mbtiles://${name}/{z}/{x}/{y}.${info.format}`,
-                          ];
-
-                          if (source.attribution) {
-                            tileJSON.attribution = source.attribution;
-                          }
-
-                          resolve();
-                        });
-                      }
-                    );
-                  })
-                );
-              } else if (sourceType === "pmtiles") {
-                const inputFile = path.join(
-                  config.options.paths.pmtiles,
-                  config.data[sourceID].pmtiles
-                );
-
-                repoobj.sources[name] = openPMtiles(inputFile);
-                repoobj.sourceTypes[name] = "pmtiles";
-
-                const metadata = await getPMtilesInfo(repoobj.sources[name]);
-
-                if (metadata.proj4) {
-                  // how to do this for multiple sources with different proj4 defs?
-                  const to3857 = proj4("EPSG:3857");
-                  const toDataProj = proj4(metadata.proj4);
-                  repoobj.dataProjWGStoInternalWGS = (xy) =>
-                    to3857.inverse(toDataProj.forward(xy));
+                  tileJSON.attribution += source.attribution;
                 }
 
-                const type = source.type;
-
-                Object.assign(source, metadata);
-
-                source.type = type;
-                source.tiles = [
-                  `pmtiles://${name}/{z}/{x}/{y}.${metadata.format}`,
-                ];
-
-                if (source.attribution) {
-                  tileJSON.attribution = source.attribution;
-                }
+                // Replace with info from local file
+                delete source.url;
               }
-            }
-          }
+            })
+          );
 
-          await Promise.all(queue);
+          const renderers = await Promise.all(
+            Array.from({ length: config.options.maxScaleRender }, (_, scale) =>
+              createPool(
+                {
+                  create: async () => {
+                    const renderer = new mlgl.Map({
+                      mode: "tile",
+                      ratio: scale + 1,
+                      request: async (req, callback) => {
+                        const protocol = req.url.split(":")[0];
 
-          for (let scale = 1; scale <= config.options.maxScaleRender; scale++) {
-            repoobj.renderers[scale - 1] = createPool(
-              {
-                create: async () => {
-                  const renderer = new mlgl.Map({
-                    mode: "tile",
-                    ratio: scale,
-                    request: async (req, callback) => {
-                      const protocol = req.url.split(":")[0];
+                        if (protocol === "sprites") {
+                          const parts = decodeURIComponent(req.url).split("/");
+                          const spriteDir = parts[2];
+                          const spriteFile = parts[3];
 
-                      if (protocol === "sprites") {
-                        const filePath = path.join(
-                          config.options.paths.sprites,
-                          decodeURIComponent(req.url).substring(
-                            protocol.length + 3
-                          )
-                        );
-
-                        try {
-                          fs.readFile(filePath, (error, data) => {
-                            callback(error, {
-                              data: data,
-                            });
-                          });
-                        } catch (error) {
-                          callback(error, {
-                            data: null,
-                          });
-                        }
-                      } else if (protocol === "fonts") {
-                        const parts = decodeURIComponent(req.url).split("/");
-                        const fonts = parts[2];
-                        const range = parts[3].split(".")[0];
-
-                        try {
-                          callback(null, {
-                            data: await getFontsPbf(
-                              config.options.paths.fonts,
-                              fonts,
-                              range
-                            ),
-                          });
-                        } catch (error) {
-                          callback(error, {
-                            data: null,
-                          });
-                        }
-                      } else if (
-                        protocol === "mbtiles" ||
-                        protocol === "pmtiles"
-                      ) {
-                        const parts = decodeURIComponent(req.url).split("/");
-                        const sourceId = parts[2];
-                        const source = repoobj.sources[sourceId];
-                        const sourceType = repoobj.sourceTypes[sourceId];
-                        const sourceInfo = styleJSON.sources[sourceId];
-                        const z = Number(parts[3]);
-                        const x = Number(parts[4]);
-                        const y = Number(parts[5].split(".")[0]);
-
-                        if (sourceType === "mbtiles") {
-                          source.getTile(z, x, y, (error, data) => {
-                            if (error || !data) {
-                              printLog(
-                                "warning",
-                                `MBTiles source "${sourceId}": ${error}. Serving empty...`
-                              );
-
-                              createEmptyResponse(
-                                sourceInfo.format,
-                                sourceInfo.color,
-                                callback
-                              );
-
-                              return;
-                            }
-
-                            if (sourceInfo.format === "pbf") {
-                              try {
-                                data = zlib.unzipSync(data);
-                              } catch (error) {
-                                callback(error, {
-                                  data: nul,
-                                });
-                              }
-                            }
+                          try {
+                            const data = fs.readFileSync(
+                              path.join(
+                                config.options.paths.sprites,
+                                spriteDir,
+                                spriteFile
+                              )
+                            );
 
                             callback(null, {
                               data: data,
                             });
-                          });
-                        } else if (sourceType === "pmtiles") {
-                          const { data } = await getPMtilesTile(
-                            source,
-                            z,
-                            x,
-                            y
-                          );
-
-                          if (!data) {
-                            printLog(
-                              "warning",
-                              `PMTiles source "${sourceId}": ${error}. Serving empty...`
-                            );
-
-                            createEmptyResponse(
-                              sourceInfo.format,
-                              sourceInfo.color,
-                              callback
-                            );
-
-                            return;
+                          } catch (error) {
+                            callback(error, {
+                              data: null,
+                            });
                           }
+                        } else if (protocol === "fonts") {
+                          const parts = decodeURIComponent(req.url).split("/");
+                          const fonts = parts[2];
+                          const range = parts[3].split(".")[0];
 
-                          callback(null, {
-                            data: data,
-                          });
-                        }
-                      } else if (protocol === "http" || protocol === "https") {
-                        try {
-                          const { data } = await axios.get(
-                            decodeURIComponent(req.url),
-                            {
-                              responseType: "arraybuffer",
+                          try {
+                            const data = await getFontsPbf(
+                              config.options.paths.fonts,
+                              fonts,
+                              range
+                            );
+
+                            callback(null, {
+                              data: data,
+                            });
+                          } catch (error) {
+                            callback(error, {
+                              data: null,
+                            });
+                          }
+                        } else if (
+                          protocol === "mbtiles" ||
+                          protocol === "pmtiles"
+                        ) {
+                          const parts = decodeURIComponent(req.url).split("/");
+                          const sourceID = parts[2];
+                          const z = Number(parts[3]);
+                          const x = Number(parts[4]);
+                          const y = Number(parts[5].split(".")[0]);
+                          const sourceData = config.repo.datas[sourceID];
+                          const source = sourceData.source;
+
+                          if (sourceData.sourceType === "mbtiles") {
+                            try {
+                              let { data } = await getMBTilesTile(
+                                source,
+                                z,
+                                x,
+                                y
+                              );
+
+                              if (sourceData.tileJSON.format === "pbf") {
+                                try {
+                                  data = zlib.unzipSync(data);
+                                } catch (error) {
+                                  printLog(
+                                    "warning",
+                                    `MBTiles source "${sourceID}": Invalid tile ${z}/${x}/${y}.pbf`
+                                  );
+                                }
+                              }
+
+                              callback(null, {
+                                data: data,
+                              });
+                            } catch (error) {
+                              printLog(
+                                "warning",
+                                `MBTiles source "${sourceID}": ${error}`
+                              );
+
+                              createEmptyResponse(
+                                sourceData.tileJSON.format,
+                                callback
+                              );
                             }
-                          );
+                          } else {
+                            const { data } = await getPMtilesTile(
+                              source,
+                              z,
+                              x,
+                              y
+                            );
 
-                          callback(null, {
-                            data: data,
-                          });
-                        } catch (error) {
-                          const format = req.originalUrl?.slice(
-                            req.originalUrl.lastIndexOf("."),
-                            -1
-                          );
+                            if (data === undefined) {
+                              printLog(
+                                "warning",
+                                `PMTiles source "${sourceID}": Error: Tile does not exist`
+                              );
 
-                          createEmptyResponse(format, "", callback);
+                              createEmptyResponse(
+                                sourceData.tileJSON.format,
+                                callback
+                              );
+                            } else {
+                              callback(null, {
+                                data: data,
+                              });
+                            }
+                          }
+                        } else if (
+                          protocol === "http" ||
+                          protocol === "https"
+                        ) {
+                          try {
+                            const { data } = await axios.get(
+                              decodeURIComponent(req.url),
+                              {
+                                responseType: "arraybuffer",
+                              }
+                            );
+
+                            callback(null, {
+                              data: data,
+                            });
+                          } catch (error) {
+                            printLog("warning", error);
+
+                            const format = req.originalUrl?.slice(
+                              req.originalUrl.lastIndexOf(".") + 1
+                            );
+
+                            createEmptyResponse(format, callback);
+                          }
                         }
-                      }
-                    },
-                  });
+                      },
+                    });
 
-                  renderer.load(styleJSON);
+                    renderer.load(styleJSON);
 
-                  return renderer;
+                    return renderer;
+                  },
+                  destroy: async (renderer) => {
+                    renderer.release();
+                  },
                 },
-                destroy: async (renderer) => {
-                  renderer.release();
-                },
-              },
-              {
-                min: config.options.minPoolSize,
-                max: config.options.maxPoolSize,
-              }
-            );
-          }
+                {
+                  min: config.options.minPoolSize,
+                  max: config.options.maxPoolSize,
+                }
+              )
+            )
+          );
 
-          config.repo.rendereds[style] = repoobj;
+          config.repo.rendereds[style] = {
+            tileJSON: tileJSON,
+            renderers: renderers,
+          };
         } catch (error) {
           printLog(
             "error",

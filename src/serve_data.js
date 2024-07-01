@@ -1,16 +1,17 @@
 "use strict";
 
-import fs from "node:fs";
 import path from "node:path";
 import zlib from "zlib";
 import express from "express";
-import MBTiles from "@mapbox/mbtiles";
 import {
   fixTileJSONCenter,
   isValidHttpUrl,
   getPMtilesInfo,
   getPMtilesTile,
+  getMBTilesTile,
+  getMBTilesInfo,
   downloadFile,
+  openMBTiles,
   openPMtiles,
   printLog,
   getUrl,
@@ -35,62 +36,63 @@ function getDataTileHandler(config) {
       x >= Math.pow(2, z) ||
       y >= Math.pow(2, z)
     ) {
-      return res.status(400).send("Data is out of bounds");
+      return res.status(400).send("Data bound is invalid");
     }
 
     try {
       if (item.sourceType === "mbtiles") {
-        item.source.getTile(z, x, y, (error, data, headers = {}) => {
-          if (error) {
-            if (/does not exist/.test(error.message)) {
-              return res.status(204).send();
-            } else {
-              throw error;
-            }
-          } else {
-            if (!data) {
-              throw Error("Data is not found");
-            } else {
-              let isGzipped = false;
+        try {
+          let { data, headers = {} } = await getMBTilesTile(
+            item.source,
+            z,
+            x,
+            y
+          );
 
-              if (req.params.format === "pbf") {
-                if (data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0) {
-                  isGzipped = true;
-                }
+          let isGzipped = false;
 
-                headers["Content-Type"] = "application/x-protobuf";
-              }
-
-              if (isGzipped === false) {
-                data = zlib.gzipSync(data);
-              }
-
-              headers["Content-Encoding"] = "gzip";
-
-              res.set(headers);
-
-              return res.status(200).send(data);
-            }
-          }
-        });
-      } else if (item.sourceType === "pmtiles") {
-        let { data, headers = {} } = await getPMtilesTile(item.source, z, x, y);
-
-        if (!data) {
-          throw Error("Data is not found");
-        } else {
           if (req.params.format === "pbf") {
+            if (data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0) {
+              isGzipped = true;
+            }
+
             headers["Content-Type"] = "application/x-protobuf";
           }
 
-          data = zlib.gzipSync(data);
+          if (isGzipped === false) {
+            data = zlib.gzipSync(data);
+          }
 
           headers["Content-Encoding"] = "gzip";
 
           res.set(headers);
 
           return res.status(200).send(data);
+        } catch (error) {
+          if (/does not exist/.test(error.message)) {
+            return res.status(204).send("Data is empty");
+          } else {
+            throw error;
+          }
         }
+      } else {
+        let { data, headers = {} } = await getPMtilesTile(item.source, z, x, y);
+
+        if (data === undefined) {
+          return res.status(204).send("Data is empty");
+        }
+
+        if (req.params.format === "pbf") {
+          headers["Content-Type"] = "application/x-protobuf";
+        }
+
+        data = zlib.gzipSync(data);
+
+        headers["Content-Encoding"] = "gzip";
+
+        res.set(headers);
+
+        return res.status(200).send(data);
       }
     } catch (error) {
       printLog("error", `Failed to get data "${id}": ${error}`);
@@ -191,28 +193,12 @@ export const serve_data = {
               item.mbtiles
             );
 
-            const stat = fs.statSync(inputDataFile);
-            if (stat.isFile() === false || stat.size === 0) {
-              throw Error(`MBTiles data is invalid`);
-            }
-
             dataInfo.sourceType = "mbtiles";
-            dataInfo.source = new MBTiles(
-              inputDataFile + "?mode=ro",
-              (error, mbtiles) => {
-                if (error) {
-                  throw error;
-                }
+            dataInfo.source = await openMBTiles(inputDataFile);
 
-                mbtiles.getInfo((error, info) => {
-                  if (error) {
-                    throw error;
-                  }
+            const info = await getMBTilesInfo(dataInfo.source);
 
-                  Object.assign(dataInfo.tileJSON, info);
-                });
-              }
-            );
+            Object.assign(dataInfo.tileJSON, info);
           } else if (item.pmtiles) {
             let inputDataFile = "";
 
@@ -223,11 +209,6 @@ export const serve_data = {
                 config.options.paths.pmtiles,
                 item.pmtiles
               );
-
-              const stat = fs.statSync(inputDataFile);
-              if (stat.isFile() === false || stat.size === 0) {
-                throw Error(`PMTiles data is invalid`);
-              }
             }
 
             dataInfo.sourceType = "pmtiles";
@@ -238,6 +219,14 @@ export const serve_data = {
             Object.assign(dataInfo.tileJSON, info);
           } else {
             throw Error(`"pmtiles" or "mbtiles" property is empty`);
+          }
+
+          if (
+            ["jpeg", "jpg", "pbf", "png", "webp"].includes(
+              dataInfo.tileJSON.format
+            ) === false
+          ) {
+            throw Error(`Data format is invalid`);
           }
 
           fixTileJSONCenter(dataInfo.tileJSON);
