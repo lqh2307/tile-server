@@ -10,7 +10,7 @@ import { serve_sprite } from "./serve_sprite.js";
 import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
-import { printLog } from "./utils.js";
+import { createRepoFile, printLog } from "./utils.js";
 
 /**
  * Load config file and assign default
@@ -172,7 +172,7 @@ export function startServer(opts) {
   ])
     .then(() => {
       printLog("info", "Load data complete!");
-
+      createRepoFile(config, "./config.json");
       startupComplete = true;
     })
     .catch(() => {
