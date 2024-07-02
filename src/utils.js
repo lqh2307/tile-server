@@ -189,9 +189,7 @@ export function validateSprite(spriteDirPath) {
 
       const jsonData = JSON.parse(jsonFile);
 
-      Object.keys(jsonData).forEach((key) => {
-        const value = jsonData[key];
-
+      Object.values(jsonData).forEach((value) => {
         if (
           typeof value !== "object" ||
           "height" in value === false ||

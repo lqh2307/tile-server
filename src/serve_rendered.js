@@ -214,10 +214,10 @@ function getRenderedHandler(config) {
 
 function getRenderedsListHandler(config) {
   return async (req, res, next) => {
-    const rendereds = Object.keys(config.repo.rendereds);
+    const rendereds = config.repo.rendereds;
 
-    const result = rendereds.map((rendered) => {
-      const tileJSON = config.repo.rendereds[rendered].tileJSON;
+    const result = Object.keys(rendereds).map((rendered) => {
+      const tileJSON = rendereds[rendered].tileJSON;
 
       return {
         id: rendered,
@@ -249,13 +249,13 @@ export const serve_rendered = {
 
   add: async (config) => {
     /* Loop over styles */
+    const styles = config.repo.styles;
+
     await Promise.all(
-      Object.keys(config.repo.styles).map(async (style) => {
+      Object.keys(styles).map(async (style) => {
         try {
           /* Clone style JSON */
-          const styleJSON = JSON.parse(
-            JSON.stringify(config.repo.styles[style].styleJSON)
-          );
+          const styleJSON = JSON.parse(JSON.stringify(styles[style].styleJSON));
 
           const tileJSON = {
             tilejson: "2.2.0",
@@ -266,19 +266,19 @@ export const serve_rendered = {
             bounds: [-180, -85.0511, 180, 85.0511],
             format: "png",
             type: "baselayer",
-            center:
-              styleJSON.center?.length === 2 && styleJSON.zoom
-                ? styleJSON.center.concat(Math.round(styleJSON.zoom))
-                : undefined,
           };
+
+          if (styleJSON.center?.length === 2 && styleJSON.zoom) {
+            tileJSON.center = styleJSON.center.concat(
+              Math.round(styleJSON.zoom)
+            );
+          }
 
           fixTileJSONCenter(tileJSON);
 
-          /* Loop over sources in style */
+          /* Fix source */
           await Promise.all(
-            Object.keys(styleJSON.sources).map(async (name) => {
-              const source = styleJSON.sources[name];
-
+            Object.values(styleJSON.sources).map(async (source) => {
               if (
                 source.url?.startsWith("pmtiles://") === true ||
                 source.url?.startsWith("mbtiles://") === true
@@ -400,7 +400,7 @@ export const serve_rendered = {
                                     data = zlib.unzipSync(data);
                                   } catch (error) {
                                     printLog(
-                                      "warning",
+                                      "error",
                                       `MBTiles source "${sourceID}": Failed to unzip tile ${z}/${x}/${y}.pbf`
                                     );
 
@@ -412,6 +412,15 @@ export const serve_rendered = {
                                   data: data,
                                 });
                               } catch (error) {
+                                if (
+                                  /does not exist/.test(error.message) === false
+                                ) {
+                                  printLog(
+                                    "error",
+                                    `MBTiles source "${sourceID}": ${error}`
+                                  );
+                                }
+
                                 createEmptyResponse(
                                   sourceData.tileJSON.format,
                                   callback

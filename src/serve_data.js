@@ -69,7 +69,7 @@ function getDataTileHandler(config) {
 
           return res.status(200).send(data);
         } catch (error) {
-          if (/does not exist/.test(error.message)) {
+          if (/does not exist/.test(error.message) === true) {
             return res.status(204).send("Data is empty");
           } else {
             throw error;
@@ -130,10 +130,10 @@ function getDataHandler(config) {
 
 function getDatasListHandler(config) {
   return async (req, res, next) => {
-    const datas = Object.keys(config.repo.datas);
+    const datas = config.repo.datas;
 
-    const result = datas.map((data) => {
-      const item = config.repo.datas[data];
+    const result = Object.keys(datas).map((data) => {
+      const item = datas[data];
 
       return {
         id: data,
@@ -161,10 +161,8 @@ export const serve_data = {
   },
 
   add: async (config) => {
-    const datas = Object.keys(config.data);
-
     await Promise.all(
-      datas.map(async (data) => {
+      Object.keys(config.data).map(async (data) => {
         const item = config.data[data];
         const dataInfo = {
           tileJSON: {

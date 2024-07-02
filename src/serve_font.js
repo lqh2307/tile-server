@@ -28,9 +28,7 @@ function getFontHandler(config) {
 
 function getFontsListHandler(config) {
   return async (req, res, next) => {
-    const fonts = Object.keys(config.repo.fonts);
-
-    const result = fonts.map((font) => {
+    const result = Object.keys(config.repo.fonts).map((font) => {
       return {
         name: font,
         url: `${getUrl(req)}fonts/${font}/{range}.pbf`,
@@ -52,10 +50,8 @@ export const serve_font = {
   },
 
   add: async (config) => {
-    const fonts = Object.keys(config.fonts);
-
     await Promise.all(
-      fonts.map(async (font) => {
+      Object.keys(config.fonts).map(async (font) => {
         try {
           /* Validate font */
           validatePBFFont(path.join(config.options.paths.fonts, font));

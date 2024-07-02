@@ -15,20 +15,16 @@ function getStyleHandler(config) {
       return res.status(404).send("Style is not found");
     }
 
-    const sources = {};
-    Object.keys(item.styleJSON.sources).forEach((name) => {
-      sources[name] = {
-        ...item.styleJSON.sources[name],
-        url: fixUrl(req, item.styleJSON.sources[name].url),
-      };
+    /* Clone style JSON */
+    const styleJSON = JSON.parse(JSON.stringify(item.styleJSON));
+
+    /* Fix url */
+    Object.values(styleJSON.sources).forEach((source) => {
+      source.url = fixUrl(req, source.url);
     });
 
-    const styleJSON = {
-      ...item.styleJSON,
-      sources: sources,
-      sprite: fixUrl(req, item.styleJSON.sprite),
-      glyphs: fixUrl(req, item.styleJSON.glyphs),
-    };
+    styleJSON.sprite = fixUrl(req, styleJSON.sprite);
+    styleJSON.glyphs = fixUrl(req, styleJSON.glyphs);
 
     res.header("Content-Type", "application/json");
 
@@ -38,10 +34,10 @@ function getStyleHandler(config) {
 
 function getStylesListHandler(config) {
   return async (req, res, next) => {
-    const styles = Object.keys(config.repo.styles);
+    const styles = config.repo.styles;
 
-    const result = styles.map((style) => {
-      const item = config.repo.styles[style];
+    const result = Object.keys(styles).map((style) => {
+      const item = styles[style];
 
       return {
         id: style,
@@ -65,20 +61,18 @@ export const serve_style = {
   },
 
   add: async (config) => {
-    const styles = Object.keys(config.styles);
-
     await Promise.all(
-      styles.map(async (style) => {
-        const item = config.styles[style];
+      Object.keys(config.styles).map(async (style) => {
+        const stylePath = config.styles[style].style;
 
         try {
-          if (!item.style) {
+          if (!stylePath) {
             throw Error(`"style" property is empty`);
           }
 
           const styleJSON = JSON.parse(
             fs.readFileSync(
-              path.resolve(config.options.paths.styles, item.style)
+              path.resolve(config.options.paths.styles, stylePath)
             )
           );
 
@@ -95,13 +89,13 @@ export const serve_style = {
           }
 
           Object.keys(styleJSON.sources).forEach((name) => {
-            const source = styleJSON.sources[name];
+            const sourceUrl = styleJSON.sources[name].url;
 
             if (
-              source.url?.startsWith("pmtiles://") === true ||
-              source.url?.startsWith("mbtiles://") === true
+              sourceUrl?.startsWith("pmtiles://") === true ||
+              sourceUrl?.startsWith("mbtiles://") === true
             ) {
-              const sourceID = source.url.slice(11, -1);
+              const sourceID = sourceUrl.slice(11, -1);
 
               if (!config.repo.datas[sourceID]) {
                 throw Error(`Source data "${name}" is not found`);

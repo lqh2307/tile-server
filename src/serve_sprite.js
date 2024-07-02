@@ -36,9 +36,7 @@ function getSpriteHandler(config) {
 
 function getSpritesListHandler(config) {
   return async (req, res, next) => {
-    const sprites = Object.keys(config.repo.sprites);
-
-    const result = sprites.map((sprite) => {
+    const result = Object.keys(config.repo.sprites).map((sprite) => {
       return {
         name: sprite,
         urls: [
@@ -66,10 +64,8 @@ export const serve_sprite = {
   },
 
   add: async (config) => {
-    const sprites = Object.keys(config.sprites);
-
     await Promise.all(
-      sprites.map(async (sprite) => {
+      Object.keys(config.sprites).map(async (sprite) => {
         try {
           /* Validate sprite */
           validateSprite(path.join(config.options.paths.sprites, sprite));
