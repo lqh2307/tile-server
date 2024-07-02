@@ -246,11 +246,9 @@ export const serve_rendered = {
       styles.map(async (style) => {
         try {
           const styleJSON = JSON.parse(
-            fs.readFileSync(
-              path.join(config.options.paths.styles, config.styles[style].style)
-            )
+            JSON.stringify(config.repo.styles[style].styleJSON)
           );
-
+          
           const tileJSON = {
             tilejson: "2.2.0",
             name: styleJSON.name || "",
