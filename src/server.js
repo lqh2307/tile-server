@@ -129,7 +129,7 @@ export function startServer(dataDir) {
   if (watchToKill > 0) {
     printLog(
       "info",
-      `Watch config file changes interval ${config.options.watchToKill}ms to kill server`
+      `Watch config file changes interval ${watchToKill}ms to kill server`
     );
 
     const newChokidar = chokidar.watch(path.resolve(dataDir, "config.json"), {
@@ -146,7 +146,7 @@ export function startServer(dataDir) {
   } else if (watchToRestart > 0) {
     printLog(
       "info",
-      `Watch config file changes interval ${config.options.watchToRestart}ms to restart server`
+      `Watch config file changes interval ${watchToRestart}ms to restart server`
     );
 
     const newChokidar = chokidar.watch(path.resolve(dataDir, "config.json"), {
