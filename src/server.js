@@ -116,8 +116,17 @@ export function startServer(dataDir) {
   /* Load config file */
   const config = loadConfigFile(dataDir);
 
+  /* Read params */
+  const {
+    watchToKill,
+    watchToRestart,
+    restartEndpoint,
+    killEndpoint,
+    listenPort,
+  } = config.options;
+  
   /* Setup watch config file */
-  if (config.options.watchToKill > 0) {
+  if (watchToKill > 0) {
     printLog(
       "info",
       `Watch config file changes interval ${config.options.watchToKill}ms to kill server`
@@ -126,7 +135,7 @@ export function startServer(dataDir) {
     const newChokidar = chokidar.watch(path.resolve(dataDir, "config.json"), {
       usePolling: true,
       awaitWriteFinish: true,
-      interval: config.options.watchToKill,
+      interval: watchToKill,
     });
 
     newChokidar.on("change", () => {
@@ -134,7 +143,7 @@ export function startServer(dataDir) {
 
       process.exit(0);
     });
-  } else if (config.options.watchToRestart > 0) {
+  } else if (watchToRestart > 0) {
     printLog(
       "info",
       `Watch config file changes interval ${config.options.watchToRestart}ms to restart server`
@@ -143,7 +152,7 @@ export function startServer(dataDir) {
     const newChokidar = chokidar.watch(path.resolve(dataDir, "config.json"), {
       usePolling: true,
       awaitWriteFinish: true,
-      interval: config.options.watchToRestart,
+      interval: watchToRestart,
     });
 
     newChokidar.on("change", () => {
@@ -201,7 +210,7 @@ export function startServer(dataDir) {
     }
   });
 
-  if (config.options.restartEndpoint === true) {
+  if (restartEndpoint === true) {
     app.get("/restart", async (req, res, next) => {
       printLog("info", "Received restart request. Restarting server...");
 
@@ -213,7 +222,7 @@ export function startServer(dataDir) {
     });
   }
 
-  if (config.options.killEndpoint === true) {
+  if (killEndpoint === true) {
     app.get("/kill", async (req, res, next) => {
       printLog("info", "Received kill request. Killed server!");
 
@@ -233,7 +242,7 @@ export function startServer(dataDir) {
   app.use("/", serve_template.init(config));
 
   /* Start listen */
-  app.listen(config.options.listenPort, () => {
-    printLog("info", `Listening on port: ${config.options.listenPort}`);
+  app.listen(listenPort, () => {
+    printLog("info", `Listening on port: ${listenPort}`);
   });
 }
