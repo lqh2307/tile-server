@@ -18,7 +18,7 @@ import { printLog } from "./utils.js";
  * @returns {object}
  */
 function loadConfigFile(dataDir) {
-  const configFilePath = path.resolve(dataDir, "config.json");
+  const configFilePath = path.join(dataDir, "config.json");
 
   printLog("info", `Load config file: ${configFilePath}`);
 
@@ -104,7 +104,7 @@ export function startServer(dataDir) {
       `Watch config file changes interval ${watchToKill}ms to kill server`
     );
 
-    const newChokidar = chokidar.watch(path.resolve(dataDir, "config.json"), {
+    const newChokidar = chokidar.watch(path.join(dataDir, "config.json"), {
       usePolling: true,
       awaitWriteFinish: true,
       interval: watchToKill,
@@ -121,7 +121,7 @@ export function startServer(dataDir) {
       `Watch config file changes interval ${watchToRestart}ms to restart server`
     );
 
-    const newChokidar = chokidar.watch(path.resolve(dataDir, "config.json"), {
+    const newChokidar = chokidar.watch(path.join(dataDir, "config.json"), {
       usePolling: true,
       awaitWriteFinish: true,
       interval: watchToRestart,
