@@ -26,80 +26,49 @@ function loadConfigFile(dataDir) {
     /* Read config.json file */
     const config = JSON.parse(fs.readFileSync(configFilePath, "utf8"));
 
-    config.options = config.options || {};
+    // Asign options
+const configObj = {
+  paths: {
+    styles: path.join(dataDir, config.options?.paths?.styles || ""),
+    fonts: path.join(dataDir, config.options?.paths?.fonts || ""),
+    sprites: path.join(dataDir, config.options?.paths?.sprites || ""),
+    mbtiles: path.join(dataDir, config.options?.paths?.mbtiles || ""),
+    pmtiles: path.join(dataDir, config.options?.paths?.pmtiles || "")
+  },
+  formatQuality: {
+    jpeg: config.options?.formatQuality?.jpeg || 100,
+    webp: config.options?.formatQuality?.webp || 100
+  },
+  listenPort: config.options?.listenPort || 8080,
+  watchToKill: config.options?.watchToKill || 0,
+  watchToRestart: config.options?.watchToRestart || 1000,
+  killEndpoint: config.options?.killEndpoint ?? true,
+  restartEndpoint: config.options?.restartEndpoint ?? true,
+  frontPage: config.options?.frontPage ?? true,
+  serveWMTS: config.options?.serveWMTS ?? true,
+  maxScaleRender: config.options?.maxScaleRender || 1,
+  minPoolSize: config.options?.minPoolSize || 8,
+  maxPoolSize: config.options?.maxPoolSize || 16,
+  styles: config.styles || {},
+  data: config.data || {},
+  sprites: config.sprites || {},
+  fonts: config.fonts || {},
+  repo: {
+    styles: {},
+    rendereds: {},
+    datas: {},
+    fonts: {},
+    sprites: {},
+  },
+};
 
-    /* Asign resource path */
-    config.options.paths = config.options.paths || {};
-    config.options.paths.styles = path.join(
-      dataDir,
-      config.options.paths.styles || ""
-    );
-    config.options.paths.fonts = path.join(
-      dataDir,
-      config.options.paths.fonts || ""
-    );
-    config.options.paths.sprites = path.join(
-      dataDir,
-      config.options.paths.sprites || ""
-    );
-    config.options.paths.mbtiles = path.join(
-      dataDir,
-      config.options.paths.mbtiles || ""
-    );
-    config.options.paths.pmtiles = path.join(
-      dataDir,
-      config.options.paths.pmtiles || ""
-    );
-
-    Object.keys(config.options.paths).forEach((key) => {
-      if (fs.statSync(config.options.paths[key]).isDirectory() === false) {
+    Object.keys(configObj.options.paths).forEach((key) => {
+      if (fs.statSync(configObj.options.paths[key]).isDirectory() === false) {
         throw Error(`"${key}" dir does not exist`);
       }
     });
-
-    /* Asign format quality */
-    config.options.formatQuality = config.options.formatQuality || {};
-    config.options.formatQuality.jpeg =
-      config.options.formatQuality.jpeg || 100;
-    config.options.formatQuality.webp =
-      config.options.formatQuality.webp || 100;
-
-    /* Asign listen port */
-    config.options.listenPort = config.options.listenPort || 8080;
-
-    /* Asign action with server */
-    config.options.watchToKill = config.options.watchToKill || 0;
-    config.options.watchToRestart = config.options.watchToRestart || 1000;
-
-    /* Asign enable endpoint */
-    config.options.killEndpoint = config.options.killEndpoint || true;
-    config.options.restartEndpoint = config.options.restartEndpoint || true;
-    config.options.frontPage = config.options.frontPage || true;
-    config.options.serveWMTS = config.options.serveWMTS || true;
-
-    /* Asign scale render */
-    config.options.maxScaleRender = config.options.maxScaleRender || 1;
-
-    /* Asign pool size */
-    config.options.minPoolSize = config.options.minPoolSize || 8;
-    config.options.maxPoolSize = config.options.maxPoolSize || 16;
-
-    /* Asign resource */
-    config.styles = config.styles || {};
-    config.data = config.data || {};
-    config.sprites = config.sprites || {};
-    config.fonts = config.fonts || {};
-
-    /* Asign repo */
-    config.repo = {
-      styles: {},
-      rendereds: {},
-      datas: {},
-      fonts: {},
-      sprites: {},
-    };
-
-    return config;
+    
+    return configObj;
   } catch (error) {
     printLog("error", `Failed to load config file: ${error}`);
 
