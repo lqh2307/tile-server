@@ -65,6 +65,32 @@ export function getUrl(req) {
   return urlObject.toString();
 }
 
+export function fixTileJSON(tileJSON) {
+  if (tileJSON.bounds === undefined) {
+    tileJSON.bounds = [-180, -85.0511, 180, 85.0511];
+  }
+
+  if (tileJSON.center === undefined) {
+    // 360 / tiles = 360 / 4 = 90
+    tileJSON.center = [
+      (tileJSON.bounds[0] + tileJSON.bounds[2]) / 2,
+      (tileJSON.bounds[1] + tileJSON.bounds[3]) / 2,
+      Math.round(
+        -Math.log((tileJSON.bounds[2] - tileJSON.bounds[0]) / 90) /
+          Math.LN2
+      ),
+    ];
+  }
+
+  if (tileJSON.minzoom === undefined) {
+    tileJSON.minzoom = 0;
+  }
+
+  if (tileJSON.maxzoom === undefined) {
+    tileJSON.maxzoom = 22;
+  }
+}
+
 export function fixTileJSONCenter(tileJSON) {
   if (tileJSON.bounds && !tileJSON.center) {
     const tiles = 4;
