@@ -26,7 +26,7 @@ function loadConfigFile(dataDir) {
     /* Read config.json file */
     const config = JSON.parse(fs.readFileSync(configFilePath, "utf8"));
 
-    // Asign options
+    /* Asign options */
 const configObj = {
   paths: {
     styles: path.join(dataDir, config.options?.paths?.styles || ""),
@@ -62,15 +62,18 @@ const configObj = {
   },
 };
 
-    Object.keys(configObj.options.paths).forEach((key) => {
-      if (fs.statSync(configObj.options.paths[key]).isDirectory() === false) {
-        throw Error(`"${key}" dir does not exist`);
+    /* Check directory paths */
+    Object.values(configObj.options.paths).forEach((path) => {
+const stat = fs.statSync(path);
+      
+      if (stat.isDirectory() === false) {
+        throw Error(`Directory "${path}" does not exist`);
       }
     });
     
     return configObj;
   } catch (error) {
-    printLog("error", `Failed to load config file: ${error}`);
+    printLog("error", `Failed to load config file: ${error}. Exited!`);
 
     process.exit(0);
   }
