@@ -35,6 +35,15 @@ function getRenderedTileHandler(config) {
     const item = config.repo.rendereds[id];
     const format = req.params.format;
 
+    if (["jpeg", "jpg", "png", "webp"].includes(format) === true) {
+      // sharp lib not support jpg format
+      if (format === "jpg") {
+        format = "jpeg";
+      }
+    } else {
+      return res.status(400).send("Rendered data format is invalid");
+    }
+
     if (!item) {
       return res.status(404).send("Rendered data is not found");
     }
@@ -62,15 +71,6 @@ function getRenderedTileHandler(config) {
 
     if (scale > config.options.maxScaleRender) {
       return res.status(400).send("Rendered data scale is invalid");
-    }
-
-    if (["jpeg", "jpg", "png", "webp"].includes(format) === true) {
-      // sharp lib not support jpg format
-      if (format === "jpg") {
-        format = "jpeg";
-      }
-    } else {
-      return res.status(400).send("Rendered data format is invalid");
     }
 
     const tileSize = Number(req.params.tileSize) || 256;
