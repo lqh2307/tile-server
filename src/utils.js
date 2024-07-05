@@ -314,20 +314,12 @@ export async function downloadFile(url, outputPath, overwrite = false) {
 
     response.data.pipe(writer);
 
-    let error = null;
-
-    writer.on("error", (err) => {
-      error = err;
-
-      writer.close();
-
-      reject(err);
+    writer.on('error', (err) => {
+      writer.close(() => reject(err));
     });
 
-    writer.on("close", () => {
-      if (!error) {
-        resolve(outputPath);
-      }
+    writer.on('finish', () => {
+      writer.close(() => resolve(outputPath));
     });
   });
 }
