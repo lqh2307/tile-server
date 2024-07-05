@@ -11,36 +11,38 @@ const mercator = new SphericalMercator();
 
 function serveFrontPageHandler(config) {
   return async (req, res, next) => {
+    const renderedList = config.repo.rendereds;
+
     const styles = {};
-    const renderedPromises = Object.keys(config.repo.rendereds).map(
-      async (id) => {
-        const style = config.repo.rendereds[id];
-        const { center, format, name = "" } = style.tileJSON;
-        const tileSize = 256;
+    const renderedPromises = Object.keys(renderedList).map(async (id) => {
+      const style = renderedList[id];
+      const { center, format, name = "" } = style.tileJSON;
+      const tileSize = 256;
 
-        let viewerHash = "";
-        let thumbnail = "";
-        if (center) {
-          viewerHash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
+      let viewerHash = "";
+      let thumbnail = "";
+      if (center) {
+        viewerHash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
 
-          const centerPx = mercator.px([center[0], center[1]], center[2]);
+        const centerPx = mercator.px([center[0], center[1]], center[2]);
 
-          thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.png`;
-        }
-
-        styles[id] = {
-          name: name,
-          xyz_link: `${getUrl(req)}styles/${id}/${tileSize}/{z}/{x}/{y}.${format}`,
-          viewer_hash: viewerHash,
-          thumbnail: thumbnail,
-          serve_wmts: config.options.serveWMTS === true,
-        };
+        thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.png`;
       }
-    );
+
+      styles[id] = {
+        name: name,
+        xyz_link: `${getUrl(req)}styles/${id}/${tileSize}/{z}/{x}/{y}.${format}`,
+        viewer_hash: viewerHash,
+        thumbnail: thumbnail,
+        serve_wmts: config.options.serveWMTS === true,
+      };
+    });
+
+    const dataList = config.repo.datas;
 
     const datas = {};
-    const dataPromises = Object.keys(config.repo.datas).map(async (id) => {
-      const data = config.repo.datas[id];
+    const dataPromises = Object.keys(dataList).map(async (id) => {
+      const data = dataList[id];
       const { center, format, filesize, name = "" } = data.tileJSON;
 
       let viewerHash = "";
@@ -76,13 +78,13 @@ function serveFrontPageHandler(config) {
       }
 
       datas[id] = {
+        name: name,
         xyz_link: `${getUrl(req)}data/${id}/{z}/{x}/{y}.${format}`,
         viewer_hash: viewerHash,
         thumbnail: thumbnail,
         source_type: data.sourceType,
         is_vector: format === "pbf",
         formatted_filesize: formattedFilesize,
-        name: name,
       };
     });
 
@@ -97,11 +99,11 @@ function serveFrontPageHandler(config) {
       data_count: dataCount,
     };
 
-    const compiled = handlebars.compile(
-      fs
-        .readFileSync(path.resolve("public", "templates", "index.tmpl"))
-        .toString()
-    )(serveData);
+    const filePath = path.resolve("public", "templates", "index.tmpl");
+
+    const compiled = handlebars.compile(fs.readFileSync(filePath).toString())(
+      serveData
+    );
 
     return res.status(200).send(compiled);
   };
@@ -121,11 +123,11 @@ function serveStyleHandler(config) {
       name: style.tileJSON.name || "",
     };
 
-    const compiled = handlebars.compile(
-      fs
-        .readFileSync(path.resolve("public", "templates", "viewer.tmpl"))
-        .toString()
-    )(serveData);
+    const filePath = path.resolve("public", "templates", "viewer.tmpl");
+
+    const compiled = handlebars.compile(fs.readFileSync(filePath).toString())(
+      serveData
+    );
 
     return res.status(200).send(compiled);
   };
@@ -146,11 +148,11 @@ function serveDataHandler(config) {
       is_vector: data.tileJSON.format === "pbf",
     };
 
-    const compiled = handlebars.compile(
-      fs
-        .readFileSync(path.resolve("public", "templates", "data.tmpl"))
-        .toString()
-    )(serveData);
+    const filePath = path.resolve("public", "templates", "data.tmpl");
+
+    const compiled = handlebars.compile(fs.readFileSync(filePath).toString())(
+      serveData
+    );
 
     return res.status(200).send(compiled);
   };
@@ -171,11 +173,11 @@ function serveWMTSHandler(config) {
       base_url: `${req.get("X-Forwarded-Protocol") ? req.get("X-Forwarded-Protocol") : req.protocol}://${req.get("host")}/`,
     };
 
-    const compiled = handlebars.compile(
-      fs
-        .readFileSync(path.resolve("public", "templates", "wmts.tmpl"))
-        .toString()
-    )(serveData);
+    const filePath = path.resolve("public", "templates", "wmts.tmpl");
+
+    const compiled = handlebars.compile(fs.readFileSync(filePath).toString())(
+      serveData
+    );
 
     res.header("Content-Type", "text/xml");
 

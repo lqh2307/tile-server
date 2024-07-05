@@ -14,10 +14,10 @@ function getSpriteHandler(config) {
       return res.status(404).send("Sprite is not found");
     }
 
+    const filePath = `${path.join(config.options.paths.sprites, id, "sprite")}${req.params.scale || ""}.${req.params.format}`;
+
     try {
-      const data = fs.readFileSync(
-        `${path.join(config.options.paths.sprites, id, "sprite")}${req.params.scale || ""}.${req.params.format}`
-      );
+      const data = fs.readFileSync(filePath);
 
       if (req.params.format === "json") {
         res.header("Content-type", "application/json");
@@ -36,7 +36,9 @@ function getSpriteHandler(config) {
 
 function getSpritesListHandler(config) {
   return async (req, res, next) => {
-    const result = Object.keys(config.repo.sprites).map((sprite) => {
+    const sprites = config.repo.sprites;
+
+    const result = Object.keys(sprites).map((sprite) => {
       return {
         name: sprite,
         urls: [
@@ -68,7 +70,9 @@ export const serve_sprite = {
       Object.keys(config.sprites).map(async (sprite) => {
         try {
           /* Validate sprite */
-          validateSprite(path.join(config.options.paths.sprites, sprite));
+          const dirPath = path.join(config.options.paths.sprites, sprite);
+
+          validateSprite(dirPath);
 
           config.repo.sprites[sprite] = true;
         } catch (error) {

@@ -15,20 +15,28 @@ function getStyleHandler(config) {
       return res.status(404).send("Style is not found");
     }
 
-    /* Clone style JSON */
-    const styleJSON = JSON.parse(JSON.stringify(item.styleJSON));
+    try {
+      /* Clone style JSON */
+      const stringJSON = JSON.stringify(item.styleJSON);
 
-    /* Fix url */
-    Object.values(styleJSON.sources).forEach((source) => {
-      source.url = fixUrl(req, source.url);
-    });
+      const styleJSON = JSON.parse(stringJSON);
 
-    styleJSON.sprite = fixUrl(req, styleJSON.sprite);
-    styleJSON.glyphs = fixUrl(req, styleJSON.glyphs);
+      /* Fix url */
+      Object.values(styleJSON.sources).forEach((source) => {
+        source.url = fixUrl(req, source.url);
+      });
 
-    res.header("Content-Type", "application/json");
+      styleJSON.sprite = fixUrl(req, styleJSON.sprite);
+      styleJSON.glyphs = fixUrl(req, styleJSON.glyphs);
 
-    return res.status(200).send(styleJSON);
+      res.header("Content-Type", "application/json");
+
+      return res.status(200).send(styleJSON);
+    } catch (error) {
+      printLog("error", `Failed to get style "${id}": ${error}`);
+
+      return res.status(404).send("Style is not found");
+    }
   };
 }
 
@@ -70,11 +78,11 @@ export const serve_style = {
             throw Error(`"style" property is empty`);
           }
 
-          const styleJSON = JSON.parse(
-            fs.readFileSync(
-              path.resolve(config.options.paths.styles, stylePath)
-            )
-          );
+          const filePath = path.join(config.options.paths.styles, stylePath);
+
+          const file = fs.readFileSync(filePath);
+
+          const styleJSON = JSON.parse(file);
 
           /* Validate style */
           const validationErrors = validateStyleMin(styleJSON);

@@ -4,7 +4,6 @@ import path from "node:path";
 import zlib from "zlib";
 import express from "express";
 import {
-  fixTileJSONCenter,
   isValidHttpUrl,
   getPMTilesInfo,
   getPMTilesTile,
@@ -13,6 +12,7 @@ import {
   downloadFile,
   openMBTiles,
   openPMTiles,
+  fixTileJSON,
   printLog,
   getUrl,
 } from "./utils.js";
@@ -49,17 +49,17 @@ function getDataTileHandler(config) {
             y
           );
 
-          let isGzipped = false;
-
-          if (req.params.format === "pbf") {
-            if (data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) === 0) {
-              isGzipped = true;
-            }
-
-            headers["Content-Type"] = "application/x-protobuf";
+          if (!data) {
+            return res.status(204).send("Data is empty");
           }
 
-          if (isGzipped === false) {
+          if (req.params.format === "pbf") {
+            headers["Content-Type"] = "application/x-protobuf";
+
+            if (data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) !== 0) {
+              data = zlib.gzipSync(data);
+            }
+          } else {
             data = zlib.gzipSync(data);
           }
 
@@ -78,7 +78,7 @@ function getDataTileHandler(config) {
       } else {
         let { data, headers = {} } = await getPMTilesTile(item.source, z, x, y);
 
-        if (data === undefined) {
+        if (!data) {
           return res.status(204).send("Data is empty");
         }
 
@@ -231,7 +231,7 @@ export const serve_data = {
             throw Error(`Data format is invalid`);
           }
 
-          fixTileJSONCenter(dataInfo.tileJSON);
+          fixTileJSON(dataInfo.tileJSON);
 
           config.repo.datas[data] = dataInfo;
         } catch (error) {

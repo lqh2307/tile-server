@@ -5,16 +5,16 @@ import fs from "node:fs";
 import path from "node:path";
 import zlib from "zlib";
 import sharp from "sharp";
-import Color from "color";
 import express from "express";
 import SphericalMercator from "@mapbox/sphericalmercator";
 import mlgl from "@maplibre/maplibre-gl-native";
 import axios from "axios";
 import {
-  fixTileJSONCenter,
+  createEmptyResponse,
   getPMTilesTile,
   getMBTilesTile,
   getFontsPbf,
+  fixTileJSON,
   printLog,
   getUrl,
 } from "./utils.js";
@@ -28,40 +28,6 @@ mlgl.on("message", (error) => {
 });
 
 const mercator = new SphericalMercator();
-
-/**
- * Create an appropriate mlgl response for http errors
- * @param {string} format tile format
- * @param {Function} callback mlgl callback
- */
-function createEmptyResponse(format, callback) {
-  if (["jpeg", "jpg", "png", "webp"].includes(format) === true) {
-    // sharp lib not support jpg format
-    if (format === "jpg") {
-      format = "jpeg";
-    }
-
-    const color = new Color("rgba(255,255,255,0)");
-    sharp(Buffer.from(color.array()), {
-      raw: {
-        width: 1,
-        height: 1,
-        channels: format === "jpeg" ? 3 : 4,
-      },
-    })
-      .toFormat(format)
-      .toBuffer((_, buffer) => {
-        callback(null, {
-          data: buffer,
-        });
-      });
-  } else {
-    /* pbf and other formats */
-    callback(null, {
-      data: Buffer.alloc(0),
-    });
-  }
-}
 
 function getRenderedTileHandler(config) {
   return async (req, res, next) => {
@@ -255,7 +221,9 @@ export const serve_rendered = {
       Object.keys(styles).map(async (style) => {
         try {
           /* Clone style JSON */
-          const styleJSON = JSON.parse(JSON.stringify(styles[style].styleJSON));
+          const stringJSON = JSON.stringify(styles[style].styleJSON);
+
+          const styleJSON = JSON.parse(stringJSON);
 
           const tileJSON = {
             tilejson: "2.2.0",
@@ -263,7 +231,7 @@ export const serve_rendered = {
             attribution: "",
             minzoom: 0,
             maxzoom: 22,
-            bounds: [-180, -85.0511, 180, 85.0511],
+            bounds: [-180, -85.051128779807, 180, 85.051128779807],
             format: "png",
             type: "baselayer",
           };
@@ -274,7 +242,7 @@ export const serve_rendered = {
             );
           }
 
-          fixTileJSONCenter(tileJSON);
+          fixTileJSON(tileJSON);
 
           /* Fix source */
           await Promise.all(
@@ -395,22 +363,29 @@ export const serve_rendered = {
                                   y
                                 );
 
-                                if (sourceData.tileJSON.format === "pbf") {
-                                  try {
-                                    data = zlib.unzipSync(data);
-                                  } catch (error) {
-                                    printLog(
-                                      "error",
-                                      `MBTiles source "${sourceID}": Failed to unzip tile ${z}/${x}/${y}.pbf`
-                                    );
+                                if (!data) {
+                                  createEmptyResponse(
+                                    sourceData.tileJSON.format,
+                                    callback
+                                  );
+                                } else {
+                                  if (sourceData.tileJSON.format === "pbf") {
+                                    try {
+                                      data = zlib.unzipSync(data);
+                                    } catch (error) {
+                                      printLog(
+                                        "error",
+                                        `MBTiles source "${sourceID}": Failed to unzip tile ${z}/${x}/${y}.pbf`
+                                      );
 
-                                    throw error;
+                                      throw error;
+                                    }
                                   }
-                                }
 
-                                callback(null, {
-                                  data: data,
-                                });
+                                  callback(null, {
+                                    data: data,
+                                  });
+                                }
                               } catch (error) {
                                 if (
                                   /does not exist/.test(error.message) === false
@@ -434,7 +409,7 @@ export const serve_rendered = {
                                 y
                               );
 
-                              if (data === undefined) {
+                              if (!data) {
                                 createEmptyResponse(
                                   sourceData.tileJSON.format,
                                   callback

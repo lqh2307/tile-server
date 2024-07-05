@@ -24,53 +24,57 @@ function loadConfigFile(dataDir) {
 
   try {
     /* Read config.json file */
-    const config = JSON.parse(fs.readFileSync(configFilePath, "utf8"));
+    const file = fs.readFileSync(configFilePath, "utf8");
+
+    const config = JSON.parse(file);
 
     /* Asign options */
-const configObj = {
-  paths: {
-    styles: path.join(dataDir, config.options?.paths?.styles || ""),
-    fonts: path.join(dataDir, config.options?.paths?.fonts || ""),
-    sprites: path.join(dataDir, config.options?.paths?.sprites || ""),
-    mbtiles: path.join(dataDir, config.options?.paths?.mbtiles || ""),
-    pmtiles: path.join(dataDir, config.options?.paths?.pmtiles || "")
-  },
-  formatQuality: {
-    jpeg: config.options?.formatQuality?.jpeg || 100,
-    webp: config.options?.formatQuality?.webp || 100
-  },
-  listenPort: config.options?.listenPort || 8080,
-  watchToKill: config.options?.watchToKill || 0,
-  watchToRestart: config.options?.watchToRestart || 1000,
-  killEndpoint: config.options?.killEndpoint ?? true,
-  restartEndpoint: config.options?.restartEndpoint ?? true,
-  frontPage: config.options?.frontPage ?? true,
-  serveWMTS: config.options?.serveWMTS ?? true,
-  maxScaleRender: config.options?.maxScaleRender || 1,
-  minPoolSize: config.options?.minPoolSize || 8,
-  maxPoolSize: config.options?.maxPoolSize || 16,
-  styles: config.styles || {},
-  data: config.data || {},
-  sprites: config.sprites || {},
-  fonts: config.fonts || {},
-  repo: {
-    styles: {},
-    rendereds: {},
-    datas: {},
-    fonts: {},
-    sprites: {},
-  },
-};
+    const configObj = {
+      options: {
+        paths: {
+          styles: path.join(dataDir, config.options?.paths?.styles || ""),
+          fonts: path.join(dataDir, config.options?.paths?.fonts || ""),
+          sprites: path.join(dataDir, config.options?.paths?.sprites || ""),
+          mbtiles: path.join(dataDir, config.options?.paths?.mbtiles || ""),
+          pmtiles: path.join(dataDir, config.options?.paths?.pmtiles || ""),
+        },
+        formatQuality: {
+          jpeg: config.options?.formatQuality?.jpeg || 100,
+          webp: config.options?.formatQuality?.webp || 100,
+        },
+        listenPort: config.options?.listenPort || 8080,
+        watchToKill: config.options?.watchToKill || 0,
+        watchToRestart: config.options?.watchToRestart || 1000,
+        killEndpoint: config.options?.killEndpoint ?? true,
+        restartEndpoint: config.options?.restartEndpoint ?? true,
+        frontPage: config.options?.frontPage ?? true,
+        serveWMTS: config.options?.serveWMTS ?? true,
+        maxScaleRender: config.options?.maxScaleRender || 1,
+        minPoolSize: config.options?.minPoolSize || 8,
+        maxPoolSize: config.options?.maxPoolSize || 16,
+      },
+      styles: config.styles || {},
+      data: config.data || {},
+      sprites: config.sprites || {},
+      fonts: config.fonts || {},
+      repo: {
+        styles: {},
+        rendereds: {},
+        datas: {},
+        fonts: {},
+        sprites: {},
+      },
+    };
 
     /* Check directory paths */
     Object.values(configObj.options.paths).forEach((path) => {
-const stat = fs.statSync(path);
-      
+      const stat = fs.statSync(path);
+
       if (stat.isDirectory() === false) {
         throw Error(`Directory "${path}" does not exist`);
       }
     });
-    
+
     return configObj;
   } catch (error) {
     printLog("error", `Failed to load config file: ${error}. Exited!`);
@@ -96,7 +100,7 @@ export function startServer(dataDir) {
     killEndpoint,
     listenPort,
   } = config.options;
-  
+
   /* Setup watch config file */
   if (watchToKill > 0) {
     printLog(
@@ -104,7 +108,9 @@ export function startServer(dataDir) {
       `Watch config file changes interval ${watchToKill}ms to kill server`
     );
 
-    const newChokidar = chokidar.watch(path.join(dataDir, "config.json"), {
+    const configFilePath = path.join(dataDir, "config.json");
+
+    const newChokidar = chokidar.watch(configFilePath, {
       usePolling: true,
       awaitWriteFinish: true,
       interval: watchToKill,
@@ -121,7 +127,9 @@ export function startServer(dataDir) {
       `Watch config file changes interval ${watchToRestart}ms to restart server`
     );
 
-    const newChokidar = chokidar.watch(path.join(dataDir, "config.json"), {
+    const configFilePath = path.join(dataDir, "config.json");
+
+    const newChokidar = chokidar.watch(configFilePath, {
       usePolling: true,
       awaitWriteFinish: true,
       interval: watchToRestart,
@@ -158,14 +166,13 @@ export function startServer(dataDir) {
     });
 
   /* Init server */
+  const logFormat =
+    ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent";
+
   const app = express()
     .disable("x-powered-by")
     .enable("trust proxy")
-    .use(
-      morgan(
-        ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent"
-      )
-    )
+    .use(morgan(logFormat))
     .use(
       cors({
         origin: "*",

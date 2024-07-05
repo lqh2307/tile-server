@@ -2,11 +2,46 @@
 
 import glyphCompose from "@mapbox/glyph-pbf-composite";
 import MBTiles from "@mapbox/mbtiles";
+import Color from "color";
 import path from "node:path";
 import axios from "axios";
 import fs from "node:fs";
 import { pngValidator } from "png-validator";
 import { PMTiles, FetchSource } from "pmtiles";
+
+/**
+ * Create an appropriate mlgl response for http errors
+ * @param {string} format tile format
+ * @param {Function} callback mlgl callback
+ */
+export function createEmptyResponse(format, callback) {
+  if (["jpeg", "jpg", "png", "webp"].includes(format) === true) {
+    // sharp lib not support jpg format
+    if (format === "jpg") {
+      format = "jpeg";
+    }
+
+    const color = new Color("rgba(255,255,255,0)");
+    sharp(Buffer.from(color.array()), {
+      raw: {
+        width: 1,
+        height: 1,
+        channels: format === "jpeg" ? 3 : 4,
+      },
+    })
+      .toFormat(format)
+      .toBuffer((_, buffer) => {
+        callback(null, {
+          data: buffer,
+        });
+      });
+  } else {
+    /* pbf and other formats */
+    callback(null, {
+      data: Buffer.alloc(0),
+    });
+  }
+}
 
 /**
  * Find files in directory
@@ -15,13 +50,15 @@ import { PMTiles, FetchSource } from "pmtiles";
  * @returns {string[]}
  */
 function findFiles(dirPath, regex) {
-  return fs
-    .readdirSync(dirPath)
-    .filter(
-      (fileName) =>
-        regex.test(fileName) &&
-        fs.statSync(path.join(dirPath, fileName)).isFile()
-    );
+  const fileNames = fs.readdirSync(dirPath);
+
+  return fileNames.filter((fileName) => {
+    const filePath = path.join(dirPath, fileName);
+
+    const stat = fs.statSync(filePath);
+
+    return regex.test(fileName) === true && stat.isFile() === true;
+  });
 }
 
 /**
@@ -67,7 +104,7 @@ export function getUrl(req) {
 
 export function fixTileJSON(tileJSON) {
   if (tileJSON.bounds === undefined) {
-    tileJSON.bounds = [-180, -85.0511, 180, 85.0511];
+    tileJSON.bounds = [-180, -85.051128779807, 180, 85.051128779807];
   }
 
   if (tileJSON.center === undefined) {
@@ -76,8 +113,7 @@ export function fixTileJSON(tileJSON) {
       (tileJSON.bounds[0] + tileJSON.bounds[2]) / 2,
       (tileJSON.bounds[1] + tileJSON.bounds[3]) / 2,
       Math.round(
-        -Math.log((tileJSON.bounds[2] - tileJSON.bounds[0]) / 90) /
-          Math.LN2
+        -Math.log((tileJSON.bounds[2] - tileJSON.bounds[0]) / 90) / Math.LN2
       ),
     ];
   }
@@ -91,28 +127,15 @@ export function fixTileJSON(tileJSON) {
   }
 }
 
-export function fixTileJSONCenter(tileJSON) {
-  if (tileJSON.bounds && !tileJSON.center) {
-    const tiles = 4;
-
-    tileJSON.center = [
-      (tileJSON.bounds[0] + tileJSON.bounds[2]) / 2,
-      (tileJSON.bounds[1] + tileJSON.bounds[3]) / 2,
-      Math.round(
-        -Math.log((tileJSON.bounds[2] - tileJSON.bounds[0]) / 360 / tiles) /
-          Math.LN2
-      ),
-    ];
-  }
-}
-
 export async function getFontsPbf(fontPath, names, range) {
   const fonts = names.split(",");
 
   const values = await Promise.all(
     fonts.map(async (font) => {
       try {
-        return fs.readFileSync(path.join(fontPath, font, `${range}.pbf`));
+        const filePath = path.join(fontPath, font, `${range}.pbf`);
+
+        return fs.readFileSync(filePath);
       } catch (error) {
         const fallbackFont = "Open Sans Regular";
 
@@ -121,15 +144,15 @@ export async function getFontsPbf(fontPath, names, range) {
           `Failed to get font "${font}": ${error}. Using fallback font "${fallbackFont}"...`
         );
 
-        return fs.readFileSync(
-          path.resolve(
-            "public",
-            "resources",
-            "fonts",
-            fallbackFont,
-            `${range}.pbf`
-          )
+        const filePath = path.resolve(
+          "public",
+          "resources",
+          "fonts",
+          fallbackFont,
+          `${range}.pbf`
         );
+
+        return fs.readFileSync(filePath);
       }
     })
   );
@@ -137,9 +160,14 @@ export async function getFontsPbf(fontPath, names, range) {
   return glyphCompose.combine(values);
 }
 
-export function isValidHttpUrl(string) {
+/**
+ * Check url is valid?
+ * @param {string} strUrl
+ * @returns {boolean}
+ */
+export function isValidHttpUrl(strUrl) {
   try {
-    const url = new URL(string);
+    const url = new URL(strUrl);
 
     return url.protocol === "http:" || url.protocol === "https:";
   } catch (_) {
@@ -156,30 +184,14 @@ export function isValidHttpUrl(string) {
 export function printLog(level, msg) {
   const dateTime = new Date().toISOString();
 
-  switch (level) {
-    case "debug": {
-      console.debug(`${dateTime} ${`[DEBUG] ${msg}`}`);
-
-      break;
-    }
-
-    case "warning": {
-      console.warn(`${dateTime} ${`[WARNING] ${msg}`}`);
-
-      break;
-    }
-
-    case "error": {
-      console.error(`${dateTime} ${`[ERROR] ${msg}`}`);
-
-      break;
-    }
-
-    default: {
-      console.info(`${dateTime} ${`[INFO] ${msg}`}`);
-
-      break;
-    }
+  if (level === "debug") {
+    console.debug(`${dateTime} [DEBUG] ${msg}`);
+  } else if (level === "warning") {
+    console.warn(`${dateTime} [WARNING] ${msg}`);
+  } else if (level === "error") {
+    console.error(`${dateTime} [ERROR] ${msg}`);
+  } else {
+    console.info(`${dateTime} [INFO] ${msg}`);
   }
 }
 
@@ -208,10 +220,9 @@ export function validateSprite(spriteDirPath) {
 
     jsonSpriteFileNames.forEach((jsonSpriteFileName) => {
       /* Validate JSON sprite */
-      const jsonFile = fs.readFileSync(
-        path.join(spriteDirPath, jsonSpriteFileName),
-        "utf8"
-      );
+      const jsonFilePath = path.join(spriteDirPath, jsonSpriteFileName);
+
+      const jsonFile = fs.readFileSync(jsonFilePath, "utf8");
 
       const jsonData = JSON.parse(jsonFile);
 
@@ -231,12 +242,12 @@ export function validateSprite(spriteDirPath) {
       });
 
       /* Validate PNG sprite */
-      const pngData = fs.readFileSync(
-        path.join(
-          spriteDirPath,
-          `${jsonSpriteFileName.slice(0, jsonSpriteFileName.lastIndexOf(".json"))}.png`
-        )
+      const pngFilePath = path.join(
+        spriteDirPath,
+        `${jsonSpriteFileName.slice(0, jsonSpriteFileName.lastIndexOf(".json"))}.png`
       );
+
+      const pngData = fs.readFileSync(pngFilePath);
 
       pngValidator(pngData);
     });
@@ -266,11 +277,7 @@ export function createRepoFile(repo, repoFilePath) {
 
   const jsonData = JSON.stringify(repo, getCircularReplacer(), 2);
 
-  fs.writeFile(repoFilePath, jsonData, "utf8", (error) => {
-    if (error) {
-      throw error;
-    }
-  });
+  fs.writeFileSync(repoFilePath, jsonData, "utf8");
 }
 
 export function printUsedMemory(interval) {
@@ -289,12 +296,19 @@ export function printUsedMemory(interval) {
 }
 
 export async function downloadFile(url, outputPath, overwrite = false) {
-  if (fs.existsSync(outputPath) === true && overwrite === false) {
+  try {
     const stat = fs.statSync(outputPath);
-    if (stat.isFile() && stat.size > 0) {
+
+    if (stat.isFile() === true && stat.size > 0 && overwrite === false) {
       return outputPath;
     }
-  }
+  } catch (_) {}
+
+  const dirPath = path.dirname(outputPath);
+
+  fs.mkdirSync(dirPath, {
+    recursive: true,
+  });
 
   const response = await axios({
     url,
@@ -303,22 +317,15 @@ export async function downloadFile(url, outputPath, overwrite = false) {
   });
 
   return new Promise((resolve, reject) => {
-    const dir = path.dirname(outputPath);
-    if (fs.existsSync(dir) === false) {
-      fs.mkdirSync(dir, {
-        recursive: true,
-      });
-    }
-
     const writer = fs.createWriteStream(outputPath);
 
     response.data.pipe(writer);
 
-    writer.on('error', (err) => {
+    writer.on("error", (err) => {
       writer.close(() => reject(err));
     });
 
-    writer.on('finish', () => {
+    writer.on("finish", () => {
       writer.close(() => resolve(outputPath));
     });
   });
@@ -349,32 +356,6 @@ class PMTilesFileSource {
   }
 }
 
-function getPMTilesTileType(typenum) {
-  const headers = {};
-  let tileType;
-
-  if (typenum === 0) {
-    tileType = "";
-  } else if (typenum === 1) {
-    tileType = "pbf";
-    headers["Content-Type"] = "application/x-protobuf";
-  } else if (typenum === 2) {
-    tileType = "png";
-    headers["Content-Type"] = "image/png";
-  } else if (typenum === 3) {
-    tileType = "jpeg";
-    headers["Content-Type"] = "image/jpeg";
-  } else if (typenum === 4) {
-    tileType = "webp";
-    headers["Content-Type"] = "image/webp";
-  }
-
-  return {
-    type: tileType,
-    headers: headers,
-  };
-}
-
 export async function openPMTiles(filePath) {
   let source;
 
@@ -387,57 +368,77 @@ export async function openPMTiles(filePath) {
   return new PMTiles(source);
 }
 
-export async function getPMTilesInfo(mbtilesSource) {
-  const header = await mbtilesSource.getHeader();
-  const metadata = await mbtilesSource.getMetadata();
+export async function getPMTilesInfo(pmtilesSource) {
+  const header = await pmtilesSource.getHeader();
+  const metadata = await pmtilesSource.getMetadata();
 
-  //Add missing metadata from header
-  metadata["format"] = getPMTilesTileType(header.tileType).type;
-  metadata["minzoom"] = header.minZoom;
-  metadata["maxzoom"] = header.maxZoom;
+  // Add missing metadata from header
+  if (header.tileType === 1) {
+    metadata.format = "pbf";
+  } else if (header.tileType === 2) {
+    metadata.format = "png";
+  } else if (header.tileType === 3) {
+    metadata.format = "jpeg";
+  } else if (header.tileType === 4) {
+    metadata.format = "webp";
+  }
+
+  if (header.minZoom) {
+    metadata.minzoom = header.minZoom;
+  } else {
+    metadata.minzoom = 0;
+  }
+
+  if (header.maxZoom) {
+    metadata.maxzoom = header.maxZoom;
+  } else {
+    metadata.maxzoom = 22;
+  }
 
   if (header.minLon && header.minLat && header.maxLon && header.maxLat) {
-    metadata["bounds"] = [
+    metadata.bounds = [
       header.minLon,
       header.minLat,
       header.maxLon,
       header.maxLat,
     ];
   } else {
-    metadata["bounds"] = [-180, -85.05112877980659, 180, 85.0511287798066];
+    metadata.bounds = [-180, -85.051128779807, 180, 85.051128779807];
   }
 
   if (header.centerZoom) {
-    metadata["center"] = [
-      header.centerLon,
-      header.centerLat,
-      header.centerZoom,
-    ];
+    metadata.center = [header.centerLon, header.centerLat, header.centerZoom];
   } else {
-    metadata["center"] = [
+    metadata.center = [
       header.centerLon,
       header.centerLat,
-      parseInt(metadata["maxzoom"]) / 2,
+      parseInt(metadata.maxzoom) / 2,
     ];
   }
 
   return metadata;
 }
 
-export async function getPMTilesTile(pmtiles, z, x, y) {
-  const header = await pmtiles.getHeader();
-  const tileType = getPMTilesTileType(header.tileType);
-  let zxyTile = await pmtiles.getZxy(z, x, y);
+export async function getPMTilesTile(pmtilesSource, z, x, y) {
+  const header = await pmtilesSource.getHeader();
 
-  if (zxyTile && zxyTile.data) {
-    zxyTile = Buffer.from(zxyTile.data);
-  } else {
-    zxyTile = undefined;
+  const headers = {};
+
+  if (header.tileType === 1) {
+    headers["Content-Type"] = "application/x-protobuf";
+  } else if (header.tileType === 2) {
+    headers["Content-Type"] = "image/png";
+  } else if (header.tileType === 3) {
+    headers["Content-Type"] = "image/jpeg";
+  } else if (header.tileType === 4) {
+    headers["Content-Type"] = "image/webp";
   }
 
+  const zxyTile = await pmtilesSource.getZxy(z, x, y);
+
   return {
-    data: zxyTile,
-    headers: tileType.headers,
+    data: zxyTile?.data ? Buffer.from(zxyTile.data) : zxyTile,
+    headers: headers,
   };
 }
 
