@@ -33,6 +33,7 @@ function getRenderedTileHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
     const item = config.repo.rendereds[id];
+    const format = req.params.format;
 
     if (!item) {
       return res.status(404).send("Rendered data is not found");
@@ -62,8 +63,6 @@ function getRenderedTileHandler(config) {
     if (scale > config.options.maxScaleRender) {
       return res.status(400).send("Rendered data scale is invalid");
     }
-
-    const format = req.params.format;
 
     if (["jpeg", "jpg", "png", "webp"].includes(format) === true) {
       // sharp lib not support jpg format
@@ -206,7 +205,7 @@ export const serve_rendered = {
     app.get("/rendereds.json", getRenderedsListHandler(config));
     app.get("/(:tileSize(256|512)/)?:id.json", getRenderedHandler(config));
     app.get(
-      `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(@\\d+x)?.:format(pbf|jpg|png|jpeg|webp)`,
+      `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(@\\d+x)?.:format([\\w]+)`,
       getRenderedTileHandler(config)
     );
 

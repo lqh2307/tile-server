@@ -21,6 +21,11 @@ function getDataTileHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
     const item = config.repo.datas[id];
+    const format = req.params.format;
+
+    if (["jpeg", "jpg", "pbf", "png", "webp"].includes(format) === false) {
+      return res.status(400).send("Data format is invalid");
+    }
 
     if (!item) {
       return res.status(404).send("Data is not found");
@@ -53,7 +58,7 @@ function getDataTileHandler(config) {
             return res.status(204).send("Data is empty");
           }
 
-          if (req.params.format === "pbf") {
+          if (format === "pbf") {
             headers["Content-Type"] = "application/x-protobuf";
 
             if (data.slice(0, 2).indexOf(Buffer.from([0x1f, 0x8b])) !== 0) {
@@ -82,7 +87,7 @@ function getDataTileHandler(config) {
           return res.status(204).send("Data is empty");
         }
 
-        if (req.params.format === "pbf") {
+        if (format === "pbf") {
           headers["Content-Type"] = "application/x-protobuf";
         }
 
@@ -153,7 +158,7 @@ export const serve_data = {
     app.get("/datas.json", getDatasListHandler(config));
     app.get("/:id.json", getDataHandler(config));
     app.get(
-      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(pbf|jpg|png|jpeg|webp)`,
+      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format([\\w]+)`,
       getDataTileHandler(config)
     );
 

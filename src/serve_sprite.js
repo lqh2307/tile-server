@@ -9,6 +9,11 @@ function getSpriteHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
     const item = config.repo.sprites[id];
+    const format = req.params.format;
+
+    if (["json", "png"].includes(format) === false) {
+      return res.status(400).send("Sprite format is invalid");
+    }
 
     if (!item) {
       return res.status(404).send("Sprite is not found");
@@ -58,7 +63,7 @@ export const serve_sprite = {
 
     app.get("/sprites.json", getSpritesListHandler(config));
     app.get(
-      "/:id/sprite:scale(@\\d+x)?.:format(png|json)",
+      "/:id/sprite:scale(@\\d+x)?.:format([\\w]+)",
       getSpriteHandler(config)
     );
 
