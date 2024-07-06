@@ -77,7 +77,7 @@ export const serve_sprite = {
           /* Validate sprite */
           const dirPath = path.join(config.options.paths.sprites, sprite);
 
-          validateSprite(dirPath);
+          await validateSprite(dirPath);
 
           /* Add to repo */
           config.repo.sprites[sprite] = true;

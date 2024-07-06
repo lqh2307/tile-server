@@ -1,9 +1,9 @@
-import chokidar from "chokidar";
-import express from "express";
-import morgan from "morgan";
-import path from "node:path";
-import cors from "cors";
 import fs from "node:fs";
+import cors from "cors";
+import path from "node:path";
+import morgan from "morgan";
+import express from "express";
+import chokidar from "chokidar";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
 import { serve_sprite } from "./serve_sprite.js";
@@ -160,7 +160,7 @@ export function startServer(dataDir) {
 
       startupComplete = true;
     })
-    .catch(() => {
+    .catch((error) => {
       printLog("error", `Failed to load data: ${error}`);
 
       process.exit(0);

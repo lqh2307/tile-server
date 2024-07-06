@@ -58,7 +58,7 @@ export const serve_font = {
           /* Validate font */
           const dirPath = path.join(config.options.paths.fonts, font);
 
-          validatePBFFont(dirPath);
+          await validatePBFFont(dirPath);
 
           /* Add to repo */
           config.repo.fonts[font] = true;

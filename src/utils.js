@@ -1,13 +1,12 @@
 "use strict";
 
-import glyphCompose from "@mapbox/glyph-pbf-composite";
-import MBTiles from "@mapbox/mbtiles";
-import Color from "color";
+import fs from "node:fs";
 import path from "node:path";
+import Color from "color";
 import axios from "axios";
 import sharp from "sharp";
-import fs from "node:fs";
-import { pngValidator } from "png-validator";
+import MBTiles from "@mapbox/mbtiles";
+import glyphCompose from "@mapbox/glyph-pbf-composite";
 import { PMTiles, FetchSource } from "pmtiles";
 
 /**
@@ -208,7 +207,7 @@ export function printLog(level, msg) {
   }
 }
 
-export function validatePBFFont(pbfDirPath) {
+export async function validatePBFFont(pbfDirPath) {
   try {
     const pbfFileNames = findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
 
@@ -220,7 +219,7 @@ export function validatePBFFont(pbfDirPath) {
   }
 }
 
-export function validateSprite(spriteDirPath) {
+export async function validateSprite(spriteDirPath) {
   try {
     const jsonSpriteFileNames = findFiles(
       spriteDirPath,
@@ -228,42 +227,46 @@ export function validateSprite(spriteDirPath) {
     );
 
     if (jsonSpriteFileNames.length === 0) {
-      throw Error(`Json file count is equal 0`);
+      throw Error(`Not found json sprite file`);
     }
 
-    jsonSpriteFileNames.forEach((jsonSpriteFileName) => {
-      /* Validate JSON sprite */
-      const jsonFilePath = path.join(spriteDirPath, jsonSpriteFileName);
+    await Promise.all(
+      jsonSpriteFileNames.map(async (jsonSpriteFileName) => {
+        /* Validate JSON sprite */
+        const jsonFilePath = path.join(spriteDirPath, jsonSpriteFileName);
 
-      const jsonFile = fs.readFileSync(jsonFilePath, "utf8");
+        const jsonFile = fs.readFileSync(jsonFilePath, "utf8");
 
-      const jsonData = JSON.parse(jsonFile);
+        const jsonData = JSON.parse(jsonFile);
 
-      Object.values(jsonData).forEach((value) => {
-        if (
-          typeof value !== "object" ||
-          "height" in value === false ||
-          "pixelRatio" in value === false ||
-          "width" in value === false ||
-          "x" in value === false ||
-          "y" in value === false
-        ) {
-          throw Error(
-            `One of properties ("height", "pixelRatio", "width", "x", "y") is empty`
-          );
+        Object.values(jsonData).forEach((value) => {
+          if (
+            typeof value !== "object" ||
+            "height" in value === false ||
+            "pixelRatio" in value === false ||
+            "width" in value === false ||
+            "x" in value === false ||
+            "y" in value === false
+          ) {
+            throw Error(
+              `One of properties ("height", "pixelRatio", "width", "x", "y") is empty`
+            );
+          }
+        });
+
+        /* Validate PNG sprite */
+        const pngFilePath = path.join(
+          spriteDirPath,
+          `${jsonSpriteFileName.slice(0, jsonSpriteFileName.lastIndexOf(".json"))}.png`
+        );
+
+        const pngMetadata = await sharp(pngFilePath).metadata();
+
+        if (pngMetadata.format !== "png") {
+          throw Error("Invalid png sprite file");
         }
-      });
-
-      /* Validate PNG sprite */
-      const pngFilePath = path.join(
-        spriteDirPath,
-        `${jsonSpriteFileName.slice(0, jsonSpriteFileName.lastIndexOf(".json"))}.png`
-      );
-
-      const pngData = fs.readFileSync(pngFilePath);
-
-      pngValidator(pngData);
-    });
+      })
+    );
   } catch (error) {
     throw error;
   }

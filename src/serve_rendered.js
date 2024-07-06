@@ -1,14 +1,14 @@
 "use strict";
 
-import { createPool } from "generic-pool";
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "zlib";
+import mlgl from "@maplibre/maplibre-gl-native";
+import axios from "axios";
 import sharp from "sharp";
 import express from "express";
 import SphericalMercator from "@mapbox/sphericalmercator";
-import mlgl from "@maplibre/maplibre-gl-native";
-import axios from "axios";
+import { createPool } from "generic-pool";
 import {
   createEmptyResponse,
   getPMTilesTile,
@@ -286,6 +286,30 @@ export const serve_rendered = {
           sources: sources,
         };
 
+        /* Validate sprite */
+        if (styleJSON.sprite === "") {
+          printLog(
+            "warning",
+            `Sprite in style "${style}" is empty. Serving empty sprite...`
+          );
+
+          delete styleJSON.sprite;
+        } else if (styleJSON.sprite?.startsWith("sprites://") === true) {
+          const spriteID = styleJSON.sprite.slice(
+            10,
+            styleJSON.sprite.lastIndexOf("/")
+          );
+
+          if (!config.repo.sprites[spriteID]) {
+            printLog(
+              "warning",
+              `Sprite "${spriteID}" in style "${style}" is not found. Serving empty sprite...`
+            );
+
+            delete styleJSON.sprite;
+          }
+        }
+
         /* Add missing infos */
         if (styleJSON.center?.length === 2 && styleJSON.zoom) {
           rendered.tileJSON.center = [
@@ -407,7 +431,7 @@ export const serve_rendered = {
                           } catch (error) {
                             printLog(
                               "warning",
-                              `Failed to get data "${sourceID}" - Tile ${z}/${x}/${y}: ${error}. Serving empty...`
+                              `Failed to get data "${sourceID}" - Tile ${z}/${x}/${y}: ${error}. Serving empty tile...`
                             );
 
                             createEmptyResponse(

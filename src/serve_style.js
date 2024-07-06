@@ -1,8 +1,8 @@
 "use strict";
 
-import express from "express";
-import path from "node:path";
 import fs from "node:fs";
+import path from "node:path";
+import express from "express";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { fixUrl, printLog, getUrl } from "./utils.js";
 
