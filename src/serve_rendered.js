@@ -33,7 +33,7 @@ function getRenderedTileHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
     const item = config.repo.rendereds[id];
-    const format = req.params.format;
+    let { format, z, x, y, scale, tileSize } = req.params;
 
     if (["jpeg", "jpg", "png", "webp", "avif"].includes(format) === true) {
       // sharp lib not support jpg format
@@ -41,16 +41,16 @@ function getRenderedTileHandler(config) {
         format = "jpeg";
       }
     } else {
-      return res.status(400).send("Rendered data format is invalid");
+      return res.status(400).send("Rendered data tile format is invalid");
     }
 
     if (!item) {
       return res.status(404).send("Rendered data is not found");
     }
 
-    const z = Number(req.params.z);
-    const x = Number(req.params.x);
-    const y = Number(req.params.y);
+    z = Number(z);
+    x = Number(x);
+    y = Number(y);
 
     if (z > 22 || x >= Math.pow(2, z) || y >= Math.pow(2, z)) {
       return res.status(400).send("Rendered data bound is invalid");
@@ -67,13 +67,13 @@ function getRenderedTileHandler(config) {
       return res.status(400).send("Rendered data center is invalid");
     }
 
-    const scale = req.params.scale?.slice(1, -1) || 1;
+    scale = scale?.slice(1, -1) || 1;
 
     if (scale > config.options.maxScaleRender) {
-      return res.status(400).send("Rendered data scale is invalid");
+      return res.status(400).send("Rendered data tile scale is invalid");
     }
 
-    const tileSize = Number(req.params.tileSize) || 256;
+    tileSize = Number(tileSize) || 256;
 
     // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
     const params = {
@@ -99,9 +99,12 @@ function getRenderedTileHandler(config) {
         item.renderers[scale - 1].release(renderer);
 
         if (error) {
-          printLog("error", `Failed to get data "${id}": ${error}`);
+          printLog(
+            "error",
+            `Failed to get rendered data "${id}" - Tile ${z}/${x}/${y}: ${error}`
+          );
 
-          return res.status(404).send("Data is not found");
+          return res.status(404).send("Rendered data tile is not found");
         }
 
         const image = sharp(data, {
@@ -139,9 +142,12 @@ function getRenderedTileHandler(config) {
 
         image.toBuffer((error, buffer) => {
           if (error) {
-            printLog("error", `Failed to get rendered data "${id}": ${error}`);
+            printLog(
+              "error",
+              `Failed to get rendered data "${id}" - Tile ${z}/${x}/${y}: ${error}`
+            );
 
-            return res.status(404).send("Rendered data is not found");
+            return res.status(404).send("Rendered data tile is not found");
           }
 
           res.header("Content-Type", `image/${format}`);
@@ -150,9 +156,12 @@ function getRenderedTileHandler(config) {
         });
       });
     } catch (error) {
-      printLog("error", `Failed to get rendered data "${id}": ${error}`);
+      printLog(
+        "error",
+        `Failed to get rendered data "${id}" - Tile ${z}/${x}/${y}: ${error}`
+      );
 
-      return res.status(404).send("Rendered data is not found");
+      return res.status(404).send("Rendered data tile is not found");
     }
   };
 }
@@ -357,90 +366,54 @@ export const serve_rendered = {
                           const y = Number(parts[5].split(".")[0]);
                           const sourceData = config.repo.datas[sourceID];
 
-                          if (sourceData.sourceType === "mbtiles") {
-                            try {
-                              let { data } = await getMBTilesTile(
+                          try {
+                            let dataTile;
+
+                            if (sourceData.sourceType === "mbtiles") {
+                              dataTile = await getMBTilesTile(
                                 sourceData.source,
                                 z,
                                 x,
                                 y
                               );
-
-                              if (!data) {
-                                createEmptyResponse(
-                                  sourceData.tileJSON.format,
-                                  callback
-                                );
-                              } else {
-                                if (
-                                  sourceData.tileJSON.format === "pbf" &&
-                                  data[0] === 0x1f &&
-                                  data[1] === 0x8b
-                                ) {
-                                  try {
-                                    data = zlib.unzipSync(data);
-                                  } catch (error) {
-                                    throw error;
-                                  }
-                                }
-
-                                callback(null, {
-                                  data: data,
-                                });
-                              }
-                            } catch (error) {
-                              printLog(
-                                "warning",
-                                `Failed to get MBTiles source "${sourceID}" - Tile ${z}/${x}/${y}.${sourceData.tileJSON.format}: ${error}. Serving empty...`
-                              );
-
-                              createEmptyResponse(
-                                sourceData.tileJSON.format,
-                                callback
-                              );
-                            }
-                          } else {
-                            try {
-                              const { data } = await getPMTilesTile(
+                            } else {
+                              dataTile = await getPMTilesTile(
                                 sourceData.source,
                                 z,
                                 x,
                                 y
                               );
-
-                              if (!data) {
-                                createEmptyResponse(
-                                  sourceData.tileJSON.format,
-                                  callback
-                                );
-                              } else {
-                                if (
-                                  sourceData.tileJSON.format === "pbf" &&
-                                  data[0] === 0x1f &&
-                                  data[1] === 0x8b
-                                ) {
-                                  try {
-                                    data = zlib.unzipSync(data);
-                                  } catch (error) {
-                                    throw error;
-                                  }
-                                }
-
-                                callback(null, {
-                                  data: data,
-                                });
-                              }
-                            } catch (error) {
-                              printLog(
-                                "warning",
-                                `Failed to get PMTiles source "${sourceID}" - Tile ${z}/${x}/${y}.${sourceData.tileJSON.format}: ${error}. Serving empty...`
-                              );
-
-                              createEmptyResponse(
-                                sourceData.tileJSON.format,
-                                callback
-                              );
                             }
+
+                            if (!dataTile?.data) {
+                              throw Error("Tile does not exist");
+                            } else {
+                              if (
+                                sourceData.tileJSON.format === "pbf" &&
+                                dataTile.data[0] === 0x1f &&
+                                dataTile.data[1] === 0x8b
+                              ) {
+                                try {
+                                  dataTile.data = zlib.unzipSync(dataTile.data);
+                                } catch (error) {
+                                  throw error;
+                                }
+                              }
+
+                              callback(null, {
+                                data: dataTile.data,
+                              });
+                            }
+                          } catch (error) {
+                            printLog(
+                              "warning",
+                              `Failed to get data "${sourceID}" - Tile ${z}/${x}/${y}: ${error}. Serving empty...`
+                            );
+
+                            createEmptyResponse(
+                              sourceData.tileJSON.format,
+                              callback
+                            );
                           }
                         } else if (
                           protocol === "http" ||

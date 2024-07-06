@@ -25,7 +25,7 @@ function getDataTileHandler(config) {
     if (
       ["jpeg", "jpg", "pbf", "png", "webp", "avif"].includes(format) === false
     ) {
-      return res.status(400).send("Data format is invalid");
+      return res.status(400).send("Data tile format is invalid");
     }
 
     if (!item) {
@@ -46,35 +46,32 @@ function getDataTileHandler(config) {
     }
 
     try {
+      let dataTile;
+
       if (item.sourceType === "mbtiles") {
-        let { data, headers = {} } = await getMBTilesTile(item.source, z, x, y);
-
-        if (!data) {
-          return res.status(204).send("Data is empty");
-        }
-
-        res.set(headers);
-
-        return res.status(200).send(data);
+        dataTile = await getMBTilesTile(item.source, z, x, y);
       } else {
-        let { data, headers = {} } = await getPMTilesTile(item.source, z, x, y);
-
-        if (!data) {
-          return res.status(204).send("Data is empty");
-        }
-
-        res.set(headers);
-
-        return res.status(200).send(data);
+        dataTile = await getPMTilesTile(item.source, z, x, y);
       }
+
+      if (!dataTile?.data) {
+        throw Error("Tile does not exist");
+      }
+
+      res.set(dataTile.headers);
+
+      return res.status(200).send(dataTile.data);
     } catch (error) {
+      printLog(
+        "error",
+        `Failed to get data "${id}" - Tile ${z}/${x}/${y}: ${error}`
+      );
+
       if (/does not exist/.test(error.message) === true) {
-        return res.status(204).send("Data is empty");
+        return res.status(204).send("Data tile is empty");
       }
 
-      printLog("error", `Failed to get data "${id}": ${error}`);
-
-      return res.status(404).send("Data is not found");
+      return res.status(404).send("Data tile is not found");
     }
   };
 }
@@ -88,20 +85,14 @@ function getDataHandler(config) {
       return res.status(404).send("Data is not found");
     }
 
-    try {
-      const info = {
-        ...item.tileJSON,
-        tiles: [`${getUrl(req)}data/${id}/{z}/{x}/{y}.${item.tileJSON.format}`],
-      };
+    const info = {
+      ...item.tileJSON,
+      tiles: [`${getUrl(req)}data/${id}/{z}/{x}/{y}.${item.tileJSON.format}`],
+    };
 
-      res.header("Content-type", "application/json");
+    res.header("Content-type", "application/json");
 
-      return res.status(200).send(info);
-    } catch (error) {
-      printLog("error", `Failed to get data "${id}": ${error}`);
-
-      return res.status(404).send("Data is not found");
-    }
+    return res.status(200).send(info);
   };
 }
 
@@ -142,9 +133,10 @@ export const serve_data = {
       Object.keys(config.data).map(async (data) => {
         const item = config.data[data];
         const dataInfo = {};
-        let inputDataFile = "";
 
         try {
+          let inputDataFile = "";
+
           if (item.mbtiles) {
             if (isValidHttpUrl(item.mbtiles) === true) {
               inputDataFile = path.join(

@@ -492,7 +492,7 @@ export async function getMBTilesTile(mbtilesSource, z, x, y) {
 
       resolve({
         data: data,
-        headers: headers,
+        headers: headers || {},
       });
     });
   });
