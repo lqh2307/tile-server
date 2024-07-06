@@ -9,7 +9,8 @@
     },
     "formatQuality": {
       "jpeg": 100,
-      "webp": 100
+      "webp": 100,
+      "avif": 100
     },
     "listenPort": 8080,
     "watchToKill": 0,

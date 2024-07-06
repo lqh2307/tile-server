@@ -5,6 +5,7 @@ import MBTiles from "@mapbox/mbtiles";
 import Color from "color";
 import path from "node:path";
 import axios from "axios";
+import sharp from "sharp";
 import fs from "node:fs";
 import { pngValidator } from "png-validator";
 import { PMTiles, FetchSource } from "pmtiles";
@@ -15,7 +16,7 @@ import { PMTiles, FetchSource } from "pmtiles";
  * @param {Function} callback mlgl callback
  */
 export function createEmptyResponse(format, callback) {
-  if (["jpeg", "jpg", "png", "webp"].includes(format) === true) {
+  if (["jpeg", "jpg", "png", "webp", "avif"].includes(format) === true) {
     // sharp lib not support jpg format
     if (format === "jpg") {
       format = "jpeg";
@@ -102,7 +103,19 @@ export function getUrl(req) {
   return urlObject.toString();
 }
 
+/**
+ * Add missing infos
+ * @param {object} tileJSON
+ */
 export function fixTileJSON(tileJSON) {
+  if (tileJSON.tilejson === undefined) {
+    tileJSON.tilejson = "2.2.0";
+  }
+
+  if (tileJSON.type === undefined) {
+    tileJSON.type = "baselayer";
+  }
+
   if (tileJSON.bounds === undefined) {
     tileJSON.bounds = [-180, -85.051128779807, 180, 85.051128779807];
   }
@@ -381,6 +394,8 @@ export async function getPMTilesInfo(pmtilesSource) {
     metadata.format = "jpeg";
   } else if (header.tileType === 4) {
     metadata.format = "webp";
+  } else if (header.tileType === 5) {
+    metadata.format = "avif";
   }
 
   if (header.minZoom) {
@@ -432,6 +447,8 @@ export async function getPMTilesTile(pmtilesSource, z, x, y) {
     headers["Content-Type"] = "image/jpeg";
   } else if (header.tileType === 4) {
     headers["Content-Type"] = "image/webp";
+  } else if (header.tileType === 5) {
+    headers["Content-Type"] = "image/avif";
   }
 
   const zxyTile = await pmtilesSource.getZxy(z, x, y);

@@ -15,28 +15,25 @@ function getStyleHandler(config) {
       return res.status(404).send("Style is not found");
     }
 
-    try {
-      /* Clone style JSON */
-      const stringJSON = JSON.stringify(item.styleJSON);
+    /* Clone style JSON & Fix urls */
+    const sources = {};
+    Object.keys(item.styleJSON.sources).forEach((source) => {
+      sources[source] = {
+        ...item.styleJSON.sources[source],
+        url: fixUrl(req, item.styleJSON.sources[source].url),
+      };
+    });
 
-      const styleJSON = JSON.parse(stringJSON);
+    const styleJSON = {
+      ...item.styleJSON,
+      sources: sources,
+      sprite: fixUrl(req, item.styleJSON.sprite),
+      glyphs: fixUrl(req, item.styleJSON.glyphs),
+    };
 
-      /* Fix url */
-      Object.values(styleJSON.sources).forEach((source) => {
-        source.url = fixUrl(req, source.url);
-      });
+    res.header("Content-Type", "application/json");
 
-      styleJSON.sprite = fixUrl(req, styleJSON.sprite);
-      styleJSON.glyphs = fixUrl(req, styleJSON.glyphs);
-
-      res.header("Content-Type", "application/json");
-
-      return res.status(200).send(styleJSON);
-    } catch (error) {
-      printLog("error", `Failed to get style "${id}": ${error}`);
-
-      return res.status(404).send("Style is not found");
-    }
+    return res.status(200).send(styleJSON);
   };
 }
 
@@ -96,8 +93,8 @@ export const serve_style = {
             throw Error(errString);
           }
 
-          Object.keys(styleJSON.sources).forEach((name) => {
-            const sourceUrl = styleJSON.sources[name].url;
+          Object.keys(styleJSON.sources).forEach((source) => {
+            const sourceUrl = styleJSON.sources[source].url;
 
             if (
               sourceUrl?.startsWith("pmtiles://") === true ||
@@ -106,11 +103,12 @@ export const serve_style = {
               const sourceID = sourceUrl.slice(11, -1);
 
               if (!config.repo.datas[sourceID]) {
-                throw Error(`Source data "${name}" is not found`);
+                throw Error(`Source data "${source}" is not found`);
               }
             }
           });
 
+          /* Add to repo */
           config.repo.styles[style] = {
             styleJSON: styleJSON,
           };

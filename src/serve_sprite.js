@@ -19,14 +19,14 @@ function getSpriteHandler(config) {
       return res.status(404).send("Sprite is not found");
     }
 
-    const filePath = `${path.join(config.options.paths.sprites, id, "sprite")}${req.params.scale || ""}.${req.params.format}`;
-
     try {
+      const filePath = `${path.join(config.options.paths.sprites, id, "sprite")}${req.params.scale || ""}.${req.params.format}`;
+
       const data = fs.readFileSync(filePath);
 
-      if (req.params.format === "json") {
+      if (format === "json") {
         res.header("Content-type", "application/json");
-      } else if (req.params.format === "png") {
+      } else {
         res.header("Content-type", "image/png");
       }
 
@@ -79,6 +79,7 @@ export const serve_sprite = {
 
           validateSprite(dirPath);
 
+          /* Add to repo */
           config.repo.sprites[sprite] = true;
         } catch (error) {
           printLog(

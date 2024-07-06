@@ -60,6 +60,7 @@ export const serve_font = {
 
           validatePBFFont(dirPath);
 
+          /* Add to repo */
           config.repo.fonts[font] = true;
         } catch (error) {
           printLog(

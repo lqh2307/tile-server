@@ -41,6 +41,7 @@ function loadConfigFile(dataDir) {
         formatQuality: {
           jpeg: config.options?.formatQuality?.jpeg || 100,
           webp: config.options?.formatQuality?.webp || 100,
+          avif: config.options?.formatQuality?.avif || 100,
         },
         listenPort: config.options?.listenPort || 8080,
         watchToKill: config.options?.watchToKill || 0,

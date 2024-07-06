@@ -35,7 +35,7 @@ function getRenderedTileHandler(config) {
     const item = config.repo.rendereds[id];
     const format = req.params.format;
 
-    if (["jpeg", "jpg", "png", "webp"].includes(format) === true) {
+    if (["jpeg", "jpg", "png", "webp", "avif"].includes(format) === true) {
       // sharp lib not support jpg format
       if (format === "jpg") {
         format = "jpeg";
@@ -122,9 +122,7 @@ function getRenderedTileHandler(config) {
         // END HACK(Part 2)
 
         if (format === "png") {
-          image.png({
-            adaptiveFiltering: false,
-          });
+          image.png({});
         } else if (format === "jpeg") {
           image.jpeg({
             quality: config.options.formatQuality.jpeg,
@@ -132,6 +130,10 @@ function getRenderedTileHandler(config) {
         } else if (format === "webp") {
           image.webp({
             quality: config.options.formatQuality.webp,
+          });
+        } else if (format === "avif") {
+          image.avif({
+            quality: config.options.formatQuality.avif,
           });
         }
 
@@ -213,194 +215,192 @@ export const serve_rendered = {
   },
 
   add: async (config) => {
-    /* Loop over styles */
-    const styles = config.repo.styles;
-
     await Promise.all(
-      Object.keys(styles).map(async (style) => {
-        try {
-          /* Clone style JSON */
-          const stringJSON = JSON.stringify(styles[style].styleJSON);
-
-          const styleJSON = JSON.parse(stringJSON);
-
-          const tileJSON = {
-            tilejson: "2.2.0",
-            name: styleJSON.name || "",
+      Object.keys(config.repo.styles).map(async (style) => {
+        const item = config.repo.styles[style];
+        const rendered = {
+          tileJSON: {
+            name: item.styleJSON.name || "",
             attribution: "",
-            minzoom: 0,
-            maxzoom: 22,
-            bounds: [-180, -85.051128779807, 180, 85.051128779807],
             format: "png",
-            type: "baselayer",
-          };
+          },
+        };
 
-          if (styleJSON.center?.length === 2 && styleJSON.zoom) {
-            tileJSON.center = styleJSON.center.concat(
-              Math.round(styleJSON.zoom)
-            );
-          }
+        /* Clone style JSON & Fix sources */
+        const sources = {};
+        await Promise.all(
+          Object.keys(item.styleJSON.sources).map(async (source) => {
+            const oldSource = item.styleJSON.sources[source];
+            const sourceUrl = oldSource.url;
 
-          fixTileJSON(tileJSON);
+            if (
+              sourceUrl?.startsWith("pmtiles://") === true ||
+              sourceUrl?.startsWith("mbtiles://") === true
+            ) {
+              const sourceID = sourceUrl.slice(11, -1);
+              const sourceData = config.repo.datas[sourceID];
 
-          /* Fix source */
-          await Promise.all(
-            Object.values(styleJSON.sources).map(async (source) => {
-              if (
-                source.url?.startsWith("pmtiles://") === true ||
-                source.url?.startsWith("mbtiles://") === true
-              ) {
-                const sourceID = source.url.slice(11, -1);
-                const sourceData = config.repo.datas[sourceID];
+              // Fix source
+              sources[source] = {
+                ...oldSource,
+                ...sourceData.tileJSON,
+                type: oldSource.type,
+                tiles: [
+                  `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`,
+                ],
+              };
 
-                Object.assign(source, {
-                  ...sourceData.tileJSON,
-                  type: source.type,
-                  tiles: [
-                    `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`,
-                  ],
-                });
+              // Replace with local tiles
+              delete sources[source].url;
+            } else {
+              sources[source] = oldSource;
+            }
 
-                if (
-                  source.attribution &&
-                  tileJSON.attribution.includes(source.attribution) === false
-                ) {
-                  if (tileJSON.attribution !== "") {
-                    tileJSON.attribution += " | ";
-                  }
-
-                  tileJSON.attribution += source.attribution;
-                }
-
-                // Replace with info from local file
-                delete source.url;
+            // Add atribution
+            if (
+              sources[source].attribution &&
+              rendered.tileJSON.attribution.includes(
+                sources[source].attribution
+              ) === false
+            ) {
+              if (rendered.tileJSON.attribution !== "") {
+                rendered.tileJSON.attribution += " | ";
               }
-            })
-          );
 
-          /* Create pools */
-          const renderers = await Promise.all(
-            Array.from(
-              {
-                length: config.options.maxScaleRender,
-              },
-              (_, scale) =>
-                createPool(
-                  {
-                    create: async () => {
-                      const renderer = new mlgl.Map({
-                        mode: "tile",
-                        ratio: scale + 1,
-                        request: async (req, callback) => {
-                          const protocol = req.url.split(":")[0];
+              rendered.tileJSON.attribution += sources[source].attribution;
+            }
+          })
+        );
 
-                          if (protocol === "sprites") {
-                            const parts = decodeURIComponent(req.url).split(
-                              "/"
+        const styleJSON = {
+          ...item.styleJSON,
+          sources: sources,
+        };
+
+        /* Add missing infos */
+        if (styleJSON.center?.length === 2 && styleJSON.zoom) {
+          rendered.tileJSON.center = [
+            styleJSON.center[0],
+            styleJSON.center[1],
+            Math.round(styleJSON.zoom),
+          ];
+        }
+
+        fixTileJSON(rendered.tileJSON);
+
+        /* Create pools */
+        rendered.renderers = await Promise.all(
+          Array.from(
+            {
+              length: config.options.maxScaleRender,
+            },
+            (_, scale) =>
+              createPool(
+                {
+                  create: async () => {
+                    const renderer = new mlgl.Map({
+                      mode: "tile",
+                      ratio: scale + 1,
+                      request: async (req, callback) => {
+                        const protocol = req.url.split(":")[0];
+
+                        if (protocol === "sprites") {
+                          const parts = decodeURIComponent(req.url).split("/");
+                          const spriteDir = parts[2];
+                          const spriteFile = parts[3];
+
+                          try {
+                            const data = fs.readFileSync(
+                              path.join(
+                                config.options.paths.sprites,
+                                spriteDir,
+                                spriteFile
+                              )
                             );
-                            const spriteDir = parts[2];
-                            const spriteFile = parts[3];
 
+                            callback(null, {
+                              data: data,
+                            });
+                          } catch (error) {
+                            callback(error, {
+                              data: null,
+                            });
+                          }
+                        } else if (protocol === "fonts") {
+                          const parts = decodeURIComponent(req.url).split("/");
+                          const fonts = parts[2];
+                          const range = parts[3].split(".")[0];
+
+                          try {
+                            const data = await getFontsPbf(
+                              config.options.paths.fonts,
+                              fonts,
+                              range
+                            );
+
+                            callback(null, {
+                              data: data,
+                            });
+                          } catch (error) {
+                            callback(error, {
+                              data: null,
+                            });
+                          }
+                        } else if (
+                          protocol === "mbtiles" ||
+                          protocol === "pmtiles"
+                        ) {
+                          const parts = decodeURIComponent(req.url).split("/");
+                          const sourceID = parts[2];
+                          const z = Number(parts[3]);
+                          const x = Number(parts[4]);
+                          const y = Number(parts[5].split(".")[0]);
+                          const sourceData = config.repo.datas[sourceID];
+
+                          if (sourceData.sourceType === "mbtiles") {
                             try {
-                              const data = fs.readFileSync(
-                                path.join(
-                                  config.options.paths.sprites,
-                                  spriteDir,
-                                  spriteFile
-                                )
+                              let { data } = await getMBTilesTile(
+                                sourceData.source,
+                                z,
+                                x,
+                                y
                               );
 
-                              callback(null, {
-                                data: data,
-                              });
-                            } catch (error) {
-                              callback(error, {
-                                data: null,
-                              });
-                            }
-                          } else if (protocol === "fonts") {
-                            const parts = decodeURIComponent(req.url).split(
-                              "/"
-                            );
-                            const fonts = parts[2];
-                            const range = parts[3].split(".")[0];
-
-                            try {
-                              const data = await getFontsPbf(
-                                config.options.paths.fonts,
-                                fonts,
-                                range
-                              );
-
-                              callback(null, {
-                                data: data,
-                              });
-                            } catch (error) {
-                              callback(error, {
-                                data: null,
-                              });
-                            }
-                          } else if (
-                            protocol === "mbtiles" ||
-                            protocol === "pmtiles"
-                          ) {
-                            const parts = decodeURIComponent(req.url).split(
-                              "/"
-                            );
-                            const sourceID = parts[2];
-                            const z = Number(parts[3]);
-                            const x = Number(parts[4]);
-                            const y = Number(parts[5].split(".")[0]);
-                            const sourceData = config.repo.datas[sourceID];
-
-                            if (sourceData.sourceType === "mbtiles") {
-                              try {
-                                let { data } = await getMBTilesTile(
-                                  sourceData.source,
-                                  z,
-                                  x,
-                                  y
-                                );
-
-                                if (!data) {
-                                  createEmptyResponse(
-                                    sourceData.tileJSON.format,
-                                    callback
-                                  );
-                                } else {
-                                  if (sourceData.tileJSON.format === "pbf") {
-                                    try {
-                                      data = zlib.unzipSync(data);
-                                    } catch (error) {
-                                      printLog(
-                                        "error",
-                                        `MBTiles source "${sourceID}": Failed to unzip tile ${z}/${x}/${y}.pbf`
-                                      );
-
-                                      throw error;
-                                    }
-                                  }
-
-                                  callback(null, {
-                                    data: data,
-                                  });
-                                }
-                              } catch (error) {
-                                if (
-                                  /does not exist/.test(error.message) === false
-                                ) {
-                                  printLog(
-                                    "error",
-                                    `MBTiles source "${sourceID}": ${error}`
-                                  );
-                                }
-
+                              if (!data) {
                                 createEmptyResponse(
                                   sourceData.tileJSON.format,
                                   callback
                                 );
+                              } else {
+                                if (
+                                  sourceData.tileJSON.format === "pbf" &&
+                                  data[0] === 0x1f &&
+                                  data[1] === 0x8b
+                                ) {
+                                  try {
+                                    data = zlib.unzipSync(data);
+                                  } catch (error) {
+                                    throw error;
+                                  }
+                                }
+
+                                callback(null, {
+                                  data: data,
+                                });
                               }
-                            } else {
+                            } catch (error) {
+                              printLog(
+                                "warning",
+                                `Failed to get MBTiles source "${sourceID}" - Tile ${z}/${x}/${y}.${sourceData.tileJSON.format}: ${error}. Serving empty...`
+                              );
+
+                              createEmptyResponse(
+                                sourceData.tileJSON.format,
+                                callback
+                              );
+                            }
+                          } else {
+                            try {
                               const { data } = await getPMTilesTile(
                                 sourceData.source,
                                 z,
@@ -414,63 +414,78 @@ export const serve_rendered = {
                                   callback
                                 );
                               } else {
+                                if (
+                                  sourceData.tileJSON.format === "pbf" &&
+                                  data[0] === 0x1f &&
+                                  data[1] === 0x8b
+                                ) {
+                                  try {
+                                    data = zlib.unzipSync(data);
+                                  } catch (error) {
+                                    throw error;
+                                  }
+                                }
+
                                 callback(null, {
                                   data: data,
                                 });
                               }
-                            }
-                          } else if (
-                            protocol === "http" ||
-                            protocol === "https"
-                          ) {
-                            try {
-                              const url = decodeURIComponent(req.url);
-
-                              const { data } = await axios.get(url, {
-                                responseType: "arraybuffer",
-                              });
-
-                              callback(null, {
-                                data: data,
-                              });
                             } catch (error) {
-                              printLog("warning", error);
+                              printLog(
+                                "warning",
+                                `Failed to get PMTiles source "${sourceID}" - Tile ${z}/${x}/${y}.${sourceData.tileJSON.format}: ${error}. Serving empty...`
+                              );
 
                               createEmptyResponse(
-                                url.slice(url.lastIndexOf(".") + 1),
+                                sourceData.tileJSON.format,
                                 callback
                               );
                             }
                           }
-                        },
-                      });
+                        } else if (
+                          protocol === "http" ||
+                          protocol === "https"
+                        ) {
+                          try {
+                            const url = decodeURIComponent(req.url);
 
-                      renderer.load(styleJSON);
+                            const { data } = await axios.get(url, {
+                              responseType: "arraybuffer",
+                            });
 
-                      return renderer;
-                    },
-                    destroy: async (renderer) => {
-                      renderer.release();
-                    },
+                            callback(null, {
+                              data: data,
+                            });
+                          } catch (error) {
+                            printLog("warning", error);
+
+                            createEmptyResponse(
+                              url.slice(url.lastIndexOf(".") + 1),
+                              callback
+                            );
+                          }
+                        }
+                      },
+                    });
+
+                    renderer.load(styleJSON);
+
+                    return renderer;
                   },
-                  {
-                    min: config.options.minPoolSize,
-                    max: config.options.maxPoolSize,
-                  }
-                )
-            )
-          );
+                  destroy: async (renderer) => {
+                    renderer.release();
+                  },
+                },
+                {
+                  min: config.options.minPoolSize,
+                  max: config.options.maxPoolSize,
+                }
+              )
+          )
+        );
 
-          config.repo.rendereds[style] = {
-            tileJSON: tileJSON,
-            renderers: renderers,
-          };
-        } catch (error) {
-          printLog(
-            "error",
-            `Failed to load rendered data "${style}": ${error}. Skipping...`
-          );
-        }
+        /* Add to repo */
+        config.repo.rendereds[style] = rendered;
       })
     );
   },
