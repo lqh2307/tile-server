@@ -285,30 +285,6 @@ export const serve_rendered = {
           sources: sources,
         };
 
-        /* Validate sprite */
-        if (styleJSON.sprite === "") {
-          printLog(
-            "warning",
-            `Sprite in style "${style}" is empty. Serving empty sprite...`
-          );
-
-          delete styleJSON.sprite;
-        } else if (styleJSON.sprite?.startsWith("sprites://") === true) {
-          const spriteID = styleJSON.sprite.slice(
-            10,
-            styleJSON.sprite.lastIndexOf("/")
-          );
-
-          if (!config.repo.sprites[spriteID]) {
-            printLog(
-              "warning",
-              `Sprite "${spriteID}" in style "${style}" is not found. Serving empty sprite...`
-            );
-
-            delete styleJSON.sprite;
-          }
-        }
-
         /* Add missing infos */
         if (styleJSON.center?.length === 2 && styleJSON.zoom) {
           rendered.tileJSON.center = [

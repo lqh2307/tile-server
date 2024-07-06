@@ -3,7 +3,6 @@
 import path from "node:path";
 import express from "express";
 import {
-  isValidHttpUrl,
   getPMTilesInfo,
   getPMTilesTile,
   getMBTilesTile,
@@ -135,10 +134,13 @@ export const serve_data = {
         const dataInfo = {};
 
         try {
-          let inputDataFile = "";
+          let inputDataFile;
 
           if (item.mbtiles) {
-            if (isValidHttpUrl(item.mbtiles) === true) {
+            if (
+              item.mbtiles.startsWith("https://") === true ||
+              item.mbtiles.startsWith("http://") === true
+            ) {
               inputDataFile = path.join(
                 config.options.paths.mbtiles,
                 data,
@@ -159,7 +161,10 @@ export const serve_data = {
             dataInfo.source = await openMBTiles(inputDataFile);
             dataInfo.tileJSON = await getMBTilesInfo(dataInfo.source);
           } else if (item.pmtiles) {
-            if (isValidHttpUrl(item.pmtiles) === true) {
+            if (
+              item.pmtiles.startsWith("https://") === true ||
+              item.pmtiles.startsWith("http://") === true
+            ) {
               inputDataFile = item.pmtiles;
             } else {
               inputDataFile = path.join(

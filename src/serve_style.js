@@ -93,17 +93,55 @@ export const serve_style = {
             throw Error(errString);
           }
 
+          /* Validate fonts */
+          if (styleJSON.glyphs !== undefined) {
+            if (
+              styleJSON.glyphs.startsWith("fonts://") === false &&
+              styleJSON.glyphs.startsWith("https://") === false &&
+              styleJSON.glyphs.startsWith("http://") === false
+            ) {
+              throw Error("Invalid fonts url");
+            }
+          }
+
+          /* Validate sprite */
+          if (styleJSON.sprite !== undefined) {
+            if (styleJSON.sprite.startsWith("sprites://") === true) {
+              const spriteID = styleJSON.sprite.slice(
+                10,
+                styleJSON.sprite.lastIndexOf("/")
+              );
+
+              if (!config.repo.sprites[spriteID]) {
+                throw Error(`Sprite "${spriteID}" is not found`);
+              }
+            } else if (
+              styleJSON.sprite.startsWith("https://") === false &&
+              styleJSON.sprite.startsWith("http://") === false
+            ) {
+              throw Error("Invalid sprite url");
+            }
+          }
+
+          /* Validate sources */
           Object.keys(styleJSON.sources).forEach((source) => {
             const sourceUrl = styleJSON.sources[source].url;
 
-            if (
-              sourceUrl?.startsWith("pmtiles://") === true ||
-              sourceUrl?.startsWith("mbtiles://") === true
-            ) {
-              const sourceID = sourceUrl.slice(11, -1);
+            if (sourceUrl !== undefined) {
+              if (
+                sourceUrl.startsWith("pmtiles://") === true ||
+                sourceUrl.startsWith("mbtiles://") === true
+              ) {
+                const sourceID = sourceUrl.slice(11, -1);
 
-              if (!config.repo.datas[sourceID]) {
-                throw Error(`Source data "${source}" is not found`);
+                if (!config.repo.datas[sourceID]) {
+                  throw Error(`Source "${source}" is not found`);
+                }
+              } else if (
+                sourceUrl.startsWith("https://") === false &&
+                sourceUrl.startsWith("http://") === false
+              ) {
+                throw Error(`Source "${source}" is invalid url`);
               }
             }
           });

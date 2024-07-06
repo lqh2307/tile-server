@@ -49,7 +49,7 @@ export function createEmptyResponse(format, callback) {
  * @param {RegExp} regex
  * @returns {string[]}
  */
-function findFiles(dirPath, regex) {
+export function findFiles(dirPath, regex) {
   const fileNames = fs.readdirSync(dirPath);
 
   return fileNames.filter((fileName) => {
@@ -62,21 +62,23 @@ function findFiles(dirPath, regex) {
 }
 
 /**
- * Replace local:// url with public http(s):// url
+ * Replace local url by http(s) url
  * @param {Request} req
  * @param {string} url
  * @Returns {string}
  */
 export function fixUrl(req, url) {
-  if (
-    url?.startsWith("mbtiles://") === true ||
-    url?.startsWith("pmtiles://") === true
-  ) {
-    return `${getUrl(req)}data/${url.slice(11, -1)}.json`;
-  } else if (url?.startsWith("sprites://") === true) {
-    return url.replace("sprites://", `${getUrl(req)}sprites/`);
-  } else if (url?.startsWith("fonts://") === true) {
-    return url.replace("fonts://", `${getUrl(req)}fonts/`);
+  if (url !== undefined) {
+    if (
+      url.startsWith("mbtiles://") === true ||
+      url.startsWith("pmtiles://") === true
+    ) {
+      return `${getUrl(req)}data/${url.slice(11, -1)}.json`;
+    } else if (url.startsWith("sprites://") === true) {
+      return url.replace("sprites://", `${getUrl(req)}sprites/`);
+    } else if (url.startsWith("fonts://") === true) {
+      return url.replace("fonts://", `${getUrl(req)}fonts/`);
+    }
   }
 
   return url;
@@ -170,21 +172,6 @@ export async function getFontsPbf(fontPath, names, range) {
   );
 
   return glyphCompose.combine(values);
-}
-
-/**
- * Check url is valid?
- * @param {string} strUrl
- * @returns {boolean}
- */
-export function isValidHttpUrl(strUrl) {
-  try {
-    const url = new URL(strUrl);
-
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch (_) {
-    return false;
-  }
 }
 
 /**
@@ -347,37 +334,40 @@ export async function downloadFile(url, outputPath, overwrite = false) {
   });
 }
 
-class PMTilesFileSource {
-  constructor(fd) {
-    this.fd = fd;
-  }
-
-  getKey() {
-    return this.fd;
-  }
-
-  async getBytes(offset, length) {
-    const buffer = Buffer.alloc(length);
-
-    fs.readSync(this.fd, buffer, 0, buffer.length, offset);
-
-    const data = buffer.buffer.slice(
-      buffer.byteOffset,
-      buffer.byteOffset + buffer.byteLength
-    );
-
-    return {
-      data: data,
-    };
-  }
-}
-
 export async function openPMTiles(filePath) {
   let source;
 
-  if (isValidHttpUrl(filePath) === true) {
+  if (
+    filePath.startsWith("https://") === true ||
+    filePath.startsWith("http://") === true
+  ) {
     source = new FetchSource(filePath);
   } else {
+    class PMTilesFileSource {
+      constructor(fd) {
+        this.fd = fd;
+      }
+
+      getKey() {
+        return this.fd;
+      }
+
+      async getBytes(offset, length) {
+        const buffer = Buffer.alloc(length);
+
+        fs.readSync(this.fd, buffer, 0, buffer.length, offset);
+
+        const data = buffer.buffer.slice(
+          buffer.byteOffset,
+          buffer.byteOffset + buffer.byteLength
+        );
+
+        return {
+          data: data,
+        };
+      }
+    }
+
     source = new PMTilesFileSource(fs.openSync(filePath, "r"));
   }
 
