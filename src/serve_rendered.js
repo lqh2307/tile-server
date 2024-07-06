@@ -267,16 +267,15 @@ export const serve_rendered = {
 
             // Add atribution
             if (
-              sources[source].attribution &&
-              rendered.tileJSON.attribution.includes(
-                sources[source].attribution
-              ) === false
+              oldSource.attribution &&
+              rendered.tileJSON.attribution.includes(oldSource.attribution) ===
+                false
             ) {
               if (rendered.tileJSON.attribution !== "") {
                 rendered.tileJSON.attribution += " | ";
               }
 
-              rendered.tileJSON.attribution += sources[source].attribution;
+              rendered.tileJSON.attribution += oldSource.attribution;
             }
           })
         );
