@@ -249,13 +249,12 @@ export const serve_rendered = {
         await Promise.all(
           Object.keys(item.styleJSON.sources).map(async (source) => {
             const oldSource = item.styleJSON.sources[source];
-            const sourceUrl = oldSource.url;
 
             if (
-              sourceUrl?.startsWith("pmtiles://") === true ||
-              sourceUrl?.startsWith("mbtiles://") === true
+              oldSource.url?.startsWith("pmtiles://") === true ||
+              oldSource.url?.startsWith("mbtiles://") === true
             ) {
-              const sourceID = sourceUrl.slice(11, -1);
+              const sourceID = oldSource.url.slice(11, -1);
               const sourceData = config.repo.datas[sourceID];
 
               // Fix source
@@ -444,6 +443,10 @@ export const serve_rendered = {
                               callback
                             );
                           }
+                        } else {
+                          callback(null, {
+                            data: null,
+                          });
                         }
                       },
                     });
