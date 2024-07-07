@@ -1,5 +1,6 @@
 "use strict";
 
+import zlib from "zlib";
 import path from "node:path";
 import express from "express";
 import {
@@ -21,12 +22,14 @@ function getDataTileHandler(config) {
     const item = config.repo.datas[id];
     let { format, z, x, y } = req.params;
 
+    /* Check data tile format */
     if (
       ["jpeg", "jpg", "pbf", "png", "webp", "avif"].includes(format) === false
     ) {
       return res.status(400).send("Data tile format is invalid");
     }
 
+    /* Check data is exist? */
     if (!item) {
       return res.status(404).send("Data is not found");
     }
@@ -35,26 +38,39 @@ function getDataTileHandler(config) {
     x = Number(x);
     y = Number(y);
 
+    /* Check data tile bounds */
     if (
       z < item.tileJSON.minzoom ||
       z > item.tileJSON.maxzoom ||
       x >= Math.pow(2, z) ||
       y >= Math.pow(2, z)
     ) {
-      return res.status(400).send("Data bound is invalid");
+      return res.status(400).send("Data tile bounds is invalid");
     }
 
     try {
       let dataTile;
 
+      /* Get data tile */
       if (item.sourceType === "mbtiles") {
         dataTile = await getMBTilesTile(item.source, z, x, y);
       } else {
         dataTile = await getPMTilesTile(item.source, z, x, y);
       }
 
+      /* Check data tile is exist? */
       if (!dataTile?.data) {
         throw Error("Tile does not exist");
+      }
+
+      /* Gzip pbf data tile format */
+      if (
+        format === "pbf" &&
+        (dataTile.data[0] !== 0x1f || dataTile.data[1] !== 0x8b)
+      ) {
+        dataTile.data = zlib.gzipSync(dataTile.data);
+
+        dataTile.headers["Content-Encoding"] = "gzip";
       }
 
       res.set(dataTile.headers);

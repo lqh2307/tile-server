@@ -35,6 +35,7 @@ function getRenderedTileHandler(config) {
     const item = config.repo.rendereds[id];
     let { format, z, x, y, scale, tileSize } = req.params;
 
+    /* Check rendered data tile format */
     if (["jpeg", "jpg", "png", "webp", "avif"].includes(format) === true) {
       // sharp lib not support jpg format
       if (format === "jpg") {
@@ -44,18 +45,21 @@ function getRenderedTileHandler(config) {
       return res.status(400).send("Rendered data tile format is invalid");
     }
 
+    /* Check rendered data is exist? */
     if (!item) {
       return res.status(404).send("Rendered data is not found");
     }
 
+    /* Check rendered data tile bounds */
     z = Number(z);
     x = Number(x);
     y = Number(y);
 
     if (z < 0 || z > 22 || x >= Math.pow(2, z) || y >= Math.pow(2, z)) {
-      return res.status(400).send("Rendered data bound is invalid");
+      return res.status(400).send("Rendered data tile bounds is invalid");
     }
 
+    /* Check rendered data tile center */
     const tileCenter = mercator.ll(
       [
         ((x + 0.5) / (1 << z)) * (256 << z),
@@ -64,9 +68,10 @@ function getRenderedTileHandler(config) {
       z
     );
     if (Math.abs(tileCenter[0]) > 180 || Math.abs(tileCenter[1]) > 85.06) {
-      return res.status(400).send("Rendered data center is invalid");
+      return res.status(400).send("Rendered data tile center is invalid");
     }
 
+    /* Check rendered data tile scale */
     scale = Number(scale?.slice(1, -1)) || 1;
 
     if (scale > config.options.maxScaleRender) {
@@ -372,6 +377,7 @@ export const serve_rendered = {
                           try {
                             let dataTile;
 
+                            /* Get rendered data tile */
                             if (sourceData.sourceType === "mbtiles") {
                               dataTile = await getMBTilesTile(
                                 sourceData.source,
@@ -388,25 +394,23 @@ export const serve_rendered = {
                               );
                             }
 
+                            /* Check rendered data tile is exist? */
                             if (!dataTile?.data) {
                               throw Error("Tile does not exist");
-                            } else {
-                              if (
-                                sourceData.tileJSON.format === "pbf" &&
-                                dataTile.data[0] === 0x1f &&
-                                dataTile.data[1] === 0x8b
-                              ) {
-                                try {
-                                  dataTile.data = zlib.unzipSync(dataTile.data);
-                                } catch (error) {
-                                  throw error;
-                                }
-                              }
-
-                              callback(null, {
-                                data: dataTile.data,
-                              });
                             }
+
+                            /* Unzip pbf rendered data tile format */
+                            if (
+                              sourceData.tileJSON.format === "pbf" &&
+                              dataTile.data[0] === 0x1f &&
+                              dataTile.data[1] === 0x8b
+                            ) {
+                              dataTile.data = zlib.unzipSync(dataTile.data);
+                            }
+
+                            callback(null, {
+                              data: dataTile.data,
+                            });
                           } catch (error) {
                             printLog(
                               "warning",
