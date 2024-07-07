@@ -10,19 +10,56 @@
     <script src="/maplibre-gl.js"></script>
     <script src="/maplibre-gl-inspect.js"></script>
     <style>
-      body {background:#fff;color:#333;font-family:Arial, sans-serif;}
-      #map {position:absolute;top:0;left:0;right:250px;bottom:0;}
-      h1 {position:absolute;top:5px;right:0;width:240px;margin:0;line-height:20px;font-size:20px;}
-      #layerList {position:absolute;top:35px;right:0;bottom:0;width:240px;overflow:auto;}
-      #layerList div div {width:15px;height:15px;display:inline-block;}
+      body {
+        background: #fff;
+        color: #333;
+        font-family: Arial, sans-serif;
+      }
+      #map {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 250px;
+        bottom: 0;
+      }
+      h1 {
+        position: absolute;
+        top: 5px;
+        right: 0;
+        width: 240px;
+        margin: 0;
+        line-height: 20px;
+        font-size: 20px;
+      }
+      #layerList {
+        position: absolute;
+        top: 35px;
+        right: 0;
+        bottom: 0;
+        width: 240px;
+        overflow: auto;
+      }
+      #layerList div div {
+        width: 15px;
+        height: 15px;
+        display: inline-block;
+      }
     </style>
   {{else}}
     <link rel="stylesheet" type="text/css" href="/leaflet.css" />
     <script src="/leaflet.js"></script>
     <script src="/leaflet-hash.js"></script>
     <style>
-      body { margin:0; padding:0; }
-      #map { position:absolute; top:0; bottom:0; width:100%; }
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+      }
       .leaflet-control-layers-toggle {
         background-image: url(/images/layers.png);
         width: 36px;
@@ -89,43 +126,43 @@
       new L.Control.Zoom({ position: 'topright' }).addTo(map);
 
       var tile_urls = [], tile_attribution, tile_minzoom, tile_maxzoom;
-      var url = '/data/{{id}}.json';
       var req = new XMLHttpRequest();
       req.overrideMimeType("application/json");
-      req.open('GET', url, true);
+      req.open('GET', '/data/{{id}}.json', true);
       req.onload = function() {
-          var jsonResponse = JSON.parse(req.responseText);
-          for (key in jsonResponse) {
-            var keyl = key.toLowerCase();
-              switch(keyl) {
-                case "tiles":
-                  tile_urls = jsonResponse[key];
-                  break;
-                case "attribution":
-                  tile_attribution = jsonResponse[key];
-                  break;
-                case "minzoom":
-                  tile_minzoom = jsonResponse[key];
-                  break;
-                case "maxzoom":
-                  tile_maxzoom = jsonResponse[key];
-                  break;
-              }
-          }
+        var jsonResponse = JSON.parse(req.responseText);
+        for (key in jsonResponse) {
+          var keyl = key.toLowerCase();
 
-          for (tile_url in tile_urls) {
-              L.tileLayer(tile_urls[tile_url], {
-                  tileSize: 256,
-                  minZoom: tile_minzoom,
-                  maxZoom: tile_maxzoom,
-                  attribution: tile_attribution
-              }).addTo(map);
+          switch(keyl) {
+            case "tiles":
+              tile_urls = jsonResponse[key];
+              break;
+            case "attribution":
+              tile_attribution = jsonResponse[key];
+              break;
+            case "minzoom":
+              tile_minzoom = jsonResponse[key];
+              break;
+            case "maxzoom":
+              tile_maxzoom = jsonResponse[key];
+              break;
           }
-          
-          map.eachLayer(function(layer) {
-            // do not add scale prefix even if retina display is detected
-            layer.scalePrefix = '.';
-          });
+        }
+
+        for (tile_url in tile_urls) {
+          L.tileLayer(tile_urls[tile_url], {
+            tileSize: 256,
+            minZoom: tile_minzoom,
+            maxZoom: tile_maxzoom,
+            attribution: tile_attribution
+          }).addTo(map);
+        }
+        
+        map.eachLayer(function(layer) {
+          // do not add scale prefix even if retina display is detected
+          layer.scalePrefix = '.';
+        });
       };
       req.send(null);
 

@@ -10,13 +10,13 @@ import express from "express";
 import SphericalMercator from "@mapbox/sphericalmercator";
 import { createPool } from "generic-pool";
 import {
-  createEmptyResponse,
+  responseEmptyTile,
   getPMTilesTile,
   getMBTilesTile,
-  getFontsPbf,
+  getFontsPBF,
   fixTileJSON,
   printLog,
-  getUrl,
+  getURL,
 } from "./utils.js";
 
 mlgl.on("message", (error) => {
@@ -52,7 +52,7 @@ function getRenderedTileHandler(config) {
     x = Number(x);
     y = Number(y);
 
-    if (z > 22 || x >= Math.pow(2, z) || y >= Math.pow(2, z)) {
+    if (z < 0 || z > 22 || x >= Math.pow(2, z) || y >= Math.pow(2, z)) {
       return res.status(400).send("Rendered data bound is invalid");
     }
 
@@ -67,7 +67,7 @@ function getRenderedTileHandler(config) {
       return res.status(400).send("Rendered data center is invalid");
     }
 
-    scale = scale?.slice(1, -1) || 1;
+    scale = Number(scale?.slice(1, -1)) || 1;
 
     if (scale > config.options.maxScaleRender) {
       return res.status(400).send("Rendered data tile scale is invalid");
@@ -77,7 +77,7 @@ function getRenderedTileHandler(config) {
 
     // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
     const params = {
-      zoom: tileSize === 512 ? Math.max(0, z) : Math.max(0, z - 1),
+      zoom: tileSize === 512 ? z : Math.max(0, z - 1),
       center: tileCenter,
       width: tileSize,
       height: tileSize,
@@ -125,7 +125,9 @@ function getRenderedTileHandler(config) {
         // END HACK(Part 2)
 
         if (format === "png") {
-          image.png({});
+          image.png({
+            adaptiveFiltering: false,
+          });
         } else if (format === "jpeg") {
           image.jpeg({
             quality: config.options.formatQuality.jpeg,
@@ -133,10 +135,12 @@ function getRenderedTileHandler(config) {
         } else if (format === "webp") {
           image.webp({
             quality: config.options.formatQuality.webp,
+            lossless: true,
           });
         } else if (format === "avif") {
           image.avif({
             quality: config.options.formatQuality.avif,
+            lossless: true,
           });
         }
 
@@ -178,7 +182,7 @@ function getRenderedHandler(config) {
     const info = {
       ...item.tileJSON,
       tiles: [
-        `${getUrl(req)}styles/${id}/${req.params.tileSize || 256}/{z}/{x}/{y}.${item.tileJSON.format}`,
+        `${getURL(req)}styles/${id}/${req.params.tileSize || 256}/{z}/{x}/{y}.${item.tileJSON.format}`,
       ],
     };
 
@@ -199,8 +203,8 @@ function getRenderedsListHandler(config) {
         id: rendered,
         name: tileJSON.name || "",
         url: [
-          `${getUrl(req)}styles/256/${rendered}.json`,
-          `${getUrl(req)}styles/512/${rendered}.json`,
+          `${getURL(req)}styles/256/${rendered}.json`,
+          `${getURL(req)}styles/512/${rendered}.json`,
         ],
       };
     });
@@ -340,7 +344,7 @@ export const serve_rendered = {
                           const range = parts[3].split(".")[0];
 
                           try {
-                            const data = await getFontsPbf(
+                            const data = await getFontsPBF(
                               config.options.paths.fonts,
                               fonts,
                               range
@@ -409,7 +413,7 @@ export const serve_rendered = {
                               `Failed to get data "${sourceID}" - Tile ${z}/${x}/${y}: ${error}. Serving empty tile...`
                             );
 
-                            createEmptyResponse(
+                            responseEmptyTile(
                               sourceData.tileJSON.format,
                               callback
                             );
@@ -431,7 +435,7 @@ export const serve_rendered = {
                           } catch (error) {
                             printLog("warning", error);
 
-                            createEmptyResponse(
+                            responseEmptyTile(
                               url.slice(url.lastIndexOf(".") + 1),
                               callback
                             );

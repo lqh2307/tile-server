@@ -5,44 +5,42 @@ import path from "node:path";
 import express from "express";
 import handlebars from "handlebars";
 import SphericalMercator from "@mapbox/sphericalmercator";
-import { getUrl } from "./utils.js";
+import { getURL } from "./utils.js";
 
 const mercator = new SphericalMercator();
 
 function serveFrontPageHandler(config) {
   return async (req, res, next) => {
-    const renderedList = config.repo.rendereds;
-
     const styles = {};
-    const renderedPromises = Object.keys(renderedList).map(async (id) => {
-      const style = renderedList[id];
-      const { center, format, name = "" } = style.tileJSON;
-      const tileSize = 256;
+    const renderedPromises = Object.keys(config.repo.rendereds).map(
+      async (id) => {
+        const style = config.repo.rendereds[id];
+        const { center, format, name = "" } = style.tileJSON;
+        const tileSize = 256;
 
-      let viewerHash = "";
-      let thumbnail = "";
-      if (center) {
-        viewerHash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
+        let viewerHash = "";
+        let thumbnail = "";
+        if (center) {
+          viewerHash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
 
-        const centerPx = mercator.px([center[0], center[1]], center[2]);
+          const centerPx = mercator.px([center[0], center[1]], center[2]);
 
-        thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.png`;
+          thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.png`;
+        }
+
+        styles[id] = {
+          name: name,
+          xyz_link: `${getURL(req)}styles/${id}/${tileSize}/{z}/{x}/{y}.${format}`,
+          viewer_hash: viewerHash,
+          thumbnail: thumbnail,
+          serve_wmts: config.options.serveWMTS === true,
+        };
       }
-
-      styles[id] = {
-        name: name,
-        xyz_link: `${getUrl(req)}styles/${id}/${tileSize}/{z}/{x}/{y}.${format}`,
-        viewer_hash: viewerHash,
-        thumbnail: thumbnail,
-        serve_wmts: config.options.serveWMTS === true,
-      };
-    });
-
-    const dataList = config.repo.datas;
+    );
 
     const datas = {};
-    const dataPromises = Object.keys(dataList).map(async (id) => {
-      const data = dataList[id];
+    const dataPromises = Object.keys(config.repo.datas).map(async (id) => {
+      const data = config.repo.datas[id];
       const { center, format, filesize, name = "" } = data.tileJSON;
 
       let viewerHash = "";
@@ -79,7 +77,7 @@ function serveFrontPageHandler(config) {
 
       datas[id] = {
         name: name,
-        xyz_link: `${getUrl(req)}data/${id}/{z}/{x}/{y}.${format}`,
+        xyz_link: `${getURL(req)}data/${id}/{z}/{x}/{y}.${format}`,
         viewer_hash: viewerHash,
         thumbnail: thumbnail,
         source_type: data.sourceType,
@@ -170,7 +168,7 @@ function serveWMTSHandler(config) {
     const serveData = {
       id: id,
       name: wmts.tileJSON.name || "",
-      base_url: `${req.get("X-Forwarded-Protocol") ? req.get("X-Forwarded-Protocol") : req.protocol}://${req.get("host")}/`,
+      base_url: getURL(req),
     };
 
     const filePath = path.resolve("public", "templates", "wmts.tmpl");

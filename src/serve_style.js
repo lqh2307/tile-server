@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import express from "express";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
-import { fixUrl, printLog, getUrl } from "./utils.js";
+import { fixURL, printLog, getURL } from "./utils.js";
 
 function getStyleHandler(config) {
   return async (req, res, next) => {
@@ -20,15 +20,15 @@ function getStyleHandler(config) {
     Object.keys(item.styleJSON.sources).forEach((source) => {
       sources[source] = {
         ...item.styleJSON.sources[source],
-        url: fixUrl(req, item.styleJSON.sources[source].url),
+        url: fixURL(req, item.styleJSON.sources[source].url),
       };
     });
 
     const styleJSON = {
       ...item.styleJSON,
       sources: sources,
-      sprite: fixUrl(req, item.styleJSON.sprite),
-      glyphs: fixUrl(req, item.styleJSON.glyphs),
+      sprite: fixURL(req, item.styleJSON.sprite),
+      glyphs: fixURL(req, item.styleJSON.glyphs),
     };
 
     res.header("Content-Type", "application/json");
@@ -47,7 +47,7 @@ function getStylesListHandler(config) {
       return {
         id: style,
         name: item.styleJSON.name || "",
-        url: `${getUrl(req)}styles/${style}/style.json`,
+        url: `${getURL(req)}styles/${style}/style.json`,
       };
     });
 

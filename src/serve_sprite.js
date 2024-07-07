@@ -3,13 +3,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import express from "express";
-import { printLog, getUrl, validateSprite } from "./utils.js";
+import { printLog, getURL, validateSprite } from "./utils.js";
 
 function getSpriteHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
     const item = config.repo.sprites[id];
-    const format = req.params.format;
+    const { scale, format } = req.params;
 
     if (["json", "png"].includes(format) === false) {
       return res.status(400).send("Sprite format is invalid");
@@ -20,7 +20,7 @@ function getSpriteHandler(config) {
     }
 
     try {
-      const filePath = `${path.join(config.options.paths.sprites, id, "sprite")}${req.params.scale || ""}.${req.params.format}`;
+      const filePath = `${path.join(config.options.paths.sprites, id, "sprite")}${scale || ""}.${format}`;
 
       const data = fs.readFileSync(filePath);
 
@@ -47,8 +47,8 @@ function getSpritesListHandler(config) {
       return {
         name: sprite,
         urls: [
-          `${getUrl(req)}sprites/${sprite}/sprite.json`,
-          `${getUrl(req)}sprites/${sprite}/sprite.png`,
+          `${getURL(req)}sprites/${sprite}/sprite.json`,
+          `${getURL(req)}sprites/${sprite}/sprite.png`,
         ],
       };
     });

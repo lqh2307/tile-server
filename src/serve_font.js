@@ -2,17 +2,18 @@
 
 import path from "node:path";
 import express from "express";
-import { validatePBFFont, getFontsPbf, printLog, getUrl } from "./utils.js";
+import { validateFont, getFontsPBF, printLog, getURL } from "./utils.js";
 
 function getFontHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
+    const range = req.params.range;
 
     try {
-      const concatenated = await getFontsPbf(
+      const concatenated = await getFontsPBF(
         config.options.paths.fonts,
         id,
-        req.params.range
+        range
       );
 
       res.header("Content-type", "application/x-protobuf");
@@ -33,7 +34,7 @@ function getFontsListHandler(config) {
     const result = Object.keys(fonts).map((font) => {
       return {
         name: font,
-        url: `${getUrl(req)}fonts/${font}/{range}.pbf`,
+        url: `${getURL(req)}fonts/${font}/{range}.pbf`,
       };
     });
 
@@ -58,7 +59,7 @@ export const serve_font = {
           /* Validate font */
           const dirPath = path.join(config.options.paths.fonts, font);
 
-          await validatePBFFont(dirPath);
+          await validateFont(dirPath);
 
           /* Add to repo */
           config.repo.fonts[font] = true;

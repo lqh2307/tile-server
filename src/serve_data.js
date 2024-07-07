@@ -12,7 +12,7 @@ import {
   openPMTiles,
   fixTileJSON,
   printLog,
-  getUrl,
+  getURL,
 } from "./utils.js";
 
 function getDataTileHandler(config) {
@@ -86,7 +86,7 @@ function getDataHandler(config) {
 
     const info = {
       ...item.tileJSON,
-      tiles: [`${getUrl(req)}data/${id}/{z}/{x}/{y}.${item.tileJSON.format}`],
+      tiles: [`${getURL(req)}data/${id}/{z}/{x}/{y}.${item.tileJSON.format}`],
     };
 
     res.header("Content-type", "application/json");
@@ -105,7 +105,7 @@ function getDatasListHandler(config) {
       return {
         id: data,
         name: item.tileJSON.name || "",
-        url: `${getUrl(req)}data/${data}.json`,
+        url: `${getURL(req)}data/${data}.json`,
       };
     });
 

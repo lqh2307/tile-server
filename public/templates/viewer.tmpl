@@ -12,8 +12,16 @@
   <script src="/leaflet.js"></script>
   <script src="/leaflet-hash.js"></script>
   <style>
-    body { margin:0; padding:0; }
-    #map { position:absolute; top:0; bottom:0; width:100%; }
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+    }
     .leaflet-control-layers-toggle {
       background-image: url(/images/layers.png);
       width: 36px;
@@ -33,20 +41,20 @@
   <div id='map'></div>
   <script>
     function isWebglSupported() {
-        if (window.WebGLRenderingContext) {
-            const canvas = document.createElement('canvas');
-            try {
-                const context = canvas.getContext('webgl2') || canvas.getContext('webgl');
-                if (context && typeof context.getParameter === 'function') {
-                    return true;
-                }
-            } catch (e) {
-                // WebGL is supported, but disabled
-            }
-            return false;
+      if (window.WebGLRenderingContext) {
+        const canvas = document.createElement('canvas');
+        try {
+          const context = canvas.getContext('webgl2') || canvas.getContext('webgl');
+          if (context && typeof context.getParameter === 'function') {
+            return true;
+          }
+        } catch (e) {
+          // WebGL is supported, but disabled
         }
-        // WebGL not supported
         return false;
+      }
+      // WebGL not supported
+      return false;
     }
     var q = (location.search || '').substr(1).split('&');
     var preference =
@@ -63,63 +71,63 @@
         maxPitch: 85
       });
       map.addControl(new maplibregl.NavigationControl({
-         visualizePitch: true,
-         showZoom: true,
-         showCompass: true
+        visualizePitch: true,
+        showZoom: true,
+        showCompass: true
       }));
       map.addControl(new MaplibreInspect({
-         showMapPopupOnHover: false,
-         showInspectMapPopupOnHover: false,
-         selectThreshold: 5
+        showMapPopupOnHover: false,
+        showInspectMapPopupOnHover: false,
+        selectThreshold: 5
       }));
     } else {
-        var map = L.map('map', { minZoom: 1, zoomControl: false });
-        new L.Control.Zoom({ position: 'topright' }).addTo(map);
-        
-        var tile_urls = [], tile_attribution, tile_minzoom, tile_maxzoom;
-        var url = '/styles/256/{{id}}.json';
-        var req = new XMLHttpRequest();
-        req.overrideMimeType("application/json");
-        req.open('GET', url, true);
-        req.onload = function() {
-            var jsonResponse = JSON.parse(req.responseText);
-            for (key in jsonResponse) {
-              var keyl = key.toLowerCase();
-                switch(keyl) {
-                  case "tiles":
-                    tile_urls = jsonResponse[key];
-                    break;
-                  case "attribution":
-                    tile_attribution = jsonResponse[key];
-                    break;
-                  case "minzoom":
-                    tile_minzoom = jsonResponse[key];
-                    break;
-                  case "maxzoom":
-                    tile_maxzoom = jsonResponse[key];
-                    break;
-                }
-            }
-
-            for (tile_url in tile_urls) {
-                L.tileLayer(tile_urls[tile_url], {
-                    tileSize: 256,
-                    minZoom: tile_minzoom,
-                    maxZoom: tile_maxzoom,
-                    attribution: tile_attribution
-                }).addTo(map);
-            }
-        
-            map.eachLayer(function(layer) {
-              // do not add scale prefix even if retina display is detected
-              layer.scalePrefix = '.';
-            });
-        };
-        req.send(null);
+      var map = L.map('map', { minZoom: 1, zoomControl: false });
+      new L.Control.Zoom({ position: 'topright' }).addTo(map);
       
-        setTimeout(function() {
-            new L.Hash(map);
-        }, 0);
+      var tile_urls = [], tile_attribution, tile_minzoom, tile_maxzoom;
+      var req = new XMLHttpRequest();
+      req.overrideMimeType("application/json");
+      req.open('GET', '/styles/256/{{id}}.json', true);
+      req.onload = function() {
+        var jsonResponse = JSON.parse(req.responseText);
+        for (key in jsonResponse) {
+          var keyl = key.toLowerCase();
+
+          switch(keyl) {
+            case "tiles":
+              tile_urls = jsonResponse[key];
+              break;
+            case "attribution":
+              tile_attribution = jsonResponse[key];
+              break;
+            case "minzoom":
+              tile_minzoom = jsonResponse[key];
+              break;
+            case "maxzoom":
+              tile_maxzoom = jsonResponse[key];
+              break;
+          }
+        }
+
+        for (tile_url in tile_urls) {
+          L.tileLayer(tile_urls[tile_url], {
+            tileSize: 256,
+            minZoom: tile_minzoom,
+            maxZoom: tile_maxzoom,
+            attribution: tile_attribution
+          }).addTo(map);
+        }
+    
+        map.eachLayer(function(layer) {
+          // do not add scale prefix even if retina display is detected
+          layer.scalePrefix = '.';
+        });
+      };
+      req.send(null);
+    
+      setTimeout(function() {
+        new L.Hash(map);
+      }, 0);
     }
   </script>
 </body>

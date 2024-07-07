@@ -14,7 +14,7 @@ import { PMTiles, FetchSource } from "pmtiles";
  * @param {string} format tile format
  * @param {Function} callback mlgl callback
  */
-export function createEmptyResponse(format, callback) {
+export function responseEmptyTile(format, callback) {
   if (["jpeg", "jpg", "png", "webp", "avif"].includes(format) === true) {
     // sharp lib not support jpg format
     if (format === "jpg") {
@@ -67,17 +67,17 @@ export function findFiles(dirPath, regex) {
  * @param {string} url
  * @Returns {string}
  */
-export function fixUrl(req, url) {
+export function fixURL(req, url) {
   if (url !== undefined) {
     if (
       url.startsWith("mbtiles://") === true ||
       url.startsWith("pmtiles://") === true
     ) {
-      return `${getUrl(req)}data/${url.slice(11, -1)}.json`;
+      return `${getURL(req)}data/${url.slice(11, -1)}.json`;
     } else if (url.startsWith("sprites://") === true) {
-      return url.replace("sprites://", `${getUrl(req)}sprites/`);
+      return url.replace("sprites://", `${getURL(req)}sprites/`);
     } else if (url.startsWith("fonts://") === true) {
-      return url.replace("fonts://", `${getUrl(req)}fonts/`);
+      return url.replace("fonts://", `${getURL(req)}fonts/`);
     }
   }
 
@@ -89,7 +89,7 @@ export function fixUrl(req, url) {
  * @param {Request} req
  * @returns {string}
  */
-export function getUrl(req) {
+export function getURL(req) {
   const urlObject = new URL(`${req.protocol}://${req.headers.host}/`);
 
   // support overriding hostname by sending X-Forwarded-Host http header
@@ -141,7 +141,7 @@ export function fixTileJSON(tileJSON) {
   }
 }
 
-export async function getFontsPbf(fontPath, names, range) {
+export async function getFontsPBF(fontPath, names, range) {
   const fonts = names.split(",");
 
   const values = await Promise.all(
@@ -194,7 +194,7 @@ export function printLog(level, msg) {
   }
 }
 
-export async function validatePBFFont(pbfDirPath) {
+export async function validateFont(pbfDirPath) {
   try {
     const pbfFileNames = findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
 
