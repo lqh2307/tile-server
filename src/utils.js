@@ -62,29 +62,6 @@ export function findFiles(dirPath, regex) {
 }
 
 /**
- * Replace local url by http(s) url
- * @param {Request} req
- * @param {string} url
- * @Returns {string}
- */
-export function fixURL(req, url) {
-  if (url !== undefined) {
-    if (
-      url.startsWith("mbtiles://") === true ||
-      url.startsWith("pmtiles://") === true
-    ) {
-      return `${getURL(req)}data/${url.slice(11, -1)}.json`;
-    } else if (url.startsWith("sprites://") === true) {
-      return url.replace("sprites://", `${getURL(req)}sprites/`);
-    } else if (url.startsWith("fonts://") === true) {
-      return url.replace("fonts://", `${getURL(req)}fonts/`);
-    }
-  }
-
-  return url;
-}
-
-/**
  * Get host URL from request
  * @param {Request} req
  * @returns {string}

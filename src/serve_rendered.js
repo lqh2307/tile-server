@@ -244,8 +244,13 @@ export const serve_rendered = {
           },
         };
 
-        /* Clone style JSON & Fix sources */
-        const sources = {};
+        /* Clone style JSON */
+        const styleJSON = {
+          ...item.styleJSON,
+          sources: {},
+        };
+
+        /* Fix sources & Add attribution */
         await Promise.all(
           Object.keys(item.styleJSON.sources).map(async (source) => {
             const oldSource = item.styleJSON.sources[source];
@@ -258,7 +263,7 @@ export const serve_rendered = {
               const sourceData = config.repo.datas[sourceID];
 
               // Fix source
-              sources[source] = {
+              styleJSON.sources[source] = {
                 ...oldSource,
                 ...sourceData.tileJSON,
                 type: oldSource.type,
@@ -268,9 +273,9 @@ export const serve_rendered = {
               };
 
               // Replace with local tiles
-              delete sources[source].url;
+              delete styleJSON.sources[source].url;
             } else {
-              sources[source] = oldSource;
+              styleJSON.sources[source] = oldSource;
             }
 
             // Add atribution
@@ -287,11 +292,6 @@ export const serve_rendered = {
             }
           })
         );
-
-        const styleJSON = {
-          ...item.styleJSON,
-          sources: sources,
-        };
 
         /* Add missing infos */
         if (styleJSON.center?.length === 2 && styleJSON.zoom) {

@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import express from "express";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
-import { fixURL, printLog, getURL } from "./utils.js";
+import { printLog, getURL } from "./utils.js";
 
 function getStyleHandler(config) {
   return async (req, res, next) => {
@@ -15,21 +15,51 @@ function getStyleHandler(config) {
       return res.status(404).send("Style is not found");
     }
 
-    /* Clone style JSON & Fix urls */
-    const sources = {};
-    Object.keys(item.styleJSON.sources).forEach((source) => {
-      sources[source] = {
-        ...item.styleJSON.sources[source],
-        url: fixURL(req, item.styleJSON.sources[source].url),
-      };
-    });
-
+    /* Clone style JSON */
     const styleJSON = {
       ...item.styleJSON,
-      sources: sources,
-      sprite: fixURL(req, item.styleJSON.sprite),
-      glyphs: fixURL(req, item.styleJSON.glyphs),
+      sources: {},
     };
+
+    /* Fix sprite url */
+    if (styleJSON.sprite !== undefined) {
+      if (styleJSON.sprite.startsWith("sprites://") === true) {
+        styleJSON.sprite = styleJSON.sprite.replace(
+          "sprites://",
+          `${getURL(req)}sprites/`
+        );
+      }
+    }
+
+    /* Fix fonts url */
+    if (styleJSON.glyphs !== undefined) {
+      if (styleJSON.glyphs.startsWith("fonts://") === true) {
+        styleJSON.glyphs = styleJSON.glyphs.replace(
+          "fonts://",
+          `${getURL(req)}fonts/`
+        );
+      }
+    }
+
+    /* Fix source urls */
+    Object.keys(item.styleJSON.sources).forEach((name) => {
+      const source = item.styleJSON.sources[name];
+
+      styleJSON.sources[name] = {
+        ...source,
+      };
+
+      if (source.url !== undefined) {
+        if (
+          source.url.startsWith("mbtiles://") === true ||
+          source.url.startsWith("pmtiles://") === true
+        ) {
+          const sourceID = source.url.slice(11, -1);
+
+          styleJSON.sources[name].url = `${getURL(req)}data/${sourceID}.json`;
+        }
+      }
+    });
 
     res.header("Content-Type", "application/json");
 
