@@ -318,10 +318,11 @@ export const serve_rendered = {
                       mode: "tile",
                       ratio: scale + 1,
                       request: async (req, callback) => {
-                        const protocol = req.url.split(":")[0];
+                        const url = decodeURIComponent(req.url);
+                        const parts = url.split("/");
+                        const protocol = parts[0];
 
-                        if (protocol === "sprites") {
-                          const parts = decodeURIComponent(req.url).split("/");
+                        if (protocol === "sprites:") {
                           const spriteDir = parts[2];
                           const spriteFile = parts[3];
 
@@ -342,8 +343,7 @@ export const serve_rendered = {
                               data: null,
                             });
                           }
-                        } else if (protocol === "fonts") {
-                          const parts = decodeURIComponent(req.url).split("/");
+                        } else if (protocol === "fonts:") {
                           const fonts = parts[2];
                           const range = parts[3].split(".")[0];
 
@@ -363,10 +363,9 @@ export const serve_rendered = {
                             });
                           }
                         } else if (
-                          protocol === "mbtiles" ||
-                          protocol === "pmtiles"
+                          protocol === "mbtiles:" ||
+                          protocol === "pmtiles:"
                         ) {
-                          const parts = decodeURIComponent(req.url).split("/");
                           const sourceID = parts[2];
                           const z = Number(parts[3]);
                           const x = Number(parts[4]);
@@ -422,12 +421,10 @@ export const serve_rendered = {
                             );
                           }
                         } else if (
-                          protocol === "http" ||
-                          protocol === "https"
+                          protocol === "http:" ||
+                          protocol === "https:"
                         ) {
                           try {
-                            const url = decodeURIComponent(req.url);
-
                             const { data } = await axios.get(url, {
                               responseType: "arraybuffer",
                             });
@@ -443,10 +440,6 @@ export const serve_rendered = {
                               callback
                             );
                           }
-                        } else {
-                          callback(null, {
-                            data: null,
-                          });
                         }
                       },
                     });
