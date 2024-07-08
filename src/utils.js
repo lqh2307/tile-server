@@ -118,6 +118,13 @@ export function fixTileJSON(tileJSON) {
   }
 }
 
+/**
+ *
+ * @param {string} fontPath
+ * @param {string} names
+ * @param {string} range
+ * @returns
+ */
 export async function getFontsPBF(fontPath, names, range) {
   const fonts = names.split(",");
 
@@ -171,6 +178,10 @@ export function printLog(level, msg) {
   }
 }
 
+/**
+ *
+ * @param {string} pbfDirPath
+ */
 export async function validateFont(pbfDirPath) {
   try {
     const pbfFileNames = findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
@@ -183,6 +194,10 @@ export async function validateFont(pbfDirPath) {
   }
 }
 
+/**
+ *
+ * @param {string} spriteDirPath
+ */
 export async function validateSprite(spriteDirPath) {
   try {
     const jsonSpriteFileNames = findFiles(
@@ -236,6 +251,11 @@ export async function validateSprite(spriteDirPath) {
   }
 }
 
+/**
+ *
+ * @param {object} repo
+ * @param {string} repoFilePath
+ */
 export function createRepoFile(repo, repoFilePath) {
   function getCircularReplacer() {
     const seen = new WeakMap();
@@ -260,21 +280,13 @@ export function createRepoFile(repo, repoFilePath) {
   fs.writeFileSync(repoFilePath, jsonData, "utf8");
 }
 
-export function printUsedMemory(interval) {
-  setInterval(() => {
-    const memoryUsage = process.memoryUsage();
-
-    console.log(`===============================`);
-
-    console.log({
-      rss: memoryUsage.rss,
-      heapTotal: memoryUsage.heapTotal,
-      heapUsed: memoryUsage.heapUsed,
-      external: memoryUsage.external,
-    });
-  }, interval);
-}
-
+/**
+ *
+ * @param {string} url
+ * @param {string} outputPath
+ * @param {boolean} overwrite
+ * @returns
+ */
 export async function downloadFile(url, outputPath, overwrite = false) {
   try {
     const stat = fs.statSync(outputPath);
@@ -311,6 +323,11 @@ export async function downloadFile(url, outputPath, overwrite = false) {
   });
 }
 
+/**
+ *
+ * @param {string} filePath
+ * @returns
+ */
 export async function openPMTiles(filePath) {
   let source;
 
@@ -334,23 +351,28 @@ export async function openPMTiles(filePath) {
 
         fs.readSync(this.fd, buffer, 0, buffer.length, offset);
 
-        const data = buffer.buffer.slice(
-          buffer.byteOffset,
-          buffer.byteOffset + buffer.byteLength
-        );
-
         return {
-          data: data,
+          data: buffer.buffer.slice(
+            buffer.byteOffset,
+            buffer.byteOffset + buffer.byteLength
+          ),
         };
       }
     }
 
-    source = new PMTilesFileSource(fs.openSync(filePath, "r"));
+    const file = fs.openSync(filePath, "r");
+
+    source = new PMTilesFileSource(file);
   }
 
   return new PMTiles(source);
 }
 
+/**
+ *
+ * @param {*} pmtilesSource
+ * @returns
+ */
 export async function getPMTilesInfo(pmtilesSource) {
   const header = await pmtilesSource.getHeader();
   const metadata = await pmtilesSource.getMetadata();
@@ -404,6 +426,14 @@ export async function getPMTilesInfo(pmtilesSource) {
   return metadata;
 }
 
+/**
+ *
+ * @param {*} pmtilesSource
+ * @param {number} z
+ * @param {number} x
+ * @param {number} y
+ * @returns
+ */
 export async function getPMTilesTile(pmtilesSource, z, x, y) {
   const header = await pmtilesSource.getHeader();
 
@@ -429,6 +459,11 @@ export async function getPMTilesTile(pmtilesSource, z, x, y) {
   };
 }
 
+/**
+ *
+ * @param {string} filePath
+ * @returns
+ */
 export async function openMBTiles(filePath) {
   return new Promise((resolve, reject) => {
     new MBTiles(filePath + "?mode=ro", (error, mbtiles) => {
@@ -441,6 +476,11 @@ export async function openMBTiles(filePath) {
   });
 }
 
+/**
+ *
+ * @param {*} mbtilesSource
+ * @returns
+ */
 export async function getMBTilesInfo(mbtilesSource) {
   return new Promise((resolve, reject) => {
     mbtilesSource.getInfo((error, info) => {
@@ -453,6 +493,14 @@ export async function getMBTilesInfo(mbtilesSource) {
   });
 }
 
+/**
+ *
+ * @param {*} mbtilesSource
+ * @param {number} z
+ * @param {number} x
+ * @param {number} y
+ * @returns
+ */
 export async function getMBTilesTile(mbtilesSource, z, x, y) {
   return new Promise((resolve, reject) => {
     mbtilesSource.getTile(z, x, y, (error, data, headers) => {

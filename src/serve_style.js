@@ -43,18 +43,18 @@ function getStyleHandler(config) {
 
     /* Fix source urls */
     Object.keys(item.styleJSON.sources).forEach((name) => {
-      const source = item.styleJSON.sources[name];
+      const oldSource = item.styleJSON.sources[name];
 
       styleJSON.sources[name] = {
-        ...source,
+        ...oldSource,
       };
 
-      if (source.url !== undefined) {
+      if (oldSource.url !== undefined) {
         if (
-          source.url.startsWith("mbtiles://") === true ||
-          source.url.startsWith("pmtiles://") === true
+          oldSource.url.startsWith("mbtiles://") === true ||
+          oldSource.url.startsWith("pmtiles://") === true
         ) {
-          const sourceID = source.url.slice(11, -1);
+          const sourceID = oldSource.url.slice(10);
 
           styleJSON.sources[name].url = `${getURL(req)}data/${sourceID}.json`;
         }
@@ -155,21 +155,39 @@ export const serve_style = {
 
           /* Validate sources */
           Object.keys(styleJSON.sources).forEach((source) => {
-            const sourceUrl = styleJSON.sources[source].url;
+            const sourceURL = styleJSON.sources[source].url;
+            const sourceURLs = styleJSON.sources[source].urls;
+            const sourceTiles = styleJSON.sources[source].tiles;
 
-            if (sourceUrl !== undefined) {
+            if (sourceURL !== undefined) {
               if (
-                sourceUrl.startsWith("pmtiles://") === true ||
-                sourceUrl.startsWith("mbtiles://") === true
+                sourceURL.startsWith("pmtiles://") === true ||
+                sourceURL.startsWith("mbtiles://") === true
               ) {
-                const sourceID = sourceUrl.slice(11, -1);
+                const sourceID = sourceURL.slice(10);
 
                 if (!config.repo.datas[sourceID]) {
                   throw Error(`Source "${source}" is not found`);
                 }
               } else if (
-                sourceUrl.startsWith("https://") === false &&
-                sourceUrl.startsWith("http://") === false
+                sourceURL.startsWith("https://") === false &&
+                sourceURL.startsWith("http://") === false
+              ) {
+                throw Error(`Source "${source}" is invalid url`);
+              }
+            } else if (sourceURL !== undefined) {
+              if (
+                sourceURL.startsWith("pmtiles://") === true ||
+                sourceURL.startsWith("mbtiles://") === true
+              ) {
+                const sourceID = sourceURL.slice(10);
+
+                if (!config.repo.datas[sourceID]) {
+                  throw Error(`Source "${source}" is not found`);
+                }
+              } else if (
+                sourceURL.startsWith("https://") === false &&
+                sourceURL.startsWith("http://") === false
               ) {
                 throw Error(`Source "${source}" is invalid url`);
               }

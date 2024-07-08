@@ -6,17 +6,17 @@ Clone source:
 
 	git clone https://github.com/lqh2307/tile-server.git
 
-Switch to dev:
+Switch to v0.0.1:
 
-	git checkout dev
+	git checkout v0.0.1
 
 Build image:
 
-	docker build -t quanghuy2307/tile-server:latest .
+	docker build -t quanghuy2307/tile-server:0.0.1 .
 
 Run container:
 
-	docker run --rm -it -p 8080:8080 --name tile-server -v /home/huy/Downloads/tile-server/data:/tile-server/data quanghuy2307/tile-server:latest
+	docker run --rm -it -p 8080:8080 --name tile-server -v /home/huy/Downloads/tile-server/data:/tile-server/data quanghuy2307/tile-server:0.0.1
 
 Example config.json:
 
@@ -31,7 +31,8 @@ Example config.json:
 			},
 			"formatQuality": {
 				"jpeg": 100,
-				"webp": 100
+				"webp": 100,
+				"avif": 100
 			},
 			"listenPort": 8080,
 			"watchToKill": 0,
@@ -40,7 +41,7 @@ Example config.json:
 			"restartEndpoint": true,
 			"frontPage": true,
 			"serveWMTS": true,
-			"maxScaleRender": 1,
+			"maxScaleRender": 2,
 			"minPoolSize": 8,
 			"maxPoolSize": 16
 		},
@@ -112,7 +113,11 @@ Example config.json:
 			}
 		},
 		"sprites": {
-			"osm-liberty": true
+			"osm-liberty": true,
+			"osm-basic": true
 		},
-		"fonts": {}
+		"fonts": {
+			"Open Sans Regular": true,
+			"Times New Roman": true
+		}
 	}

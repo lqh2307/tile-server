@@ -259,7 +259,7 @@ export const serve_rendered = {
               oldSource.url?.startsWith("pmtiles://") === true ||
               oldSource.url?.startsWith("mbtiles://") === true
             ) {
-              const sourceID = oldSource.url.slice(11, -1);
+              const sourceID = oldSource.url.slice(10);
               const sourceData = config.repo.datas[sourceID];
 
               // Fix source
