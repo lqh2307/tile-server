@@ -7,7 +7,6 @@ import mlgl from "@maplibre/maplibre-gl-native";
 import axios from "axios";
 import sharp from "sharp";
 import express from "express";
-import SphericalMercator from "@mapbox/sphericalmercator";
 import { createPool } from "generic-pool";
 import {
   responseEmptyTile,
@@ -27,13 +26,11 @@ mlgl.on("message", (error) => {
   }
 });
 
-const mercator = new SphericalMercator();
-
 function getRenderedTileHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
     const item = config.repo.rendereds[id];
-    let { format, z, x, y, scale, tileSize } = req.params;
+    let format = req.params.format;
 
     /* Check rendered data tile format */
     if (["jpeg", "jpg", "png", "webp", "avif"].includes(format) === true) {
@@ -51,34 +48,18 @@ function getRenderedTileHandler(config) {
     }
 
     /* Check rendered data tile bounds */
-    z = Number(z);
-    x = Number(x);
-    y = Number(y);
-
-    if (z < 0 || z > 22 || x >= Math.pow(2, z) || y >= Math.pow(2, z)) {
-      return res.status(400).send("Rendered data tile bounds is invalid");
-    }
-
-    /* Check rendered data tile center */
-    const tileCenter = mercator.ll(
-      [
-        ((x + 0.5) / (1 << z)) * (256 << z),
-        ((y + 0.5) / (1 << z)) * (256 << z),
-      ],
-      z
-    );
-    if (Math.abs(tileCenter[0]) > 180 || Math.abs(tileCenter[1]) > 85.06) {
-      return res.status(400).send("Rendered data tile center is invalid");
-    }
+    z = Number(req.params.z);
+    x = Number(req.params.x);
+    y = Number(req.params.y);
 
     /* Check rendered data tile scale */
-    scale = Number(scale?.slice(1, -1)) || 1;
+    const scale = Number(req.params.scale?.slice(1, -1)) || 1;
 
     if (scale > config.options.maxScaleRender) {
       return res.status(400).send("Rendered data tile scale is invalid");
     }
 
-    tileSize = Number(tileSize) || 256;
+    const tileSize = Number(req.params.tileSize) || 256;
 
     // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
     const params = {
