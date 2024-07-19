@@ -20,11 +20,10 @@ function getDataTileHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
     const item = config.repo.datas[id];
-    let { format, z, x, y } = req.params;
 
     /* Check data tile format */
     if (
-      ["jpeg", "jpg", "pbf", "png", "webp", "avif"].includes(format) === false
+      ["jpeg", "jpg", "pbf", "png", "webp", "avif"].includes(req.params.format) === false
     ) {
       return res.status(400).send("Data tile format is invalid");
     }
@@ -34,23 +33,13 @@ function getDataTileHandler(config) {
       return res.status(404).send("Data is not found");
     }
 
-    z = Number(z);
-    x = Number(x);
-    y = Number(y);
+    z = Number(req.params.z);
+    x = Number(req.params.x);
+    y = Number(req.params.y);
 
-    /* Check data tile bounds */
-    if (
-      z < item.tileJSON.minzoom ||
-      z > item.tileJSON.maxzoom ||
-      x >= Math.pow(2, z) ||
-      y >= Math.pow(2, z)
-    ) {
-      return res.status(400).send("Data tile bounds is invalid");
-    }
+    let dataTile;
 
     try {
-      let dataTile;
-
       /* Get data tile */
       if (item.sourceType === "mbtiles") {
         dataTile = await getMBTilesTile(item.source, z, x, y);
@@ -65,7 +54,7 @@ function getDataTileHandler(config) {
 
       /* Gzip pbf data tile format */
       if (
-        format === "pbf" &&
+        req.params.format === "pbf" &&
         (dataTile.data[0] !== 0x1f || dataTile.data[1] !== 0x8b)
       ) {
         dataTile.data = zlib.gzipSync(dataTile.data);
@@ -148,10 +137,9 @@ export const serve_data = {
       Object.keys(config.data).map(async (data) => {
         const item = config.data[data];
         const dataInfo = {};
-
+        let inputDataFile;
+        
         try {
-          let inputDataFile;
-
           if (item.mbtiles) {
             if (
               item.mbtiles.startsWith("https://") === true ||
