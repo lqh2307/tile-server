@@ -58,6 +58,34 @@ function getStyleHandler(config) {
 
           styleJSON.sources[name].url = `${getURL(req)}data/${sourceID}.json`;
         }
+      } else if (oldSource.urls !== undefined) {
+        styleJSON.sources[name].urls = oldSource.urls.map((sourceURL) => {
+          if (
+            sourceURL.startsWith("pmtiles://") === true ||
+            sourceURL.startsWith("mbtiles://") === true
+          ) {
+            const sourceID = sourceURL.slice(10);
+
+            return `${getURL(req)}data/${sourceID}.json`;
+          }
+
+          return sourceURL;
+        });
+      } else if (oldSource.tiles !== undefined) {
+        styleJSON.sources[name].tiles = oldSource.tiles.map((tileURL) => {
+          if (
+            tileURL.startsWith("pmtiles://") === true ||
+            tileURL.startsWith("mbtiles://") === true
+          ) {
+            const sourceID = tileURL.slice(10);
+
+            return `${getURL(req)}data/${sourceID}/{z}/{x}/{y}.${
+              config.repo.datas[sourceID].tileJSON.format
+            }`;
+          }
+
+          return tileURL;
+        });
       }
     });
 
@@ -156,8 +184,16 @@ export const serve_style = {
           /* Validate sources */
           Object.keys(styleJSON.sources).forEach((source) => {
             const sourceURL = styleJSON.sources[source].url;
+            const sourceURLs = styleJSON.sources[source].urls;
+            const sourceTiles = styleJSON.sources[source].tiles;
 
-            if (sourceURL !== undefined) {
+            if (
+              sourceURL !== undefined &&
+              sourceURLs !== undefined &&
+              sourceTiles !== undefined
+            ) {
+              throw Error(`Source "${source}" is invalid`);
+            } else if (sourceURL !== undefined) {
               if (
                 sourceURL.startsWith("pmtiles://") === true ||
                 sourceURL.startsWith("mbtiles://") === true
@@ -173,26 +209,36 @@ export const serve_style = {
               ) {
                 throw Error(`Source "${source}" is invalid url`);
               }
-            }
-
-            const sourceURLs = styleJSON.sources[source].urls;
-
-            if (sourceURLs !== undefined) {
+            } else if (sourceURLs !== undefined) {
               sourceURLs.forEach((sourceURL) => {
                 if (
+                  sourceURL.startsWith("pmtiles://") === true ||
+                  sourceURL.startsWith("mbtiles://") === true
+                ) {
+                  const sourceID = sourceURL.slice(10);
+
+                  if (!config.repo.datas[sourceID]) {
+                    throw Error(`Source "${source}" is not found`);
+                  }
+                } else if (
                   sourceURL.startsWith("https://") === false &&
                   sourceURL.startsWith("http://") === false
                 ) {
                   throw Error(`Source "${source}" is invalid urls`);
                 }
               });
-            }
-
-            const sourceTiles = styleJSON.sources[source].tiles;
-
-            if (sourceTiles !== undefined) {
+            } else if (sourceTiles !== undefined) {
               sourceTiles.forEach((sourceTile) => {
                 if (
+                  sourceTile.startsWith("pmtiles://") === true ||
+                  sourceTile.startsWith("mbtiles://") === true
+                ) {
+                  const sourceID = sourceURL.slice(10);
+
+                  if (!config.repo.datas[sourceID]) {
+                    throw Error(`Source "${source}" is not found`);
+                  }
+                } else if (
                   sourceTile.startsWith("https://") === false &&
                   sourceTile.startsWith("http://") === false
                 ) {

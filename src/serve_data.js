@@ -23,7 +23,9 @@ function getDataTileHandler(config) {
 
     /* Check data tile format */
     if (
-      ["jpeg", "jpg", "pbf", "png", "webp", "avif"].includes(req.params.format) === false
+      ["jpeg", "jpg", "pbf", "png", "webp", "avif"].includes(
+        req.params.format
+      ) === false
     ) {
       return res.status(400).send("Data tile format is invalid");
     }
@@ -137,8 +139,9 @@ export const serve_data = {
       Object.keys(config.data).map(async (data) => {
         const item = config.data[data];
         const dataInfo = {};
+
         let inputDataFile;
-        
+
         try {
           if (item.mbtiles) {
             if (

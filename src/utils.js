@@ -236,7 +236,10 @@ export async function validateSprite(spriteDirPath) {
         /* Validate PNG sprite */
         const pngFilePath = path.join(
           spriteDirPath,
-          `${jsonSpriteFileName.slice(0, jsonSpriteFileName.lastIndexOf(".json"))}.png`
+          `${jsonSpriteFileName.slice(
+            0,
+            jsonSpriteFileName.lastIndexOf(".json")
+          )}.png`
         );
 
         const pngMetadata = await sharp(pngFilePath).metadata();

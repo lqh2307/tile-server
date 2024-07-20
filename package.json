@@ -1,9 +1,14 @@
 {
   "name": "tile-server",
-  "description": "Vector and raster tile server",
-  "version": "2.0.0",
+  "description": "Vector/Raster tile server for serving xyz/wmts tiles",
+  "version": "1.0.0",
   "keywords": [
+    "leaflet",
     "maplibre-gl",
+    "maplibre-gl-js",
+    "maplibre-gl-native",
+    "nodejs",
+    "javascript",
     "tile-server"
   ],
   "license": "BSD-2-Clause",
@@ -22,7 +27,6 @@
     "axios": "1.7.2",
     "chokidar": "3.6.0",
     "color": "4.2.3",
-    "commander": "12.1.0",
     "cors": "2.8.5",
     "express": "4.19.2",
     "generic-pool": "3.9.0",

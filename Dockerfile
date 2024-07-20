@@ -3,10 +3,6 @@ ARG TARGET_IMAGE=ubuntu:22.04
 
 FROM $BUILDER_IMAGE AS builder
 
-# set proxy
-# ARG http_proxy=http://10.55.123.98:3333
-# ARG https_proxy=http://10.55.123.98:3333
-
 USER root
 
 RUN \
@@ -48,10 +44,6 @@ RUN npm install --omit=dev;
 FROM $TARGET_IMAGE AS final
 
 USER root
-
-# set proxy
-# ARG http_proxy=http://10.55.123.98:3333
-# ARG https_proxy=http://10.55.123.98:3333
 
 RUN \
   set -ex; \

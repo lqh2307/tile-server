@@ -9,7 +9,7 @@ function getSpriteHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
     const item = config.repo.sprites[id];
-    const { scale, format } = req.params;
+    const format = req.params.format;
 
     if (["json", "png"].includes(format) === false) {
       return res.status(400).send("Sprite format is invalid");
@@ -20,7 +20,11 @@ function getSpriteHandler(config) {
     }
 
     try {
-      const filePath = `${path.join(config.options.paths.sprites, id, "sprite")}${scale || ""}.${format}`;
+      const filePath = `${path.join(
+        config.options.paths.sprites,
+        id,
+        "sprite"
+      )}${req.params.scale || ""}.${format}`;
 
       const data = fs.readFileSync(filePath);
 

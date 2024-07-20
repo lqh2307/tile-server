@@ -11,82 +11,85 @@ const mercator = new SphericalMercator();
 
 function serveFrontPageHandler(config) {
   return async (req, res, next) => {
+    if (config.startupComplete === false) {
+      return res.status(503).send("Starting");
+    }
+
     const styles = {};
-    const renderedPromises = Object.keys(config.repo.rendereds).map(
-      async (id) => {
+    const datas = {};
+
+    await Promise.all([
+      ...Object.keys(config.repo.rendereds).map(async (id) => {
         const style = config.repo.rendereds[id];
-        const { center, format, name = "" } = style.tileJSON;
-        const tileSize = 256;
+        const center = style.tileJSON.center;
 
         let viewerHash = "";
         let thumbnail = "";
         if (center) {
-          viewerHash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
+          viewerHash = `#${center[2]}/${center[1]}/${center[0]}`;
 
           const centerPx = mercator.px([center[0], center[1]], center[2]);
+          const x = Math.floor(centerPx[0] / 256);
+          const y = Math.floor(centerPx[1] / 256);
 
-          thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.png`;
+          thumbnail = `${center[2]}/${x}/${y}.png`;
         }
 
         styles[id] = {
-          name: name,
-          xyz_link: `${getURL(req)}styles/${id}/${tileSize}/{z}/{x}/{y}.${format}`,
+          name: style.tileJSON.name || "",
+          xyz_link: `${getURL(req)}styles/${id}/256/{z}/{x}/{y}.png`,
           viewer_hash: viewerHash,
           thumbnail: thumbnail,
           serve_wmts: config.options.serveWMTS === true,
         };
-      }
-    );
+      }),
+      ...Object.keys(config.repo.datas).map(async (id) => {
+        const data = config.repo.datas[id];
+        const { center, format, filesize } = data.tileJSON;
 
-    const datas = {};
-    const dataPromises = Object.keys(config.repo.datas).map(async (id) => {
-      const data = config.repo.datas[id];
-      const { center, format, filesize, name = "" } = data.tileJSON;
+        let viewerHash = "";
+        let thumbnail = "";
+        if (center) {
+          viewerHash = `#${center[2]}/${center[1]}/${center[0]}`;
 
-      let viewerHash = "";
-      let thumbnail = "";
-      if (center) {
-        const tileSize = 256;
+          if (format !== "pbf") {
+            const centerPx = mercator.px([center[0], center[1]], center[2]);
+            const x = Math.floor(centerPx[0] / 256);
+            const y = Math.floor(centerPx[1] / 256);
 
-        viewerHash = `#${center[2]}/${center[1].toFixed(5)}/${center[0].toFixed(5)}`;
-
-        if (format !== "pbf") {
-          const centerPx = mercator.px([center[0], center[1]], center[2]);
-
-          thumbnail = `${center[2]}/${Math.floor(centerPx[0] / tileSize)}/${Math.floor(centerPx[1] / tileSize)}.${format}`;
-        }
-      }
-
-      let formattedFilesize = "unknown";
-      if (filesize) {
-        let suffix = "kB";
-        let size = filesize / 1024;
-
-        if (size > 1024) {
-          suffix = "MB";
-          size /= 1024;
+            thumbnail = `${center[2]}/${x}/${y}.${format}`;
+          }
         }
 
-        if (size > 1024) {
-          suffix = "GB";
-          size /= 1024;
+        let formattedFilesize = "unknown";
+        if (filesize) {
+          let suffix = "kB";
+          let size = filesize / 1024;
+
+          if (size > 1024) {
+            suffix = "MB";
+            size /= 1024;
+          }
+
+          if (size > 1024) {
+            suffix = "GB";
+            size /= 1024;
+          }
+
+          formattedFilesize = `${size.toFixed(2)} ${suffix}`;
         }
 
-        formattedFilesize = `${size.toFixed(2)} ${suffix}`;
-      }
-
-      datas[id] = {
-        name: name,
-        xyz_link: `${getURL(req)}data/${id}/{z}/{x}/{y}.${format}`,
-        viewer_hash: viewerHash,
-        thumbnail: thumbnail,
-        source_type: data.sourceType,
-        is_vector: format === "pbf",
-        formatted_filesize: formattedFilesize,
-      };
-    });
-
-    await Promise.all([...renderedPromises, ...dataPromises]);
+        datas[id] = {
+          name: data.tileJSON.name || "",
+          xyz_link: `${getURL(req)}data/${id}/{z}/{x}/{y}.${format}`,
+          viewer_hash: viewerHash,
+          thumbnail: thumbnail,
+          source_type: data.sourceType,
+          is_vector: format === "pbf",
+          formatted_filesize: formattedFilesize,
+        };
+      }),
+    ]);
 
     const styleCount = Object.keys(styles).length;
     const dataCount = Object.keys(datas).length;

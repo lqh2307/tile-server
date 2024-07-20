@@ -168,7 +168,9 @@ function getRenderedHandler(config) {
     const info = {
       ...item.tileJSON,
       tiles: [
-        `${getURL(req)}styles/${id}/${req.params.tileSize || 256}/{z}/{x}/{y}.${item.tileJSON.format}`,
+        `${getURL(req)}styles/${id}/${req.params.tileSize || 256}/{z}/{x}/{y}.${
+          item.tileJSON.format
+        }`,
       ],
     };
 
@@ -231,32 +233,60 @@ export const serve_rendered = {
           sources: {},
         };
 
-        /* Fix sources & Add attribution */
+        /* Fix source urls & Add attribution */
         await Promise.all(
-          Object.keys(item.styleJSON.sources).map(async (source) => {
-            const oldSource = item.styleJSON.sources[source];
+          // Fix source urls
+          Object.keys(item.styleJSON.sources).map(async (name) => {
+            const oldSource = item.styleJSON.sources[name];
 
-            if (
-              oldSource.url?.startsWith("pmtiles://") === true ||
-              oldSource.url?.startsWith("mbtiles://") === true
-            ) {
-              const sourceID = oldSource.url.slice(10);
-              const sourceData = config.repo.datas[sourceID];
+            styleJSON.sources[name] = {
+              ...oldSource,
+            };
 
-              // Fix source
-              styleJSON.sources[source] = {
-                ...oldSource,
-                ...sourceData.tileJSON,
-                type: oldSource.type,
-                tiles: [
-                  `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`,
-                ],
-              };
+            if (oldSource.url !== undefined) {
+              if (
+                oldSource.url.startsWith("pmtiles://") === true ||
+                oldSource.url.startsWith("mbtiles://") === true
+              ) {
+                const sourceID = oldSource.url.slice(10);
+                const sourceData = config.repo.datas[sourceID];
+                const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
 
-              // Replace with local tiles
-              delete styleJSON.sources[source].url;
-            } else {
-              styleJSON.sources[source] = oldSource;
+                if (styleJSON.sources[name].tiles != undefined) {
+                  styleJSON.sources[name].tiles.push(tile);
+                } else {
+                  styleJSON.sources[name] = {
+                    ...sourceData.tileJSON,
+                    type: oldSource.type,
+                    tiles: [tile],
+                  };
+                }
+
+                delete styleJSON.sources[name].url;
+              }
+            } else if (oldSource.urls !== undefined) {
+              oldSource.urls.forEach((sourceURL) => {
+                if (
+                  sourceURL.startsWith("pmtiles://") === true ||
+                  sourceURL.startsWith("mbtiles://") === true
+                ) {
+                  const sourceID = sourceURL.slice(10);
+                  const sourceData = config.repo.datas[sourceID];
+                  const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+
+                  if (styleJSON.sources[name].tiles != undefined) {
+                    styleJSON.sources[name].tiles.push(tile);
+                  } else {
+                    styleJSON.sources[name] = {
+                      ...sourceData.tileJSON,
+                      type: oldSource.type,
+                      tiles: [tile],
+                    };
+                  }
+                }
+              });
+
+              delete styleJSON.sources[name].urls;
             }
 
             // Add atribution

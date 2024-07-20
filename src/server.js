@@ -6,25 +6,26 @@ import express from "express";
 import chokidar from "chokidar";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
+import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
 import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
 import { printLog } from "./utils.js";
 
+const DATA_DIR_PATH = path.resolve("data");
+const CONFIG_FILE_PATH = path.join(dataDirPath, "config.json");
+
 /**
  * Load config file and assign default
- * @param {string} dataDir
  * @returns {object}
  */
-function loadConfigFile(dataDir) {
-  const configFilePath = path.join(dataDir, "config.json");
-
-  printLog("info", `Load config file: ${configFilePath}`);
+function loadConfigFile() {
+  printLog("info", "Load config file...");
 
   try {
-    /* Read config.json file */
-    const file = fs.readFileSync(configFilePath, "utf8");
+    /* Read config file */
+    const file = fs.readFileSync(CONFIG_FILE_PATH, "utf8");
 
     const config = JSON.parse(file);
 
@@ -32,11 +33,20 @@ function loadConfigFile(dataDir) {
     const configObj = {
       options: {
         paths: {
-          styles: path.join(dataDir, config.options?.paths?.styles || ""),
-          fonts: path.join(dataDir, config.options?.paths?.fonts || ""),
-          sprites: path.join(dataDir, config.options?.paths?.sprites || ""),
-          mbtiles: path.join(dataDir, config.options?.paths?.mbtiles || ""),
-          pmtiles: path.join(dataDir, config.options?.paths?.pmtiles || ""),
+          styles: path.join(DATA_DIR_PATH, config.options?.paths?.styles || ""),
+          fonts: path.join(DATA_DIR_PATH, config.options?.paths?.fonts || ""),
+          sprites: path.join(
+            DATA_DIR_PATH,
+            config.options?.paths?.sprites || ""
+          ),
+          mbtiles: path.join(
+            DATA_DIR_PATH,
+            config.options?.paths?.mbtiles || ""
+          ),
+          pmtiles: path.join(
+            DATA_DIR_PATH,
+            config.options?.paths?.pmtiles || ""
+          ),
         },
         formatQuality: {
           jpeg: config.options?.formatQuality?.jpeg || 100,
@@ -65,7 +75,6 @@ function loadConfigFile(dataDir) {
         fonts: {},
         sprites: {},
       },
-      configFilePath: configFilePath,
       startupComplete: false,
     };
 
@@ -88,33 +97,23 @@ function loadConfigFile(dataDir) {
 
 /**
  * Start server
- * @param {string} dataDir
  * @returns {void}
  */
-export function startServer(dataDir) {
+export function startServer() {
   /* Load config file */
-  const config = loadConfigFile(dataDir);
-
-  /* Read params */
-  const {
-    watchToKill,
-    watchToRestart,
-    restartEndpoint,
-    killEndpoint,
-    listenPort,
-  } = config.options;
+  const config = loadConfigFile();
 
   /* Setup watch config file */
-  if (watchToKill > 0) {
+  if (config.options.watchToKill > 0) {
     printLog(
       "info",
-      `Watch config file changes interval ${watchToKill}ms to kill server`
+      `Watch config file changes interval ${config.options.watchToKill}ms to kill server`
     );
 
-    const newChokidar = chokidar.watch(config.configFilePath, {
+    const newChokidar = chokidar.watch(CONFIG_FILE_PATH, {
       usePolling: true,
       awaitWriteFinish: true,
-      interval: watchToKill,
+      interval: config.options.watchToKill,
     });
 
     newChokidar.on("change", () => {
@@ -122,16 +121,16 @@ export function startServer(dataDir) {
 
       process.exit(0);
     });
-  } else if (watchToRestart > 0) {
+  } else if (config.options.watchToRestart > 0) {
     printLog(
       "info",
-      `Watch config file changes interval ${watchToRestart}ms to restart server`
+      `Watch config file changes interval ${config.options.watchToRestart}ms to restart server`
     );
 
-    const newChokidar = chokidar.watch(config.configFilePath, {
+    const newChokidar = chokidar.watch(CONFIG_FILE_PATH, {
       usePolling: true,
       awaitWriteFinish: true,
-      interval: watchToRestart,
+      interval: config.options.watchToRestart,
     });
 
     newChokidar.on("change", () => {
@@ -162,63 +161,29 @@ export function startServer(dataDir) {
       process.exit(0);
     });
 
-  /* Init server */
-  const logFormat =
-    ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent";
-
-  const app = express()
+  /* Start http server */
+  express()
     .disable("x-powered-by")
     .enable("trust proxy")
-    .use(morgan(logFormat))
+    .use(
+      morgan(
+        ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent"
+      )
+    )
     .use(
       cors({
         origin: "*",
         methods: "GET",
       })
-    );
-
-  /* Asign endpoint */
-  app.get("/health", async (req, res, next) => {
-    if (config.startupComplete === true) {
-      return res.status(200).send("OK");
-    } else {
-      return res.status(503).send("Starting");
-    }
-  });
-
-  if (restartEndpoint === true) {
-    app.get("/restart", async (req, res, next) => {
-      printLog("info", "Received restart request. Restarting server...");
-
-      setTimeout(() => {
-        process.exit(1);
-      }, 0);
-
-      return res.status(200).send("OK");
+    )
+    .use("/", serve_common.init(config))
+    .use("/fonts", serve_font.init(config))
+    .use("/sprites", serve_sprite.init(config))
+    .use("/data", serve_data.init(config))
+    .use("/styles", serve_style.init(config))
+    .use("/styles", serve_rendered.init(config))
+    .use("/", serve_template.init(config))
+    .listen(listenPort, () => {
+      printLog("info", `Listening on port: ${config.options.listenPort}`);
     });
-  }
-
-  if (killEndpoint === true) {
-    app.get("/kill", async (req, res, next) => {
-      printLog("info", "Received kill request. Killed server!");
-
-      setTimeout(() => {
-        process.exit(0);
-      }, 0);
-
-      return res.status(200).send("OK");
-    });
-  }
-
-  app.use("/fonts", serve_font.init(config));
-  app.use("/sprites", serve_sprite.init(config));
-  app.use("/data", serve_data.init(config));
-  app.use("/styles", serve_style.init(config));
-  app.use("/styles", serve_rendered.init(config));
-  app.use("/", serve_template.init(config));
-
-  /* Start listen */
-  app.listen(listenPort, () => {
-    printLog("info", `Listening on port: ${listenPort}`);
-  });
 }

@@ -1,27 +1,11 @@
 "use strict";
 
 import os from "os";
-import fs from "node:fs";
 import path from "node:path";
-import { program } from "commander";
 import { startServer } from "./server.js";
 import { printLog } from "./utils.js";
 
-const packageJSON = JSON.parse(
-  fs.readFileSync(path.resolve("package.json"), "utf8")
-);
-
-program
-  .description("===== Tile server startup options =====")
-  .usage("tile-server [options]")
-  .option(
-    "-d, --data-dir <path>",
-    "data directory path (include config.json file)",
-    "data"
-  )
-  .version(packageJSON.version, "-v, --version")
-  .showHelpAfterError();
-
+/* Set envs & events */
 process.env.UV_THREADPOOL_SIZE = Math.ceil(Math.max(4, os.cpus().length * 1.5)); // For libuv
 
 process.on("SIGINT", () => {
@@ -29,14 +13,12 @@ process.on("SIGINT", () => {
 
   process.exit(0);
 });
+
 process.on("SIGTERM", () => {
   printLog("info", `Received "SIGTERM" signal. Killed server!`);
 
   process.exit(0);
 });
 
-program.parse(process.argv);
-
-const opts = program.opts();
-
-startServer(path.resolve(opts.dataDir));
+/* Start server */
+startServer();
