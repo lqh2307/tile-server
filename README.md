@@ -16,7 +16,8 @@ Build image:
 
 Create data folder in local with structure:
 
-	data_folder - fonts folder
+	data_folder
+				- fonts folder
 				- mbtiles folder
 				- pmtiles folder
 				- sprites folder
