@@ -15,6 +15,7 @@ Build image:
 	docker build -t tile-server:1.0.0 .
 
 Create data folder in local with structure:
+
 	data_folder - fonts folder
 				- mbtiles folder
 				- pmtiles folder
