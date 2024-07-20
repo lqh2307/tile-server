@@ -2,9 +2,9 @@
 
 while true; do
   if [ -z "$DISPLAY" ]; then
-    xvfb-run -a -s "-terminate -nolisten unix" node ./src/main.js "$@"
+    xvfb-run -a -s "-terminate -nolisten unix" node ./src/main.js
   else
-    node ./src/main.js "$@"
+    node ./src/main.js
   fi
 
   EXIT_CODE=$?
