@@ -15,8 +15,7 @@
   "main": "src/main.js",
   "type": "module",
   "scripts": {
-    "start": "./entrypoint.sh src/main.js",
-    "dev": "nodemon src/main.js"
+    "start": "entrypoint.sh"
   },
   "dependencies": {
     "@mapbox/glyph-pbf-composite": "0.0.3",
@@ -40,7 +39,6 @@
     "@types/express": "4.17.21",
     "@types/mapbox__sphericalmercator": "1.2.3",
     "@types/morgan": "1.9.9",
-    "nodemon": "3.1.4",
     "prettier": "3.3.2"
   },
   "engines": {
