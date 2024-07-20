@@ -103,6 +103,32 @@ export function startServer() {
   /* Load config file */
   const config = loadConfigFile();
 
+  /* Start http server */
+  express()
+    .disable("x-powered-by")
+    .enable("trust proxy")
+    .use(
+      morgan(
+        ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent"
+      )
+    )
+    .use(
+      cors({
+        origin: "*",
+        methods: "GET",
+      })
+    )
+    .use("/", serve_common.init(config))
+    .use("/fonts", serve_font.init(config))
+    .use("/sprites", serve_sprite.init(config))
+    .use("/data", serve_data.init(config))
+    .use("/styles", serve_style.init(config))
+    .use("/styles", serve_rendered.init(config))
+    .use("/", serve_template.init(config))
+    .listen(config.options.listenPort, () => {
+      printLog("info", `Listening on port: ${config.options.listenPort}`);
+    });
+
   /* Setup watch config file */
   if (config.options.watchToKill > 0) {
     printLog(
@@ -159,31 +185,5 @@ export function startServer() {
       printLog("error", `Failed to load data: ${error}`);
 
       process.exit(0);
-    });
-
-  /* Start http server */
-  express()
-    .disable("x-powered-by")
-    .enable("trust proxy")
-    .use(
-      morgan(
-        ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent"
-      )
-    )
-    .use(
-      cors({
-        origin: "*",
-        methods: "GET",
-      })
-    )
-    .use("/", serve_common.init(config))
-    .use("/fonts", serve_font.init(config))
-    .use("/sprites", serve_sprite.init(config))
-    .use("/data", serve_data.init(config))
-    .use("/styles", serve_style.init(config))
-    .use("/styles", serve_rendered.init(config))
-    .use("/", serve_template.init(config))
-    .listen(listenPort, () => {
-      printLog("info", `Listening on port: ${config.options.listenPort}`);
     });
 }

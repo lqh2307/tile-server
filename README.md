@@ -6,19 +6,27 @@ Clone source:
 
 	git clone https://github.com/lqh2307/tile-server.git
 
-Switch to v0.0.1:
+Switch to 1.0.0:
 
-	git checkout v0.0.1
+	git checkout 1.0.0
 
 Build image:
 
-	docker build -t quanghuy2307/tile-server:0.0.1 .
+	docker build -t tile-server:1.0.0 .
+
+Create data folder in local with structure:
+	data_folder - fonts folder
+				- mbtiles folder
+				- pmtiles folder
+				- sprites folder
+				- styles folder
+				- config.json file
 
 Run container:
 
-	docker run --rm -it -p 8080:8080 --name tile-server -v /home/huy/Downloads/tile-server/data:/tile-server/data quanghuy2307/tile-server:0.0.1
+	docker run --rm -it -p 8080:8080 --name tile-server -v /path_to_data_folder:/tile-server/data tile-server:1.0.0
 
-Example config.json:
+Example config.json content:
 
 	{
 		"options": {

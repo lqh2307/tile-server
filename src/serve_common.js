@@ -7,7 +7,7 @@ function serveHealthHandler(config) {
   return async (req, res, next) => {
     return async (req, res, next) => {
       if (config.startupComplete === false) {
-        return res.status(503).send("Starting");
+        return res.status(503).send("Starting...");
       }
 
       return res.status(200).send("OK");

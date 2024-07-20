@@ -130,20 +130,21 @@ function getRenderedTileHandler(config) {
           });
         }
 
-        image.toBuffer((error, buffer) => {
-          if (error) {
+        image
+          .toBuffer()
+          .then((data) => {
+            res.header("Content-Type", `image/${format}`);
+
+            return res.status(200).send(data);
+          })
+          .catch((error) => {
             printLog(
               "error",
               `Failed to get rendered data "${id}" - Tile ${z}/${x}/${y}: ${error}`
             );
 
             return res.status(404).send("Rendered data tile is not found");
-          }
-
-          res.header("Content-Type", `image/${format}`);
-
-          return res.status(200).send(buffer);
-        });
+          });
       });
     } catch (error) {
       printLog(
@@ -252,15 +253,11 @@ export const serve_rendered = {
                 const sourceData = config.repo.datas[sourceID];
                 const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
 
-                if (styleJSON.sources[name].tiles != undefined) {
-                  styleJSON.sources[name].tiles.push(tile);
-                } else {
-                  styleJSON.sources[name] = {
-                    ...sourceData.tileJSON,
-                    type: oldSource.type,
-                    tiles: [tile],
-                  };
-                }
+                styleJSON.sources[name] = {
+                  ...sourceData.tileJSON,
+                  type: oldSource.type,
+                  tiles: [tile],
+                };
 
                 delete styleJSON.sources[name].url;
               }

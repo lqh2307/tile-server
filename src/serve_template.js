@@ -12,7 +12,7 @@ const mercator = new SphericalMercator();
 function serveFrontPageHandler(config) {
   return async (req, res, next) => {
     if (config.startupComplete === false) {
-      return res.status(503).send("Starting");
+      return res.status(503).send("Starting...");
     }
 
     const styles = {};
@@ -63,7 +63,7 @@ function serveFrontPageHandler(config) {
 
         let formattedFilesize = "unknown";
         if (filesize) {
-          let suffix = "kB";
+          let suffix = "KB";
           let size = filesize / 1024;
 
           if (size > 1024) {
@@ -91,13 +91,11 @@ function serveFrontPageHandler(config) {
       }),
     ]);
 
-    const styleCount = Object.keys(styles).length;
-    const dataCount = Object.keys(datas).length;
     const serveData = {
-      styles: styleCount ? styles : null,
-      data: dataCount ? datas : null,
-      style_count: styleCount,
-      data_count: dataCount,
+      styles: styles,
+      data: datas,
+      style_count: Object.keys(styles).length,
+      data_count: Object.keys(datas).length,
     };
 
     const filePath = path.resolve("public", "templates", "index.tmpl");
@@ -112,6 +110,10 @@ function serveFrontPageHandler(config) {
 
 function serveStyleHandler(config) {
   return async (req, res, next) => {
+    if (config.startupComplete === false) {
+      return res.status(503).send("Starting...");
+    }
+
     const id = decodeURI(req.params.id);
     const style = config.repo.rendereds[id];
 
@@ -135,6 +137,10 @@ function serveStyleHandler(config) {
 }
 
 function serveDataHandler(config) {
+  if (config.startupComplete === false) {
+    return res.status(503).send("Starting...");
+  }
+
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
     const data = config.repo.datas[id];

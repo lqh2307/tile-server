@@ -72,73 +72,69 @@
       <div class="tab" onclick="switchTab(event, 'data-tab')">DATA ({{data_count}})</div>
     </div>
     <div id="styles-tab" class="tab-content active">
-      {{#if styles}}
-        <div class="box">
-        {{#each styles}}
-          <div class="item">
-            {{#if thumbnail}}
-              <img src="/styles/{{@key}}/{{thumbnail}}" alt="{{name}} preview" />
-            {{else}}
-              <img src="/images/placeholder.png" alt="{{name}} preview" />
-            {{/if}}
-            <div class="details">
-              <h3>{{name}}</h3>
-              <p class="identifier">identifier: {{@key}}</p>
-              <p class="services">
-                services: <a href="/styles/{{@key}}/style.json">Style</a> | <a href="/styles/{{@key}}.json">TileJSON</a>
-                {{#if serve_wmts}}
-                  | <a href="/styles/{{@key}}/wmts.xml">WMTS</a>
-                {{/if}}
-                {{#if xyz_link}}
-                  | <a href="#" onclick="toggleXYZ('xyz_style_{{@key}}', event);">XYZ</a>
-                  <input id="xyz_style_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{&xyz_link}}" onclick="copyToClipboard(this);" />
-                {{/if}}
-              </p>
-            </div>
-            <div class="viewers">
-                <a class="btn" href="/styles/{{@key}}/{{viewer_hash}}">Viewer</a>
-                <a class="btn" href="/styles/{{@key}}/?raster{{viewer_hash}}">Raster</a>
-                <a class="btn" href="/styles/{{@key}}/?vector{{viewer_hash}}">Vector</a>
-            </div>
+      <div class="box">
+      {{#each styles}}
+        <div class="item">
+          {{#if thumbnail}}
+            <img src="/styles/{{@key}}/{{thumbnail}}" alt="{{name}} preview" />
+          {{else}}
+            <img src="/images/placeholder.png" alt="{{name}} preview" />
+          {{/if}}
+          <div class="details">
+            <h3>{{name}}</h3>
+            <p class="identifier">identifier: {{@key}}</p>
+            <p class="services">
+              services: <a href="/styles/{{@key}}/style.json">Style</a> | <a href="/styles/{{@key}}.json">TileJSON</a>
+              {{#if serve_wmts}}
+                | <a href="/styles/{{@key}}/wmts.xml">WMTS</a>
+              {{/if}}
+              {{#if xyz_link}}
+                | <a href="#" onclick="toggleXYZ('xyz_style_{{@key}}', event);">XYZ</a>
+                <input id="xyz_style_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{&xyz_link}}" onclick="copyToClipboard(this);" />
+              {{/if}}
+            </p>
           </div>
-        {{/each}}
+          <div class="viewers">
+              <a class="btn" href="/styles/{{@key}}/{{viewer_hash}}">Viewer</a>
+              <a class="btn" href="/styles/{{@key}}/?raster{{viewer_hash}}">Raster</a>
+              <a class="btn" href="/styles/{{@key}}/?vector{{viewer_hash}}">Vector</a>
+          </div>
         </div>
-      {{/if}}
+      {{/each}}
+      </div>
     </div>
     <div id="data-tab" class="tab-content">
-      {{#if data}}
-        <div class="box">
-        {{#each data}}
-          <div class="item">
-            {{#if thumbnail}}
-              <img src="/data/{{@key}}/{{thumbnail}}" alt="{{name}} preview" />
-            {{else}}
-              <img src="/images/placeholder.png" alt="{{name}} preview" />
-            {{/if}}
-            <div class="details">
-              <h3>{{name}}</h3>
-              <div class="identifier">identifier: {{@key}}</div>
-              <div class="identifier">size: {{formatted_filesize}}</div>
-              <div class="identifier">type: {{#if is_vector}}vector{{else}}raster{{/if}} {{#if source_type}} | ext: {{source_type}}{{/if}}</div>
-              <p class="services">
-                services: <a href="/data/{{@key}}.json">TileJSON</a>
-                {{#if xyz_link}}
-                  | <a href="#" onclick="toggleXYZ('xyz_data_{{@key}}', event);">XYZ</a>
-                  <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{&xyz_link}}" onclick="copyToClipboard(this);" />
-                {{/if}}
-              </p>
-            </div>
-            <div class="viewers">
-              {{#if is_vector}}
-                  <a class="btn" href="/data/{{@key}}/{{viewer_hash}}">Inspect</a>
-              {{else}}
-                  <a class="btn" href="/data/{{@key}}/{{viewer_hash}}">View</a>
+      <div class="box">
+      {{#each data}}
+        <div class="item">
+          {{#if thumbnail}}
+            <img src="/data/{{@key}}/{{thumbnail}}" alt="{{name}} preview" />
+          {{else}}
+            <img src="/images/placeholder.png" alt="{{name}} preview" />
+          {{/if}}
+          <div class="details">
+            <h3>{{name}}</h3>
+            <div class="identifier">identifier: {{@key}}</div>
+            <div class="identifier">size: {{formatted_filesize}}</div>
+            <div class="identifier">type: {{#if is_vector}}vector{{else}}raster{{/if}} {{#if source_type}} | ext: {{source_type}}{{/if}}</div>
+            <p class="services">
+              services: <a href="/data/{{@key}}.json">TileJSON</a>
+              {{#if xyz_link}}
+                | <a href="#" onclick="toggleXYZ('xyz_data_{{@key}}', event);">XYZ</a>
+                <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{&xyz_link}}" onclick="copyToClipboard(this);" />
               {{/if}}
-            </div>
+            </p>
           </div>
-        {{/each}}
+          <div class="viewers">
+            {{#if is_vector}}
+                <a class="btn" href="/data/{{@key}}/{{viewer_hash}}">Inspect</a>
+            {{else}}
+                <a class="btn" href="/data/{{@key}}/{{viewer_hash}}">View</a>
+            {{/if}}
+          </div>
         </div>
-      {{/if}}
+      {{/each}}
+      </div>
     </div>
   </section>
   <a href="#" class="back-to-top" onclick="scrollToTop(event);">Back to top</a>

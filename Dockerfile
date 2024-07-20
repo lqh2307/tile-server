@@ -63,17 +63,20 @@ RUN \
   apt-get clean; \
   rm -rf /var/lib/apt/lists/*;
 
-COPY --from=builder /tile-server /tile-server
 COPY --from=builder /usr/bin/node /usr/bin/node
 COPY --from=builder /usr/include/node /usr/include/node
 COPY --from=builder /usr/share/doc/node /usr/share/doc/node
 
-RUN chmod +x /tile-server/entrypoint.sh
-
 WORKDIR /tile-server
+
+COPY --from=builder /tile-server .
+
+RUN mkdir data data/fonts data/sprites data/mbtiles data/pmtiles data/styles
+RUN cp public/resources/config/config.json config.json
+RUN chmod +x entrypoint.sh
 
 VOLUME /tile-server/data
 
 EXPOSE 8080
 
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["entrypoint.sh"]

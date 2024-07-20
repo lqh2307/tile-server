@@ -30,10 +30,14 @@ export function responseEmptyTile(format, callback) {
       },
     })
       .toFormat(format)
-      .toBuffer((_, buffer) => {
+      .toBuffer()
+      .then((data) => {
         callback(null, {
-          data: buffer,
+          data: data,
         });
+      })
+      .catch((error) => {
+        printLog("error", error);
       });
   } else {
     /* pbf and other formats */

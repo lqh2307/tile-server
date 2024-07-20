@@ -66,7 +66,7 @@ function getStyleHandler(config) {
           ) {
             const sourceID = sourceURL.slice(10);
 
-            return `${getURL(req)}data/${sourceID}.json`;
+            sourceURL = `${getURL(req)}data/${sourceID}.json`;
           }
 
           return sourceURL;
@@ -79,7 +79,7 @@ function getStyleHandler(config) {
           ) {
             const sourceID = tileURL.slice(10);
 
-            return `${getURL(req)}data/${sourceID}/{z}/{x}/{y}.${
+            tileURL = `${getURL(req)}data/${sourceID}/{z}/{x}/{y}.${
               config.repo.datas[sourceID].tileJSON.format
             }`;
           }
