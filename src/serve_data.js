@@ -35,9 +35,9 @@ function getDataTileHandler(config) {
       return res.status(404).send("Data is not found");
     }
 
-    z = Number(req.params.z);
-    x = Number(req.params.x);
-    y = Number(req.params.y);
+    const z = Number(req.params.z);
+    const x = Number(req.params.x);
+    const y = Number(req.params.y);
 
     let dataTile;
 
