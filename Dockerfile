@@ -63,13 +63,12 @@ RUN \
   apt-get clean; \
   rm -rf /var/lib/apt/lists/*;
 
-COPY --from=builder /usr/bin/node /usr/bin/node
-COPY --from=builder /usr/include/node /usr/include/node
-COPY --from=builder /usr/share/doc/node /usr/share/doc/node
-
 WORKDIR /tile-server
 
 COPY --from=builder /tile-server .
+COPY --from=builder /usr/bin/node /usr/bin/node
+COPY --from=builder /usr/include/node /usr/include/node
+COPY --from=builder /usr/share/doc/node /usr/share/doc/node
 
 RUN mkdir data data/fonts data/sprites data/mbtiles data/pmtiles data/styles
 RUN cp public/resources/config/config.json config.json
