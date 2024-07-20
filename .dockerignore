@@ -1,7 +1,5 @@
 *
-**/.gitkeep
 !src
 !public
 !package.json
 !entrypoint.sh
-!data
