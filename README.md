@@ -17,12 +17,12 @@ Build image:
 Create data folder in local with structure:
 
 	data_folder
-				- fonts folder
-				- mbtiles folder
-				- pmtiles folder
-				- sprites folder
-				- styles folder
-				- config.json file
+		- fonts folder
+		- mbtiles folder
+		- pmtiles folder
+		- sprites folder
+		- styles folder
+		- config.json file
 
 Run container:
 
