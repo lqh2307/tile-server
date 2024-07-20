@@ -25,7 +25,7 @@
 
       setTimeout(() => {
         el.style.display = 'none';
-      }, 500);
+      }, 200);
     }
 
     function scrollToTop(event) {
@@ -60,6 +60,7 @@
       });
 
       event.currentTarget.classList.add('active');
+
       document.getElementById(tabId).classList.add('active');
     }
   </script>
@@ -75,11 +76,7 @@
       <div class="box">
       {{#each styles}}
         <div class="item">
-          {{#if thumbnail}}
-            <img src="/styles/{{@key}}/{{thumbnail}}" alt="{{name}} preview" />
-          {{else}}
-            <img src="/images/placeholder.png" alt="{{name}} preview" />
-          {{/if}}
+          <img src="{{thumbnail}}" alt="{{name}} preview" />
           <div class="details">
             <h3>{{name}}</h3>
             <p class="identifier">identifier: {{@key}}</p>
@@ -89,15 +86,17 @@
                 | <a href="/styles/{{@key}}/wmts.xml">WMTS</a>
               {{/if}}
               {{#if xyz_link}}
-                | <a href="#" onclick="toggleXYZ('xyz_style_{{@key}}', event);">XYZ</a>
-                <input id="xyz_style_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{&xyz_link}}" onclick="copyToClipboard(this);" />
+                | <a href="#" onclick="toggleXYZ('xyz_style_{{@key}}', event)">XYZ</a>
+                <input id="xyz_style_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{&xyz_link}}" onclick="copyToClipboard(this)" />
               {{/if}}
             </p>
           </div>
           <div class="viewers">
               <a class="btn" href="/styles/{{@key}}/{{viewer_hash}}">Viewer</a>
-              <a class="btn" href="/styles/{{@key}}/?raster{{viewer_hash}}">Raster</a>
-              <a class="btn" href="/styles/{{@key}}/?vector{{viewer_hash}}">Vector</a>
+              {{#if serve_rendered}}
+                <a class="btn" href="/styles/{{@key}}/?raster{{viewer_hash}}">Raster</a>
+                <a class="btn" href="/styles/{{@key}}/?vector{{viewer_hash}}">Vector</a>
+              {{/if}}
           </div>
         </div>
       {{/each}}
@@ -107,11 +106,7 @@
       <div class="box">
       {{#each data}}
         <div class="item">
-          {{#if thumbnail}}
-            <img src="/data/{{@key}}/{{thumbnail}}" alt="{{name}} preview" />
-          {{else}}
-            <img src="/images/placeholder.png" alt="{{name}} preview" />
-          {{/if}}
+          <img src="{{thumbnail}}" alt="{{name}} preview" />
           <div class="details">
             <h3>{{name}}</h3>
             <div class="identifier">identifier: {{@key}}</div>
@@ -120,8 +115,8 @@
             <p class="services">
               services: <a href="/data/{{@key}}.json">TileJSON</a>
               {{#if xyz_link}}
-                | <a href="#" onclick="toggleXYZ('xyz_data_{{@key}}', event);">XYZ</a>
-                <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{&xyz_link}}" onclick="copyToClipboard(this);" />
+                | <a href="#" onclick="toggleXYZ('xyz_data_{{@key}}', event)">XYZ</a>
+                <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{&xyz_link}}" onclick="copyToClipboard(this)" />
               {{/if}}
             </p>
           </div>
@@ -137,6 +132,6 @@
       </div>
     </div>
   </section>
-  <a href="#" class="back-to-top" onclick="scrollToTop(event);">Back to top</a>
+  <a href="#" class="back-to-top" onclick="scrollToTop(event)">Back to top</a>
 </body>
 </html>

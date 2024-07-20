@@ -51,6 +51,7 @@ Example config.json content:
 			"restartEndpoint": true,
 			"frontPage": true,
 			"serveWMTS": true,
+			"serveRendered": true,
 			"maxScaleRender": 2,
 			"minPoolSize": 8,
 			"maxPoolSize": 16

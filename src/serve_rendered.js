@@ -18,14 +18,6 @@ import {
   getURL,
 } from "./utils.js";
 
-mlgl.on("message", (error) => {
-  if (error.severity === "ERROR") {
-    printLog("error", `mlgl: ${JSON.stringify(error)}`);
-  } else if (error.severity === "WARNING") {
-    printLog("warning", `mlgl: ${JSON.stringify(error)}`);
-  }
-});
-
 function getRenderedTileHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
@@ -204,8 +196,13 @@ export const serve_rendered = {
   init: (config) => {
     const app = express();
 
+    /* Get all style rendereds */
     app.get("/rendereds.json", getRenderedsListHandler(config));
+
+    /* Get style rendered */
     app.get("/(:tileSize(256|512)/)?:id.json", getRenderedHandler(config));
+
+    /* Serve style xyz */
     app.get(
       `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(@\\d+x)?.:format([\\w]+)`,
       getRenderedTileHandler(config)
@@ -215,6 +212,14 @@ export const serve_rendered = {
   },
 
   add: async (config) => {
+    mlgl.on("message", (error) => {
+      if (error.severity === "ERROR") {
+        printLog("error", `mlgl: ${JSON.stringify(error)}`);
+      } else if (error.severity === "WARNING") {
+        printLog("warning", `mlgl: ${JSON.stringify(error)}`);
+      }
+    });
+
     await Promise.all(
       Object.keys(config.repo.styles).map(async (style) => {
         const item = config.repo.styles[style];

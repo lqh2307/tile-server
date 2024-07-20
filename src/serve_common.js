@@ -47,12 +47,15 @@ export const serve_common = {
   init: (config) => {
     const app = express();
 
+    /* Check health */
     app.get("/health", serveHealthHandler(config));
 
+    /* Restart */
     if (config.options.restartEndpoint === true) {
       app.get("/restart", serveRestartHandler());
     }
 
+    /* Kill */
     if (config.options.killEndpoint === true) {
       app.get("/kill", serveKillHandler());
     }

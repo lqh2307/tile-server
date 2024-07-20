@@ -4,7 +4,6 @@ import path from "node:path";
 import morgan from "morgan";
 import express from "express";
 import chokidar from "chokidar";
-import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
@@ -60,6 +59,7 @@ function loadConfigFile() {
         restartEndpoint: config.options?.restartEndpoint ?? true,
         frontPage: config.options?.frontPage ?? true,
         serveWMTS: config.options?.serveWMTS ?? true,
+        serveRendered: config.options?.serveRendered ?? true,
         maxScaleRender: config.options?.maxScaleRender || 1,
         minPoolSize: config.options?.minPoolSize || 8,
         maxPoolSize: config.options?.maxPoolSize || 16,
@@ -119,12 +119,11 @@ export function startServer() {
       })
     )
     .use("/", serve_common.init(config))
+    .use("/", serve_template.init(config))
     .use("/fonts", serve_font.init(config))
     .use("/sprites", serve_sprite.init(config))
     .use("/data", serve_data.init(config))
     .use("/styles", serve_style.init(config))
-    .use("/styles", serve_rendered.init(config))
-    .use("/", serve_template.init(config))
     .listen(config.options.listenPort, () => {
       printLog("info", `Listening on port: ${config.options.listenPort}`);
     });
@@ -170,11 +169,7 @@ export function startServer() {
   Promise.all([
     serve_font.add(config),
     serve_sprite.add(config),
-    serve_data
-      .add(config)
-      .then(() =>
-        serve_style.add(config).then(() => serve_rendered.add(config))
-      ),
+    serve_data.add(config).then(() => serve_style.add(config)),
   ])
     .then(() => {
       printLog("info", "Load data complete!");

@@ -65,7 +65,10 @@ export const serve_sprite = {
   init: (config) => {
     const app = express();
 
+    /* Get all sprites */
     app.get("/sprites.json", getSpritesListHandler(config));
+
+    /* Get sprite */
     app.get(
       "/:id/sprite:scale(@\\d+x)?.:format([\\w]+)",
       getSpriteHandler(config)

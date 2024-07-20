@@ -5,6 +5,7 @@ import path from "node:path";
 import express from "express";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { printLog, getURL } from "./utils.js";
+import { serve_rendered } from "./serve_rendered.js";
 
 function getStyleHandler(config) {
   return async (req, res, next) => {
@@ -117,8 +118,16 @@ export const serve_style = {
   init: (config) => {
     const app = express();
 
-    app.get("/styles.json", getStylesListHandler(config));
+    /* Get style */
     app.get("/:id/style.json", getStyleHandler(config));
+
+    /* Get all styles */
+    app.get("/styles.json", getStylesListHandler(config));
+
+    /* Serve rendered */
+    if (config.options.serveRendered === true) {
+      app.use("/styles", serve_rendered.init(config));
+    }
 
     return app;
   },
@@ -260,5 +269,9 @@ export const serve_style = {
         }
       })
     );
+
+    if (config.options.serveRendered === true) {
+      await serve_rendered.add(config);
+    }
   },
 };

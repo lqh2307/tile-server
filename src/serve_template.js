@@ -7,13 +7,13 @@ import handlebars from "handlebars";
 import SphericalMercator from "@mapbox/sphericalmercator";
 import { getURL } from "./utils.js";
 
-const mercator = new SphericalMercator();
-
 function serveFrontPageHandler(config) {
   return async (req, res, next) => {
     if (config.startupComplete === false) {
       return res.status(503).send("Starting...");
     }
+
+    const mercator = new SphericalMercator();
 
     const styles = {};
     const datas = {};
@@ -24,7 +24,7 @@ function serveFrontPageHandler(config) {
         const center = style.tileJSON.center;
 
         let viewerHash = "";
-        let thumbnail = "";
+        let thumbnail = "/images/placeholder.png";
         if (center) {
           viewerHash = `#${center[2]}/${center[1]}/${center[0]}`;
 
@@ -32,15 +32,25 @@ function serveFrontPageHandler(config) {
           const x = Math.floor(centerPx[0] / 256);
           const y = Math.floor(centerPx[1] / 256);
 
-          thumbnail = `${center[2]}/${x}/${y}.png`;
+          if (config.options.serveRendered === true) {
+            thumbnail = `${getURL(req)}styles/${id}/256/${
+              center[2]
+            }/${x}/${y}.png`;
+          }
+        }
+
+        let xyzLink = "";
+        if (config.options.serveRendered === true) {
+          xyzLink = `${getURL(req)}styles/${id}/256/{z}/{x}/{y}.png`;
         }
 
         styles[id] = {
           name: style.tileJSON.name || "",
-          xyz_link: `${getURL(req)}styles/${id}/256/{z}/{x}/{y}.png`,
+          xyz_link: xyzLink,
           viewer_hash: viewerHash,
           thumbnail: thumbnail,
           serve_wmts: config.options.serveWMTS === true,
+          serve_rendered: config.options.serveRendered === true,
         };
       }),
       ...Object.keys(config.repo.datas).map(async (id) => {
@@ -48,7 +58,7 @@ function serveFrontPageHandler(config) {
         const { center, format, filesize } = data.tileJSON;
 
         let viewerHash = "";
-        let thumbnail = "";
+        let thumbnail = "/images/placeholder.png";
         if (center) {
           viewerHash = `#${center[2]}/${center[1]}/${center[0]}`;
 
@@ -57,7 +67,9 @@ function serveFrontPageHandler(config) {
             const x = Math.floor(centerPx[0] / 256);
             const y = Math.floor(centerPx[1] / 256);
 
-            thumbnail = `${center[2]}/${x}/${y}.${format}`;
+            thumbnail = `${getURL(req)}data/${id}/${
+              center[2]
+            }/${x}/${y}.${format}`;
           }
         }
 
@@ -79,9 +91,11 @@ function serveFrontPageHandler(config) {
           formattedFilesize = `${size.toFixed(2)} ${suffix}`;
         }
 
+        const xyzLink = `${getURL(req)}data/${id}/{z}/{x}/{y}.${format}`;
+
         datas[id] = {
           name: data.tileJSON.name || "",
-          xyz_link: `${getURL(req)}data/${id}/{z}/{x}/{y}.${format}`,
+          xyz_link: xyzLink,
           viewer_hash: viewerHash,
           thumbnail: thumbnail,
           source_type: data.sourceType,
@@ -199,13 +213,23 @@ export const serve_template = {
       express.static(path.resolve("public", "resources"))
     );
 
-    if (config.options.serveWMTS === true) {
+    /* Get WMTS */
+    if (
+      config.options.serveRendered === true &&
+      config.options.serveWMTS === true
+    ) {
       app.get("/styles/:id/wmts.xml", serveWMTSHandler(config));
     }
 
-    app.get("/styles/:id/$", serveStyleHandler(config));
+    /* Serve style */
+    if (config.options.serveRendered === true) {
+      app.get("/styles/:id/$", serveStyleHandler(config));
+    }
+
+    /* Serve data */
     app.use("/data/:id/$", serveDataHandler(config));
 
+    /* Serve front page */
     if (config.options.frontPage === true) {
       app.get("/$", serveFrontPageHandler(config));
     }

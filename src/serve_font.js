@@ -46,7 +46,10 @@ export const serve_font = {
   init: (config) => {
     const app = express();
 
+    /* Get all fonts */
     app.get("/fonts.json", getFontsListHandler(config));
+
+    /* Get font */
     app.get("/:id/:range(\\d{1,5}-\\d{1,5}).pbf", getFontHandler(config));
 
     return app;

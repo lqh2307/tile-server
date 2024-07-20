@@ -124,8 +124,13 @@ export const serve_data = {
   init: (config) => {
     const app = express();
 
+    /* Get all datas */
     app.get("/datas.json", getDatasListHandler(config));
+
+    /* Get data */
     app.get("/:id.json", getDataHandler(config));
+
+    /* Serve data xyz */
     app.get(
       `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format([\\w]+)`,
       getDataTileHandler(config)

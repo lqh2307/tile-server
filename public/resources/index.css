@@ -10,6 +10,7 @@ a {
   color: #499dce;
   transition: color 0.2s;
 }
+
 a:hover {
   color: #395d73;
 }
@@ -34,9 +35,11 @@ section {
   border: 1px solid #ededed;
   border-top: none;
 }
+
 .item:nth-child(odd) {
   background-color: #fbfbfb;
 }
+
 .item img {
   position: absolute;
   display: block;
@@ -51,10 +54,12 @@ section {
   height: 128px;
   padding: 20px 30px 20px 188px;
 }
+
 .details h3 {
   font-size: 18px;
   margin-top: 25px;
 }
+
 .details p {
   padding: 0;
   margin: 18px 0;
@@ -73,6 +78,7 @@ section {
   margin: 0;
   line-height: 36px;
 }
+
 .btn:first-child {
   position: relative;
   padding: 0;
@@ -84,6 +90,7 @@ section {
   text-decoration: none;
   font-weight: bold;
 }
+
 .btn:first-child:hover {
   background: #395d73;
 }
@@ -98,6 +105,7 @@ section {
   display: flex;
   cursor: pointer;
 }
+
 .tab {
   border: 1px solid #ddd;
   background: #f9f9f9;
@@ -106,19 +114,23 @@ section {
   padding: 10px 25px;
   font-size: 18px;
 }
+
 .tab.active {
   background: #fff;
   font-weight: 700;
   border-bottom: 1px solid #fff;
 }
+
 .tab-content {
   display: none;
   border: 1px solid #ddd;
   background: #fff;
 }
+
 .tab-content.active {
   display: block;
 }
+
 .back-to-top {
   position: fixed;
   bottom: 15px;
@@ -126,13 +138,14 @@ section {
   border: 1px solid #ddd;
   padding: 10px 20px;
   border-radius: 25px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   font-size: 13px;
   background: #fff;
   text-decoration: none;
   display: none;
   align-items: center;
 }
+
 .back-to-top:hover {
   background-color: #f0f0f0;
 }
@@ -145,6 +158,7 @@ section {
     padding: 2%;
   }
 }
+
 @media (max-width: 600px) {
   .title {
     font-weight: bold;
@@ -153,9 +167,11 @@ section {
     font-size: 20px;
     margin: 10px 0 -5px 0;
   }
+
   .item {
     height: 245px;
   }
+
   .viewers {
     float: left;
     text-align: left;
@@ -163,13 +179,16 @@ section {
     margin-left: 30px;
     margin-top: 15px;
   }
+
   .viewers a {
     display: inline-block;
     vertical-align: middle;
   }
+
   .btn {
     margin: 0 20px 0 0;
   }
+
   .btn:first-child {
     padding: 0 20px;
   }
