@@ -47,11 +47,6 @@ function getRenderedTileHandler(config) {
       return res.status(404).send("Rendered data is not found");
     }
 
-    /* Check rendered data tile bounds */
-    z = Number(req.params.z);
-    x = Number(req.params.x);
-    y = Number(req.params.y);
-
     /* Check rendered data tile scale */
     const scale = Number(req.params.scale?.slice(1, -1)) || 1;
 
@@ -59,6 +54,9 @@ function getRenderedTileHandler(config) {
       return res.status(400).send("Rendered data tile scale is invalid");
     }
 
+    const z = Number(req.params.z);
+    const x = Number(req.params.x);
+    const y = Number(req.params.y);
     const tileSize = Number(req.params.tileSize) || 256;
 
     // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
