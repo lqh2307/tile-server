@@ -65,6 +65,8 @@ function loadConfigFile(dataDir) {
         fonts: {},
         sprites: {},
       },
+      configFilePath: configFilePath,
+      startupComplete: false,
     };
 
     /* Check directory paths */
@@ -109,9 +111,7 @@ export function startServer(dataDir) {
       `Watch config file changes interval ${watchToKill}ms to kill server`
     );
 
-    const configFilePath = path.join(dataDir, "config.json");
-
-    const newChokidar = chokidar.watch(configFilePath, {
+    const newChokidar = chokidar.watch(config.configFilePath, {
       usePolling: true,
       awaitWriteFinish: true,
       interval: watchToKill,
@@ -128,9 +128,7 @@ export function startServer(dataDir) {
       `Watch config file changes interval ${watchToRestart}ms to restart server`
     );
 
-    const configFilePath = path.join(dataDir, "config.json");
-
-    const newChokidar = chokidar.watch(configFilePath, {
+    const newChokidar = chokidar.watch(config.configFilePath, {
       usePolling: true,
       awaitWriteFinish: true,
       interval: watchToRestart,
@@ -142,8 +140,6 @@ export function startServer(dataDir) {
       process.exit(1);
     });
   }
-
-  let startupComplete = false;
 
   /* Load data */
   Promise.all([
@@ -158,7 +154,7 @@ export function startServer(dataDir) {
     .then(() => {
       printLog("info", "Load data complete!");
 
-      startupComplete = true;
+      config.startupComplete = true;
     })
     .catch((error) => {
       printLog("error", `Failed to load data: ${error}`);
@@ -183,7 +179,7 @@ export function startServer(dataDir) {
 
   /* Asign endpoint */
   app.get("/health", async (req, res, next) => {
-    if (startupComplete === true) {
+    if (config.startupComplete === true) {
       return res.status(200).send("OK");
     } else {
       return res.status(503).send("Starting");
