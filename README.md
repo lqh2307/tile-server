@@ -39,11 +39,6 @@ Example config.json content:
 				"mbtiles": "mbtiles",
 				"pmtiles": "pmtiles"
 			},
-			"formatQuality": {
-				"jpeg": 100,
-				"webp": 100,
-				"avif": 100
-			},
 			"listenPort": 8080,
 			"watchToKill": 0,
 			"watchToRestart": 1000,

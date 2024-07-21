@@ -4,6 +4,7 @@ import path from "node:path";
 import morgan from "morgan";
 import express from "express";
 import chokidar from "chokidar";
+import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
@@ -13,7 +14,7 @@ import { serve_data } from "./serve_data.js";
 import { printLog } from "./utils.js";
 
 const DATA_DIR_PATH = path.resolve("data");
-const CONFIG_FILE_PATH = path.join(dataDirPath, "config.json");
+const CONFIG_FILE_PATH = path.join(DATA_DIR_PATH, "config.json");
 
 /**
  * Load config file and assign default
@@ -46,11 +47,6 @@ function loadConfigFile() {
             DATA_DIR_PATH,
             config.options?.paths?.pmtiles || ""
           ),
-        },
-        formatQuality: {
-          jpeg: config.options?.formatQuality?.jpeg || 100,
-          webp: config.options?.formatQuality?.webp || 100,
-          avif: config.options?.formatQuality?.avif || 100,
         },
         listenPort: config.options?.listenPort || 8080,
         watchToKill: config.options?.watchToKill || 0,
@@ -124,6 +120,7 @@ export function startServer() {
     .use("/sprites", serve_sprite.init(config))
     .use("/data", serve_data.init(config))
     .use("/styles", serve_style.init(config))
+    .use("/styles", serve_rendered.init(config))
     .listen(config.options.listenPort, () => {
       printLog("info", `Listening on port: ${config.options.listenPort}`);
     });
@@ -169,7 +166,11 @@ export function startServer() {
   Promise.all([
     serve_font.add(config),
     serve_sprite.add(config),
-    serve_data.add(config).then(() => serve_style.add(config)),
+    serve_data
+      .add(config)
+      .then(() =>
+        serve_style.add(config).then(() => serve_rendered.add(config))
+      ),
   ])
     .then(() => {
       printLog("info", "Load data complete!");

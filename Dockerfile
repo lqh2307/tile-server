@@ -70,12 +70,12 @@ COPY --from=builder /usr/bin/node /usr/bin/node
 COPY --from=builder /usr/include/node /usr/include/node
 COPY --from=builder /usr/share/doc/node /usr/share/doc/node
 
-RUN mkdir data data/fonts data/sprites data/mbtiles data/pmtiles data/styles
-RUN cp public/resources/config/config.json config.json
-RUN chmod +x entrypoint.sh
+RUN mkdir ./data ./data/fonts ./data/sprites ./data/mbtiles ./data/pmtiles ./data/styles
+RUN cp ./public/resources/config/config.json ./data/config.json
+RUN chmod +x ./entrypoint.sh
 
 VOLUME /tile-server/data
 
 EXPOSE 8080
 
-ENTRYPOINT ["entrypoint.sh"]
+ENTRYPOINT ["./entrypoint.sh"]

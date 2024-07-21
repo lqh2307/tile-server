@@ -5,7 +5,6 @@ import path from "node:path";
 import express from "express";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { printLog, getURL } from "./utils.js";
-import { serve_rendered } from "./serve_rendered.js";
 
 function getStyleHandler(config) {
   return async (req, res, next) => {
@@ -124,11 +123,6 @@ export const serve_style = {
     /* Get all styles */
     app.get("/styles.json", getStylesListHandler(config));
 
-    /* Serve rendered */
-    if (config.options.serveRendered === true) {
-      app.use("/styles", serve_rendered.init(config));
-    }
-
     return app;
   },
 
@@ -242,7 +236,7 @@ export const serve_style = {
                   sourceTile.startsWith("pmtiles://") === true ||
                   sourceTile.startsWith("mbtiles://") === true
                 ) {
-                  const sourceID = sourceURL.slice(10);
+                  const sourceID = sourceTile.slice(10);
 
                   if (!config.repo.datas[sourceID]) {
                     throw Error(`Source "${source}" is not found`);
@@ -269,9 +263,5 @@ export const serve_style = {
         }
       })
     );
-
-    if (config.options.serveRendered === true) {
-      await serve_rendered.add(config);
-    }
   },
 };

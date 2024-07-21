@@ -7,11 +7,6 @@
       "mbtiles": "mbtiles",
       "pmtiles": "pmtiles"
     },
-    "formatQuality": {
-      "jpeg": 100,
-      "webp": 100,
-      "avif": 100
-    },
     "listenPort": 8080,
     "watchToKill": 0,
     "watchToRestart": 1000,
@@ -20,7 +15,7 @@
     "frontPage": true,
     "serveWMTS": true,
     "serveRendered": true,
-    "maxScaleRender": 1,
+    "maxScaleRender": 2,
     "minPoolSize": 8,
     "maxPoolSize": 16
   },

@@ -4,8 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import express from "express";
 import handlebars from "handlebars";
-import SphericalMercator from "@mapbox/sphericalmercator";
-import { getURL } from "./utils.js";
+import { getURL, mercator } from "./utils.js";
 
 function serveFrontPageHandler(config) {
   return async (req, res, next) => {
@@ -13,19 +12,17 @@ function serveFrontPageHandler(config) {
       return res.status(503).send("Starting...");
     }
 
-    const mercator = new SphericalMercator();
-
     const styles = {};
     const datas = {};
 
     await Promise.all([
       ...Object.keys(config.repo.rendereds).map(async (id) => {
         const style = config.repo.rendereds[id];
-        const center = style.tileJSON.center;
+        const { name, center } = style.tileJSON;
 
         let viewerHash = "";
         let thumbnail = "/images/placeholder.png";
-        if (center) {
+        if (center !== undefined) {
           viewerHash = `#${center[2]}/${center[1]}/${center[0]}`;
 
           const centerPx = mercator.px([center[0], center[1]], center[2]);
@@ -45,21 +42,23 @@ function serveFrontPageHandler(config) {
         }
 
         styles[id] = {
-          name: style.tileJSON.name || "",
+          name: name || "",
           xyz_link: xyzLink,
           viewer_hash: viewerHash,
           thumbnail: thumbnail,
-          serve_wmts: config.options.serveWMTS === true,
+          serve_wmts:
+            config.options.serveRendered === true &&
+            config.options.serveWMTS === true,
           serve_rendered: config.options.serveRendered === true,
         };
       }),
       ...Object.keys(config.repo.datas).map(async (id) => {
         const data = config.repo.datas[id];
-        const { center, format, filesize } = data.tileJSON;
+        const { name, center, format, filesize } = data.tileJSON;
 
         let viewerHash = "";
         let thumbnail = "/images/placeholder.png";
-        if (center) {
+        if (center !== undefined) {
           viewerHash = `#${center[2]}/${center[1]}/${center[0]}`;
 
           if (format !== "pbf") {
@@ -74,7 +73,7 @@ function serveFrontPageHandler(config) {
         }
 
         let formattedFilesize = "unknown";
-        if (filesize) {
+        if (filesize !== undefined) {
           let suffix = "KB";
           let size = filesize / 1024;
 
@@ -91,11 +90,9 @@ function serveFrontPageHandler(config) {
           formattedFilesize = `${size.toFixed(2)} ${suffix}`;
         }
 
-        const xyzLink = `${getURL(req)}data/${id}/{z}/{x}/{y}.${format}`;
-
         datas[id] = {
-          name: data.tileJSON.name || "",
-          xyz_link: xyzLink,
+          name: name || "",
+          xyz_link: `${getURL(req)}data/${id}/{z}/{x}/{y}.${format}`,
           viewer_hash: viewerHash,
           thumbnail: thumbnail,
           source_type: data.sourceType,
@@ -151,11 +148,11 @@ function serveStyleHandler(config) {
 }
 
 function serveDataHandler(config) {
-  if (config.startupComplete === false) {
-    return res.status(503).send("Starting...");
-  }
-
   return async (req, res, next) => {
+    if (config.startupComplete === false) {
+      return res.status(503).send("Starting...");
+    }
+
     const id = decodeURI(req.params.id);
     const data = config.repo.datas[id];
 
@@ -222,9 +219,7 @@ export const serve_template = {
     }
 
     /* Serve style */
-    if (config.options.serveRendered === true) {
-      app.get("/styles/:id/$", serveStyleHandler(config));
-    }
+    app.get("/styles/:id/$", serveStyleHandler(config));
 
     /* Serve data */
     app.use("/data/:id/$", serveDataHandler(config));

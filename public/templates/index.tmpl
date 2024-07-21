@@ -87,7 +87,7 @@
               {{/if}}
               {{#if xyz_link}}
                 | <a href="#" onclick="toggleXYZ('xyz_style_{{@key}}', event)">XYZ</a>
-                <input id="xyz_style_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{&xyz_link}}" onclick="copyToClipboard(this)" />
+                <input id="xyz_style_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz_link}}" onclick="copyToClipboard(this)" />
               {{/if}}
             </p>
           </div>
@@ -116,7 +116,7 @@
               services: <a href="/data/{{@key}}.json">TileJSON</a>
               {{#if xyz_link}}
                 | <a href="#" onclick="toggleXYZ('xyz_data_{{@key}}', event)">XYZ</a>
-                <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{&xyz_link}}" onclick="copyToClipboard(this)" />
+                <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz_link}}" onclick="copyToClipboard(this)" />
               {{/if}}
             </p>
           </div>

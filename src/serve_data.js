@@ -21,18 +21,14 @@ function getDataTileHandler(config) {
     const id = decodeURI(req.params.id);
     const item = config.repo.datas[id];
 
-    /* Check data tile format */
-    if (
-      ["jpeg", "jpg", "pbf", "png", "webp", "avif"].includes(
-        req.params.format
-      ) === false
-    ) {
-      return res.status(400).send("Data tile format is invalid");
-    }
-
     /* Check data is exist? */
     if (!item) {
       return res.status(404).send("Data is not found");
+    }
+
+    /* Check data tile format */
+    if (req.params.format !== item.tileJSON.format) {
+      return res.status(400).send("Data tile format is invalid");
     }
 
     const z = Number(req.params.z);
@@ -132,7 +128,7 @@ export const serve_data = {
 
     /* Serve data xyz */
     app.get(
-      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format([\\w]+)`,
+      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp|avif)`,
       getDataTileHandler(config)
     );
 

@@ -1,7 +1,6 @@
 "use strict";
 
 import os from "os";
-import path from "node:path";
 import { startServer } from "./server.js";
 import { printLog } from "./utils.js";
 
