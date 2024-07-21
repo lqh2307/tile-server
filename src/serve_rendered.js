@@ -316,9 +316,7 @@ export const serve_rendered = {
         fixTileJSON(rendered.tileJSON);
 
         /* Create pools */
-        rendered.renderers = await Promise.all(
-          Array.from(
-            {
+        rendered.renderers = Array.from({
               length: config.options.maxScaleRender,
             },
             (_, scale) =>
@@ -468,8 +466,7 @@ export const serve_rendered = {
                   max: config.options.maxPoolSize,
                 }
               )
-          )
-        );
+          );
 
         /* Add to repo */
         config.repo.rendereds[style] = rendered;
