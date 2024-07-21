@@ -31,10 +31,10 @@ function getFontsListHandler(config) {
   return async (req, res, next) => {
     const fonts = config.repo.fonts;
 
-    const result = Object.keys(fonts).map((font) => {
+    const result = Object.keys(fonts).map((id) => {
       return {
-        name: font,
-        url: `${getURL(req)}fonts/${font}/{range}.pbf`,
+        name: id,
+        url: `${getURL(req)}fonts/${id}/{range}.pbf`,
       };
     });
 
@@ -57,19 +57,19 @@ export const serve_font = {
 
   add: async (config) => {
     await Promise.all(
-      Object.keys(config.fonts).map(async (font) => {
+      Object.keys(config.fonts).map(async (id) => {
         try {
           /* Validate font */
-          const dirPath = path.join(config.options.paths.fonts, font);
+          const dirPath = path.join(config.options.paths.fonts, id);
 
           await validateFont(dirPath);
 
           /* Add to repo */
-          config.repo.fonts[font] = true;
+          config.repo.fonts[id] = true;
         } catch (error) {
           printLog(
             "error",
-            `Failed to load font "${font}": ${error}. Skipping...`
+            `Failed to load font "${id}": ${error}. Skipping...`
           );
         }
       })

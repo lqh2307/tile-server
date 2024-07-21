@@ -10,7 +10,7 @@ function getSpriteHandler(config) {
     const id = decodeURI(req.params.id);
     const item = config.repo.sprites[id];
 
-    if (!item) {
+    if (item === undefined) {
       return res.status(404).send("Sprite is not found");
     }
 
@@ -42,12 +42,12 @@ function getSpritesListHandler(config) {
   return async (req, res, next) => {
     const sprites = config.repo.sprites;
 
-    const result = Object.keys(sprites).map((sprite) => {
+    const result = Object.keys(sprites).map((id) => {
       return {
-        name: sprite,
+        name: id,
         urls: [
-          `${getURL(req)}sprites/${sprite}/sprite.json`,
-          `${getURL(req)}sprites/${sprite}/sprite.png`,
+          `${getURL(req)}sprites/${id}/sprite.json`,
+          `${getURL(req)}sprites/${id}/sprite.png`,
         ],
       };
     });
@@ -74,19 +74,19 @@ export const serve_sprite = {
 
   add: async (config) => {
     await Promise.all(
-      Object.keys(config.sprites).map(async (sprite) => {
+      Object.keys(config.sprites).map(async (id) => {
         try {
           /* Validate sprite */
-          const dirPath = path.join(config.options.paths.sprites, sprite);
+          const dirPath = path.join(config.options.paths.sprites, id);
 
           await validateSprite(dirPath);
 
           /* Add to repo */
-          config.repo.sprites[sprite] = true;
+          config.repo.sprites[id] = true;
         } catch (error) {
           printLog(
             "error",
-            `Failed to load sprite "${sprite}": ${error}. Skipping...`
+            `Failed to load sprite "${id}": ${error}. Skipping...`
           );
         }
       })

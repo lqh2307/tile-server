@@ -25,7 +25,7 @@ function getRenderedTileHandler(config) {
     const item = config.repo.rendereds[id];
 
     /* Check rendered data is exist? */
-    if (!item) {
+    if (item === undefined) {
       return res.status(404).send("Rendered data is not found");
     }
 
@@ -132,7 +132,7 @@ function getRenderedHandler(config) {
     const id = decodeURI(req.params.id);
     const item = config.repo.rendereds[id];
 
-    if (!item) {
+    if (item === undefined) {
       return res.status(404).send("Rendered data is not found");
     }
 
@@ -153,15 +153,15 @@ function getRenderedsListHandler(config) {
   return async (req, res, next) => {
     const rendereds = config.repo.rendereds;
 
-    const result = Object.keys(rendereds).map((rendered) => {
-      const tileJSON = rendereds[rendered].tileJSON;
+    const result = Object.keys(rendereds).map((id) => {
+      const tileJSON = rendereds[id].tileJSON;
 
       return {
-        id: rendered,
+        id: id,
         name: tileJSON.name || "",
         url: [
-          `${getURL(req)}styles/256/${rendered}.json`,
-          `${getURL(req)}styles/512/${rendered}.json`,
+          `${getURL(req)}styles/256/${id}.json`,
+          `${getURL(req)}styles/512/${id}.json`,
         ],
       };
     });
@@ -203,8 +203,8 @@ export const serve_rendered = {
     }
 
     await Promise.all(
-      Object.keys(config.repo.styles).map(async (style) => {
-        const item = config.repo.styles[style];
+      Object.keys(config.repo.styles).map(async (id) => {
+        const item = config.repo.styles[id];
         const rendered = {
           tileJSON: {
             name: item.styleJSON.name || "",
@@ -234,67 +234,91 @@ export const serve_rendered = {
 
           await Promise.all(
             // Fix source urls
-            Object.keys(item.styleJSON.sources).map(async (name) => {
-              const oldSource = item.styleJSON.sources[name];
+            Object.keys(item.styleJSON.sources).map(async (id) => {
+              const oldSource = item.styleJSON.sources[id];
+              const sourceURL = oldSource.url;
+              const sourceURLs = oldSource.urls;
+              const sourceTiles = oldSource.tiles;
 
-              if (oldSource.url !== undefined) {
-                if (
-                  oldSource.url.startsWith("pmtiles://") === true ||
-                  oldSource.url.startsWith("mbtiles://") === true
-                ) {
-                  const sourceID = oldSource.url.slice(10);
-                  const sourceData = config.repo.datas[sourceID];
-                  const tileURL = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+              styleJSON.sources[id] = {
+                ...oldSource,
+              };
 
-                  styleJSON.sources[name] = {
-                    ...oldSource,
-                    ...sourceData.tileJSON,
-                    type: oldSource.type,
-                    tiles: [tileURL],
-                  };
+              if (sourceTiles !== undefined) {
+                const tiles = sourceTiles.map((tile) => {
+                  if (
+                    tile.startsWith("pmtiles://") === true ||
+                    tile.startsWith("mbtiles://") === true
+                  ) {
+                    const sourceID = tile.slice(10);
+                    const sourceData = config.repo.datas[sourceID];
 
-                  delete styleJSON.sources[name].url;
+                    tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+                  }
+
+                  return tile;
+                });
+
+                styleJSON.sources[id].tiles = tiles;
+              }
+
+              if (sourceURLs !== undefined) {
+                const otherUrls = [];
+
+                sourceURLs.forEach((url) => {
+                  if (
+                    url.startsWith("pmtiles://") === true ||
+                    url.startsWith("mbtiles://") === true
+                  ) {
+                    const sourceID = url.slice(10);
+                    const sourceData = config.repo.datas[sourceID];
+                    const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+
+                    if (styleJSON.sources[id].tiles !== undefined) {
+                      if (
+                        styleJSON.sources[id].tiles.includes(tile) === false
+                      ) {
+                        styleJSON.sources[id].tiles.push(tile);
+                      }
+                    } else {
+                      styleJSON.sources[id].tiles = [tile];
+                    }
+                  } else {
+                    otherUrls.push(url);
+                  }
+                });
+
+                if (otherUrls.length === 0) {
+                  delete styleJSON.sources[id].urls;
+                } else {
+                  styleJSON.sources[id].urls = otherUrls;
                 }
-              } else if (oldSource.urls !== undefined) {
-                const tileURLs = oldSource.urls.map((tileURL) => {
-                  if (
-                    tileURL.startsWith("pmtiles://") === true ||
-                    tileURL.startsWith("mbtiles://") === true
-                  ) {
-                    const sourceID = tileURL.slice(10);
-                    const sourceData = config.repo.datas[sourceID];
+              }
 
-                    tileURL = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+              if (sourceURL !== undefined) {
+                if (
+                  sourceURL.startsWith("pmtiles://") === true ||
+                  sourceURL.startsWith("mbtiles://") === true
+                ) {
+                  const sourceID = sourceURL.slice(10);
+                  const sourceData = config.repo.datas[sourceID];
+                  const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+
+                  if (styleJSON.sources[id].tiles !== undefined) {
+                    if (styleJSON.sources[id].tiles.includes(tile) === false) {
+                      styleJSON.sources[id].tiles.push(tile);
+                    }
+                  } else {
+                    styleJSON.sources[id] = {
+                      ...oldSource,
+                      ...sourceData.tileJSON,
+                      type: oldSource.type,
+                      tiles: [tile],
+                    };
                   }
 
-                  return tileURL;
-                });
-
-                styleJSON.sources[name] = {
-                  ...oldSource,
-                  tiles: tileURLs,
-                };
-
-                delete styleJSON.sources[name].urls;
-              } else if (oldSource.tiles !== undefined) {
-                const tileURLs = oldSource.tiles.map((tileURL) => {
-                  if (
-                    tileURL.startsWith("pmtiles://") === true ||
-                    tileURL.startsWith("mbtiles://") === true
-                  ) {
-                    const sourceID = tileURL.slice(10);
-                    const sourceData = config.repo.datas[sourceID];
-
-                    tileURL = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
-                  }
-
-                  return tileURL;
-                });
-
-                styleJSON.sources[name] = {
-                  ...oldSource,
-                  tiles: tileURLs,
-                };
+                  delete styleJSON.sources[id].url;
+                }
               }
 
               // Add atribution
@@ -463,7 +487,7 @@ export const serve_rendered = {
         }
 
         /* Add to repo */
-        config.repo.rendereds[style] = rendered;
+        config.repo.rendereds[id] = rendered;
       })
     );
   },

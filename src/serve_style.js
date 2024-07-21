@@ -11,7 +11,7 @@ function getStyleHandler(config) {
     const id = decodeURI(req.params.id);
     const item = config.repo.styles[id];
 
-    if (!item) {
+    if (item === undefined) {
       return res.status(404).send("Style is not found");
     }
 
@@ -42,50 +42,60 @@ function getStyleHandler(config) {
     }
 
     /* Fix source urls */
-    Object.keys(item.styleJSON.sources).forEach((name) => {
-      const oldSource = item.styleJSON.sources[name];
+    Object.keys(item.styleJSON.sources).forEach((id) => {
+      const oldSource = item.styleJSON.sources[id];
+      const sourceURL = oldSource.url;
+      const sourceURLs = oldSource.urls;
+      const sourceTiles = oldSource.tiles;
 
-      styleJSON.sources[name] = {
+      styleJSON.sources[id] = {
         ...oldSource,
       };
 
-      if (oldSource.url !== undefined) {
+      if (sourceURL !== undefined) {
         if (
-          oldSource.url.startsWith("mbtiles://") === true ||
-          oldSource.url.startsWith("pmtiles://") === true
+          sourceURL.startsWith("mbtiles://") === true ||
+          sourceURL.startsWith("pmtiles://") === true
         ) {
-          const sourceID = oldSource.url.slice(10);
+          const sourceID = sourceURL.slice(10);
 
-          styleJSON.sources[name].url = `${getURL(req)}data/${sourceID}.json`;
+          styleJSON.sources[id].url = `${getURL(req)}data/${sourceID}.json`;
         }
-      } else if (oldSource.urls !== undefined) {
-        styleJSON.sources[name].urls = oldSource.urls.map((sourceURL) => {
-          if (
-            sourceURL.startsWith("pmtiles://") === true ||
-            sourceURL.startsWith("mbtiles://") === true
-          ) {
-            const sourceID = sourceURL.slice(10);
+      }
 
-            sourceURL = `${getURL(req)}data/${sourceID}.json`;
+      if (sourceURLs !== undefined) {
+        const urls = sourceURLs.map((url) => {
+          if (
+            url.startsWith("pmtiles://") === true ||
+            url.startsWith("mbtiles://") === true
+          ) {
+            const sourceID = url.slice(10);
+
+            url = `${getURL(req)}data/${sourceID}.json`;
           }
 
-          return sourceURL;
+          return url;
         });
-      } else if (oldSource.tiles !== undefined) {
-        styleJSON.sources[name].tiles = oldSource.tiles.map((tileURL) => {
-          if (
-            tileURL.startsWith("pmtiles://") === true ||
-            tileURL.startsWith("mbtiles://") === true
-          ) {
-            const sourceID = tileURL.slice(10);
 
-            tileURL = `${getURL(req)}data/${sourceID}/{z}/{x}/{y}.${
-              config.repo.datas[sourceID].tileJSON.format
-            }`;
+        styleJSON.sources[id].urls = urls;
+      }
+
+      if (sourceTiles !== undefined) {
+        const tiles = sourceTiles.map((tile) => {
+          if (
+            tile.startsWith("pmtiles://") === true ||
+            tile.startsWith("mbtiles://") === true
+          ) {
+            const sourceID = tile.slice(10);
+            const format = config.repo.datas[sourceID].tileJSON.format;
+
+            tile = `${getURL(req)}data/${sourceID}/{z}/{x}/{y}.${format}`;
           }
 
-          return tileURL;
+          return tile;
         });
+
+        styleJSON.sources[id].tiles = tiles;
       }
     });
 
@@ -99,13 +109,13 @@ function getStylesListHandler(config) {
   return async (req, res, next) => {
     const styles = config.repo.styles;
 
-    const result = Object.keys(styles).map((style) => {
-      const item = styles[style];
+    const result = Object.keys(styles).map((id) => {
+      const item = styles[id];
 
       return {
-        id: style,
+        id: id,
         name: item.styleJSON.name || "",
-        url: `${getURL(req)}styles/${style}/style.json`,
+        url: `${getURL(req)}styles/${id}/style.json`,
       };
     });
 
@@ -128,8 +138,8 @@ export const serve_style = {
 
   add: async (config) => {
     await Promise.all(
-      Object.keys(config.styles).map(async (style) => {
-        const stylePath = config.styles[style].style;
+      Object.keys(config.styles).map(async (id) => {
+        const stylePath = config.styles[id].style;
 
         try {
           if (!stylePath) {
@@ -185,18 +195,13 @@ export const serve_style = {
           }
 
           /* Validate sources */
-          Object.keys(styleJSON.sources).forEach((source) => {
-            const sourceURL = styleJSON.sources[source].url;
-            const sourceURLs = styleJSON.sources[source].urls;
-            const sourceTiles = styleJSON.sources[source].tiles;
+          Object.keys(styleJSON.sources).forEach((id) => {
+            const oldSource = styleJSON.sources[id];
+            const sourceURL = oldSource.url;
+            const sourceURLs = oldSource.urls;
+            const sourceTiles = oldSource.tiles;
 
-            if (
-              sourceURL !== undefined &&
-              sourceURLs !== undefined &&
-              sourceTiles !== undefined
-            ) {
-              throw Error(`Source "${source}" is invalid`);
-            } else if (sourceURL !== undefined) {
+            if (sourceURL !== undefined) {
               if (
                 sourceURL.startsWith("pmtiles://") === true ||
                 sourceURL.startsWith("mbtiles://") === true
@@ -204,61 +209,65 @@ export const serve_style = {
                 const sourceID = sourceURL.slice(10);
 
                 if (!config.repo.datas[sourceID]) {
-                  throw Error(`Source "${source}" is not found`);
+                  throw Error(`Source "${id}" is not found`);
                 }
               } else if (
                 sourceURL.startsWith("https://") === false &&
                 sourceURL.startsWith("http://") === false
               ) {
-                throw Error(`Source "${source}" is invalid url`);
+                throw Error(`Source "${id}" is invalid url`);
               }
-            } else if (sourceURLs !== undefined) {
-              sourceURLs.forEach((sourceURL) => {
+            }
+
+            if (sourceURLs !== undefined) {
+              sourceURLs.forEach((url) => {
                 if (
-                  sourceURL.startsWith("pmtiles://") === true ||
-                  sourceURL.startsWith("mbtiles://") === true
+                  url.startsWith("pmtiles://") === true ||
+                  url.startsWith("mbtiles://") === true
                 ) {
-                  const sourceID = sourceURL.slice(10);
+                  const sourceID = url.slice(10);
 
                   if (!config.repo.datas[sourceID]) {
-                    throw Error(`Source "${source}" is not found`);
+                    throw Error(`Source "${id}" is not found`);
                   }
                 } else if (
-                  sourceURL.startsWith("https://") === false &&
-                  sourceURL.startsWith("http://") === false
+                  url.startsWith("https://") === false &&
+                  url.startsWith("http://") === false
                 ) {
-                  throw Error(`Source "${source}" is invalid urls`);
+                  throw Error(`Source "${id}" is invalid urls`);
                 }
               });
-            } else if (sourceTiles !== undefined) {
-              sourceTiles.forEach((sourceTile) => {
+            }
+
+            if (sourceTiles !== undefined) {
+              sourceTiles.forEach((tile) => {
                 if (
-                  sourceTile.startsWith("pmtiles://") === true ||
-                  sourceTile.startsWith("mbtiles://") === true
+                  tile.startsWith("pmtiles://") === true ||
+                  tile.startsWith("mbtiles://") === true
                 ) {
-                  const sourceID = sourceTile.slice(10);
+                  const sourceID = tile.slice(10);
 
                   if (!config.repo.datas[sourceID]) {
-                    throw Error(`Source "${source}" is not found`);
+                    throw Error(`Source "${id}" is not found`);
                   }
                 } else if (
-                  sourceTile.startsWith("https://") === false &&
-                  sourceTile.startsWith("http://") === false
+                  tile.startsWith("https://") === false &&
+                  tile.startsWith("http://") === false
                 ) {
-                  throw Error(`Source "${source}" is invalid tile urls`);
+                  throw Error(`Source "${id}" is invalid tile urls`);
                 }
               });
             }
           });
 
           /* Add to repo */
-          config.repo.styles[style] = {
+          config.repo.styles[id] = {
             styleJSON: styleJSON,
           };
         } catch (error) {
           printLog(
             "error",
-            `Failed to load style "${style}": ${error}. Skipping...`
+            `Failed to load style "${id}": ${error}. Skipping...`
           );
         }
       })

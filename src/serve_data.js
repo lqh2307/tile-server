@@ -22,7 +22,7 @@ function getDataTileHandler(config) {
     const item = config.repo.datas[id];
 
     /* Check data is exist? */
-    if (!item) {
+    if (item === undefined) {
       return res.status(404).send("Data is not found");
     }
 
@@ -83,7 +83,7 @@ function getDataHandler(config) {
     const id = decodeURI(req.params.id);
     const item = config.repo.datas[id];
 
-    if (!item) {
+    if (item === undefined) {
       return res.status(404).send("Data is not found");
     }
 
@@ -102,13 +102,13 @@ function getDatasListHandler(config) {
   return async (req, res, next) => {
     const datas = config.repo.datas;
 
-    const result = Object.keys(datas).map((data) => {
-      const item = datas[data];
+    const result = Object.keys(datas).map((id) => {
+      const item = datas[id];
 
       return {
-        id: data,
+        id: id,
         name: item.tileJSON.name || "",
-        url: `${getURL(req)}data/${data}.json`,
+        url: `${getURL(req)}data/${id}.json`,
       };
     });
 
@@ -137,8 +137,8 @@ export const serve_data = {
 
   add: async (config) => {
     await Promise.all(
-      Object.keys(config.data).map(async (data) => {
-        const item = config.data[data];
+      Object.keys(config.data).map(async (id) => {
+        const item = config.data[id];
         const dataInfo = {};
 
         let inputDataFile;
@@ -151,13 +151,13 @@ export const serve_data = {
             ) {
               inputDataFile = path.join(
                 config.options.paths.mbtiles,
-                data,
-                `${data}.mbtiles`
+                id,
+                `${id}.mbtiles`
               );
 
               await downloadFile(item.mbtiles, inputDataFile);
 
-              item.mbtiles = path.join(data, `${data}.mbtiles`);
+              item.mbtiles = path.join(id, `${id}.mbtiles`);
             } else {
               inputDataFile = path.join(
                 config.options.paths.mbtiles,
@@ -205,11 +205,11 @@ export const serve_data = {
           fixTileJSON(dataInfo.tileJSON);
 
           /* Add to repo */
-          config.repo.datas[data] = dataInfo;
+          config.repo.datas[id] = dataInfo;
         } catch (error) {
           printLog(
             "error",
-            `Failed to load data "${data}": ${error}. Skipping...`
+            `Failed to load data "${id}": ${error}. Skipping...`
           );
         }
       })
