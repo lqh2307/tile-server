@@ -126,15 +126,15 @@ function serveStyleHandler(config) {
     }
 
     const id = decodeURI(req.params.id);
-    const style = config.repo.rendereds[id];
+    const item = config.repo.rendereds[id];
 
-    if (!style) {
+    if (item === undefined) {
       return res.status(404).send("Style is not found");
     }
 
     const serveData = {
       id: id,
-      name: style.tileJSON.name || "",
+      name: item.tileJSON.name || "",
     };
 
     const filePath = path.resolve("public", "templates", "viewer.tmpl");
@@ -154,16 +154,16 @@ function serveDataHandler(config) {
     }
 
     const id = decodeURI(req.params.id);
-    const data = config.repo.datas[id];
+    const item = config.repo.datas[id];
 
-    if (!data) {
+    if (item === undefined) {
       return res.status(404).send("Data is not found");
     }
 
     const serveData = {
       id: id,
-      name: data.tileJSON.name || "",
-      is_vector: data.tileJSON.format === "pbf",
+      name: item.tileJSON.name || "",
+      is_vector: item.tileJSON.format === "pbf",
     };
 
     const filePath = path.resolve("public", "templates", "data.tmpl");
@@ -179,15 +179,15 @@ function serveDataHandler(config) {
 function serveWMTSHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
-    const wmts = config.repo.rendereds[id];
+    const item = config.repo.rendereds[id];
 
-    if (!wmts) {
+    if (item === undefined) {
       return res.status(404).send("WMTS is not found");
     }
 
     const serveData = {
       id: id,
-      name: wmts.tileJSON.name || "",
+      name: item.tileJSON.name || "",
       base_url: getURL(req),
     };
 
