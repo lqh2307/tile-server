@@ -208,7 +208,6 @@ export const serve_rendered = {
         const rendered = {
           tileJSON: {
             name: item.styleJSON.name || "",
-            attribution: "",
             format: "png",
           },
         };
@@ -284,7 +283,9 @@ export const serve_rendered = {
                       styleJSON.sources[id].tiles = [tile];
                     }
                   } else {
-                    otherUrls.push(url);
+                    if (otherUrls.includes(url) === false) {
+                      otherUrls.push(url);
+                    }
                   }
                 });
 
@@ -309,15 +310,33 @@ export const serve_rendered = {
                       styleJSON.sources[id].tiles.push(tile);
                     }
                   } else {
-                    styleJSON.sources[id] = {
-                      ...oldSource,
-                      ...sourceData.tileJSON,
-                      type: oldSource.type,
-                      tiles: [tile],
-                    };
+                    styleJSON.sources[id].tiles = [tile];
                   }
 
                   delete styleJSON.sources[id].url;
+                }
+              }
+
+              if (
+                styleJSON.sources[id].url === undefined &&
+                styleJSON.sources[id].urls === undefined &&
+                styleJSON.sources[id].tiles !== undefined
+              ) {
+                if (styleJSON.sources[id].tiles.length === 1) {
+                  const tileURL = styleJSON.sources[id].tiles[0];
+                  if (
+                    tileURL.startsWith("pmtiles://") === true ||
+                    tileURL.startsWith("mbtiles://") === true
+                  ) {
+                    const sourceID = tileURL.split("/")[2];
+                    const sourceData = config.repo.datas[sourceID];
+
+                    styleJSON.sources[id] = {
+                      ...sourceData.tileJSON,
+                      ...styleJSON.sources[id],
+                      tiles: [tileURL],
+                    };
+                  }
                 }
               }
 

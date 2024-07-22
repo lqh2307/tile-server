@@ -45,7 +45,9 @@ export function responseEmptyTile(format, callback) {
         });
       })
       .catch((error) => {
-        printLog("error", error);
+        callback(error, {
+          data: null,
+        });
       });
   } else {
     /* pbf and other formats */
@@ -100,6 +102,10 @@ export function getURL(req) {
 export function fixTileJSON(tileJSON) {
   if (tileJSON.tilejson === undefined) {
     tileJSON.tilejson = "2.2.0";
+  }
+
+  if (tileJSON.attribution === undefined) {
+    tileJSON.attribution = "";
   }
 
   if (tileJSON.type === undefined) {
