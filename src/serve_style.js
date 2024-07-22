@@ -77,7 +77,7 @@ function getStyleHandler(config) {
           return url;
         });
 
-        styleJSON.sources[id].urls = urls;
+        styleJSON.sources[id].urls = [...new Set(urls)];
       }
 
       if (sourceTiles !== undefined) {
@@ -95,7 +95,7 @@ function getStyleHandler(config) {
           return tile;
         });
 
-        styleJSON.sources[id].tiles = tiles;
+        styleJSON.sources[id].tiles = [...new Set(tiles)];
       }
     });
 
