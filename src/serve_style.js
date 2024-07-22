@@ -220,6 +220,10 @@ export const serve_style = {
             }
 
             if (sourceURLs !== undefined) {
+              if (sourceURLs.length === 0) {
+                throw Error(`Source "${id}" is invalid urls`);
+              }
+
               sourceURLs.forEach((url) => {
                 if (
                   url.startsWith("pmtiles://") === true ||
@@ -240,6 +244,10 @@ export const serve_style = {
             }
 
             if (sourceTiles !== undefined) {
+              if (sourceTiles.length === 0) {
+                throw Error(`Source "${id}" is invalid tile urls`);
+              }
+
               sourceTiles.forEach((tile) => {
                 if (
                   tile.startsWith("pmtiles://") === true ||
