@@ -98,9 +98,7 @@ function getRenderedTileHandler(config) {
         // END HACK(Part 2)
 
         image
-          .png({
-            adaptiveFiltering: false,
-          })
+          .png()
           .toBuffer()
           .then((data) => {
             res.header("Content-Type", `image/png`);
@@ -139,7 +137,9 @@ function getRenderedHandler(config) {
     const info = {
       ...item.tileJSON,
       tiles: [
-        `${getURL(req)}styles/${id}/${req.params.tileSize || 256}/{z}/{x}/{y}.png`,
+        `${getURL(req)}styles/${id}/${
+          req.params.tileSize || 256
+        }/{z}/{x}/{y}.png`,
       ],
     };
 

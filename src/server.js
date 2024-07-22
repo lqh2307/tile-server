@@ -166,12 +166,10 @@ export function startServer() {
   Promise.all([
     serve_font.add(config),
     serve_sprite.add(config),
-    serve_data
-      .add(config)
-      .then(() =>
-        serve_style.add(config).then(() => serve_rendered.add(config))
-      ),
+    serve_data.add(config),
   ])
+    .then(() => serve_style.add(config))
+    .then(() => serve_rendered.add(config))
     .then(() => {
       printLog("info", "Load data complete!");
 
