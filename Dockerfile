@@ -3,8 +3,6 @@ ARG TARGET_IMAGE=ubuntu:22.04
 
 FROM $BUILDER_IMAGE AS builder
 
-USER root
-
 RUN \
   set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
@@ -43,8 +41,6 @@ RUN npm install --omit=dev;
 
 FROM $TARGET_IMAGE AS final
 
-USER root
-
 RUN \
   set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
@@ -66,13 +62,12 @@ RUN \
 WORKDIR /tile-server
 
 COPY --from=builder /tile-server .
+COPY --from=builder /tile-server/public/resources/config/config.json ./data/config.json
 COPY --from=builder /usr/bin/node /usr/bin/node
 COPY --from=builder /usr/include/node /usr/include/node
 COPY --from=builder /usr/share/doc/node /usr/share/doc/node
 
-RUN mkdir ./data ./data/fonts ./data/sprites ./data/mbtiles ./data/pmtiles ./data/styles
-RUN cp ./public/resources/config/config.json ./data/config.json
-RUN chmod +x ./entrypoint.sh
+RUN mkdir ./data/fonts ./data/sprites ./data/mbtiles ./data/pmtiles ./data/styles
 
 VOLUME /tile-server/data
 
