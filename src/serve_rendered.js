@@ -447,7 +447,10 @@ export const serve_rendered = {
                               `Failed to get data "${sourceID}" - Tile ${z}/${x}/${y}: ${error}. Serving empty tile...`
                             );
 
-                            responseEmptyTile(callback);
+                            responseEmptyTile(
+                              sourceData.tileJSON.format,
+                              callback
+                            );
                           }
                         } else if (
                           protocol === "http:" ||
@@ -464,7 +467,10 @@ export const serve_rendered = {
                           } catch (error) {
                             printLog("warning", error);
 
-                            responseEmptyTile(callback);
+                            responseEmptyTile(
+                              url.slice(url.lastIndexOf(".") + 1),
+                              callback
+                            );
                           }
                         }
                       },

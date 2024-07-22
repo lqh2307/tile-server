@@ -13,30 +13,44 @@ import { PMTiles, FetchSource } from "pmtiles";
 export const mercator = new SphericalMercator();
 
 const emptyBufferColor = Buffer.from(new Color("rgba(255,255,255,0)").array());
+const emptyBuffer = Buffer.alloc(0);
 
 /**
  * Create an appropriate mlgl response for http errors
+ * @param {string} format tile format
  * @param {Function} callback mlgl callback
  */
-export function responseEmptyTile(callback) {
-  sharp(emptyBufferColor, {
-    raw: {
-      premultiplied: true,
-      width: 1,
-      height: 1,
-      channels: 4,
-    },
-  })
-    .toFormat("png")
-    .toBuffer()
-    .then((data) => {
-      callback(null, {
-        data: data,
-      });
+export function responseEmptyTile(format, callback) {
+  if (["jpeg", "jpg", "png", "webp", "avif"].includes(format) === true) {
+    // sharp lib not support jpg format
+    if (format === "jpg") {
+      format = "jpeg";
+    }
+
+    sharp(emptyBufferColor, {
+      raw: {
+        premultiplied: true,
+        width: 1,
+        height: 1,
+        channels: format === "jpeg" ? 3 : 4,
+      },
     })
-    .catch((error) => {
-      printLog("error", error);
+      .toFormat(format)
+      .toBuffer()
+      .then((data) => {
+        callback(null, {
+          data: data,
+        });
+      })
+      .catch((error) => {
+        printLog("error", error);
+      });
+  } else {
+    /* pbf and other formats */
+    callback(null, {
+      data: emptyBuffer,
     });
+  }
 }
 
 /**
