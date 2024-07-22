@@ -15,6 +15,8 @@ export const mercator = new SphericalMercator();
 const emptyBufferColor = Buffer.from(new Color("rgba(255,255,255,0)").array());
 const emptyBuffer = Buffer.alloc(0);
 
+const fallbackFont = "Open Sans Regular";
+
 /**
  * Create an appropriate mlgl response for http errors
  * @param {string} format tile format
@@ -145,8 +147,6 @@ export async function getFontsPBF(fontPath, names, range) {
 
         return fs.readFileSync(filePath);
       } catch (error) {
-        const fallbackFont = "Open Sans Regular";
-
         printLog(
           "warning",
           `Failed to get font "${font}": ${error}. Using fallback font "${fallbackFont}"...`

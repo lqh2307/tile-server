@@ -259,7 +259,7 @@ export const serve_rendered = {
                   return tile;
                 });
 
-                styleJSON.sources[id].tiles = tiles;
+                styleJSON.sources[id].tiles = [...new Set(tiles)];
               }
 
               if (sourceURLs !== undefined) {
