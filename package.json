@@ -31,7 +31,7 @@
     "generic-pool": "3.9.0",
     "handlebars": "4.7.8",
     "morgan": "1.10.0",
-    "pmtiles": "3.0.6",
+    "pmtiles": "3.0.7",
     "sharp": "0.33.4"
   },
   "devDependencies": {
