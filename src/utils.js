@@ -234,9 +234,7 @@ export async function validateSprite(spriteDirPath) {
         /* Validate JSON sprite */
         const jsonFilePath = path.join(spriteDirPath, jsonSpriteFileName);
 
-        const jsonFile = fs.readFileSync(jsonFilePath, "utf8");
-
-        const jsonData = JSON.parse(jsonFile);
+        const jsonData = JSON.parse(fs.readFileSync(jsonFilePath, "utf8"));
 
         Object.values(jsonData).forEach((value) => {
           if (

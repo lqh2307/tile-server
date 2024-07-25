@@ -213,7 +213,7 @@ export const serve_rendered = {
         };
 
         /* Add missing infos */
-        if (item.styleJSON.center?.length === 2 && item.styleJSON.zoom) {
+        if (item.styleJSON.center?.length >= 2 && item.styleJSON.zoom) {
           rendered.tileJSON.center = [
             item.styleJSON.center[0],
             item.styleJSON.center[1],

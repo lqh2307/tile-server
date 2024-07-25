@@ -42,7 +42,7 @@ function serveFrontPageHandler(config) {
         }
 
         styles[id] = {
-          name: name || "",
+          name: name,
           xyz_link: xyzLink,
           viewer_hash: viewerHash,
           thumbnail: thumbnail,
@@ -91,7 +91,7 @@ function serveFrontPageHandler(config) {
         }
 
         datas[id] = {
-          name: name || "",
+          name: name,
           xyz_link: `${getURL(req)}data/${id}/{z}/{x}/{y}.${format}`,
           viewer_hash: viewerHash,
           thumbnail: thumbnail,

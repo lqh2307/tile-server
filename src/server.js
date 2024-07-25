@@ -27,7 +27,7 @@ const STYLES_DIR_PATH = path.join(DATA_DIR_PATH, "styles");
  */
 export function startServer() {
   /* Load config file */
-  printLog("info", "Load config file...");
+  printLog("info", "Loading config file...");
 
   let config;
 
@@ -123,7 +123,7 @@ export function startServer() {
   }
 
   /* Start http server */
-  printLog("info", "Start HTTP server...");
+  printLog("info", "Starting HTTP server...");
 
   express()
     .disable("x-powered-by")
@@ -151,6 +151,8 @@ export function startServer() {
     });
 
   /* Load data */
+  printLog("info", "Loading data...");
+
   Promise.all([
     serve_font.add(config),
     serve_sprite.add(config),
@@ -159,7 +161,7 @@ export function startServer() {
     .then(() => serve_style.add(config))
     .then(() => serve_rendered.add(config))
     .then(() => {
-      printLog("info", "Load data complete!");
+      printLog("info", "Completed startup!");
 
       config.startupComplete = true;
     })

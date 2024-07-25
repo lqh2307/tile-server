@@ -188,11 +188,6 @@ export const serve_data = {
             throw Error(`"pmtiles" or "mbtiles" property is empty`);
           }
 
-          /* Validate tileJSON */
-          if (!dataInfo.tileJSON.name) {
-            throw Error(`Data name is invalid`);
-          }
-
           if (
             ["jpeg", "jpg", "pbf", "png", "webp", "avif"].includes(
               dataInfo.tileJSON.format

@@ -114,7 +114,7 @@ function getStylesListHandler(config) {
 
       return {
         id: id,
-        name: item.styleJSON.name || "Unknown",
+        name: item.styleJSON.name,
         url: `${getURL(req)}styles/${id}/style.json`,
       };
     });
@@ -148,9 +148,7 @@ export const serve_style = {
 
           const filePath = path.join(config.options.paths.styles, stylePath);
 
-          const file = fs.readFileSync(filePath);
-
-          const styleJSON = JSON.parse(file);
+          const styleJSON = JSON.parse(fs.readFileSync(filePath));
 
           /* Validate style */
           const validationErrors = validateStyleMin(styleJSON);
@@ -267,6 +265,11 @@ export const serve_style = {
               });
             }
           });
+
+          /* Assign missing name */
+          if (styleJSON.name === undefined) {
+            styleJSON.name = "Unknown";
+          }
 
           /* Add to repo */
           config.repo.styles[id] = {
