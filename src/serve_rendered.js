@@ -158,7 +158,7 @@ function getRenderedsListHandler(config) {
 
       return {
         id: id,
-        name: tileJSON.name || "",
+        name: tileJSON.name,
         url: [
           `${getURL(req)}styles/256/${id}.json`,
           `${getURL(req)}styles/512/${id}.json`,
@@ -207,7 +207,7 @@ export const serve_rendered = {
         const item = config.repo.styles[id];
         const rendered = {
           tileJSON: {
-            name: item.styleJSON.name || "",
+            name: item.styleJSON.name,
             format: "png",
           },
         };
@@ -347,11 +347,7 @@ export const serve_rendered = {
                   oldSource.attribution
                 ) === false
               ) {
-                if (rendered.tileJSON.attribution !== "") {
-                  rendered.tileJSON.attribution += " | ";
-                }
-
-                rendered.tileJSON.attribution += oldSource.attribution;
+                rendered.tileJSON.attribution += ` | ${oldSource.attribution}`;
               }
             })
           );

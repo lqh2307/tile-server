@@ -15,6 +15,11 @@ import { printLog } from "./utils.js";
 
 const DATA_DIR_PATH = path.resolve("data");
 const CONFIG_FILE_PATH = path.join(DATA_DIR_PATH, "config.json");
+const MBTILES_DIR_PATH = path.join(DATA_DIR_PATH, "mbtiles");
+const PMTILES_DIR_PATH = path.join(DATA_DIR_PATH, "pmtiles");
+const FONTS_DIR_PATH = path.join(DATA_DIR_PATH, "fonts");
+const SPRITES_DIR_PATH = path.join(DATA_DIR_PATH, "sprites");
+const STYLES_DIR_PATH = path.join(DATA_DIR_PATH, "styles");
 
 /**
  * Load config file and assign default
@@ -33,24 +38,15 @@ function loadConfigFile() {
     const configObj = {
       options: {
         paths: {
-          styles: path.join(DATA_DIR_PATH, config.options?.paths?.styles || ""),
-          fonts: path.join(DATA_DIR_PATH, config.options?.paths?.fonts || ""),
-          sprites: path.join(
-            DATA_DIR_PATH,
-            config.options?.paths?.sprites || ""
-          ),
-          mbtiles: path.join(
-            DATA_DIR_PATH,
-            config.options?.paths?.mbtiles || ""
-          ),
-          pmtiles: path.join(
-            DATA_DIR_PATH,
-            config.options?.paths?.pmtiles || ""
-          ),
+          styles: STYLES_DIR_PATH,
+          fonts: FONTS_DIR_PATH,
+          sprites: SPRITES_DIR_PATH,
+          mbtiles: MBTILES_DIR_PATH,
+          pmtiles: PMTILES_DIR_PATH,
         },
         listenPort: config.options?.listenPort || 8080,
         watchToKill: config.options?.watchToKill || 0,
-        watchToRestart: config.options?.watchToRestart || 1000,
+        watchToRestart: config.options?.watchToRestart || 0,
         killEndpoint: config.options?.killEndpoint ?? true,
         restartEndpoint: config.options?.restartEndpoint ?? true,
         frontPage: config.options?.frontPage ?? true,
@@ -82,6 +78,43 @@ function loadConfigFile() {
         throw Error(`Directory "${path}" does not exist`);
       }
     });
+
+    /* Setup watch config file */
+    if (configObj.options.watchToKill > 0) {
+      printLog(
+        "info",
+        `Watch config file changes interval ${configObj.options.watchToKill}ms to kill server`
+      );
+
+      chokidar
+        .watch(CONFIG_FILE_PATH, {
+          usePolling: true,
+          awaitWriteFinish: true,
+          interval: configObj.options.watchToKill,
+        })
+        .on("change", () => {
+          printLog("info", `Config file has changed. Killed server!`);
+
+          process.exit(0);
+        });
+    } else if (configObj.options.watchToRestart > 0) {
+      printLog(
+        "info",
+        `Watch config file changes interval ${configObj.options.watchToRestart}ms to restart server`
+      );
+
+      chokidar
+        .watch(CONFIG_FILE_PATH, {
+          usePolling: true,
+          awaitWriteFinish: true,
+          interval: configObj.options.watchToRestart,
+        })
+        .on("change", () => {
+          printLog("info", `Config file has changed. Restarting server...`);
+
+          process.exit(1);
+        });
+    }
 
     return configObj;
   } catch (error) {
@@ -124,43 +157,6 @@ export function startServer() {
     .listen(config.options.listenPort, () => {
       printLog("info", `Listening on port: ${config.options.listenPort}`);
     });
-
-  /* Setup watch config file */
-  if (config.options.watchToKill > 0) {
-    printLog(
-      "info",
-      `Watch config file changes interval ${config.options.watchToKill}ms to kill server`
-    );
-
-    const newChokidar = chokidar.watch(CONFIG_FILE_PATH, {
-      usePolling: true,
-      awaitWriteFinish: true,
-      interval: config.options.watchToKill,
-    });
-
-    newChokidar.on("change", () => {
-      printLog("info", `Config file has changed. Killed server!`);
-
-      process.exit(0);
-    });
-  } else if (config.options.watchToRestart > 0) {
-    printLog(
-      "info",
-      `Watch config file changes interval ${config.options.watchToRestart}ms to restart server`
-    );
-
-    const newChokidar = chokidar.watch(CONFIG_FILE_PATH, {
-      usePolling: true,
-      awaitWriteFinish: true,
-      interval: config.options.watchToRestart,
-    });
-
-    newChokidar.on("change", () => {
-      printLog("info", `Config file has changed. Restarting server...`);
-
-      process.exit(1);
-    });
-  }
 
   /* Load data */
   Promise.all([

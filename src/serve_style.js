@@ -114,7 +114,7 @@ function getStylesListHandler(config) {
 
       return {
         id: id,
-        name: item.styleJSON.name || "",
+        name: item.styleJSON.name || "Unknown",
         url: `${getURL(req)}styles/${id}/style.json`,
       };
     });

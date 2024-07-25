@@ -134,7 +134,7 @@ function serveStyleHandler(config) {
 
     const serveData = {
       id: id,
-      name: item.tileJSON.name || "",
+      name: item.tileJSON.name,
     };
 
     const filePath = path.resolve("public", "templates", "viewer.tmpl");
@@ -162,7 +162,7 @@ function serveDataHandler(config) {
 
     const serveData = {
       id: id,
-      name: item.tileJSON.name || "",
+      name: item.tileJSON.name,
       is_vector: item.tileJSON.format === "pbf",
     };
 
@@ -187,7 +187,7 @@ function serveWMTSHandler(config) {
 
     const serveData = {
       id: id,
-      name: item.tileJSON.name || "",
+      name: item.tileJSON.name,
       base_url: getURL(req),
     };
 

@@ -107,7 +107,7 @@ function getDatasListHandler(config) {
 
       return {
         id: id,
-        name: item.tileJSON.name || "",
+        name: item.tileJSON.name,
         url: `${getURL(req)}data/${id}.json`,
       };
     });

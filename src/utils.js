@@ -104,12 +104,16 @@ export function fixTileJSON(tileJSON) {
     tileJSON.tilejson = "2.2.0";
   }
 
+  if (tileJSON.name === undefined) {
+    tileJSON.name = "Unknown";
+  }
+
   if (tileJSON.attribution === undefined) {
-    tileJSON.attribution = "";
+    tileJSON.attribution = "<b>Viettel HighTech<b>";
   }
 
   if (tileJSON.type === undefined) {
-    tileJSON.type = "baselayer";
+    tileJSON.type = "overlay";
   }
 
   if (tileJSON.bounds === undefined) {
