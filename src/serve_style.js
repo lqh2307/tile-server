@@ -114,7 +114,7 @@ function getStylesListHandler(config) {
 
       return {
         id: id,
-        name: item.styleJSON.name,
+        name: item.styleJSON.name || "Unknown",
         url: `${getURL(req)}styles/${id}/style.json`,
       };
     });
@@ -265,11 +265,6 @@ export const serve_style = {
               });
             }
           });
-
-          /* Assign missing name */
-          if (styleJSON.name === undefined) {
-            styleJSON.name = "Unknown";
-          }
 
           /* Add to repo */
           config.repo.styles[id] = {

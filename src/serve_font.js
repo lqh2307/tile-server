@@ -7,13 +7,12 @@ import { validateFont, getFontsPBF, printLog, getURL } from "./utils.js";
 function getFontHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
-    const range = req.params.range;
 
     try {
       const concatenated = await getFontsPBF(
         config.options.paths.fonts,
         id,
-        range
+        req.params.range
       );
 
       res.header("Content-type", "application/x-protobuf");

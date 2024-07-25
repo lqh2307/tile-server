@@ -78,7 +78,7 @@
         <div class="item">
           <img src="{{thumbnail}}" alt="{{name}} preview" />
           <div class="details">
-            <h3>{{name}}</h3>
+            <h3 class="name">{{name}}</h3>
             <p class="identifier">identifier: {{@key}}</p>
             <p class="services">
               services: <a href="/styles/{{@key}}/style.json">Style</a> | <a href="/styles/{{@key}}.json">TileJSON</a>
@@ -108,9 +108,11 @@
         <div class="item">
           <img src="{{thumbnail}}" alt="{{name}} preview" />
           <div class="details">
-            <h3>{{name}}</h3>
+            <h3 class="name">{{name}}</h3>
             <div class="identifier">identifier: {{@key}}</div>
-            <div class="identifier">size: {{formatted_filesize}}</div>
+            {{#if formatted_filesize}}
+              <div class="identifier">size: {{formatted_filesize}}</div>
+            {{/if}}
             <div class="identifier">type: {{#if is_vector}}vector{{else}}raster{{/if}} {{#if source_type}} | ext: {{source_type}}{{/if}}</div>
             <p class="services">
               services: <a href="/data/{{@key}}.json">TileJSON</a>

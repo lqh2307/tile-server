@@ -148,10 +148,8 @@ export function fixTileJSON(tileJSON) {
  * @returns
  */
 export async function getFontsPBF(fontPath, names, range) {
-  const fonts = names.split(",");
-
   const values = await Promise.all(
-    fonts.map(async (font) => {
+    names.split(",").map(async (font) => {
       try {
         const filePath = path.join(fontPath, font, `${range}.pbf`);
 

@@ -42,7 +42,7 @@ function serveFrontPageHandler(config) {
         }
 
         styles[id] = {
-          name: name,
+          name: name || "Unknown",
           xyz_link: xyzLink,
           viewer_hash: viewerHash,
           thumbnail: thumbnail,
@@ -72,7 +72,7 @@ function serveFrontPageHandler(config) {
           }
         }
 
-        let formattedFilesize = "unknown";
+        let formattedFilesize = "";
         if (filesize !== undefined) {
           let suffix = "KB";
           let size = filesize / 1024;

@@ -11,9 +11,9 @@
     <script src="/maplibre-gl-inspect.js"></script>
     <style>
       body {
-        background: #fff;
-        color: #333;
-        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        font-family: Arial, Helvetica, sans-serif;
       }
       #map {
         position: absolute;
@@ -30,6 +30,9 @@
         margin: 0;
         line-height: 20px;
         font-size: 20px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
       }
       #layerList {
         position: absolute;
@@ -37,7 +40,9 @@
         right: 0;
         bottom: 0;
         width: 240px;
-        overflow: auto;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
       }
       #layerList div div {
         width: 15px;
