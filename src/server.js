@@ -22,20 +22,21 @@ const SPRITES_DIR_PATH = path.join(DATA_DIR_PATH, "sprites");
 const STYLES_DIR_PATH = path.join(DATA_DIR_PATH, "styles");
 
 /**
- * Load config file and assign default
- * @returns {object}
+ * Start server
+ * @returns {void}
  */
-function loadConfigFile() {
+export function startServer() {
+  /* Load config file */
   printLog("info", "Load config file...");
+
+  let config;
 
   try {
     /* Read config file */
-    const file = fs.readFileSync(CONFIG_FILE_PATH, "utf8");
-
-    const config = JSON.parse(file);
+    const configData = JSON.parse(fs.readFileSync(CONFIG_FILE_PATH, "utf8"));
 
     /* Asign options */
-    const configObj = {
+    config = {
       options: {
         paths: {
           styles: STYLES_DIR_PATH,
@@ -44,22 +45,22 @@ function loadConfigFile() {
           mbtiles: MBTILES_DIR_PATH,
           pmtiles: PMTILES_DIR_PATH,
         },
-        listenPort: config.options?.listenPort || 8080,
-        watchToKill: config.options?.watchToKill || 0,
-        watchToRestart: config.options?.watchToRestart || 0,
-        killEndpoint: config.options?.killEndpoint ?? true,
-        restartEndpoint: config.options?.restartEndpoint ?? true,
-        frontPage: config.options?.frontPage ?? true,
-        serveWMTS: config.options?.serveWMTS ?? true,
-        serveRendered: config.options?.serveRendered ?? true,
-        maxScaleRender: config.options?.maxScaleRender || 1,
-        minPoolSize: config.options?.minPoolSize || 8,
-        maxPoolSize: config.options?.maxPoolSize || 16,
+        listenPort: configData.options?.listenPort || 8080,
+        watchToKill: configData.options?.watchToKill || 0,
+        watchToRestart: configData.options?.watchToRestart || 0,
+        killEndpoint: configData.options?.killEndpoint ?? true,
+        restartEndpoint: configData.options?.restartEndpoint ?? true,
+        frontPage: configData.options?.frontPage ?? true,
+        serveWMTS: configData.options?.serveWMTS ?? true,
+        serveRendered: configData.options?.serveRendered ?? true,
+        maxScaleRender: configData.options?.maxScaleRender || 1,
+        minPoolSize: configData.options?.minPoolSize || 8,
+        maxPoolSize: configData.options?.maxPoolSize || 16,
       },
-      styles: config.styles || {},
-      data: config.data || {},
-      sprites: config.sprites || {},
-      fonts: config.fonts || {},
+      styles: configData.styles || {},
+      data: configData.data || {},
+      sprites: configData.sprites || {},
+      fonts: configData.fonts || {},
       repo: {
         styles: {},
         rendereds: {},
@@ -71,7 +72,7 @@ function loadConfigFile() {
     };
 
     /* Check directory paths */
-    Object.values(configObj.options.paths).forEach((path) => {
+    Object.values(config.options.paths).forEach((path) => {
       const stat = fs.statSync(path);
 
       if (stat.isDirectory() === false) {
@@ -80,34 +81,34 @@ function loadConfigFile() {
     });
 
     /* Setup watch config file */
-    if (configObj.options.watchToKill > 0) {
+    if (config.options.watchToKill > 0) {
       printLog(
         "info",
-        `Watch config file changes interval ${configObj.options.watchToKill}ms to kill server`
+        `Watch config file changes interval ${config.options.watchToKill}ms to kill server`
       );
 
       chokidar
         .watch(CONFIG_FILE_PATH, {
           usePolling: true,
           awaitWriteFinish: true,
-          interval: configObj.options.watchToKill,
+          interval: config.options.watchToKill,
         })
         .on("change", () => {
           printLog("info", `Config file has changed. Killed server!`);
 
           process.exit(0);
         });
-    } else if (configObj.options.watchToRestart > 0) {
+    } else if (config.options.watchToRestart > 0) {
       printLog(
         "info",
-        `Watch config file changes interval ${configObj.options.watchToRestart}ms to restart server`
+        `Watch config file changes interval ${config.options.watchToRestart}ms to restart server`
       );
 
       chokidar
         .watch(CONFIG_FILE_PATH, {
           usePolling: true,
           awaitWriteFinish: true,
-          interval: configObj.options.watchToRestart,
+          interval: config.options.watchToRestart,
         })
         .on("change", () => {
           printLog("info", `Config file has changed. Restarting server...`);
@@ -115,24 +116,15 @@ function loadConfigFile() {
           process.exit(1);
         });
     }
-
-    return configObj;
   } catch (error) {
     printLog("error", `Failed to load config file: ${error}. Exited!`);
 
     process.exit(0);
   }
-}
-
-/**
- * Start server
- * @returns {void}
- */
-export function startServer() {
-  /* Load config file */
-  const config = loadConfigFile();
 
   /* Start http server */
+  printLog("info", "Start HTTP server...");
+
   express()
     .disable("x-powered-by")
     .enable("trust proxy")
@@ -172,7 +164,7 @@ export function startServer() {
       config.startupComplete = true;
     })
     .catch((error) => {
-      printLog("error", `Failed to load data: ${error}`);
+      printLog("error", `Failed to load data: ${error}. Exited!`);
 
       process.exit(0);
     });
