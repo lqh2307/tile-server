@@ -32,13 +32,6 @@ Example config.json content:
 
 	{
 		"options": {
-			"paths": {
-				"fonts": "fonts",
-				"sprites": "sprites",
-				"styles": "styles",
-				"mbtiles": "mbtiles",
-				"pmtiles": "pmtiles"
-			},
 			"listenPort": 8080,
 			"watchToKill": 0,
 			"watchToRestart": 1000,
