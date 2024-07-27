@@ -45,15 +45,10 @@ function getDataTileHandler(config) {
         dataTile = await getPMTilesTile(item.source, z, x, y);
       }
 
-      /* Check data tile is exist? */
-      if (!dataTile?.data) {
-        throw Error("Tile does not exist");
-      }
-
       /* Gzip pbf data tile format */
       if (
-        req.params.format === "pbf" &&
-        (dataTile.data[0] !== 0x1f || dataTile.data[1] !== 0x8b)
+        dataTile.headers["Content-Type"] === "application/x-protobuf" &&
+        dataTile.headers["Content-Encoding"] === undefined
       ) {
         dataTile.data = zlib.gzipSync(dataTile.data);
 
@@ -128,7 +123,7 @@ export const serve_data = {
 
     /* Serve data xyz */
     app.get(
-      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp|avif)`,
+      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp)`,
       getDataTileHandler(config)
     );
 
@@ -185,15 +180,15 @@ export const serve_data = {
             dataInfo.source = await openPMTiles(inputDataFile);
             dataInfo.tileJSON = await getPMTilesInfo(dataInfo.source);
           } else {
-            throw Error(`"pmtiles" or "mbtiles" property is empty`);
+            throw new Error(`"pmtiles" or "mbtiles" property is empty`);
           }
 
           if (
-            ["jpeg", "jpg", "pbf", "png", "webp", "avif"].includes(
+            ["jpeg", "jpg", "pbf", "png", "webp"].includes(
               dataInfo.tileJSON.format
             ) === false
           ) {
-            throw Error(`Data format is invalid`);
+            throw new Error(`Data format is invalid`);
           }
 
           /* Add missing infos */

@@ -5,9 +5,10 @@ import path from "node:path";
 import Color from "color";
 import axios from "axios";
 import sharp from "sharp";
-import MBTiles from "@mapbox/mbtiles";
+import sqlite3 from "sqlite3";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
 import SphericalMercator from "@mapbox/sphericalmercator";
+import tiletype from "@mapbox/tiletype";
 import { PMTiles, FetchSource } from "pmtiles";
 
 export const mercator = new SphericalMercator();
@@ -23,7 +24,7 @@ const fallbackFont = "Open Sans Regular";
  * @param {Function} callback mlgl callback
  */
 export function responseEmptyTile(format, callback) {
-  if (["jpeg", "jpg", "png", "webp", "avif"].includes(format) === true) {
+  if (["jpeg", "jpg", "png", "webp"].includes(format) === true) {
     // sharp lib not support jpg format
     if (format === "jpg") {
       format = "jpeg";
@@ -205,7 +206,7 @@ export async function validateFont(pbfDirPath) {
     const pbfFileNames = findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
 
     if (pbfFileNames.length !== 256) {
-      throw Error(`Pbf file count is not equal 256`);
+      throw new Error(`Pbf file count is not equal 256`);
     }
   } catch (error) {
     throw error;
@@ -224,7 +225,7 @@ export async function validateSprite(spriteDirPath) {
     );
 
     if (jsonSpriteFileNames.length === 0) {
-      throw Error(`Not found json sprite file`);
+      throw new Error(`Not found json sprite file`);
     }
 
     await Promise.all(
@@ -243,7 +244,7 @@ export async function validateSprite(spriteDirPath) {
             "x" in value === false ||
             "y" in value === false
           ) {
-            throw Error(
+            throw new Error(
               `One of properties ("height", "pixelRatio", "width", "x", "y") is empty`
             );
           }
@@ -261,7 +262,7 @@ export async function validateSprite(spriteDirPath) {
         const pngMetadata = await sharp(pngFilePath).metadata();
 
         if (pngMetadata.format !== "png") {
-          throw Error("Invalid png sprite file");
+          throw new Error("Invalid png sprite file");
         }
       })
     );
@@ -332,14 +333,37 @@ export async function downloadFile(url, outputPath, overwrite = false) {
 
     response.data.pipe(writer);
 
-    writer.on("error", (err) => {
-      writer.close(() => reject(err));
+    writer.on("error", (error) => {
+      writer.close(() => reject(error));
     });
 
     writer.on("finish", () => {
       writer.close(() => resolve(outputPath));
     });
   });
+}
+
+class PMTilesFileSource {
+  constructor(fd) {
+    this.fd = fd;
+  }
+
+  getKey() {
+    return this.fd;
+  }
+
+  async getBytes(offset, length) {
+    const buffer = Buffer.alloc(length);
+
+    fs.readSync(this.fd, buffer, 0, buffer.length, offset);
+
+    return {
+      data: buffer.buffer.slice(
+        buffer.byteOffset,
+        buffer.byteOffset + buffer.byteLength
+      ),
+    };
+  }
 }
 
 /**
@@ -356,32 +380,7 @@ export async function openPMTiles(filePath) {
   ) {
     source = new FetchSource(filePath);
   } else {
-    class PMTilesFileSource {
-      constructor(fd) {
-        this.fd = fd;
-      }
-
-      getKey() {
-        return this.fd;
-      }
-
-      async getBytes(offset, length) {
-        const buffer = Buffer.alloc(length);
-
-        fs.readSync(this.fd, buffer, 0, buffer.length, offset);
-
-        return {
-          data: buffer.buffer.slice(
-            buffer.byteOffset,
-            buffer.byteOffset + buffer.byteLength
-          ),
-        };
-      }
-    }
-
-    const file = fs.openSync(filePath, "r");
-
-    source = new PMTilesFileSource(file);
+    source = new PMTilesFileSource(fs.openSync(filePath, "r"));
   }
 
   return new PMTiles(source);
@@ -393,10 +392,11 @@ export async function openPMTiles(filePath) {
  * @returns
  */
 export async function getPMTilesInfo(pmtilesSource) {
-  const header = await pmtilesSource.getHeader();
-  const metadata = await pmtilesSource.getMetadata();
+  const [header, metadata] = await Promise.all([
+    pmtilesSource.getHeader(),
+    pmtilesSource.getMetadata(),
+  ]);
 
-  // Add missing metadata from header
   if (header.tileType === 1) {
     metadata.format = "pbf";
   } else if (header.tileType === 2) {
@@ -405,40 +405,35 @@ export async function getPMTilesInfo(pmtilesSource) {
     metadata.format = "jpeg";
   } else if (header.tileType === 4) {
     metadata.format = "webp";
-  } else if (header.tileType === 5) {
-    metadata.format = "avif";
   }
 
-  if (header.minZoom) {
-    metadata.minzoom = header.minZoom;
-  } else {
-    metadata.minzoom = 0;
+  if (header.minZoom !== undefined) {
+    metadata.minzoom = Number(header.minZoom);
   }
 
-  if (header.maxZoom) {
-    metadata.maxzoom = header.maxZoom;
-  } else {
-    metadata.maxzoom = 22;
+  if (header.maxZoom !== undefined) {
+    metadata.maxzoom = Number(header.maxZoom);
   }
 
-  if (header.minLon && header.minLat && header.maxLon && header.maxLat) {
+  if (
+    header.minLon !== undefined &&
+    header.minLat !== undefined &&
+    header.maxLon !== undefined &&
+    header.maxLat !== undefined
+  ) {
     metadata.bounds = [
-      header.minLon,
-      header.minLat,
-      header.maxLon,
-      header.maxLat,
+      Number(header.minLon),
+      Number(header.minLat),
+      Number(header.maxLon),
+      Number(header.maxLat),
     ];
-  } else {
-    metadata.bounds = [-180, -85.051128779807, 180, 85.051128779807];
   }
 
-  if (header.centerZoom) {
-    metadata.center = [header.centerLon, header.centerLat, header.centerZoom];
-  } else {
+  if (header.centerZoom !== undefined) {
     metadata.center = [
-      header.centerLon,
-      header.centerLat,
-      parseInt(metadata.maxzoom) / 2,
+      Number(header.centerLon),
+      Number(header.centerLat),
+      Number(header.centerZoom),
     ];
   }
 
@@ -454,28 +449,33 @@ export async function getPMTilesInfo(pmtilesSource) {
  * @returns
  */
 export async function getPMTilesTile(pmtilesSource, z, x, y) {
-  const header = await pmtilesSource.getHeader();
+  try {
+    const zxyTile = await pmtilesSource.getZxy(z, x, y);
 
-  const headers = {};
+    if (!zxyTile?.data) {
+      throw new Error("Tile does not exist");
+    }
 
-  if (header.tileType === 1) {
-    headers["Content-Type"] = "application/x-protobuf";
-  } else if (header.tileType === 2) {
-    headers["Content-Type"] = "image/png";
-  } else if (header.tileType === 3) {
-    headers["Content-Type"] = "image/jpeg";
-  } else if (header.tileType === 4) {
-    headers["Content-Type"] = "image/webp";
-  } else if (header.tileType === 5) {
-    headers["Content-Type"] = "image/avif";
+    const header = await pmtilesSource.getHeader();
+    const headers = tiletype.headers(zxyTile.data);
+
+    if (header.tileType === 1) {
+      headers["Content-Type"] = "application/x-protobuf";
+    } else if (header.tileType === 2) {
+      headers["Content-Type"] = "image/png";
+    } else if (header.tileType === 3) {
+      headers["Content-Type"] = "image/jpeg";
+    } else if (header.tileType === 4) {
+      headers["Content-Type"] = "image/webp";
+    }
+
+    return {
+      data: zxyTile.data,
+      headers: headers,
+    };
+  } catch (error) {
+    throw error;
   }
-
-  const zxyTile = await pmtilesSource.getZxy(z, x, y);
-
-  return {
-    data: zxyTile?.data ? Buffer.from(zxyTile.data) : zxyTile,
-    headers: headers,
-  };
 }
 
 /**
@@ -485,30 +485,17 @@ export async function getPMTilesTile(pmtilesSource, z, x, y) {
  */
 export async function openMBTiles(filePath) {
   return new Promise((resolve, reject) => {
-    new MBTiles(filePath + "?mode=ro", (error, mbtiles) => {
-      if (error) {
-        return reject(error);
+    const mbtilesSource = new sqlite3.Database(
+      filePath,
+      sqlite3.OPEN_READONLY,
+      (error) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(mbtilesSource);
+        }
       }
-
-      resolve(mbtiles);
-    });
-  });
-}
-
-/**
- *
- * @param {*} mbtilesSource
- * @returns
- */
-export async function getMBTilesInfo(mbtilesSource) {
-  return new Promise((resolve, reject) => {
-    mbtilesSource.getInfo((error, info) => {
-      if (error) {
-        return reject(error);
-      }
-
-      resolve(info);
-    });
+    );
   });
 }
 
@@ -522,15 +509,90 @@ export async function getMBTilesInfo(mbtilesSource) {
  */
 export async function getMBTilesTile(mbtilesSource, z, x, y) {
   return new Promise((resolve, reject) => {
-    mbtilesSource.getTile(z, x, y, (error, data, headers) => {
-      if (error) {
-        reject(error);
+    mbtilesSource.get(
+      "SELECT tile_data FROM tiles WHERE zoom_level = ? AND tile_column = ? AND tile_row = ?",
+      z,
+      x,
+      (1 << z) - 1 - y, // Flip Y coordinate because MBTiles files use TMS scheme
+      (err, row) => {
+        if (err) {
+          reject(err);
+        } else if (!row?.tile_data) {
+          reject(new Error("Tile does not exist"));
+        } else {
+          resolve({
+            data: row.tile_data,
+            headers: tiletype.headers(row.tile_data),
+          });
+        }
+      }
+    );
+  });
+}
+
+/**
+ *
+ * @param {*} mbtilesSource
+ * @returns
+ */
+export async function getMBTilesInfo(mbtilesSource) {
+  return new Promise((resolve, reject) => {
+    mbtilesSource.all("SELECT name, value FROM metadata", (err, rows) => {
+      if (err) {
+        reject(err);
       }
 
-      resolve({
-        data: data,
-        headers: headers || {},
-      });
+      const info = {};
+
+      if (rows) {
+        rows.forEach((row) => {
+          switch (row.name) {
+            case "json":
+              try {
+                Object.assign(info, JSON.parse(row.value));
+              } catch (err) {
+                reject(err);
+              }
+
+              break;
+            case "minzoom":
+            case "maxzoom":
+              info[row.name] = Number(row.value);
+
+              break;
+            case "center":
+            case "bounds":
+              info[row.name] = row.value.split(",").map(Number);
+
+              break;
+            default:
+              info[row.name] = row.value;
+
+              break;
+          }
+        });
+      }
+
+      info.scheme = "xyz"; // Guarantee that we always return proper schema type, even if 'tms' is specified in metadata
+
+      resolve(info);
+    });
+  });
+}
+
+/**
+ *
+ * @param {*} mbtilesSource
+ * @returns
+ */
+export async function closeMBTiles(mbtilesSource) {
+  return new Promise((resolve, reject) => {
+    mbtilesSource.close((err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
     });
   });
 }

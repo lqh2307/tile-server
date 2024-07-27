@@ -110,9 +110,6 @@
           <div class="details">
             <h3 class="name">{{name}}</h3>
             <div class="identifier">identifier: {{@key}}</div>
-            {{#if formatted_filesize}}
-              <div class="identifier">size: {{formatted_filesize}}</div>
-            {{/if}}
             <div class="identifier">type: {{#if is_vector}}vector{{else}}raster{{/if}} {{#if source_type}} | ext: {{source_type}}{{/if}}</div>
             <p class="services">
               services: <a href="/data/{{@key}}.json">TileJSON</a>

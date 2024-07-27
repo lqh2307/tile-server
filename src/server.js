@@ -76,7 +76,7 @@ export function startServer() {
       const stat = fs.statSync(path);
 
       if (stat.isDirectory() === false) {
-        throw Error(`Directory "${path}" does not exist`);
+        throw new Error(`Directory "${path}" does not exist`);
       }
     });
 

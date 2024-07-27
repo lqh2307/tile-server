@@ -439,16 +439,11 @@ export const serve_rendered = {
                               );
                             }
 
-                            /* Check rendered data tile is exist? */
-                            if (!dataTile?.data) {
-                              throw Error("Tile does not exist");
-                            }
-
                             /* Unzip pbf rendered data tile format */
                             if (
-                              sourceData.tileJSON.format === "pbf" &&
-                              dataTile.data[0] === 0x1f &&
-                              dataTile.data[1] === 0x8b
+                              dataTile.headers["Content-Type"] ===
+                                "application/x-protobuf" &&
+                              dataTile.headers["Content-Encoding"] === "gzip"
                             ) {
                               dataTile.data = zlib.unzipSync(dataTile.data);
                             }

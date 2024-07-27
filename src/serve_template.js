@@ -72,24 +72,6 @@ function serveFrontPageHandler(config) {
           }
         }
 
-        let formattedFilesize = "";
-        if (filesize !== undefined) {
-          let suffix = "KB";
-          let size = filesize / 1024;
-
-          if (size > 1024) {
-            suffix = "MB";
-            size /= 1024;
-          }
-
-          if (size > 1024) {
-            suffix = "GB";
-            size /= 1024;
-          }
-
-          formattedFilesize = `${size.toFixed(2)} ${suffix}`;
-        }
-
         datas[id] = {
           name: name,
           xyz_link: `${getURL(req)}data/${id}/{z}/{x}/{y}.${format}`,
@@ -97,7 +79,6 @@ function serveFrontPageHandler(config) {
           thumbnail: thumbnail,
           source_type: data.sourceType,
           is_vector: format === "pbf",
-          formatted_filesize: formattedFilesize,
         };
       }),
     ]);

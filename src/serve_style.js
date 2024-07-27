@@ -143,7 +143,7 @@ export const serve_style = {
 
         try {
           if (!stylePath) {
-            throw Error(`"style" property is empty`);
+            throw new Error(`"style" property is empty`);
           }
 
           const filePath = path.join(config.options.paths.styles, stylePath);
@@ -159,7 +159,7 @@ export const serve_style = {
               errString += "\n\t" + `${error.message}`;
             }
 
-            throw Error(errString);
+            throw new Error(errString);
           }
 
           /* Validate fonts */
@@ -169,7 +169,7 @@ export const serve_style = {
               styleJSON.glyphs.startsWith("https://") === false &&
               styleJSON.glyphs.startsWith("http://") === false
             ) {
-              throw Error("Invalid fonts url");
+              throw new Error("Invalid fonts url");
             }
           }
 
@@ -182,13 +182,13 @@ export const serve_style = {
               );
 
               if (!config.repo.sprites[spriteID]) {
-                throw Error(`Sprite "${spriteID}" is not found`);
+                throw new Error(`Sprite "${spriteID}" is not found`);
               }
             } else if (
               styleJSON.sprite.startsWith("https://") === false &&
               styleJSON.sprite.startsWith("http://") === false
             ) {
-              throw Error("Invalid sprite url");
+              throw new Error("Invalid sprite url");
             }
           }
 
@@ -207,19 +207,19 @@ export const serve_style = {
                 const sourceID = sourceURL.slice(10);
 
                 if (!config.repo.datas[sourceID]) {
-                  throw Error(`Source "${id}" is not found`);
+                  throw new Error(`Source "${id}" is not found`);
                 }
               } else if (
                 sourceURL.startsWith("https://") === false &&
                 sourceURL.startsWith("http://") === false
               ) {
-                throw Error(`Source "${id}" is invalid url`);
+                throw new Error(`Source "${id}" is invalid url`);
               }
             }
 
             if (sourceURLs !== undefined) {
               if (sourceURLs.length === 0) {
-                throw Error(`Source "${id}" is invalid urls`);
+                throw new Error(`Source "${id}" is invalid urls`);
               }
 
               sourceURLs.forEach((url) => {
@@ -230,20 +230,20 @@ export const serve_style = {
                   const sourceID = url.slice(10);
 
                   if (!config.repo.datas[sourceID]) {
-                    throw Error(`Source "${id}" is not found`);
+                    throw new Error(`Source "${id}" is not found`);
                   }
                 } else if (
                   url.startsWith("https://") === false &&
                   url.startsWith("http://") === false
                 ) {
-                  throw Error(`Source "${id}" is invalid urls`);
+                  throw new Error(`Source "${id}" is invalid urls`);
                 }
               });
             }
 
             if (sourceTiles !== undefined) {
               if (sourceTiles.length === 0) {
-                throw Error(`Source "${id}" is invalid tile urls`);
+                throw new Error(`Source "${id}" is invalid tile urls`);
               }
 
               sourceTiles.forEach((tile) => {
@@ -254,13 +254,13 @@ export const serve_style = {
                   const sourceID = tile.slice(10);
 
                   if (!config.repo.datas[sourceID]) {
-                    throw Error(`Source "${id}" is not found`);
+                    throw new Error(`Source "${id}" is not found`);
                   }
                 } else if (
                   tile.startsWith("https://") === false &&
                   tile.startsWith("http://") === false
                 ) {
-                  throw Error(`Source "${id}" is invalid tile urls`);
+                  throw new Error(`Source "${id}" is invalid tile urls`);
                 }
               });
             }
