@@ -62,12 +62,10 @@ RUN \
 WORKDIR /tile-server
 
 COPY --from=builder /tile-server .
-COPY --from=builder /tile-server/public/resources/config/config.json ./data/config.json
+COPY --from=builder /tile-server/public/resources/template ./data
 COPY --from=builder /usr/bin/node /usr/bin/node
 COPY --from=builder /usr/include/node /usr/include/node
 COPY --from=builder /usr/share/doc/node /usr/share/doc/node
-
-RUN mkdir ./data/fonts ./data/sprites ./data/mbtiles ./data/pmtiles ./data/styles
 
 VOLUME /tile-server/data
 

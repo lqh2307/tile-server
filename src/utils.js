@@ -164,6 +164,7 @@ export async function getFontsPBF(fontPath, ids, range) {
         const filePath = path.resolve(
           "public",
           "resources",
+          "template",
           "fonts",
           fallbackFont,
           `${range}.pbf`
