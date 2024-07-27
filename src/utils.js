@@ -144,21 +144,21 @@ export function fixTileJSON(tileJSON) {
 /**
  *
  * @param {string} fontPath
- * @param {string} names
+ * @param {string} ids
  * @param {string} range
  * @returns
  */
-export async function getFontsPBF(fontPath, names, range) {
+export async function getFontsPBF(fontPath, ids, range) {
   const values = await Promise.all(
-    names.split(",").map(async (font) => {
+    ids.split(",").map(async (id) => {
       try {
-        const filePath = path.join(fontPath, font, `${range}.pbf`);
+        const filePath = path.join(fontPath, id, `${range}.pbf`);
 
         return fs.readFileSync(filePath);
-      } catch (error) {
+      } catch (_) {
         printLog(
           "warning",
-          `Failed to get font "${font}": ${error}. Using fallback font "${fallbackFont}"...`
+          `Failed to get font "${id}": Font is not found. Using fallback font "${fallbackFont}"...`
         );
 
         const filePath = path.resolve(

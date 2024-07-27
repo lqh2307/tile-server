@@ -6,12 +6,12 @@ import { validateFont, getFontsPBF, printLog, getURL } from "./utils.js";
 
 function getFontHandler(config) {
   return async (req, res, next) => {
-    const id = decodeURI(req.params.id);
+    const ids = decodeURI(req.params.id);
 
     try {
       const concatenated = await getFontsPBF(
         config.options.paths.fonts,
-        id,
+        ids,
         req.params.range
       );
 
@@ -19,7 +19,7 @@ function getFontHandler(config) {
 
       return res.status(200).send(concatenated);
     } catch (error) {
-      printLog("error", `Failed to get font "${id}": ${error}`);
+      printLog("error", `Failed to get font "${ids}": ${error}`);
 
       return res.status(404).send("Font is not found");
     }

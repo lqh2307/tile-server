@@ -37,6 +37,94 @@
       });
     }
 
+    function switchTab(event, tabId) {
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+
+      event.currentTarget.classList.add('active');
+
+      document.getElementById(tabId).classList.add('active');
+
+      if (tabId === 'styles-tab' && !document.querySelector('#styles-tab').innerHTML.trim()) {
+        renderDatas('styles-tab');
+      } else if (tabId === 'data-tab' && !document.querySelector('#data-tab').innerHTML.trim()) {
+        renderDatas('data-tab');
+      }
+    }
+
+    function renderDatas(tabId) {
+      if (tabId === 'styles-tab') {
+        document.querySelector('#styles-tab').innerHTML = `
+          <div class="box">
+            {{#each styles}}
+              <div class="item">
+                <img src="{{thumbnail}}" alt="{{name}} preview" />
+                <div class="details">
+                  <h3 class="name">{{name}}</h3>
+                  <p class="identifier">identifier: {{@key}}</p>
+                  <p class="services">
+                    services: <a href="/styles/{{@key}}/style.json">Style</a> | <a href="/styles/{{@key}}.json">TileJSON</a>
+                    {{#if serve_wmts}}
+                      | <a href="/styles/{{@key}}/wmts.xml">WMTS</a>
+                    {{/if}}
+                    {{#if xyz_link}}
+                      | <a href="#" onclick="toggleXYZ('xyz_style_{{@key}}', event)">XYZ</a>
+                      <input id="xyz_style_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz_link}}" onclick="copyToClipboard(this)" />
+                    {{/if}}
+                  </p>
+                </div>
+                <div class="viewers">
+                    <a class="btn" href="/styles/{{@key}}/{{viewer_hash}}">Viewer</a>
+                    {{#if serve_rendered}}
+                      <a class="btn" href="/styles/{{@key}}/?raster{{viewer_hash}}">Raster</a>
+                      <a class="btn" href="/styles/{{@key}}/?vector{{viewer_hash}}">Vector</a>
+                    {{/if}}
+                </div>
+              </div>
+            {{/each}}
+          </div>
+        `;
+      } else if (tabId === 'data-tab') {
+        document.querySelector('#data-tab').innerHTML = `
+          <div class="box">
+            {{#each data}}
+              <div class="item">
+                <img src="{{thumbnail}}" alt="{{name}} preview" />
+                <div class="details">
+                  <h3 class="name">{{name}}</h3>
+                  <div class="identifier">identifier: {{@key}}</div>
+                  <div class="identifier">type: {{#if is_vector}}vector{{else}}raster{{/if}} {{#if source_type}} | ext: {{source_type}}{{/if}}</div>
+                  <p class="services">
+                    services: <a href="/data/{{@key}}.json">TileJSON</a>
+                    {{#if xyz_link}}
+                      | <a href="#" onclick="toggleXYZ('xyz_data_{{@key}}', event)">XYZ</a>
+                      <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz_link}}" onclick="copyToClipboard(this)" />
+                    {{/if}}
+                  </p>
+                </div>
+                <div class="viewers">
+                  {{#if is_vector}}
+                      <a class="btn" href="/data/{{@key}}/{{viewer_hash}}">Inspect</a>
+                  {{else}}
+                      <a class="btn" href="/data/{{@key}}/{{viewer_hash}}">View</a>
+                  {{/if}}
+                </div>
+              </div>
+            {{/each}}
+          </div>
+        `;
+      }
+    }
+
+    window.onload = function() {
+      renderDatas('styles-tab');
+    };
+
     window.addEventListener('scroll', () => {
       const backToTopButton = document.querySelector('.back-to-top');
 
@@ -46,23 +134,6 @@
         backToTopButton.style.display = 'none';
       }
     });
-
-    function switchTab(event, tabId) {
-      const tabs = document.querySelectorAll('.tab');
-      const contents = document.querySelectorAll('.tab-content');
-
-      tabs.forEach(tab => {
-        tab.classList.remove('active');
-      });
-
-      contents.forEach(content => {
-        content.classList.remove('active');
-      });
-
-      event.currentTarget.classList.add('active');
-
-      document.getElementById(tabId).classList.add('active');
-    }
   </script>
 </head>
 <body>
@@ -72,64 +143,8 @@
       <div class="tab active" onclick="switchTab(event, 'styles-tab')">STYLES ({{style_count}})</div>
       <div class="tab" onclick="switchTab(event, 'data-tab')">DATA ({{data_count}})</div>
     </div>
-    <div id="styles-tab" class="tab-content active">
-      <div class="box">
-      {{#each styles}}
-        <div class="item">
-          <img src="{{thumbnail}}" alt="{{name}} preview" />
-          <div class="details">
-            <h3 class="name">{{name}}</h3>
-            <p class="identifier">identifier: {{@key}}</p>
-            <p class="services">
-              services: <a href="/styles/{{@key}}/style.json">Style</a> | <a href="/styles/{{@key}}.json">TileJSON</a>
-              {{#if serve_wmts}}
-                | <a href="/styles/{{@key}}/wmts.xml">WMTS</a>
-              {{/if}}
-              {{#if xyz_link}}
-                | <a href="#" onclick="toggleXYZ('xyz_style_{{@key}}', event)">XYZ</a>
-                <input id="xyz_style_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz_link}}" onclick="copyToClipboard(this)" />
-              {{/if}}
-            </p>
-          </div>
-          <div class="viewers">
-              <a class="btn" href="/styles/{{@key}}/{{viewer_hash}}">Viewer</a>
-              {{#if serve_rendered}}
-                <a class="btn" href="/styles/{{@key}}/?raster{{viewer_hash}}">Raster</a>
-                <a class="btn" href="/styles/{{@key}}/?vector{{viewer_hash}}">Vector</a>
-              {{/if}}
-          </div>
-        </div>
-      {{/each}}
-      </div>
-    </div>
-    <div id="data-tab" class="tab-content">
-      <div class="box">
-      {{#each data}}
-        <div class="item">
-          <img src="{{thumbnail}}" alt="{{name}} preview" />
-          <div class="details">
-            <h3 class="name">{{name}}</h3>
-            <div class="identifier">identifier: {{@key}}</div>
-            <div class="identifier">type: {{#if is_vector}}vector{{else}}raster{{/if}} {{#if source_type}} | ext: {{source_type}}{{/if}}</div>
-            <p class="services">
-              services: <a href="/data/{{@key}}.json">TileJSON</a>
-              {{#if xyz_link}}
-                | <a href="#" onclick="toggleXYZ('xyz_data_{{@key}}', event)">XYZ</a>
-                <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz_link}}" onclick="copyToClipboard(this)" />
-              {{/if}}
-            </p>
-          </div>
-          <div class="viewers">
-            {{#if is_vector}}
-                <a class="btn" href="/data/{{@key}}/{{viewer_hash}}">Inspect</a>
-            {{else}}
-                <a class="btn" href="/data/{{@key}}/{{viewer_hash}}">View</a>
-            {{/if}}
-          </div>
-        </div>
-      {{/each}}
-      </div>
-    </div>
+    <div id="styles-tab" class="tab-content active"></div>
+    <div id="data-tab" class="tab-content"></div>
   </section>
   <a href="#" class="back-to-top" onclick="scrollToTop(event)">Back to top</a>
 </body>
