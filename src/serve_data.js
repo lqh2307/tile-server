@@ -4,6 +4,7 @@ import zlib from "zlib";
 import path from "node:path";
 import express from "express";
 import {
+  validateDataInfo,
   getPMTilesInfo,
   getPMTilesTile,
   getMBTilesTile,
@@ -11,7 +12,6 @@ import {
   downloadFile,
   openMBTiles,
   openPMTiles,
-  fixTileJSON,
   printLog,
   getURL,
 } from "./utils.js";
@@ -64,7 +64,7 @@ function getDataTileHandler(config) {
         `Failed to get data "${id}" - Tile ${z}/${x}/${y}: ${error}`
       );
 
-      if (/does not exist/.test(error.message) === true) {
+      if (error.message === "Tile does not exist") {
         return res.status(204).send("Data tile is empty");
       }
 
@@ -134,7 +134,11 @@ export const serve_data = {
     await Promise.all(
       Object.keys(config.data).map(async (id) => {
         const item = config.data[id];
-        const dataInfo = {};
+        const dataInfo = {
+          tileJSON: {
+            tilejson: "2.2.0",
+          },
+        };
 
         let inputDataFile;
 
@@ -162,7 +166,10 @@ export const serve_data = {
 
             dataInfo.sourceType = "mbtiles";
             dataInfo.source = await openMBTiles(inputDataFile);
-            dataInfo.tileJSON = await getMBTilesInfo(dataInfo.source);
+            Object.assign(
+              dataInfo.tileJSON,
+              await getMBTilesInfo(dataInfo.source)
+            );
           } else if (item.pmtiles) {
             if (
               item.pmtiles.startsWith("https://") === true ||
@@ -178,21 +185,16 @@ export const serve_data = {
 
             dataInfo.sourceType = "pmtiles";
             dataInfo.source = await openPMTiles(inputDataFile);
-            dataInfo.tileJSON = await getPMTilesInfo(dataInfo.source);
+            Object.assign(
+              dataInfo.tileJSON,
+              await getPMTilesInfo(dataInfo.source)
+            );
           } else {
             throw new Error(`"pmtiles" or "mbtiles" property is empty`);
           }
 
-          if (
-            ["jpeg", "jpg", "pbf", "png", "webp"].includes(
-              dataInfo.tileJSON.format
-            ) === false
-          ) {
-            throw new Error(`Data format is invalid`);
-          }
-
-          /* Add missing infos */
-          fixTileJSON(dataInfo.tileJSON);
+          /* Validate info */
+          await validateDataInfo(dataInfo.tileJSON);
 
           /* Add to repo */
           config.repo.datas[id] = dataInfo;

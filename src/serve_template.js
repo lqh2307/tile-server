@@ -18,22 +18,23 @@ function serveFrontPageHandler(config) {
     await Promise.all([
       ...Object.keys(config.repo.rendereds).map(async (id) => {
         const style = config.repo.rendereds[id];
-        const { name, center } = style.tileJSON;
+        let { name, center } = style.tileJSON;
 
-        let viewerHash = "";
+        if (center === undefined) {
+          center = [0, 0, 11];
+        }
+
         let thumbnail = "/images/placeholder.png";
-        if (center !== undefined) {
-          viewerHash = `#${center[2]}/${center[1]}/${center[0]}`;
+        const viewerHash = `#${center[2]}/${center[1]}/${center[0]}`;
 
-          const centerPx = mercator.px([center[0], center[1]], center[2]);
-          const x = Math.floor(centerPx[0] / 256);
-          const y = Math.floor(centerPx[1] / 256);
+        const centerPx = mercator.px([center[0], center[1]], center[2]);
+        const x = Math.floor(centerPx[0] / 256);
+        const y = Math.floor(centerPx[1] / 256);
 
-          if (config.options.serveRendered === true) {
-            thumbnail = `${getURL(req)}styles/${id}/256/${
-              center[2]
-            }/${x}/${y}.png`;
-          }
+        if (config.options.serveRendered === true) {
+          thumbnail = `${getURL(req)}styles/${id}/256/${
+            center[2]
+          }/${x}/${y}.png`;
         }
 
         let xyzLink = "";
@@ -54,22 +55,32 @@ function serveFrontPageHandler(config) {
       }),
       ...Object.keys(config.repo.datas).map(async (id) => {
         const data = config.repo.datas[id];
-        const { name, center, format, filesize } = data.tileJSON;
+        let { name, center, format, bounds, minzoom, maxzoom } = data.tileJSON;
 
-        let viewerHash = "";
+        if (
+          center === undefined &&
+          bounds !== undefined &&
+          minzoom !== undefined &&
+          maxzoom !== undefined
+        ) {
+          center = [
+            (bounds[0] + bounds[2]) / 2,
+            (bounds[1] + bounds[3]) / 2,
+            Math.floor((minzoom + maxzoom) / 2),
+          ];
+        }
+
         let thumbnail = "/images/placeholder.png";
-        if (center !== undefined) {
-          viewerHash = `#${center[2]}/${center[1]}/${center[0]}`;
+        const viewerHash = `#${center[2]}/${center[1]}/${center[0]}`;
 
-          if (format !== "pbf") {
-            const centerPx = mercator.px([center[0], center[1]], center[2]);
-            const x = Math.floor(centerPx[0] / 256);
-            const y = Math.floor(centerPx[1] / 256);
+        if (format !== "pbf") {
+          const centerPx = mercator.px([center[0], center[1]], center[2]);
+          const x = Math.floor(centerPx[0] / 256);
+          const y = Math.floor(centerPx[1] / 256);
 
-            thumbnail = `${getURL(req)}data/${id}/${
-              center[2]
-            }/${x}/${y}.${format}`;
-          }
+          thumbnail = `${getURL(req)}data/${id}/${
+            center[2]
+          }/${x}/${y}.${format}`;
         }
 
         datas[id] = {

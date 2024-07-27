@@ -97,51 +97,6 @@ export function getURL(req) {
 }
 
 /**
- * Add missing infos
- * @param {object} tileJSON
- */
-export function fixTileJSON(tileJSON) {
-  if (tileJSON.tilejson === undefined) {
-    tileJSON.tilejson = "2.2.0";
-  }
-
-  if (tileJSON.name === undefined) {
-    tileJSON.name = "Unknown";
-  }
-
-  if (tileJSON.attribution === undefined) {
-    tileJSON.attribution = "<b>Viettel HighTech<b>";
-  }
-
-  if (tileJSON.type === undefined) {
-    tileJSON.type = "overlay";
-  }
-
-  if (tileJSON.bounds === undefined) {
-    tileJSON.bounds = [-180, -85.051128779807, 180, 85.051128779807];
-  }
-
-  if (tileJSON.center === undefined) {
-    // 360 / tiles = 360 / 4 = 90
-    tileJSON.center = [
-      (tileJSON.bounds[0] + tileJSON.bounds[2]) / 2,
-      (tileJSON.bounds[1] + tileJSON.bounds[3]) / 2,
-      Math.round(
-        -Math.log((tileJSON.bounds[2] - tileJSON.bounds[0]) / 90) / Math.LN2
-      ),
-    ];
-  }
-
-  if (tileJSON.minzoom === undefined) {
-    tileJSON.minzoom = 0;
-  }
-
-  if (tileJSON.maxzoom === undefined) {
-    tileJSON.maxzoom = 22;
-  }
-}
-
-/**
  *
  * @param {string} fontPath
  * @param {string} ids
@@ -203,14 +158,66 @@ export function printLog(level, msg) {
  * @param {string} pbfDirPath
  */
 export async function validateFont(pbfDirPath) {
-  try {
-    const pbfFileNames = findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
+  const pbfFileNames = findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
 
-    if (pbfFileNames.length !== 256) {
-      throw new Error(`Pbf file count is not equal 256`);
+  if (pbfFileNames.length !== 256) {
+    throw new Error(`Pbf file count is not equal 256`);
+  }
+}
+
+/**
+ *
+ * @param {object} info
+ */
+export async function validateDataInfo(info) {
+  /* Validate format */
+  if (["jpeg", "jpg", "pbf", "png", "webp"].includes(info.format) === false) {
+    throw new Error(`Data format is invalid`);
+  }
+
+  /* Validate minzoom */
+  if (info.minzoom !== undefined) {
+    if (info.minzoom < 0) {
+      throw new Error(`Data minzoom is invalid`);
     }
-  } catch (error) {
-    throw error;
+  }
+
+  /* Validate maxzoom */
+  if (info.maxzoom !== undefined) {
+    if (info.maxzoom < 0 || info.maxzoom > 22) {
+      throw new Error(`Data maxzoom is invalid`);
+    }
+  }
+
+  /* Validate minzoom & maxzoom */
+  if (info.minzoom !== undefined && info.maxzoom !== undefined) {
+    if (info.minzoom > info.maxzoom) {
+      throw new Error(`Data zoom is invalid`);
+    }
+  }
+
+  /* Validate bounds */
+  if (info.bounds !== undefined) {
+    if (
+      info.bounds.length !== 4 ||
+      Math.abs(info.bounds[0]) > 180 ||
+      Math.abs(info.bounds[2]) > 180 ||
+      Math.abs(info.bounds[1]) > 90 ||
+      Math.abs(info.bounds[3]) > 90
+    ) {
+      throw new Error(`Data bounds is invalid`);
+    }
+  }
+
+  /* Validate center */
+  if (info.center !== undefined) {
+    if (
+      info.center.length !== 3 ||
+      Math.abs(info.bounds[0]) > 180 ||
+      Math.abs(info.bounds[1]) > 90
+    ) {
+      throw new Error(`Data center is invalid`);
+    }
   }
 }
 
@@ -219,57 +226,53 @@ export async function validateFont(pbfDirPath) {
  * @param {string} spriteDirPath
  */
 export async function validateSprite(spriteDirPath) {
-  try {
-    const jsonSpriteFileNames = findFiles(
-      spriteDirPath,
-      /^sprite(@\d+x)?\.json$/
-    );
+  const jsonSpriteFileNames = findFiles(
+    spriteDirPath,
+    /^sprite(@\d+x)?\.json$/
+  );
 
-    if (jsonSpriteFileNames.length === 0) {
-      throw new Error(`Not found json sprite file`);
-    }
-
-    await Promise.all(
-      jsonSpriteFileNames.map(async (jsonSpriteFileName) => {
-        /* Validate JSON sprite */
-        const jsonFilePath = path.join(spriteDirPath, jsonSpriteFileName);
-
-        const jsonData = JSON.parse(fs.readFileSync(jsonFilePath, "utf8"));
-
-        Object.values(jsonData).forEach((value) => {
-          if (
-            typeof value !== "object" ||
-            "height" in value === false ||
-            "pixelRatio" in value === false ||
-            "width" in value === false ||
-            "x" in value === false ||
-            "y" in value === false
-          ) {
-            throw new Error(
-              `One of properties ("height", "pixelRatio", "width", "x", "y") is empty`
-            );
-          }
-        });
-
-        /* Validate PNG sprite */
-        const pngFilePath = path.join(
-          spriteDirPath,
-          `${jsonSpriteFileName.slice(
-            0,
-            jsonSpriteFileName.lastIndexOf(".json")
-          )}.png`
-        );
-
-        const pngMetadata = await sharp(pngFilePath).metadata();
-
-        if (pngMetadata.format !== "png") {
-          throw new Error("Invalid png sprite file");
-        }
-      })
-    );
-  } catch (error) {
-    throw error;
+  if (jsonSpriteFileNames.length === 0) {
+    throw new Error(`Not found json sprite file`);
   }
+
+  await Promise.all(
+    jsonSpriteFileNames.map(async (jsonSpriteFileName) => {
+      /* Validate JSON sprite */
+      const jsonFilePath = path.join(spriteDirPath, jsonSpriteFileName);
+
+      const jsonData = JSON.parse(fs.readFileSync(jsonFilePath, "utf8"));
+
+      Object.values(jsonData).forEach((value) => {
+        if (
+          typeof value !== "object" ||
+          "height" in value === false ||
+          "pixelRatio" in value === false ||
+          "width" in value === false ||
+          "x" in value === false ||
+          "y" in value === false
+        ) {
+          throw new Error(
+            `One of properties ("height", "pixelRatio", "width", "x", "y") is empty`
+          );
+        }
+      });
+
+      /* Validate PNG sprite */
+      const pngFilePath = path.join(
+        spriteDirPath,
+        `${jsonSpriteFileName.slice(
+          0,
+          jsonSpriteFileName.lastIndexOf(".json")
+        )}.png`
+      );
+
+      const pngMetadata = await sharp(pngFilePath).metadata();
+
+      if (pngMetadata.format !== "png") {
+        throw new Error("Invalid png sprite file");
+      }
+    })
+  );
 }
 
 /**
@@ -450,33 +453,29 @@ export async function getPMTilesInfo(pmtilesSource) {
  * @returns
  */
 export async function getPMTilesTile(pmtilesSource, z, x, y) {
-  try {
-    const zxyTile = await pmtilesSource.getZxy(z, x, y);
+  const zxyTile = await pmtilesSource.getZxy(z, x, y);
 
-    if (!zxyTile?.data) {
-      throw new Error("Tile does not exist");
-    }
-
-    const header = await pmtilesSource.getHeader();
-    const headers = tiletype.headers(zxyTile.data);
-
-    if (header.tileType === 1) {
-      headers["Content-Type"] = "application/x-protobuf";
-    } else if (header.tileType === 2) {
-      headers["Content-Type"] = "image/png";
-    } else if (header.tileType === 3) {
-      headers["Content-Type"] = "image/jpeg";
-    } else if (header.tileType === 4) {
-      headers["Content-Type"] = "image/webp";
-    }
-
-    return {
-      data: zxyTile.data,
-      headers: headers,
-    };
-  } catch (error) {
-    throw error;
+  if (!zxyTile?.data) {
+    throw new Error("Tile does not exist");
   }
+
+  const header = await pmtilesSource.getHeader();
+  const headers = tiletype.headers(zxyTile.data);
+
+  if (header.tileType === 1) {
+    headers["Content-Type"] = "application/x-protobuf";
+  } else if (header.tileType === 2) {
+    headers["Content-Type"] = "image/png";
+  } else if (header.tileType === 3) {
+    headers["Content-Type"] = "image/jpeg";
+  } else if (header.tileType === 4) {
+    headers["Content-Type"] = "image/webp";
+  }
+
+  return {
+    data: zxyTile.data,
+    headers: headers,
+  };
 }
 
 /**
@@ -563,7 +562,7 @@ export async function getMBTilesInfo(mbtilesSource) {
               break;
             case "center":
             case "bounds":
-              info[row.name] = row.value.split(",").map(Number);
+              info[row.name] = row.value.split(",").map((elm) => Number(elm));
 
               break;
             default:

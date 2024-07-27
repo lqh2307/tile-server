@@ -13,7 +13,6 @@ import {
   getPMTilesTile,
   getMBTilesTile,
   getFontsPBF,
-  fixTileJSON,
   printLog,
   mercator,
   getURL,
@@ -207,12 +206,18 @@ export const serve_rendered = {
         const item = config.repo.styles[id];
         const rendered = {
           tileJSON: {
-            name: item.styleJSON.name,
+            tilejson: "2.2.0",
+            name: item.styleJSON.name || "Unknown",
             format: "png",
+            bounds: [-180, -85.051128779807, 180, 85.051128779807],
+            attribution: "<b>Viettel HighTech<b>",
+            type: "overlay",
+            minzoom: 0,
+            maxzoom: 22,
           },
         };
 
-        /* Add missing infos */
+        /* Fix center */
         if (item.styleJSON.center?.length >= 2 && item.styleJSON.zoom) {
           rendered.tileJSON.center = [
             item.styleJSON.center[0],
@@ -220,8 +225,6 @@ export const serve_rendered = {
             Math.round(item.styleJSON.zoom),
           ];
         }
-
-        fixTileJSON(rendered.tileJSON);
 
         /* Fix source urls & Add attribution & Create pools */
         if (config.options.serveRendered === true) {
