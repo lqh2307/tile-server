@@ -222,7 +222,7 @@ export const serve_rendered = {
           rendered.tileJSON.center = [
             item.styleJSON.center[0],
             item.styleJSON.center[1],
-            Math.round(item.styleJSON.zoom),
+            Math.floor(item.styleJSON.zoom),
           ];
         }
 

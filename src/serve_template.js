@@ -25,8 +25,6 @@ function serveFrontPageHandler(config) {
         }
 
         let thumbnail = "/images/placeholder.png";
-        const viewerHash = `#${center[2]}/${center[1]}/${center[0]}`;
-
         const centerPx = mercator.px([center[0], center[1]], center[2]);
         const x = Math.floor(centerPx[0] / 256);
         const y = Math.floor(centerPx[1] / 256);
@@ -37,7 +35,7 @@ function serveFrontPageHandler(config) {
           }/${x}/${y}.png`;
         }
 
-        let xyzLink = "";
+        let xyzLink;
         if (config.options.serveRendered === true) {
           xyzLink = `${getURL(req)}styles/${id}/256/{z}/{x}/{y}.png`;
         }
@@ -45,7 +43,7 @@ function serveFrontPageHandler(config) {
         styles[id] = {
           name: name || "Unknown",
           xyz_link: xyzLink,
-          viewer_hash: viewerHash,
+          viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
           thumbnail: thumbnail,
           serve_wmts:
             config.options.serveRendered === true &&
@@ -71,8 +69,6 @@ function serveFrontPageHandler(config) {
         }
 
         let thumbnail = "/images/placeholder.png";
-        const viewerHash = `#${center[2]}/${center[1]}/${center[0]}`;
-
         if (format !== "pbf") {
           const centerPx = mercator.px([center[0], center[1]], center[2]);
           const x = Math.floor(centerPx[0] / 256);
@@ -86,7 +82,7 @@ function serveFrontPageHandler(config) {
         datas[id] = {
           name: name,
           xyz_link: `${getURL(req)}data/${id}/{z}/{x}/{y}.${format}`,
-          viewer_hash: viewerHash,
+          viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
           thumbnail: thumbnail,
           source_type: data.sourceType,
           is_vector: format === "pbf",
