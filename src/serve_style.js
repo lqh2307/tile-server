@@ -3,8 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import express from "express";
-import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
-import { printLog, getURL } from "./utils.js";
+import { printLog, getURL, validateStyle } from "./utils.js";
 
 function getStyleHandler(config) {
   return async (req, res, next) => {
@@ -144,125 +143,13 @@ export const serve_style = {
             throw new Error(`"style" property is empty`);
           }
 
+          /* Read style json file */
           const filePath = path.join(config.options.paths.styles, stylePath);
 
           const styleJSON = JSON.parse(fs.readFileSync(filePath));
 
           /* Validate style */
-          const validationErrors = validateStyleMin(styleJSON);
-          if (validationErrors.length > 0) {
-            let errString = "Style is invalid:";
-
-            for (const error of validationErrors) {
-              errString += "\n\t" + `${error.message}`;
-            }
-
-            throw new Error(errString);
-          }
-
-          /* Validate fonts */
-          if (styleJSON.glyphs !== undefined) {
-            if (
-              styleJSON.glyphs.startsWith("fonts://") === false &&
-              styleJSON.glyphs.startsWith("https://") === false &&
-              styleJSON.glyphs.startsWith("http://") === false
-            ) {
-              throw new Error("Invalid fonts url");
-            }
-          }
-
-          /* Validate sprite */
-          if (styleJSON.sprite !== undefined) {
-            if (styleJSON.sprite.startsWith("sprites://") === true) {
-              const spriteID = styleJSON.sprite.slice(
-                10,
-                styleJSON.sprite.lastIndexOf("/")
-              );
-
-              if (!config.repo.sprites[spriteID]) {
-                throw new Error(`Sprite "${spriteID}" is not found`);
-              }
-            } else if (
-              styleJSON.sprite.startsWith("https://") === false &&
-              styleJSON.sprite.startsWith("http://") === false
-            ) {
-              throw new Error("Invalid sprite url");
-            }
-          }
-
-          /* Validate sources */
-          Object.keys(styleJSON.sources).forEach((id) => {
-            const oldSource = styleJSON.sources[id];
-            const sourceURL = oldSource.url;
-            const sourceURLs = oldSource.urls;
-            const sourceTiles = oldSource.tiles;
-
-            if (sourceURL !== undefined) {
-              if (
-                sourceURL.startsWith("pmtiles://") === true ||
-                sourceURL.startsWith("mbtiles://") === true
-              ) {
-                const sourceID = sourceURL.slice(10);
-
-                if (!config.repo.datas[sourceID]) {
-                  throw new Error(`Source "${id}" is not found`);
-                }
-              } else if (
-                sourceURL.startsWith("https://") === false &&
-                sourceURL.startsWith("http://") === false
-              ) {
-                throw new Error(`Source "${id}" is invalid url`);
-              }
-            }
-
-            if (sourceURLs !== undefined) {
-              if (sourceURLs.length === 0) {
-                throw new Error(`Source "${id}" is invalid urls`);
-              }
-
-              sourceURLs.forEach((url) => {
-                if (
-                  url.startsWith("pmtiles://") === true ||
-                  url.startsWith("mbtiles://") === true
-                ) {
-                  const sourceID = url.slice(10);
-
-                  if (!config.repo.datas[sourceID]) {
-                    throw new Error(`Source "${id}" is not found`);
-                  }
-                } else if (
-                  url.startsWith("https://") === false &&
-                  url.startsWith("http://") === false
-                ) {
-                  throw new Error(`Source "${id}" is invalid urls`);
-                }
-              });
-            }
-
-            if (sourceTiles !== undefined) {
-              if (sourceTiles.length === 0) {
-                throw new Error(`Source "${id}" is invalid tile urls`);
-              }
-
-              sourceTiles.forEach((tile) => {
-                if (
-                  tile.startsWith("pmtiles://") === true ||
-                  tile.startsWith("mbtiles://") === true
-                ) {
-                  const sourceID = tile.slice(10);
-
-                  if (!config.repo.datas[sourceID]) {
-                    throw new Error(`Source "${id}" is not found`);
-                  }
-                } else if (
-                  tile.startsWith("https://") === false &&
-                  tile.startsWith("http://") === false
-                ) {
-                  throw new Error(`Source "${id}" is invalid tile urls`);
-                }
-              });
-            }
-          });
+          await validateStyle(config, styleJSON);
 
           /* Add to repo */
           config.repo.styles[id] = {

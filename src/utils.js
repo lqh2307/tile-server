@@ -10,6 +10,7 @@ import glyphCompose from "@mapbox/glyph-pbf-composite";
 import SphericalMercator from "@mapbox/sphericalmercator";
 import tiletype from "@mapbox/tiletype";
 import { PMTiles, FetchSource } from "pmtiles";
+import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 
 export const mercator = new SphericalMercator();
 
@@ -198,7 +199,7 @@ export async function validateDataInfo(info) {
 
   /* Validate minzoom */
   if (info.minzoom !== undefined) {
-    if (info.minzoom < 0 || info.maxzoom > 22) {
+    if (info.minzoom < 0 || info.minzoom > 22) {
       throw new Error(`Data minzoom info is invalid`);
     }
   }
@@ -242,6 +243,128 @@ export async function validateDataInfo(info) {
       throw new Error(`Data center info is invalid`);
     }
   }
+}
+
+/**
+ * Validate style
+ * @param {object} config
+ * @param {object} styleJSON
+ * @returns {Promise<void>}
+ */
+export async function validateStyle(config, styleJSON) {
+  /* Validate style */
+  const validationErrors = validateStyleMin(styleJSON);
+  if (validationErrors.length > 0) {
+    const errString = validationErrors
+      .map((validationError) => validationError.message)
+      .join("\n\t");
+
+    throw new Error(errString);
+  }
+
+  /* Validate fonts */
+  if (styleJSON.glyphs !== undefined) {
+    if (
+      styleJSON.glyphs.startsWith("fonts://") === false &&
+      styleJSON.glyphs.startsWith("https://") === false &&
+      styleJSON.glyphs.startsWith("http://") === false
+    ) {
+      throw new Error("Invalid fonts url");
+    }
+  }
+
+  /* Validate sprite */
+  if (styleJSON.sprite !== undefined) {
+    if (styleJSON.sprite.startsWith("sprites://") === true) {
+      const spriteID = styleJSON.sprite.slice(
+        10,
+        styleJSON.sprite.lastIndexOf("/")
+      );
+
+      if (!config.repo.sprites[spriteID]) {
+        throw new Error(`Sprite "${spriteID}" is not found`);
+      }
+    } else if (
+      styleJSON.sprite.startsWith("https://") === false &&
+      styleJSON.sprite.startsWith("http://") === false
+    ) {
+      throw new Error("Invalid sprite url");
+    }
+  }
+
+  /* Validate sources */
+  Object.keys(styleJSON.sources).forEach((id) => {
+    const oldSource = styleJSON.sources[id];
+    const sourceURL = oldSource.url;
+    const sourceURLs = oldSource.urls;
+    const sourceTiles = oldSource.tiles;
+
+    if (sourceURL !== undefined) {
+      if (
+        sourceURL.startsWith("pmtiles://") === true ||
+        sourceURL.startsWith("mbtiles://") === true
+      ) {
+        const sourceID = sourceURL.slice(10);
+
+        if (!config.repo.datas[sourceID]) {
+          throw new Error(`Source "${id}" is not found`);
+        }
+      } else if (
+        sourceURL.startsWith("https://") === false &&
+        sourceURL.startsWith("http://") === false
+      ) {
+        throw new Error(`Source "${id}" is invalid url`);
+      }
+    }
+
+    if (sourceURLs !== undefined) {
+      if (sourceURLs.length === 0) {
+        throw new Error(`Source "${id}" is invalid urls`);
+      }
+
+      sourceURLs.forEach((url) => {
+        if (
+          url.startsWith("pmtiles://") === true ||
+          url.startsWith("mbtiles://") === true
+        ) {
+          const sourceID = url.slice(10);
+
+          if (!config.repo.datas[sourceID]) {
+            throw new Error(`Source "${id}" is not found`);
+          }
+        } else if (
+          url.startsWith("https://") === false &&
+          url.startsWith("http://") === false
+        ) {
+          throw new Error(`Source "${id}" is invalid urls`);
+        }
+      });
+    }
+
+    if (sourceTiles !== undefined) {
+      if (sourceTiles.length === 0) {
+        throw new Error(`Source "${id}" is invalid tile urls`);
+      }
+
+      sourceTiles.forEach((tile) => {
+        if (
+          tile.startsWith("pmtiles://") === true ||
+          tile.startsWith("mbtiles://") === true
+        ) {
+          const sourceID = tile.slice(10);
+
+          if (!config.repo.datas[sourceID]) {
+            throw new Error(`Source "${id}" is not found`);
+          }
+        } else if (
+          tile.startsWith("https://") === false &&
+          tile.startsWith("http://") === false
+        ) {
+          throw new Error(`Source "${id}" is invalid tile urls`);
+        }
+      });
+    }
+  });
 }
 
 /**

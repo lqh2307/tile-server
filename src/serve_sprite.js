@@ -24,9 +24,9 @@ function getSpriteHandler(config) {
       const data = fs.readFileSync(filePath);
 
       if (req.params.format === "json") {
-        res.header("Content-type", "application/json");
+        res.header("Content-Type", "application/json");
       } else {
-        res.header("Content-type", "image/png");
+        res.header("Content-Type", "image/png");
       }
 
       return res.status(200).send(data);
@@ -40,21 +40,17 @@ function getSpriteHandler(config) {
 
 function getSpritesListHandler(config) {
   return async (req, res, next) => {
-    return async (req, res, next) => {
-      const sprites = config.repo.sprites;
+    const result = Object.keys(config.repo.sprites).map((id) => {
+      return {
+        name: id,
+        urls: [
+          `${getURL(req)}sprites/${id}/sprite.json`,
+          `${getURL(req)}sprites/${id}/sprite.png`,
+        ],
+      };
+    });
 
-      const result = Object.keys(sprites).map((id) => {
-        return {
-          name: id,
-          urls: [
-            `${getURL(req)}sprites/${id}/sprite.json`,
-            `${getURL(req)}sprites/${id}/sprite.png`,
-          ],
-        };
-      });
-
-      return res.status(200).send(result);
-    };
+    return res.status(200).send(result);
   };
 }
 

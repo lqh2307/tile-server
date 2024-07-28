@@ -1,12 +1,12 @@
 "use strict";
 
-import fs from "node:fs";
-import path from "node:path";
 import zlib from "zlib";
-import mlgl from "@maplibre/maplibre-gl-native";
+import fs from "node:fs";
 import axios from "axios";
 import sharp from "sharp";
+import path from "node:path";
 import express from "express";
+import mlgl from "@maplibre/maplibre-gl-native";
 import { createPool } from "generic-pool";
 import {
   responseEmptyTile,
@@ -142,7 +142,7 @@ function getRenderedHandler(config) {
       ],
     };
 
-    res.header("Content-type", "application/json");
+    res.header("Content-Type", "application/json");
 
     return res.status(200).send(info);
   };
@@ -153,11 +153,9 @@ function getRenderedsListHandler(config) {
     const rendereds = config.repo.rendereds;
 
     const result = Object.keys(rendereds).map((id) => {
-      const tileJSON = rendereds[id].tileJSON;
-
       return {
         id: id,
-        name: tileJSON.name,
+        name: rendereds[id].tileJSON.name,
         url: [
           `${getURL(req)}styles/256/${id}.json`,
           `${getURL(req)}styles/512/${id}.json`,
@@ -400,15 +398,26 @@ export const serve_rendered = {
                             const fonts = parts[2];
                             const range = parts[3].split(".")[0];
 
-                            const data = await getFontsPBF(
-                              config.options.paths.fonts,
-                              fonts,
-                              range
-                            );
+                            try {
+                              let data = await getFontsPBF(
+                                config.options.paths.fonts,
+                                fonts,
+                                range
+                              );
 
-                            callback(null, {
-                              data: data,
-                            });
+                              /* Unzip pbf font */
+                              if (data[0] === 0x1f && data[1] === 0x8b) {
+                                data = zlib.unzipSync(data);
+                              }
+
+                              callback(null, {
+                                data: data,
+                              });
+                            } catch (error) {
+                              callback(error, {
+                                data: null,
+                              });
+                            }
                           } else if (
                             protocol === "mbtiles:" ||
                             protocol === "pmtiles:"
@@ -439,7 +448,7 @@ export const serve_rendered = {
                                 );
                               }
 
-                              /* Unzip pbf rendered tile format */
+                              /* Unzip pbf rendered tile */
                               if (
                                 dataTile.headers["Content-Type"] ===
                                   "application/x-protobuf" &&

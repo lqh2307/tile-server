@@ -45,7 +45,7 @@ function getDataTileHandler(config) {
         dataTile = await getPMTilesTile(item.source, z, x, y);
       }
 
-      /* Gzip pbf data tile format */
+      /* Gzip pbf data tile */
       if (
         dataTile.headers["Content-Type"] === "application/x-protobuf" &&
         dataTile.headers["Content-Encoding"] === undefined
@@ -87,7 +87,7 @@ function getDataHandler(config) {
       tiles: [`${getURL(req)}data/${id}/{z}/{x}/{y}.${item.tileJSON.format}`],
     };
 
-    res.header("Content-type", "application/json");
+    res.header("Content-Type", "application/json");
 
     return res.status(200).send(info);
   };

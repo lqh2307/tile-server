@@ -1,5 +1,6 @@
 "use strict";
 
+import zlib from "zlib";
 import path from "node:path";
 import express from "express";
 import { validateFont, getFontsPBF, printLog, getURL } from "./utils.js";
@@ -8,15 +9,28 @@ function getFontHandler(config) {
   return async (req, res, next) => {
     const ids = decodeURI(req.params.id);
 
-    const concatenated = await getFontsPBF(
-      config.options.paths.fonts,
-      ids,
-      req.params.range
-    );
+    try {
+      let data = await getFontsPBF(
+        config.options.paths.fonts,
+        ids,
+        req.params.range
+      );
 
-    res.header("Content-type", "application/x-protobuf");
+      /* Gzip pbf font */
+      if (data[0] !== 0x1f && data[1] !== 0x8b) {
+        data = zlib.gzipSync(data);
 
-    return res.status(200).send(concatenated);
+        res.header("Content-Encoding", "gzip");
+      }
+
+      res.header("Content-Type", "application/x-protobuf");
+
+      return res.status(200).send(data);
+    } catch (error) {
+      printLog("error", `Failed to get font "${ids}": ${error}`);
+
+      return res.status(404).send("Font is not found");
+    }
   };
 }
 
