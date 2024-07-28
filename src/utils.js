@@ -101,23 +101,32 @@ export function getURL(req) {
 
 /**
  *
- * @param {string} fontPath
+ * @param {object} fontPath
  * @param {string} ids
  * @param {string} range
  * @returns {Promise<any>}
  * @returns
  */
-export async function getFontsPBF(fontPath, ids, range) {
-  const values = await Promise.all(
+export async function getFontsPBF(config, ids, range) {
+  const data = await Promise.all(
     ids.split(",").map(async (id) => {
       try {
-        const filePath = path.join(fontPath, id, `${range}.pbf`);
+        /* Check font is exist? */
+        if (config.repo.fonts[id] === undefined) {
+          throw new Error("Font is not found");
+        }
+
+        const filePath = path.join(
+          config.options.paths.fonts,
+          id,
+          `${range}.pbf`
+        );
 
         return fs.readFileSync(filePath);
-      } catch (_) {
+      } catch (error) {
         printLog(
           "warning",
-          `Failed to get font "${id}": Font is not found. Using fallback font "${fallbackFont}"...`
+          `Failed to get font "${id}": ${error}. Using fallback font "${fallbackFont}"...`
         );
 
         const filePath = path.resolve(
@@ -134,7 +143,7 @@ export async function getFontsPBF(fontPath, ids, range) {
     })
   );
 
-  return glyphCompose.combine(values);
+  return glyphCompose.combine(data);
 }
 
 /**

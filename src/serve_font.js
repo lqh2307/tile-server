@@ -10,11 +10,7 @@ function getFontHandler(config) {
     const ids = decodeURI(req.params.id);
 
     try {
-      let data = await getFontsPBF(
-        config.options.paths.fonts,
-        ids,
-        req.params.range
-      );
+      let data = await getFontsPBF(config, ids, req.params.range);
 
       /* Gzip pbf font */
       if (data[0] !== 0x1f || data[1] !== 0x8b) {

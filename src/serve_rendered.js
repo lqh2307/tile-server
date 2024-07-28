@@ -400,7 +400,7 @@ export const serve_rendered = {
 
                             try {
                               let data = await getFontsPBF(
-                                config.options.paths.fonts,
+                                config,
                                 fonts,
                                 range
                               );
