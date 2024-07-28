@@ -8,130 +8,116 @@ import { printLog, getURL } from "./utils.js";
 
 function getStyleHandler(config) {
   return async (req, res, next) => {
-    try {
-      const id = decodeURI(req.params.id);
-      const item = config.repo.styles[id];
+    const id = decodeURI(req.params.id);
+    const item = config.repo.styles[id];
 
-      if (item === undefined) {
-        return res.status(404).send("Style is not found");
+    if (item === undefined) {
+      return res.status(404).send("Style is not found");
+    }
+
+    /* Clone style JSON */
+    const styleJSON = {
+      ...item.styleJSON,
+      sources: {},
+    };
+
+    /* Fix sprite url */
+    if (styleJSON.sprite !== undefined) {
+      if (styleJSON.sprite.startsWith("sprites://") === true) {
+        styleJSON.sprite = styleJSON.sprite.replace(
+          "sprites://",
+          `${getURL(req)}sprites/`
+        );
       }
+    }
 
-      /* Clone style JSON */
-      const styleJSON = {
-        ...item.styleJSON,
-        sources: {},
+    /* Fix fonts url */
+    if (styleJSON.glyphs !== undefined) {
+      if (styleJSON.glyphs.startsWith("fonts://") === true) {
+        styleJSON.glyphs = styleJSON.glyphs.replace(
+          "fonts://",
+          `${getURL(req)}fonts/`
+        );
+      }
+    }
+
+    /* Fix source urls */
+    Object.keys(item.styleJSON.sources).forEach((id) => {
+      const oldSource = item.styleJSON.sources[id];
+      const sourceURL = oldSource.url;
+      const sourceURLs = oldSource.urls;
+      const sourceTiles = oldSource.tiles;
+
+      styleJSON.sources[id] = {
+        ...oldSource,
       };
 
-      /* Fix sprite url */
-      if (styleJSON.sprite !== undefined) {
-        if (styleJSON.sprite.startsWith("sprites://") === true) {
-          styleJSON.sprite = styleJSON.sprite.replace(
-            "sprites://",
-            `${getURL(req)}sprites/`
-          );
+      if (sourceURL !== undefined) {
+        if (
+          sourceURL.startsWith("mbtiles://") === true ||
+          sourceURL.startsWith("pmtiles://") === true
+        ) {
+          const sourceID = sourceURL.slice(10);
+
+          styleJSON.sources[id].url = `${getURL(req)}data/${sourceID}.json`;
         }
       }
 
-      /* Fix fonts url */
-      if (styleJSON.glyphs !== undefined) {
-        if (styleJSON.glyphs.startsWith("fonts://") === true) {
-          styleJSON.glyphs = styleJSON.glyphs.replace(
-            "fonts://",
-            `${getURL(req)}fonts/`
-          );
-        }
-      }
-
-      /* Fix source urls */
-      Object.keys(item.styleJSON.sources).forEach((id) => {
-        const oldSource = item.styleJSON.sources[id];
-        const sourceURL = oldSource.url;
-        const sourceURLs = oldSource.urls;
-        const sourceTiles = oldSource.tiles;
-
-        styleJSON.sources[id] = {
-          ...oldSource,
-        };
-
-        if (sourceURL !== undefined) {
+      if (sourceURLs !== undefined) {
+        const urls = sourceURLs.map((url) => {
           if (
-            sourceURL.startsWith("mbtiles://") === true ||
-            sourceURL.startsWith("pmtiles://") === true
+            url.startsWith("pmtiles://") === true ||
+            url.startsWith("mbtiles://") === true
           ) {
-            const sourceID = sourceURL.slice(10);
+            const sourceID = url.slice(10);
 
-            styleJSON.sources[id].url = `${getURL(req)}data/${sourceID}.json`;
+            url = `${getURL(req)}data/${sourceID}.json`;
           }
-        }
 
-        if (sourceURLs !== undefined) {
-          const urls = sourceURLs.map((url) => {
-            if (
-              url.startsWith("pmtiles://") === true ||
-              url.startsWith("mbtiles://") === true
-            ) {
-              const sourceID = url.slice(10);
+          return url;
+        });
 
-              url = `${getURL(req)}data/${sourceID}.json`;
-            }
+        styleJSON.sources[id].urls = [...new Set(urls)];
+      }
 
-            return url;
-          });
+      if (sourceTiles !== undefined) {
+        const tiles = sourceTiles.map((tile) => {
+          if (
+            tile.startsWith("pmtiles://") === true ||
+            tile.startsWith("mbtiles://") === true
+          ) {
+            const sourceID = tile.slice(10);
+            const format = config.repo.datas[sourceID].tileJSON.format;
 
-          styleJSON.sources[id].urls = [...new Set(urls)];
-        }
+            tile = `${getURL(req)}data/${sourceID}/{z}/{x}/{y}.${format}`;
+          }
 
-        if (sourceTiles !== undefined) {
-          const tiles = sourceTiles.map((tile) => {
-            if (
-              tile.startsWith("pmtiles://") === true ||
-              tile.startsWith("mbtiles://") === true
-            ) {
-              const sourceID = tile.slice(10);
-              const format = config.repo.datas[sourceID].tileJSON.format;
+          return tile;
+        });
 
-              tile = `${getURL(req)}data/${sourceID}/{z}/{x}/{y}.${format}`;
-            }
+        styleJSON.sources[id].tiles = [...new Set(tiles)];
+      }
+    });
 
-            return tile;
-          });
+    res.header("Content-Type", "application/json");
 
-          styleJSON.sources[id].tiles = [...new Set(tiles)];
-        }
-      });
-
-      res.header("Content-Type", "application/json");
-
-      return res.status(200).send(styleJSON);
-    } catch (error) {
-      printLog("error", `Failed to get style "${id}": ${error}`);
-
-      return res.status(500).send("Internal server error");
-    }
+    return res.status(200).send(styleJSON);
   };
 }
 
 function getStylesListHandler(config) {
   return async (req, res, next) => {
-    try {
-      const styles = config.repo.styles;
+    const styles = config.repo.styles;
 
-      const result = Object.keys(styles).map((id) => {
-        const item = styles[id];
+    const result = Object.keys(styles).map((id) => {
+      return {
+        id: id,
+        name: styles[id].styleJSON.name || "Unknown",
+        url: `${getURL(req)}styles/${id}/style.json`,
+      };
+    });
 
-        return {
-          id: id,
-          name: item.styleJSON.name || "Unknown",
-          url: `${getURL(req)}styles/${id}/style.json`,
-        };
-      });
-
-      return res.status(200).send(result);
-    } catch (error) {
-      printLog("error", `Failed to get styles list: ${error}`);
-
-      return res.status(500).send("Internal server error");
-    }
+    return res.status(200).send(result);
   };
 }
 
@@ -151,9 +137,9 @@ export const serve_style = {
   add: async (config) => {
     await Promise.all(
       Object.keys(config.styles).map(async (id) => {
-        const stylePath = config.styles[id].style;
-
         try {
+          const stylePath = config.styles[id].style;
+
           if (!stylePath) {
             throw new Error(`"style" property is empty`);
           }

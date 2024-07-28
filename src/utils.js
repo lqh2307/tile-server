@@ -5,7 +5,7 @@ import path from "node:path";
 import Color from "color";
 import axios from "axios";
 import sharp from "sharp";
-import sqlite3 from "sqlite3";
+import Database from "better-sqlite3";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
 import SphericalMercator from "@mapbox/sphericalmercator";
 import tiletype from "@mapbox/tiletype";
@@ -513,18 +513,8 @@ export async function getPMTilesTile(pmtilesSource, z, x, y) {
  * @returns {Promise<object>}
  */
 export async function openMBTiles(filePath) {
-  return new Promise((resolve, reject) => {
-    const mbtilesSource = new sqlite3.Database(
-      filePath,
-      sqlite3.OPEN_READONLY,
-      (error) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(mbtilesSource);
-        }
-      }
-    );
+  return new Database(filePath, {
+    readonly: true,
   });
 }
 
@@ -537,28 +527,23 @@ export async function openMBTiles(filePath) {
  * @returns {Promise<object>}
  */
 export async function getMBTilesTile(mbtilesSource, z, x, y) {
-  return new Promise((resolve, reject) => {
-    y = (1 << z) - 1 - y; // Flip Y to convert TMS scheme => XYZ scheme
-
-    mbtilesSource.get(
-      "SELECT tile_data FROM tiles WHERE zoom_level = ? AND tile_column = ? AND tile_row = ?",
+  const row = mbtilesSource
+    .prepare(
+      "SELECT tile_data FROM tiles WHERE zoom_level = ? AND tile_column = ? AND tile_row = ?"
+    )
+    .get(
       z,
       x,
-      y,
-      (err, row) => {
-        if (err) {
-          reject(err);
-        } else if (!row?.tile_data) {
-          reject(new Error("Tile does not exist"));
-        } else {
-          resolve({
-            data: row.tile_data,
-            headers: tiletype.headers(row.tile_data),
-          });
-        }
-      }
+      (1 << z) - 1 - y // Flip Y to convert TMS scheme => XYZ scheme);
     );
-  });
+  if (!row || !row.tile_data) {
+    throw new Error("Tile does not exist");
+  }
+
+  return {
+    data: row.tile_data,
+    headers: tiletype.headers(row.tile_data),
+  };
 }
 
 /**
@@ -567,48 +552,40 @@ export async function getMBTilesTile(mbtilesSource, z, x, y) {
  * @returns {Promise<object>}
  */
 export async function getMBTilesInfo(mbtilesSource) {
-  return new Promise((resolve, reject) => {
-    mbtilesSource.all("SELECT name, value FROM metadata", (err, rows) => {
-      if (err) {
-        reject(err);
+  const rows = mbtilesSource.prepare("SELECT name, value FROM metadata").all();
+
+  const info = {
+    scheme: "xyz", // Guarantee scheme always is XYZ
+  };
+
+  if (rows) {
+    rows.forEach((row) => {
+      switch (row.name) {
+        case "json":
+          Object.assign(info, JSON.parse(row.value));
+
+          break;
+        case "minzoom":
+        case "maxzoom":
+          info[row.name] = Number(row.value);
+
+          break;
+        case "center":
+        case "bounds":
+          info[row.name] = row.value.split(",").map((elm) => Number(elm));
+
+          break;
+        case "scheme":
+          break;
+        default:
+          info[row.name] = row.value;
+
+          break;
       }
-
-      const info = {};
-
-      if (rows) {
-        rows.forEach((row) => {
-          switch (row.name) {
-            case "json":
-              try {
-                Object.assign(info, JSON.parse(row.value));
-              } catch (err) {
-                reject(err);
-              }
-
-              break;
-            case "minzoom":
-            case "maxzoom":
-              info[row.name] = Number(row.value);
-
-              break;
-            case "center":
-            case "bounds":
-              info[row.name] = row.value.split(",").map((elm) => Number(elm));
-
-              break;
-            default:
-              info[row.name] = row.value;
-
-              break;
-          }
-        });
-      }
-
-      info.scheme = "xyz"; // Guarantee scheme always is XYZ
-
-      resolve(info);
     });
-  });
+  }
+
+  return info;
 }
 
 /**
@@ -617,13 +594,5 @@ export async function getMBTilesInfo(mbtilesSource) {
  * @returns {Promise<void>}
  */
 export async function closeMBTiles(mbtilesSource) {
-  return new Promise((resolve, reject) => {
-    mbtilesSource.close((err) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
-  });
+  mbtilesSource.close();
 }

@@ -20,51 +20,51 @@ import {
 
 function getRenderedTileHandler(config) {
   return async (req, res, next) => {
+    const id = decodeURI(req.params.id);
+    const item = config.repo.rendereds[id];
+
+    /* Check rendered is exist? */
+    if (item === undefined) {
+      return res.status(404).send("Rendered is not found");
+    }
+
+    /* Check rendered tile scale */
+    const scale = Number(req.params.scale?.slice(1, -1)) || 1;
+
+    if (scale > config.options.maxScaleRender) {
+      return res.status(400).send("Rendered tile scale is invalid");
+    }
+
+    const z = Number(req.params.z);
+    const x = Number(req.params.x);
+    const y = Number(req.params.y);
+    const tileSize = Number(req.params.tileSize) || 256;
+    const tileCenter = mercator.ll(
+      [
+        ((x + 0.5) / (1 << z)) * (256 << z),
+        ((y + 0.5) / (1 << z)) * (256 << z),
+      ],
+      z
+    );
+
+    // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
+    const params = {
+      zoom: tileSize === 512 ? z : Math.max(0, z - 1),
+      center: tileCenter,
+      width: tileSize,
+      height: tileSize,
+    };
+
+    // HACK(Part 1) 256px tiles are a zoom level lower than maplibre-native default tiles.
+    // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
+    // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in Part 2.
+    if (z === 0 && tileSize === 256) {
+      params.width *= 2;
+      params.height *= 2;
+    }
+    // END HACK(Part 1)
+
     try {
-      const id = decodeURI(req.params.id);
-      const item = config.repo.rendereds[id];
-
-      /* Check rendered is exist? */
-      if (item === undefined) {
-        return res.status(404).send("Rendered is not found");
-      }
-
-      /* Check rendered tile scale */
-      const scale = Number(req.params.scale?.slice(1, -1)) || 1;
-
-      if (scale > config.options.maxScaleRender) {
-        return res.status(400).send("Rendered tile scale is invalid");
-      }
-
-      const z = Number(req.params.z);
-      const x = Number(req.params.x);
-      const y = Number(req.params.y);
-      const tileSize = Number(req.params.tileSize) || 256;
-      const tileCenter = mercator.ll(
-        [
-          ((x + 0.5) / (1 << z)) * (256 << z),
-          ((y + 0.5) / (1 << z)) * (256 << z),
-        ],
-        z
-      );
-
-      // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
-      const params = {
-        zoom: tileSize === 512 ? z : Math.max(0, z - 1),
-        center: tileCenter,
-        width: tileSize,
-        height: tileSize,
-      };
-
-      // HACK(Part 1) 256px tiles are a zoom level lower than maplibre-native default tiles.
-      // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-      // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in Part 2.
-      if (z === 0 && tileSize === 256) {
-        params.width *= 2;
-        params.height *= 2;
-      }
-      // END HACK(Part 1)
-
       const renderer = await item.renderers[scale - 1].acquire();
 
       renderer.render(params, (error, data) => {
@@ -126,58 +126,46 @@ function getRenderedTileHandler(config) {
 
 function getRenderedHandler(config) {
   return async (req, res, next) => {
-    try {
-      const id = decodeURI(req.params.id);
-      const item = config.repo.rendereds[id];
+    const id = decodeURI(req.params.id);
+    const item = config.repo.rendereds[id];
 
-      if (item === undefined) {
-        return res.status(404).send("Rendered is not found");
-      }
-
-      const info = {
-        ...item.tileJSON,
-        tiles: [
-          `${getURL(req)}styles/${id}/${
-            req.params.tileSize || 256
-          }/{z}/{x}/{y}.png`,
-        ],
-      };
-
-      res.header("Content-type", "application/json");
-
-      return res.status(200).send(info);
-    } catch (error) {
-      printLog("error", `Failed to get rendered "${id}": ${error}`);
-
-      return res.status(500).send("Internal server error");
+    if (item === undefined) {
+      return res.status(404).send("Rendered is not found");
     }
+
+    const info = {
+      ...item.tileJSON,
+      tiles: [
+        `${getURL(req)}styles/${id}/${
+          req.params.tileSize || 256
+        }/{z}/{x}/{y}.png`,
+      ],
+    };
+
+    res.header("Content-type", "application/json");
+
+    return res.status(200).send(info);
   };
 }
 
 function getRenderedsListHandler(config) {
   return async (req, res, next) => {
-    try {
-      const rendereds = config.repo.rendereds;
+    const rendereds = config.repo.rendereds;
 
-      const result = Object.keys(rendereds).map((id) => {
-        const tileJSON = rendereds[id].tileJSON;
+    const result = Object.keys(rendereds).map((id) => {
+      const tileJSON = rendereds[id].tileJSON;
 
-        return {
-          id: id,
-          name: tileJSON.name,
-          url: [
-            `${getURL(req)}styles/256/${id}.json`,
-            `${getURL(req)}styles/512/${id}.json`,
-          ],
-        };
-      });
+      return {
+        id: id,
+        name: tileJSON.name,
+        url: [
+          `${getURL(req)}styles/256/${id}.json`,
+          `${getURL(req)}styles/512/${id}.json`,
+        ],
+      };
+    });
 
-      return res.status(200).send(result);
-    } catch (error) {
-      printLog("error", `Failed to get rendereds list: ${error}`);
-
-      return res.status(500).send("Internal server error");
-    }
+    return res.status(200).send(result);
   };
 }
 
@@ -215,76 +203,109 @@ export const serve_rendered = {
 
     await Promise.all(
       Object.keys(config.repo.styles).map(async (id) => {
-        const item = config.repo.styles[id];
-        const rendered = {
-          tileJSON: {
-            tilejson: "2.2.0",
-            name: item.styleJSON.name || "Unknown",
-            format: "png",
-            bounds: [-180, -85.051128779807, 180, 85.051128779807],
-            attribution: "<b>Viettel HighTech<b>",
-            type: "overlay",
-            minzoom: 0,
-            maxzoom: 22,
-          },
-        };
-
-        /* Fix center */
-        if (item.styleJSON.center?.length >= 2 && item.styleJSON.zoom) {
-          rendered.tileJSON.center = [
-            item.styleJSON.center[0],
-            item.styleJSON.center[1],
-            Math.floor(item.styleJSON.zoom),
-          ];
-        }
-
-        /* Fix source urls & Add attribution & Create pools */
-        if (config.options.serveRendered === true) {
-          /* Clone style JSON */
-          const styleJSON = {
-            ...item.styleJSON,
-            sources: {},
+        try {
+          const item = config.repo.styles[id];
+          const rendered = {
+            tileJSON: {
+              tilejson: "2.2.0",
+              name: item.styleJSON.name || "Unknown",
+              format: "png",
+              bounds: [-180, -85.051128779807, 180, 85.051128779807],
+              attribution: "<b>Viettel HighTech<b>",
+              type: "overlay",
+              minzoom: 0,
+              maxzoom: 22,
+            },
           };
 
-          await Promise.all(
-            // Fix source urls
-            Object.keys(item.styleJSON.sources).map(async (id) => {
-              const oldSource = item.styleJSON.sources[id];
-              const sourceURL = oldSource.url;
-              const sourceURLs = oldSource.urls;
-              const sourceTiles = oldSource.tiles;
+          /* Fix center */
+          if (item.styleJSON.center?.length >= 2 && item.styleJSON.zoom) {
+            rendered.tileJSON.center = [
+              item.styleJSON.center[0],
+              item.styleJSON.center[1],
+              Math.floor(item.styleJSON.zoom),
+            ];
+          }
 
-              styleJSON.sources[id] = {
-                ...oldSource,
-              };
+          /* Fix source urls & Add attribution & Create pools */
+          if (config.options.serveRendered === true) {
+            /* Clone style JSON */
+            const styleJSON = {
+              ...item.styleJSON,
+              sources: {},
+            };
 
-              if (sourceTiles !== undefined) {
-                const tiles = sourceTiles.map((tile) => {
-                  if (
-                    tile.startsWith("pmtiles://") === true ||
-                    tile.startsWith("mbtiles://") === true
-                  ) {
-                    const sourceID = tile.slice(10);
-                    const sourceData = config.repo.datas[sourceID];
+            await Promise.all(
+              // Fix source urls
+              Object.keys(item.styleJSON.sources).map(async (id) => {
+                const oldSource = item.styleJSON.sources[id];
+                const sourceURL = oldSource.url;
+                const sourceURLs = oldSource.urls;
+                const sourceTiles = oldSource.tiles;
 
-                    tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+                styleJSON.sources[id] = {
+                  ...oldSource,
+                };
+
+                if (sourceTiles !== undefined) {
+                  const tiles = sourceTiles.map((tile) => {
+                    if (
+                      tile.startsWith("pmtiles://") === true ||
+                      tile.startsWith("mbtiles://") === true
+                    ) {
+                      const sourceID = tile.slice(10);
+                      const sourceData = config.repo.datas[sourceID];
+
+                      tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+                    }
+
+                    return tile;
+                  });
+
+                  styleJSON.sources[id].tiles = [...new Set(tiles)];
+                }
+
+                if (sourceURLs !== undefined) {
+                  const otherUrls = [];
+
+                  sourceURLs.forEach((url) => {
+                    if (
+                      url.startsWith("pmtiles://") === true ||
+                      url.startsWith("mbtiles://") === true
+                    ) {
+                      const sourceID = url.slice(10);
+                      const sourceData = config.repo.datas[sourceID];
+                      const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+
+                      if (styleJSON.sources[id].tiles !== undefined) {
+                        if (
+                          styleJSON.sources[id].tiles.includes(tile) === false
+                        ) {
+                          styleJSON.sources[id].tiles.push(tile);
+                        }
+                      } else {
+                        styleJSON.sources[id].tiles = [tile];
+                      }
+                    } else {
+                      if (otherUrls.includes(url) === false) {
+                        otherUrls.push(url);
+                      }
+                    }
+                  });
+
+                  if (otherUrls.length === 0) {
+                    delete styleJSON.sources[id].urls;
+                  } else {
+                    styleJSON.sources[id].urls = otherUrls;
                   }
+                }
 
-                  return tile;
-                });
-
-                styleJSON.sources[id].tiles = [...new Set(tiles)];
-              }
-
-              if (sourceURLs !== undefined) {
-                const otherUrls = [];
-
-                sourceURLs.forEach((url) => {
+                if (sourceURL !== undefined) {
                   if (
-                    url.startsWith("pmtiles://") === true ||
-                    url.startsWith("mbtiles://") === true
+                    sourceURL.startsWith("pmtiles://") === true ||
+                    sourceURL.startsWith("mbtiles://") === true
                   ) {
-                    const sourceID = url.slice(10);
+                    const sourceID = sourceURL.slice(10);
                     const sourceData = config.repo.datas[sourceID];
                     const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
 
@@ -297,119 +318,88 @@ export const serve_rendered = {
                     } else {
                       styleJSON.sources[id].tiles = [tile];
                     }
-                  } else {
-                    if (otherUrls.includes(url) === false) {
-                      otherUrls.push(url);
-                    }
+
+                    delete styleJSON.sources[id].url;
                   }
-                });
-
-                if (otherUrls.length === 0) {
-                  delete styleJSON.sources[id].urls;
-                } else {
-                  styleJSON.sources[id].urls = otherUrls;
                 }
-              }
 
-              if (sourceURL !== undefined) {
                 if (
-                  sourceURL.startsWith("pmtiles://") === true ||
-                  sourceURL.startsWith("mbtiles://") === true
+                  styleJSON.sources[id].url === undefined &&
+                  styleJSON.sources[id].urls === undefined &&
+                  styleJSON.sources[id].tiles !== undefined
                 ) {
-                  const sourceID = sourceURL.slice(10);
-                  const sourceData = config.repo.datas[sourceID];
-                  const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+                  if (styleJSON.sources[id].tiles.length === 1) {
+                    const tileURL = styleJSON.sources[id].tiles[0];
+                    if (
+                      tileURL.startsWith("pmtiles://") === true ||
+                      tileURL.startsWith("mbtiles://") === true
+                    ) {
+                      const sourceID = tileURL.split("/")[2];
+                      const sourceData = config.repo.datas[sourceID];
 
-                  if (styleJSON.sources[id].tiles !== undefined) {
-                    if (styleJSON.sources[id].tiles.includes(tile) === false) {
-                      styleJSON.sources[id].tiles.push(tile);
+                      styleJSON.sources[id] = {
+                        ...sourceData.tileJSON,
+                        ...styleJSON.sources[id],
+                        tiles: [tileURL],
+                      };
                     }
-                  } else {
-                    styleJSON.sources[id].tiles = [tile];
-                  }
-
-                  delete styleJSON.sources[id].url;
-                }
-              }
-
-              if (
-                styleJSON.sources[id].url === undefined &&
-                styleJSON.sources[id].urls === undefined &&
-                styleJSON.sources[id].tiles !== undefined
-              ) {
-                if (styleJSON.sources[id].tiles.length === 1) {
-                  const tileURL = styleJSON.sources[id].tiles[0];
-                  if (
-                    tileURL.startsWith("pmtiles://") === true ||
-                    tileURL.startsWith("mbtiles://") === true
-                  ) {
-                    const sourceID = tileURL.split("/")[2];
-                    const sourceData = config.repo.datas[sourceID];
-
-                    styleJSON.sources[id] = {
-                      ...sourceData.tileJSON,
-                      ...styleJSON.sources[id],
-                      tiles: [tileURL],
-                    };
                   }
                 }
-              }
 
-              // Add atribution
-              if (
-                oldSource.attribution &&
-                rendered.tileJSON.attribution.includes(
-                  oldSource.attribution
-                ) === false
-              ) {
-                rendered.tileJSON.attribution += ` | ${oldSource.attribution}`;
-              }
-            })
-          );
+                // Add atribution
+                if (
+                  oldSource.attribution &&
+                  rendered.tileJSON.attribution.includes(
+                    oldSource.attribution
+                  ) === false
+                ) {
+                  rendered.tileJSON.attribution += ` | ${oldSource.attribution}`;
+                }
+              })
+            );
 
-          // Create pools
-          rendered.renderers = Array.from(
-            {
-              length: config.options.maxScaleRender,
-            },
-            (_, scale) =>
-              createPool(
-                {
-                  create: async () => {
-                    const renderer = new mlgl.Map({
-                      mode: "tile",
-                      ratio: scale + 1,
-                      request: async (req, callback) => {
-                        const url = decodeURIComponent(req.url);
-                        const parts = url.split("/");
-                        const protocol = parts[0];
+            // Create pools
+            rendered.renderers = Array.from(
+              {
+                length: config.options.maxScaleRender,
+              },
+              (_, scale) =>
+                createPool(
+                  {
+                    create: async () => {
+                      const renderer = new mlgl.Map({
+                        mode: "tile",
+                        ratio: scale + 1,
+                        request: async (req, callback) => {
+                          const url = decodeURIComponent(req.url);
+                          const parts = url.split("/");
+                          const protocol = parts[0];
 
-                        if (protocol === "sprites:") {
-                          const spriteDir = parts[2];
-                          const spriteFile = parts[3];
+                          if (protocol === "sprites:") {
+                            const spriteDir = parts[2];
+                            const spriteFile = parts[3];
 
-                          try {
-                            const data = fs.readFileSync(
-                              path.join(
-                                config.options.paths.sprites,
-                                spriteDir,
-                                spriteFile
-                              )
-                            );
+                            try {
+                              const data = fs.readFileSync(
+                                path.join(
+                                  config.options.paths.sprites,
+                                  spriteDir,
+                                  spriteFile
+                                )
+                              );
 
-                            callback(null, {
-                              data: data,
-                            });
-                          } catch (error) {
-                            callback(error, {
-                              data: null,
-                            });
-                          }
-                        } else if (protocol === "fonts:") {
-                          const fonts = parts[2];
-                          const range = parts[3].split(".")[0];
+                              callback(null, {
+                                data: data,
+                              });
+                            } catch (error) {
+                              callback(error, {
+                                data: null,
+                              });
+                            }
+                          } else if (protocol === "fonts:") {
+                            const fonts = parts[2];
+                            const range = parts[3].split(".")[0];
 
-                          try {
                             const data = await getFontsPBF(
                               config.options.paths.fonts,
                               fonts,
@@ -419,106 +409,107 @@ export const serve_rendered = {
                             callback(null, {
                               data: data,
                             });
-                          } catch (error) {
-                            callback(error, {
-                              data: null,
-                            });
-                          }
-                        } else if (
-                          protocol === "mbtiles:" ||
-                          protocol === "pmtiles:"
-                        ) {
-                          const sourceID = parts[2];
-                          const z = Number(parts[3]);
-                          const x = Number(parts[4]);
-                          const y = Number(parts[5].split(".")[0]);
-                          const sourceData = config.repo.datas[sourceID];
+                          } else if (
+                            protocol === "mbtiles:" ||
+                            protocol === "pmtiles:"
+                          ) {
+                            const sourceID = parts[2];
+                            const z = Number(parts[3]);
+                            const x = Number(parts[4]);
+                            const y = Number(parts[5].split(".")[0]);
+                            const sourceData = config.repo.datas[sourceID];
 
-                          try {
                             let dataTile;
 
-                            /* Get rendered tile */
-                            if (sourceData.sourceType === "mbtiles") {
-                              dataTile = await getMBTilesTile(
-                                sourceData.source,
-                                z,
-                                x,
-                                y
+                            try {
+                              /* Get rendered tile */
+                              if (sourceData.sourceType === "mbtiles") {
+                                dataTile = await getMBTilesTile(
+                                  sourceData.source,
+                                  z,
+                                  x,
+                                  y
+                                );
+                              } else {
+                                dataTile = await getPMTilesTile(
+                                  sourceData.source,
+                                  z,
+                                  x,
+                                  y
+                                );
+                              }
+
+                              /* Unzip pbf rendered tile format */
+                              if (
+                                dataTile.headers["Content-Type"] ===
+                                  "application/x-protobuf" &&
+                                dataTile.headers["Content-Encoding"] === "gzip"
+                              ) {
+                                dataTile.data = zlib.unzipSync(dataTile.data);
+                              }
+
+                              callback(null, {
+                                data: dataTile.data,
+                              });
+                            } catch (error) {
+                              printLog(
+                                "warning",
+                                `Failed to get data "${sourceID}" - Tile ${z}/${x}/${y}: ${error}. Serving empty tile...`
                               );
-                            } else {
-                              dataTile = await getPMTilesTile(
-                                sourceData.source,
-                                z,
-                                x,
-                                y
+
+                              responseEmptyTile(
+                                sourceData.tileJSON.format,
+                                callback
                               );
                             }
+                          } else if (
+                            protocol === "http:" ||
+                            protocol === "https:"
+                          ) {
+                            try {
+                              const { data } = await axios.get(url, {
+                                responseType: "arraybuffer",
+                              });
 
-                            /* Unzip pbf rendered tile format */
-                            if (
-                              dataTile.headers["Content-Type"] ===
-                                "application/x-protobuf" &&
-                              dataTile.headers["Content-Encoding"] === "gzip"
-                            ) {
-                              dataTile.data = zlib.unzipSync(dataTile.data);
+                              callback(null, {
+                                data: data,
+                              });
+                            } catch (error) {
+                              printLog("warning", error);
+
+                              responseEmptyTile(
+                                url.slice(url.lastIndexOf(".") + 1),
+                                callback
+                              );
                             }
-
-                            callback(null, {
-                              data: dataTile.data,
-                            });
-                          } catch (error) {
-                            printLog(
-                              "warning",
-                              `Failed to get data "${sourceID}" - Tile ${z}/${x}/${y}: ${error}. Serving empty tile...`
-                            );
-
-                            responseEmptyTile(
-                              sourceData.tileJSON.format,
-                              callback
-                            );
                           }
-                        } else if (
-                          protocol === "http:" ||
-                          protocol === "https:"
-                        ) {
-                          try {
-                            const { data } = await axios.get(url, {
-                              responseType: "arraybuffer",
-                            });
+                        },
+                      });
 
-                            callback(null, {
-                              data: data,
-                            });
-                          } catch (error) {
-                            printLog("warning", error);
+                      renderer.load(styleJSON);
 
-                            responseEmptyTile(
-                              url.slice(url.lastIndexOf(".") + 1),
-                              callback
-                            );
-                          }
-                        }
-                      },
-                    });
-
-                    renderer.load(styleJSON);
-
-                    return renderer;
+                      return renderer;
+                    },
+                    destroy: async (renderer) => {
+                      renderer.release();
+                    },
                   },
-                  destroy: async (renderer) => {
-                    renderer.release();
-                  },
-                },
-                {
-                  min: config.options.minPoolSize,
-                  max: config.options.maxPoolSize,
-                }
-              )
+                  {
+                    min: config.options.minPoolSize,
+                    max: config.options.maxPoolSize,
+                  }
+                )
+            );
+          }
+
+          /* Add to repo */
+          config.repo.rendereds[id] = rendered;
+        } catch (error) {
+          printLog(
+            "error",
+            `Failed to load rendered "${id}": ${error}. Skipping...`
           );
         }
-
-        /* Add to repo */
-        config.repo.rendereds[id] = rendered;
       })
     );
   },

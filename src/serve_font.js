@@ -8,42 +8,28 @@ function getFontHandler(config) {
   return async (req, res, next) => {
     const ids = decodeURI(req.params.id);
 
-    try {
-      const concatenated = await getFontsPBF(
-        config.options.paths.fonts,
-        ids,
-        req.params.range
-      );
+    const concatenated = await getFontsPBF(
+      config.options.paths.fonts,
+      ids,
+      req.params.range
+    );
 
-      res.header("Content-type", "application/x-protobuf");
+    res.header("Content-type", "application/x-protobuf");
 
-      return res.status(200).send(concatenated);
-    } catch (error) {
-      printLog("error", `Failed to get font "${ids}": ${error}`);
-
-      return res.status(404).send("Font is not found");
-    }
+    return res.status(200).send(concatenated);
   };
 }
 
 function getFontsListHandler(config) {
   return async (req, res, next) => {
-    try {
-      const fonts = config.repo.fonts;
+    const result = Object.keys(config.repo.fonts).map((id) => {
+      return {
+        name: id,
+        url: `${getURL(req)}fonts/${id}/{range}.pbf`,
+      };
+    });
 
-      const result = Object.keys(fonts).map((id) => {
-        return {
-          name: id,
-          url: `${getURL(req)}fonts/${id}/{range}.pbf`,
-        };
-      });
-
-      return res.status(200).send(result);
-    } catch (error) {
-      printLog("error", `Failed to get fonts list: ${error}`);
-
-      return res.status(500).send("Internal server error");
-    }
+    return res.status(200).send(result);
   };
 }
 

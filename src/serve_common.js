@@ -5,53 +5,35 @@ import { printLog } from "./utils.js";
 
 function serveHealthHandler(config) {
   return async (req, res, next) => {
-    try {
-      if (config.startupComplete === false) {
-        return res.status(503).send("Starting...");
-      }
-
-      return res.status(200).send("OK");
-    } catch (error) {
-      printLog("error", `Failed to check health: ${error}`);
-
-      return res.status(500).send("Internal server error");
+    if (config.startupComplete === false) {
+      return res.status(503).send("Starting...");
     }
+
+    return res.status(200).send("OK");
   };
 }
 
 function serveRestartHandler() {
   return async (req, res, next) => {
-    try {
-      printLog("info", "Received restart request. Restarting server...");
+    printLog("info", "Received restart request. Restarting server...");
 
-      setTimeout(() => {
-        process.exit(1);
-      }, 0);
+    setTimeout(() => {
+      process.exit(1);
+    }, 0);
 
-      return res.status(200).send("OK");
-    } catch (error) {
-      printLog("error", `Failed to restart server: ${error}`);
-
-      return res.status(500).send("Internal server error");
-    }
+    return res.status(200).send("OK");
   };
 }
 
 function serveKillHandler() {
   return async (req, res, next) => {
-    try {
-      printLog("info", "Received kill request. Killed server!");
+    printLog("info", "Received kill request. Killed server!");
 
-      setTimeout(() => {
-        process.exit(0);
-      }, 0);
+    setTimeout(() => {
+      process.exit(0);
+    }, 0);
 
-      return res.status(200).send("OK");
-    } catch (error) {
-      printLog("error", `Failed to kill server: ${error}`);
-
-      return res.status(500).send("Internal server error");
-    }
+    return res.status(200).send("OK");
   };
 }
 
