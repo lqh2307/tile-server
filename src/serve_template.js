@@ -8,186 +8,212 @@ import { getURL, mercator } from "./utils.js";
 
 function serveFrontPageHandler(config) {
   return async (req, res, next) => {
-    if (config.startupComplete === false) {
-      return res.status(503).send("Starting...");
+    try {
+      if (config.startupComplete === false) {
+        return res.status(503).send("Starting...");
+      }
+
+      const styles = {};
+      const datas = {};
+
+      await Promise.all([
+        ...Object.keys(config.repo.rendereds).map(async (id) => {
+          const style = config.repo.rendereds[id];
+          let { name, center } = style.tileJSON;
+
+          if (center === undefined) {
+            center = [0, 0, 0];
+          }
+
+          let thumbnail = "/images/placeholder.png";
+          if (config.options.serveRendered === true) {
+            const centerPx = mercator.px([center[0], center[1]], center[2]);
+
+            thumbnail = `${getURL(req)}styles/${id}/256/${
+              center[2]
+            }/${Math.floor(centerPx[0] / 256)}/${Math.floor(centerPx[1] / 256)}.png`;
+          }
+
+          let xyzLink;
+          if (config.options.serveRendered === true) {
+            xyzLink = `${getURL(req)}styles/${id}/256/{z}/{x}/{y}.png`;
+          }
+
+          styles[id] = {
+            name: name || "Unknown",
+            xyz_link: xyzLink,
+            viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
+            thumbnail: thumbnail,
+            serve_wmts:
+              config.options.serveRendered === true &&
+              config.options.serveWMTS === true,
+            serve_rendered: config.options.serveRendered === true,
+          };
+        }),
+        ...Object.keys(config.repo.datas).map(async (id) => {
+          const data = config.repo.datas[id];
+          let { name, center, format, bounds, minzoom, maxzoom } =
+            data.tileJSON;
+
+          if (center === undefined) {
+            if (
+              bounds !== undefined &&
+              minzoom !== undefined &&
+              maxzoom !== undefined
+            ) {
+              center = [
+                (bounds[0] + bounds[2]) / 2,
+                (bounds[1] + bounds[3]) / 2,
+                Math.floor((minzoom + maxzoom) / 2),
+              ];
+            } else {
+              center = [0, 0, 0];
+            }
+          }
+
+          let thumbnail = "/images/placeholder.png";
+          if (format !== "pbf") {
+            const centerPx = mercator.px([center[0], center[1]], center[2]);
+            const x = Math.floor(centerPx[0] / 256);
+            const y = Math.floor(centerPx[1] / 256);
+
+            thumbnail = `${getURL(req)}data/${id}/${
+              center[2]
+            }/${x}/${y}.${format}`;
+          }
+
+          datas[id] = {
+            name: name,
+            xyz_link: `${getURL(req)}data/${id}/{z}/{x}/{y}.${format}`,
+            viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
+            thumbnail: thumbnail,
+            source_type: data.sourceType,
+            is_vector: format === "pbf",
+          };
+        }),
+      ]);
+
+      const serveData = {
+        styles: styles,
+        data: datas,
+        style_count: Object.keys(styles).length,
+        data_count: Object.keys(datas).length,
+      };
+
+      const filePath = path.resolve("public", "templates", "index.tmpl");
+
+      const compiled = handlebars.compile(fs.readFileSync(filePath).toString())(
+        serveData
+      );
+
+      return res.status(200).send(compiled);
+    } catch (error) {
+      printLog("error", `Failed to serve front page: ${error}`);
+
+      return res.status(500).send("Internal server error");
     }
-
-    const styles = {};
-    const datas = {};
-
-    await Promise.all([
-      ...Object.keys(config.repo.rendereds).map(async (id) => {
-        const style = config.repo.rendereds[id];
-        let { name, center } = style.tileJSON;
-
-        if (center === undefined) {
-          center = [0, 0, 11];
-        }
-
-        let thumbnail = "/images/placeholder.png";
-        const centerPx = mercator.px([center[0], center[1]], center[2]);
-        const x = Math.floor(centerPx[0] / 256);
-        const y = Math.floor(centerPx[1] / 256);
-
-        if (config.options.serveRendered === true) {
-          thumbnail = `${getURL(req)}styles/${id}/256/${
-            center[2]
-          }/${x}/${y}.png`;
-        }
-
-        let xyzLink;
-        if (config.options.serveRendered === true) {
-          xyzLink = `${getURL(req)}styles/${id}/256/{z}/{x}/{y}.png`;
-        }
-
-        styles[id] = {
-          name: name || "Unknown",
-          xyz_link: xyzLink,
-          viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
-          thumbnail: thumbnail,
-          serve_wmts:
-            config.options.serveRendered === true &&
-            config.options.serveWMTS === true,
-          serve_rendered: config.options.serveRendered === true,
-        };
-      }),
-      ...Object.keys(config.repo.datas).map(async (id) => {
-        const data = config.repo.datas[id];
-        let { name, center, format, bounds, minzoom, maxzoom } = data.tileJSON;
-
-        if (
-          center === undefined &&
-          bounds !== undefined &&
-          minzoom !== undefined &&
-          maxzoom !== undefined
-        ) {
-          center = [
-            (bounds[0] + bounds[2]) / 2,
-            (bounds[1] + bounds[3]) / 2,
-            Math.floor((minzoom + maxzoom) / 2),
-          ];
-        }
-
-        let thumbnail = "/images/placeholder.png";
-        if (format !== "pbf") {
-          const centerPx = mercator.px([center[0], center[1]], center[2]);
-          const x = Math.floor(centerPx[0] / 256);
-          const y = Math.floor(centerPx[1] / 256);
-
-          thumbnail = `${getURL(req)}data/${id}/${
-            center[2]
-          }/${x}/${y}.${format}`;
-        }
-
-        datas[id] = {
-          name: name,
-          xyz_link: `${getURL(req)}data/${id}/{z}/{x}/{y}.${format}`,
-          viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
-          thumbnail: thumbnail,
-          source_type: data.sourceType,
-          is_vector: format === "pbf",
-        };
-      }),
-    ]);
-
-    const serveData = {
-      styles: styles,
-      data: datas,
-      style_count: Object.keys(styles).length,
-      data_count: Object.keys(datas).length,
-    };
-
-    const filePath = path.resolve("public", "templates", "index.tmpl");
-
-    const compiled = handlebars.compile(fs.readFileSync(filePath).toString())(
-      serveData
-    );
-
-    return res.status(200).send(compiled);
   };
 }
 
 function serveStyleHandler(config) {
   return async (req, res, next) => {
-    if (config.startupComplete === false) {
-      return res.status(503).send("Starting...");
+    try {
+      if (config.startupComplete === false) {
+        return res.status(503).send("Starting...");
+      }
+
+      const id = decodeURI(req.params.id);
+      const item = config.repo.rendereds[id];
+
+      if (item === undefined) {
+        return res.status(404).send("Style is not found");
+      }
+
+      const serveData = {
+        id: id,
+        name: item.tileJSON.name,
+      };
+
+      const filePath = path.resolve("public", "templates", "viewer.tmpl");
+
+      const compiled = handlebars.compile(fs.readFileSync(filePath).toString())(
+        serveData
+      );
+
+      return res.status(200).send(compiled);
+    } catch (error) {
+      printLog("error", `Failed to serve style "${id}": ${error}`);
+
+      return res.status(500).send("Internal server error");
     }
-
-    const id = decodeURI(req.params.id);
-    const item = config.repo.rendereds[id];
-
-    if (item === undefined) {
-      return res.status(404).send("Style is not found");
-    }
-
-    const serveData = {
-      id: id,
-      name: item.tileJSON.name,
-    };
-
-    const filePath = path.resolve("public", "templates", "viewer.tmpl");
-
-    const compiled = handlebars.compile(fs.readFileSync(filePath).toString())(
-      serveData
-    );
-
-    return res.status(200).send(compiled);
   };
 }
 
 function serveDataHandler(config) {
   return async (req, res, next) => {
-    if (config.startupComplete === false) {
-      return res.status(503).send("Starting...");
+    try {
+      if (config.startupComplete === false) {
+        return res.status(503).send("Starting...");
+      }
+
+      const id = decodeURI(req.params.id);
+      const item = config.repo.datas[id];
+
+      if (item === undefined) {
+        return res.status(404).send("Data is not found");
+      }
+
+      const serveData = {
+        id: id,
+        name: item.tileJSON.name,
+        is_vector: item.tileJSON.format === "pbf",
+      };
+
+      const filePath = path.resolve("public", "templates", "data.tmpl");
+
+      const compiled = handlebars.compile(fs.readFileSync(filePath).toString())(
+        serveData
+      );
+
+      return res.status(200).send(compiled);
+    } catch (error) {
+      printLog("error", `Failed to serve data "${id}": ${error}`);
+
+      return res.status(500).send("Internal server error");
     }
-
-    const id = decodeURI(req.params.id);
-    const item = config.repo.datas[id];
-
-    if (item === undefined) {
-      return res.status(404).send("Data is not found");
-    }
-
-    const serveData = {
-      id: id,
-      name: item.tileJSON.name,
-      is_vector: item.tileJSON.format === "pbf",
-    };
-
-    const filePath = path.resolve("public", "templates", "data.tmpl");
-
-    const compiled = handlebars.compile(fs.readFileSync(filePath).toString())(
-      serveData
-    );
-
-    return res.status(200).send(compiled);
   };
 }
 
 function serveWMTSHandler(config) {
   return async (req, res, next) => {
-    const id = decodeURI(req.params.id);
-    const item = config.repo.rendereds[id];
+    try {
+      const id = decodeURI(req.params.id);
+      const item = config.repo.rendereds[id];
 
-    if (item === undefined) {
-      return res.status(404).send("WMTS is not found");
+      if (item === undefined) {
+        return res.status(404).send("WMTS is not found");
+      }
+
+      const serveData = {
+        id: id,
+        name: item.tileJSON.name,
+        base_url: getURL(req),
+      };
+
+      const filePath = path.resolve("public", "templates", "wmts.tmpl");
+
+      const compiled = handlebars.compile(fs.readFileSync(filePath).toString())(
+        serveData
+      );
+
+      res.header("Content-Type", "text/xml");
+
+      return res.status(200).send(compiled);
+    } catch (error) {
+      printLog("error", `Failed to serve WMTS "${id}": ${error}`);
+
+      return res.status(500).send("Internal server error");
     }
-
-    const serveData = {
-      id: id,
-      name: item.tileJSON.name,
-      base_url: getURL(req),
-    };
-
-    const filePath = path.resolve("public", "templates", "wmts.tmpl");
-
-    const compiled = handlebars.compile(fs.readFileSync(filePath).toString())(
-      serveData
-    );
-
-    res.header("Content-Type", "text/xml");
-
-    return res.status(200).send(compiled);
   };
 }
 

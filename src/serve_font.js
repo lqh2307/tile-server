@@ -28,16 +28,22 @@ function getFontHandler(config) {
 
 function getFontsListHandler(config) {
   return async (req, res, next) => {
-    const fonts = config.repo.fonts;
+    try {
+      const fonts = config.repo.fonts;
 
-    const result = Object.keys(fonts).map((id) => {
-      return {
-        name: id,
-        url: `${getURL(req)}fonts/${id}/{range}.pbf`,
-      };
-    });
+      const result = Object.keys(fonts).map((id) => {
+        return {
+          name: id,
+          url: `${getURL(req)}fonts/${id}/{range}.pbf`,
+        };
+      });
 
-    return res.status(200).send(result);
+      return res.status(200).send(result);
+    } catch (error) {
+      printLog("error", `Failed to get fonts list: ${error}`);
+
+      return res.status(500).send("Internal server error");
+    }
   };
 }
 

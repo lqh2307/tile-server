@@ -19,9 +19,10 @@ const emptyBuffer = Buffer.alloc(0);
 const fallbackFont = "Open Sans Regular";
 
 /**
- * Create an appropriate mlgl response for http errors
+ * Create an empty tile response
  * @param {string} format tile format
  * @param {Function} callback mlgl callback
+ * @returns {void}
  */
 export function responseEmptyTile(format, callback) {
   if (["jpeg", "jpg", "png", "webp"].includes(format) === true) {
@@ -59,7 +60,7 @@ export function responseEmptyTile(format, callback) {
 }
 
 /**
- * Find files in directory
+ * Find matching files in directory
  * @param {string} dirPath
  * @param {RegExp} regex
  * @returns {string[]}
@@ -101,6 +102,7 @@ export function getURL(req) {
  * @param {string} fontPath
  * @param {string} ids
  * @param {string} range
+ * @returns {Promise<any>}
  * @returns
  */
 export async function getFontsPBF(fontPath, ids, range) {
@@ -154,8 +156,9 @@ export function printLog(level, msg) {
 }
 
 /**
- *
+ * Validate font
  * @param {string} pbfDirPath
+ * @returns {Promise<void>}
  */
 export async function validateFont(pbfDirPath) {
   const pbfFileNames = findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
@@ -166,33 +169,51 @@ export async function validateFont(pbfDirPath) {
 }
 
 /**
- *
+ * Validate metadata info
  * @param {object} info
+ * @returns {Promise<void>}
  */
 export async function validateDataInfo(info) {
+  /* Validate name */
+  if (info.name === undefined) {
+    throw new Error(`Data name info is invalid`);
+  }
+
+  /* Validate type */
+  if (info.type !== undefined) {
+    if (["baselayer", "overlay"].includes(info.type) === false) {
+      throw new Error(`Data type info is invalid`);
+    }
+  }
+
   /* Validate format */
   if (["jpeg", "jpg", "pbf", "png", "webp"].includes(info.format) === false) {
-    throw new Error(`Data format is invalid`);
+    throw new Error(`Data format info is invalid`);
+  }
+
+  /* Validate vector_layers */
+  if (info.format === "pbf" && info.vector_layers === undefined) {
+    throw new Error(`Data vector_layers info is invalid`);
   }
 
   /* Validate minzoom */
   if (info.minzoom !== undefined) {
-    if (info.minzoom < 0) {
-      throw new Error(`Data minzoom is invalid`);
+    if (info.minzoom < 0 || info.maxzoom > 22) {
+      throw new Error(`Data minzoom info is invalid`);
     }
   }
 
   /* Validate maxzoom */
   if (info.maxzoom !== undefined) {
     if (info.maxzoom < 0 || info.maxzoom > 22) {
-      throw new Error(`Data maxzoom is invalid`);
+      throw new Error(`Data maxzoom info is invalid`);
     }
   }
 
   /* Validate minzoom & maxzoom */
   if (info.minzoom !== undefined && info.maxzoom !== undefined) {
     if (info.minzoom > info.maxzoom) {
-      throw new Error(`Data zoom is invalid`);
+      throw new Error(`Data zoom info is invalid`);
     }
   }
 
@@ -205,7 +226,7 @@ export async function validateDataInfo(info) {
       Math.abs(info.bounds[1]) > 90 ||
       Math.abs(info.bounds[3]) > 90
     ) {
-      throw new Error(`Data bounds is invalid`);
+      throw new Error(`Data bounds info is invalid`);
     }
   }
 
@@ -213,17 +234,20 @@ export async function validateDataInfo(info) {
   if (info.center !== undefined) {
     if (
       info.center.length !== 3 ||
-      Math.abs(info.bounds[0]) > 180 ||
-      Math.abs(info.bounds[1]) > 90
+      Math.abs(info.center[0]) > 180 ||
+      Math.abs(info.center[1]) > 90 ||
+      info.center[2] < 0 ||
+      info.center[2] > 22
     ) {
-      throw new Error(`Data center is invalid`);
+      throw new Error(`Data center info is invalid`);
     }
   }
 }
 
 /**
- *
+ * Validate sprite
  * @param {string} spriteDirPath
+ * @returns {Promise<void>}
  */
 export async function validateSprite(spriteDirPath) {
   const jsonSpriteFileNames = findFiles(
@@ -260,10 +284,7 @@ export async function validateSprite(spriteDirPath) {
       /* Validate PNG sprite */
       const pngFilePath = path.join(
         spriteDirPath,
-        `${jsonSpriteFileName.slice(
-          0,
-          jsonSpriteFileName.lastIndexOf(".json")
-        )}.png`
+        `${path.basename(jsonSpriteFileName, ".json")}.png`
       );
 
       const pngMetadata = await sharp(pngFilePath).metadata();
@@ -305,10 +326,11 @@ export function createRepoFile(repo, repoFilePath) {
 }
 
 /**
- *
+ * Download file
  * @param {string} url
  * @param {string} outputPath
  * @param {boolean} overwrite
+ * @returns {Promise<string>}
  * @returns
  */
 export async function downloadFile(url, outputPath, overwrite = false) {
@@ -347,6 +369,9 @@ export async function downloadFile(url, outputPath, overwrite = false) {
   });
 }
 
+/**
+ * Private class for PMTiles
+ */
 class PMTilesFileSource {
   constructor(fd) {
     this.fd = fd;
@@ -371,9 +396,9 @@ class PMTilesFileSource {
 }
 
 /**
- *
+ * Open PMTiles
  * @param {string} filePath
- * @returns
+ * @returns {Promise<object>}
  */
 export async function openPMTiles(filePath) {
   let source;
@@ -391,9 +416,9 @@ export async function openPMTiles(filePath) {
 }
 
 /**
- *
- * @param {*} pmtilesSource
- * @returns
+ * Get PMTiles metadata
+ * @param {object} pmtilesSource
+ * @returns {Promise<object>}
  */
 export async function getPMTilesInfo(pmtilesSource) {
   const [header, metadata] = await Promise.all([
@@ -433,7 +458,11 @@ export async function getPMTilesInfo(pmtilesSource) {
     ];
   }
 
-  if (header.centerZoom !== undefined) {
+  if (
+    header.centerLon !== undefined &&
+    header.centerLat !== undefined &&
+    header.centerZoom !== undefined
+  ) {
     metadata.center = [
       Number(header.centerLon),
       Number(header.centerLat),
@@ -445,12 +474,12 @@ export async function getPMTilesInfo(pmtilesSource) {
 }
 
 /**
- *
- * @param {*} pmtilesSource
+ * Get PMTiles tile
+ * @param {object} pmtilesSource
  * @param {number} z
  * @param {number} x
  * @param {number} y
- * @returns
+ * @returns {Promise<object>}
  */
 export async function getPMTilesTile(pmtilesSource, z, x, y) {
   const zxyTile = await pmtilesSource.getZxy(z, x, y);
@@ -479,9 +508,9 @@ export async function getPMTilesTile(pmtilesSource, z, x, y) {
 }
 
 /**
- *
+ * Open MBTiles
  * @param {string} filePath
- * @returns
+ * @returns {Promise<object>}
  */
 export async function openMBTiles(filePath) {
   return new Promise((resolve, reject) => {
@@ -500,20 +529,22 @@ export async function openMBTiles(filePath) {
 }
 
 /**
- *
- * @param {*} mbtilesSource
+ * Get MBTiles tile
+ * @param {object} mbtilesSource
  * @param {number} z
  * @param {number} x
  * @param {number} y
- * @returns
+ * @returns {Promise<object>}
  */
 export async function getMBTilesTile(mbtilesSource, z, x, y) {
   return new Promise((resolve, reject) => {
+    y = (1 << z) - 1 - y; // Flip Y to convert TMS scheme => XYZ scheme
+
     mbtilesSource.get(
       "SELECT tile_data FROM tiles WHERE zoom_level = ? AND tile_column = ? AND tile_row = ?",
       z,
       x,
-      (1 << z) - 1 - y, // Flip Y coordinate because MBTiles files use TMS scheme
+      y,
       (err, row) => {
         if (err) {
           reject(err);
@@ -531,9 +562,9 @@ export async function getMBTilesTile(mbtilesSource, z, x, y) {
 }
 
 /**
- *
- * @param {*} mbtilesSource
- * @returns
+ * Get MBTiles info
+ * @param {object} mbtilesSource
+ * @returns {Promise<object>}
  */
 export async function getMBTilesInfo(mbtilesSource) {
   return new Promise((resolve, reject) => {
@@ -573,7 +604,7 @@ export async function getMBTilesInfo(mbtilesSource) {
         });
       }
 
-      info.scheme = "xyz"; // Guarantee that we always return proper schema type, even if 'tms' is specified in metadata
+      info.scheme = "xyz"; // Guarantee scheme always is XYZ
 
       resolve(info);
     });
@@ -581,9 +612,9 @@ export async function getMBTilesInfo(mbtilesSource) {
 }
 
 /**
- *
- * @param {*} mbtilesSource
- * @returns
+ * Close MBTiles
+ * @param {object} mbtilesSource
+ * @returns {Promise<void>}
  */
 export async function closeMBTiles(mbtilesSource) {
   return new Promise((resolve, reject) => {

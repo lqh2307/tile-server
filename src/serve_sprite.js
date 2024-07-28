@@ -7,14 +7,14 @@ import { printLog, getURL, validateSprite } from "./utils.js";
 
 function getSpriteHandler(config) {
   return async (req, res, next) => {
-    const id = decodeURI(req.params.id);
-    const item = config.repo.sprites[id];
-
-    if (item === undefined) {
-      return res.status(404).send("Sprite is not found");
-    }
-
     try {
+      const id = decodeURI(req.params.id);
+      const item = config.repo.sprites[id];
+
+      if (item === undefined) {
+        return res.status(404).send("Sprite is not found");
+      }
+
       const filePath = `${path.join(
         config.options.paths.sprites,
         id,
@@ -40,19 +40,27 @@ function getSpriteHandler(config) {
 
 function getSpritesListHandler(config) {
   return async (req, res, next) => {
-    const sprites = config.repo.sprites;
+    return async (req, res, next) => {
+      try {
+        const sprites = config.repo.sprites;
 
-    const result = Object.keys(sprites).map((id) => {
-      return {
-        name: id,
-        urls: [
-          `${getURL(req)}sprites/${id}/sprite.json`,
-          `${getURL(req)}sprites/${id}/sprite.png`,
-        ],
-      };
-    });
+        const result = Object.keys(sprites).map((id) => {
+          return {
+            name: id,
+            urls: [
+              `${getURL(req)}sprites/${id}/sprite.json`,
+              `${getURL(req)}sprites/${id}/sprite.png`,
+            ],
+          };
+        });
 
-    return res.status(200).send(result);
+        return res.status(200).send(result);
+      } catch (error) {
+        printLog("error", `Failed to get sprites list: ${error}`);
+
+        return res.status(500).send("Internal server error");
+      }
+    };
   };
 }
 
