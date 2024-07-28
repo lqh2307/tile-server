@@ -17,7 +17,7 @@ function getFontHandler(config) {
       );
 
       /* Gzip pbf font */
-      if (data[0] !== 0x1f && data[1] !== 0x8b) {
+      if (data[0] !== 0x1f || data[1] !== 0x8b) {
         data = zlib.gzipSync(data);
 
         res.header("Content-Encoding", "gzip");

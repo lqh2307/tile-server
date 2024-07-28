@@ -1,10 +1,11 @@
 "use strict";
 
 import fs from "node:fs";
-import path from "node:path";
 import Color from "color";
 import axios from "axios";
 import sharp from "sharp";
+import chalk from "chalk";
+import path from "node:path";
 import Database from "better-sqlite3";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
 import SphericalMercator from "@mapbox/sphericalmercator";
@@ -138,19 +139,17 @@ export async function getFontsPBF(fontPath, ids, range) {
 
 /**
  * Print log to console
- * @param {"debug"|"info"|"warning"|"error"} level
+ * @param {"info"|"warning"|"error"} level
  * @param {string} msg
  * @returns {void}
  */
 export function printLog(level, msg) {
   const dateTime = new Date().toISOString();
 
-  if (level === "debug") {
-    console.debug(`${dateTime} [DEBUG] ${msg}`);
-  } else if (level === "warning") {
-    console.warn(`${dateTime} [WARNING] ${msg}`);
+  if (level === "warning") {
+    console.warn(chalk.yellow(`${dateTime} [WARNING] ${msg}`));
   } else if (level === "error") {
-    console.error(`${dateTime} [ERROR] ${msg}`);
+    console.error(chalk.red(`${dateTime} [ERROR] ${msg}`));
   } else {
     console.info(`${dateTime} [INFO] ${msg}`);
   }
