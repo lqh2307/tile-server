@@ -7,9 +7,9 @@ import sharp from "sharp";
 import chalk from "chalk";
 import path from "node:path";
 import Database from "better-sqlite3";
+import tiletype from "@mapbox/tiletype";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
 import SphericalMercator from "@mapbox/sphericalmercator";
-import tiletype from "@mapbox/tiletype";
 import { PMTiles, FetchSource } from "pmtiles";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 
@@ -262,12 +262,12 @@ export async function validateDataInfo(info) {
 export async function validateStyle(config, styleJSON) {
   /* Validate style */
   const validationErrors = validateStyleMin(styleJSON);
-  if (validationErrors.length > 0) {
-    const errString = validationErrors
-      .map((validationError) => validationError.message)
-      .join("\n\t");
-
-    throw new Error(errString);
+  if (validationErrors?.length > 0) {
+    throw new Error(
+      validationErrors
+        .map((validationError) => "\n\t" + validationError.message)
+        .join()
+    );
   }
 
   /* Validate fonts */
@@ -289,7 +289,7 @@ export async function validateStyle(config, styleJSON) {
         styleJSON.sprite.lastIndexOf("/")
       );
 
-      if (!config.repo.sprites[spriteID]) {
+      if (config.repo.sprites[spriteID] === undefined) {
         throw new Error(`Sprite "${spriteID}" is not found`);
       }
     } else if (
@@ -314,7 +314,7 @@ export async function validateStyle(config, styleJSON) {
       ) {
         const sourceID = sourceURL.slice(10);
 
-        if (!config.repo.datas[sourceID]) {
+        if (config.repo.datas[sourceID] === undefined) {
           throw new Error(`Source "${id}" is not found`);
         }
       } else if (
@@ -337,7 +337,7 @@ export async function validateStyle(config, styleJSON) {
         ) {
           const sourceID = url.slice(10);
 
-          if (!config.repo.datas[sourceID]) {
+          if (config.repo.datas[sourceID] === undefined) {
             throw new Error(`Source "${id}" is not found`);
           }
         } else if (
@@ -361,7 +361,7 @@ export async function validateStyle(config, styleJSON) {
         ) {
           const sourceID = tile.slice(10);
 
-          if (!config.repo.datas[sourceID]) {
+          if (config.repo.datas[sourceID] === undefined) {
             throw new Error(`Source "${id}" is not found`);
           }
         } else if (
