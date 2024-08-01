@@ -68,7 +68,7 @@ function getDataTileHandler(config) {
         return res.status(204).send("Data tile is empty");
       }
 
-      return res.status(404).send("Data tile is not found");
+      return res.status(500).send("Internal server error");
     }
   };
 }

@@ -33,7 +33,7 @@ function getSpriteHandler(config) {
     } catch (error) {
       printLog("error", `Failed to get sprite "${id}": ${error}`);
 
-      return res.status(404).send("Sprite is not found");
+      return res.status(500).send("Internal server error");
     }
   };
 }

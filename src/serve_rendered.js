@@ -12,7 +12,7 @@ import {
   getPMTilesTile,
   getMBTilesTile,
   getFontsPBF,
-  unzipAsync,
+  gunzipAsync,
   printLog,
   mercator,
   getURL,
@@ -76,7 +76,7 @@ function getRenderedTileHandler(config) {
             `Failed to get rendered "${id}" - Tile ${z}/${x}/${y}: ${error}`
           );
 
-          return res.status(404).send("Rendered tile is not found");
+          return res.status(500).send("Internal server error");
         }
 
         const image = sharp(data, {
@@ -110,7 +110,7 @@ function getRenderedTileHandler(config) {
               `Failed to get rendered "${id}" - Tile ${z}/${x}/${y}: ${error}`
             );
 
-            return res.status(404).send("Rendered tile is not found");
+            return res.status(500).send("Internal server error");
           });
       });
     } catch (error) {
@@ -119,7 +119,7 @@ function getRenderedTileHandler(config) {
         `Failed to get rendered "${id}" - Tile ${z}/${x}/${y}: ${error}`
       );
 
-      return res.status(404).send("Rendered tile is not found");
+      return res.status(500).send("Internal server error");
     }
   };
 }
@@ -407,7 +407,7 @@ export const serve_rendered = {
 
                               /* Unzip pbf font */
                               if (data[0] === 0x1f && data[1] === 0x8b) {
-                                data = await unzipAsync(data);
+                                data = await gunzipAsync(data);
                               }
 
                               callback(null, {
@@ -454,7 +454,9 @@ export const serve_rendered = {
                                   "application/x-protobuf" &&
                                 dataTile.headers["Content-Encoding"] === "gzip"
                               ) {
-                                dataTile.data = await unzipAsync(dataTile.data);
+                                dataTile.data = await gunzipAsync(
+                                  dataTile.data
+                                );
                               }
 
                               callback(null, {

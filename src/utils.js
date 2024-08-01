@@ -680,11 +680,13 @@ export async function getMBTilesTile(mbtilesSource, z, x, y) {
       "SELECT tile_data FROM tiles WHERE zoom_level = ? AND tile_column = ? AND tile_row = ?",
       z,
       x,
-      (1 << z) - 1 - y, // Flip Y to convert TMS scheme => XYZ scheme);
+      (1 << z) - 1 - y, // Flip Y to convert TMS scheme => XYZ scheme
       (error, row) => {
         if (error) {
           return reject(error);
-        } else if (!row?.tile_data) {
+        }
+
+        if (!row?.tile_data) {
           return reject(new Error("Tile does not exist"));
         }
 
@@ -768,4 +770,4 @@ export async function closeMBTiles(mbtilesSource) {
 
 export const gzipAsync = util.promisify(zlib.gzip);
 
-export const unzipAsync = util.promisify(zlib.unzip);
+export const gunzipAsync = util.promisify(zlib.gunzip);

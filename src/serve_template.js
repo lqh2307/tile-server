@@ -98,12 +98,18 @@ function serveFrontPageHandler(config) {
       data_count: Object.keys(datas).length,
     };
 
-    const fileData = await fs.readFile(
-      path.resolve("public", "templates", "index.tmpl")
-    );
-    const compiled = handlebars.compile(fileData.toString())(serveData);
+    try {
+      const fileData = await fs.readFile(
+        path.resolve("public", "templates", "index.tmpl")
+      );
+      const compiled = handlebars.compile(fileData.toString())(serveData);
 
-    return res.status(200).send(compiled);
+      return res.status(200).send(compiled);
+    } catch (error) {
+      printLog("error", `Failed to serve front page": ${error}`);
+
+      return res.status(500).send("Internal server error");
+    }
   };
 }
 
@@ -125,12 +131,18 @@ function serveStyleHandler(config) {
       name: item.tileJSON.name,
     };
 
-    const fileData = await fs.readFile(
-      path.resolve("public", "templates", "viewer.tmpl")
-    );
-    const compiled = handlebars.compile(fileData.toString())(serveData);
+    try {
+      const fileData = await fs.readFile(
+        path.resolve("public", "templates", "viewer.tmpl")
+      );
+      const compiled = handlebars.compile(fileData.toString())(serveData);
 
-    return res.status(200).send(compiled);
+      return res.status(200).send(compiled);
+    } catch (error) {
+      printLog("error", `Failed to serve style "${id}": ${error}`);
+
+      return res.status(500).send("Internal server error");
+    }
   };
 }
 
@@ -153,12 +165,18 @@ function serveDataHandler(config) {
       is_vector: item.tileJSON.format === "pbf",
     };
 
-    const fileData = await fs.readFile(
-      path.resolve("public", "templates", "data.tmpl")
-    );
-    const compiled = handlebars.compile(fileData.toString())(serveData);
+    try {
+      const fileData = await fs.readFile(
+        path.resolve("public", "templates", "data.tmpl")
+      );
+      const compiled = handlebars.compile(fileData.toString())(serveData);
 
-    return res.status(200).send(compiled);
+      return res.status(200).send(compiled);
+    } catch (error) {
+      printLog("error", `Failed to serve data "${id}": ${error}`);
+
+      return res.status(500).send("Internal server error");
+    }
   };
 }
 
@@ -177,14 +195,20 @@ function serveWMTSHandler(config) {
       base_url: getURL(req),
     };
 
-    const fileData = await fs.readFile(
-      path.resolve("public", "templates", "wmts.tmpl")
-    );
-    const compiled = handlebars.compile(fileData.toString())(serveData);
+    try {
+      const fileData = await fs.readFile(
+        path.resolve("public", "templates", "wmts.tmpl")
+      );
+      const compiled = handlebars.compile(fileData.toString())(serveData);
 
-    res.header("Content-Type", "text/xml");
+      res.header("Content-Type", "text/xml");
 
-    return res.status(200).send(compiled);
+      return res.status(200).send(compiled);
+    } catch (error) {
+      printLog("error", `Failed to serve WMTS "${id}": ${error}`);
+
+      return res.status(500).send("Internal server error");
+    }
   };
 }
 

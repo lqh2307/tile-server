@@ -30,7 +30,7 @@ function getFontHandler(config) {
     } catch (error) {
       printLog("error", `Failed to get font "${ids}": ${error}`);
 
-      return res.status(404).send("Font is not found");
+      return res.status(500).send("Internal server error");
     }
   };
 }
