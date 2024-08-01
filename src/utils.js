@@ -770,4 +770,4 @@ export async function closeMBTiles(mbtilesSource) {
 
 export const gzipAsync = util.promisify(zlib.gzip);
 
-export const gunzipAsync = util.promisify(zlib.gunzip);
+export const unzipAsync = util.promisify(zlib.unzip);

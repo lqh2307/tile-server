@@ -12,7 +12,7 @@ import {
   getPMTilesTile,
   getMBTilesTile,
   getFontsPBF,
-  gunzipAsync,
+  unzipAsync,
   printLog,
   mercator,
   getURL,
@@ -407,7 +407,7 @@ export const serve_rendered = {
 
                               /* Unzip pbf font */
                               if (data[0] === 0x1f && data[1] === 0x8b) {
-                                data = await gunzipAsync(data);
+                                data = await unzipAsync(data);
                               }
 
                               callback(null, {
@@ -452,11 +452,10 @@ export const serve_rendered = {
                               if (
                                 dataTile.headers["Content-Type"] ===
                                   "application/x-protobuf" &&
-                                dataTile.headers["Content-Encoding"] === "gzip"
+                                dataTile.headers["Content-Encoding"] !==
+                                  undefined
                               ) {
-                                dataTile.data = await gunzipAsync(
-                                  dataTile.data
-                                );
+                                dataTile.data = await unzipAsync(dataTile.data);
                               }
 
                               callback(null, {
