@@ -1,7 +1,6 @@
 "use strict";
 
-import zlib from "zlib";
-import fs from "node:fs";
+import fs from "node:fs/promises";
 import axios from "axios";
 import sharp from "sharp";
 import path from "node:path";
@@ -13,6 +12,7 @@ import {
   getPMTilesTile,
   getMBTilesTile,
   getFontsPBF,
+  unzipAsync,
   printLog,
   mercator,
   getURL,
@@ -209,7 +209,7 @@ export const serve_rendered = {
               name: item.styleJSON.name || "Unknown",
               format: "png",
               bounds: [-180, -85.051128779807, 180, 85.051128779807],
-              attribution: "<b>Viettel HighTech<b>",
+              attribution: "<b>Viettel HighTech</b>",
               type: "overlay",
               minzoom: 0,
               maxzoom: 22,
@@ -378,7 +378,7 @@ export const serve_rendered = {
                             const spriteFile = parts[3];
 
                             try {
-                              const data = fs.readFileSync(
+                              const data = await fs.readFile(
                                 path.join(
                                   config.options.paths.sprites,
                                   spriteDir,
@@ -407,7 +407,7 @@ export const serve_rendered = {
 
                               /* Unzip pbf font */
                               if (data[0] === 0x1f && data[1] === 0x8b) {
-                                data = zlib.unzipSync(data);
+                                data = await unzipAsync(data);
                               }
 
                               callback(null, {
@@ -454,7 +454,7 @@ export const serve_rendered = {
                                   "application/x-protobuf" &&
                                 dataTile.headers["Content-Encoding"] === "gzip"
                               ) {
-                                dataTile.data = zlib.unzipSync(dataTile.data);
+                                dataTile.data = await unzipAsync(dataTile.data);
                               }
 
                               callback(null, {

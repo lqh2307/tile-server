@@ -1,6 +1,5 @@
 "use strict";
 
-import zlib from "zlib";
 import path from "node:path";
 import express from "express";
 import {
@@ -12,6 +11,7 @@ import {
   downloadFile,
   openMBTiles,
   openPMTiles,
+  gzipAsync,
   printLog,
   getURL,
 } from "./utils.js";
@@ -50,7 +50,7 @@ function getDataTileHandler(config) {
         dataTile.headers["Content-Type"] === "application/x-protobuf" &&
         dataTile.headers["Content-Encoding"] === undefined
       ) {
-        dataTile.data = zlib.gzipSync(dataTile.data);
+        dataTile.data = await gzipAsync(dataTile.data);
 
         dataTile.headers["Content-Encoding"] = "gzip";
       }

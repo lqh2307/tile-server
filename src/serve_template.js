@@ -1,6 +1,6 @@
 "use strict";
 
-import fs from "node:fs";
+import fs from "node:fs/promises";
 import path from "node:path";
 import express from "express";
 import handlebars from "handlebars";
@@ -98,11 +98,10 @@ function serveFrontPageHandler(config) {
       data_count: Object.keys(datas).length,
     };
 
-    const compiled = handlebars.compile(
-      fs
-        .readFileSync(path.resolve("public", "templates", "index.tmpl"))
-        .toString()
-    )(serveData);
+    const fileData = await fs.readFile(
+      path.resolve("public", "templates", "index.tmpl")
+    );
+    const compiled = handlebars.compile(fileData.toString())(serveData);
 
     return res.status(200).send(compiled);
   };
@@ -126,11 +125,10 @@ function serveStyleHandler(config) {
       name: item.tileJSON.name,
     };
 
-    const compiled = handlebars.compile(
-      fs
-        .readFileSync(path.resolve("public", "templates", "viewer.tmpl"))
-        .toString()
-    )(serveData);
+    const fileData = await fs.readFile(
+      path.resolve("public", "templates", "viewer.tmpl")
+    );
+    const compiled = handlebars.compile(fileData.toString())(serveData);
 
     return res.status(200).send(compiled);
   };
@@ -155,11 +153,10 @@ function serveDataHandler(config) {
       is_vector: item.tileJSON.format === "pbf",
     };
 
-    const compiled = handlebars.compile(
-      fs
-        .readFileSync(path.resolve("public", "templates", "data.tmpl"))
-        .toString()
-    )(serveData);
+    const fileData = await fs.readFile(
+      path.resolve("public", "templates", "data.tmpl")
+    );
+    const compiled = handlebars.compile(fileData.toString())(serveData);
 
     return res.status(200).send(compiled);
   };
@@ -180,11 +177,10 @@ function serveWMTSHandler(config) {
       base_url: getURL(req),
     };
 
-    const compiled = handlebars.compile(
-      fs
-        .readFileSync(path.resolve("public", "templates", "wmts.tmpl"))
-        .toString()
-    )(serveData);
+    const fileData = await fs.readFile(
+      path.resolve("public", "templates", "wmts.tmpl")
+    );
+    const compiled = handlebars.compile(fileData.toString())(serveData);
 
     res.header("Content-Type", "text/xml");
 

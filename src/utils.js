@@ -1,16 +1,19 @@
 "use strict";
 
+import zlib from "zlib";
+import util from "util";
 import fs from "node:fs";
 import Color from "color";
 import axios from "axios";
 import sharp from "sharp";
 import chalk from "chalk";
 import path from "node:path";
-import Database from "better-sqlite3";
+import sqlite3 from "sqlite3";
 import tiletype from "@mapbox/tiletype";
+import fsPromise from "node:fs/promises";
+import { PMTiles, FetchSource } from "pmtiles";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
 import SphericalMercator from "@mapbox/sphericalmercator";
-import { PMTiles, FetchSource } from "pmtiles";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 
 export const mercator = new SphericalMercator();
@@ -65,18 +68,22 @@ export function responseEmptyTile(format, callback) {
  * Find matching files in directory
  * @param {string} dirPath
  * @param {RegExp} regex
- * @returns {string[]}
+ * @returns {Promise<string[]>}
  */
-export function findFiles(dirPath, regex) {
-  const fileNames = fs.readdirSync(dirPath);
+export async function findFiles(dirPath, regex) {
+  const fileNames = await fsPromise.readdir(dirPath);
 
-  return fileNames.filter((fileName) => {
+  const results = [];
+  for (const fileName of fileNames) {
     const filePath = path.join(dirPath, fileName);
+    const stat = await fsPromise.stat(filePath);
 
-    const stat = fs.statSync(filePath);
+    if (regex.test(fileName) === true && stat.isFile() === true) {
+      results.push(fileName);
+    }
+  }
 
-    return regex.test(fileName) === true && stat.isFile() === true;
-  });
+  return results;
 }
 
 /**
@@ -122,7 +129,7 @@ export async function getFontsPBF(config, ids, range) {
           `${range}.pbf`
         );
 
-        return fs.readFileSync(filePath);
+        return await fsPromise.readFile(filePath);
       } catch (error) {
         printLog(
           "warning",
@@ -138,7 +145,7 @@ export async function getFontsPBF(config, ids, range) {
           `${range}.pbf`
         );
 
-        return fs.readFileSync(filePath);
+        return await fsPromise.readFile(filePath);
       }
     })
   );
@@ -170,7 +177,7 @@ export function printLog(level, msg) {
  * @returns {Promise<void>}
  */
 export async function validateFont(pbfDirPath) {
-  const pbfFileNames = findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
+  const pbfFileNames = await findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
 
   if (pbfFileNames.length !== 256) {
     throw new Error(`Pbf file count is not equal 256`);
@@ -381,7 +388,7 @@ export async function validateStyle(config, styleJSON) {
  * @returns {Promise<void>}
  */
 export async function validateSprite(spriteDirPath) {
-  const jsonSpriteFileNames = findFiles(
+  const jsonSpriteFileNames = await findFiles(
     spriteDirPath,
     /^sprite(@\d+x)?\.json$/
   );
@@ -394,8 +401,8 @@ export async function validateSprite(spriteDirPath) {
     jsonSpriteFileNames.map(async (jsonSpriteFileName) => {
       /* Validate JSON sprite */
       const jsonFilePath = path.join(spriteDirPath, jsonSpriteFileName);
-
-      const jsonData = JSON.parse(fs.readFileSync(jsonFilePath, "utf8"));
+      const fileData = await fsPromise.readFile(jsonFilePath, "utf8");
+      const jsonData = JSON.parse(fileData);
 
       Object.values(jsonData).forEach((value) => {
         if (
@@ -432,7 +439,7 @@ export async function validateSprite(spriteDirPath) {
  * @param {object} repo
  * @param {string} repoFilePath
  */
-export function createRepoFile(repo, repoFilePath) {
+export async function createRepoFile(repo, repoFilePath) {
   function getCircularReplacer() {
     const seen = new WeakMap();
     const paths = new Map();
@@ -453,7 +460,7 @@ export function createRepoFile(repo, repoFilePath) {
 
   const jsonData = JSON.stringify(repo, getCircularReplacer(), 2);
 
-  fs.writeFileSync(repoFilePath, jsonData, "utf8");
+  await fsPromise.writeFile(repoFilePath, jsonData, "utf8");
 }
 
 /**
@@ -466,16 +473,14 @@ export function createRepoFile(repo, repoFilePath) {
  */
 export async function downloadFile(url, outputPath, overwrite = false) {
   try {
-    const stat = fs.statSync(outputPath);
+    const stat = await fsPromise.stat(outputPath);
 
     if (stat.isFile() === true && stat.size > 0 && overwrite === false) {
       return outputPath;
     }
   } catch (_) {}
 
-  const dirPath = path.dirname(outputPath);
-
-  fs.mkdirSync(dirPath, {
+  await fsPromise.mkdir(path.dirname(outputPath), {
     recursive: true,
   });
 
@@ -486,7 +491,7 @@ export async function downloadFile(url, outputPath, overwrite = false) {
   });
 
   return new Promise((resolve, reject) => {
-    const writer = fs.createWriteStream(outputPath);
+    const writer = fsPromise.createWriteStream(outputPath);
 
     response.data.pipe(writer);
 
@@ -540,7 +545,9 @@ export async function openPMTiles(filePath) {
   ) {
     source = new FetchSource(filePath);
   } else {
-    source = new PMTilesFileSource(fs.openSync(filePath, "r"));
+    const fileData = fs.openSync(filePath, "r");
+
+    source = new PMTilesFileSource(fileData);
   }
 
   return new PMTiles(source);
@@ -644,8 +651,18 @@ export async function getPMTilesTile(pmtilesSource, z, x, y) {
  * @returns {Promise<object>}
  */
 export async function openMBTiles(filePath) {
-  return new Database(filePath, {
-    readonly: true,
+  return new Promise((resolve, reject) => {
+    const mbtilesSource = new sqlite3.Database(
+      filePath,
+      sqlite3.OPEN_READONLY,
+      (error) => {
+        if (error) {
+          return reject(error);
+        }
+
+        resolve(mbtilesSource);
+      }
+    );
   });
 }
 
@@ -658,23 +675,26 @@ export async function openMBTiles(filePath) {
  * @returns {Promise<object>}
  */
 export async function getMBTilesTile(mbtilesSource, z, x, y) {
-  const row = mbtilesSource
-    .prepare(
-      "SELECT tile_data FROM tiles WHERE zoom_level = ? AND tile_column = ? AND tile_row = ?"
-    )
-    .get(
+  return new Promise((resolve, reject) => {
+    mbtilesSource.get(
+      "SELECT tile_data FROM tiles WHERE zoom_level = ? AND tile_column = ? AND tile_row = ?",
       z,
       x,
-      (1 << z) - 1 - y // Flip Y to convert TMS scheme => XYZ scheme);
-    );
-  if (!row || !row.tile_data) {
-    throw new Error("Tile does not exist");
-  }
+      (1 << z) - 1 - y, // Flip Y to convert TMS scheme => XYZ scheme);
+      (error, row) => {
+        if (error) {
+          return reject(error);
+        } else if (!row?.tile_data) {
+          return reject(new Error("Tile does not exist"));
+        }
 
-  return {
-    data: row.tile_data,
-    headers: tiletype.headers(row.tile_data),
-  };
+        resolve({
+          data: row.tile_data,
+          headers: tiletype.headers(row.tile_data),
+        });
+      }
+    );
+  });
 }
 
 /**
@@ -683,40 +703,50 @@ export async function getMBTilesTile(mbtilesSource, z, x, y) {
  * @returns {Promise<object>}
  */
 export async function getMBTilesInfo(mbtilesSource) {
-  const rows = mbtilesSource.prepare("SELECT name, value FROM metadata").all();
-
-  const info = {
-    scheme: "xyz", // Guarantee scheme always is XYZ
-  };
-
-  if (rows) {
-    rows.forEach((row) => {
-      switch (row.name) {
-        case "json":
-          Object.assign(info, JSON.parse(row.value));
-
-          break;
-        case "minzoom":
-        case "maxzoom":
-          info[row.name] = Number(row.value);
-
-          break;
-        case "center":
-        case "bounds":
-          info[row.name] = row.value.split(",").map((elm) => Number(elm));
-
-          break;
-        case "scheme":
-          break;
-        default:
-          info[row.name] = row.value;
-
-          break;
+  return new Promise((resolve, reject) => {
+    mbtilesSource.all("SELECT name, value FROM metadata", (error, rows) => {
+      if (error) {
+        return reject(error);
       }
-    });
-  }
 
-  return info;
+      const info = {
+        scheme: "xyz", // Guarantee scheme always is XYZ
+      };
+
+      if (rows) {
+        rows.forEach((row) => {
+          switch (row.name) {
+            case "json":
+              try {
+                Object.assign(info, JSON.parse(row.value));
+              } catch (error) {
+                return reject(error);
+              }
+
+              break;
+            case "minzoom":
+            case "maxzoom":
+              info[row.name] = Number(row.value);
+
+              break;
+            case "center":
+            case "bounds":
+              info[row.name] = row.value.split(",").map((elm) => Number(elm));
+
+              break;
+            case "scheme":
+              break;
+            default:
+              info[row.name] = row.value;
+
+              break;
+          }
+        });
+      }
+
+      resolve(info);
+    });
+  });
 }
 
 /**
@@ -725,5 +755,17 @@ export async function getMBTilesInfo(mbtilesSource) {
  * @returns {Promise<void>}
  */
 export async function closeMBTiles(mbtilesSource) {
-  mbtilesSource.close();
+  return new Promise((resolve, reject) => {
+    mbtilesSource.close((error) => {
+      if (error) {
+        return reject(error);
+      }
+
+      resolve();
+    });
+  });
 }
+
+export const gzipAsync = util.promisify(zlib.gzip);
+
+export const unzipAsync = util.promisify(zlib.unzip);

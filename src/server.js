@@ -33,7 +33,8 @@ export function startServer() {
 
   try {
     /* Read config file */
-    const configData = JSON.parse(fs.readFileSync(CONFIG_FILE_PATH, "utf8"));
+    const fileData = fs.readFileSync(CONFIG_FILE_PATH, "utf8");
+    const configData = JSON.parse(fileData);
 
     /* Asign options */
     config = {

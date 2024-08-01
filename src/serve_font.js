@@ -1,9 +1,14 @@
 "use strict";
 
-import zlib from "zlib";
 import path from "node:path";
 import express from "express";
-import { validateFont, getFontsPBF, printLog, getURL } from "./utils.js";
+import {
+  validateFont,
+  getFontsPBF,
+  gzipAsync,
+  printLog,
+  getURL,
+} from "./utils.js";
 
 function getFontHandler(config) {
   return async (req, res, next) => {
@@ -14,7 +19,7 @@ function getFontHandler(config) {
 
       /* Gzip pbf font */
       if (data[0] !== 0x1f || data[1] !== 0x8b) {
-        data = zlib.gzipSync(data);
+        data = await gzipAsync(data);
 
         res.header("Content-Encoding", "gzip");
       }

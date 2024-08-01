@@ -1,6 +1,6 @@
 "use strict";
 
-import fs from "node:fs";
+import fs from "node:fs/promises";
 import path from "node:path";
 import express from "express";
 import { printLog, getURL, validateSprite } from "./utils.js";
@@ -21,7 +21,7 @@ function getSpriteHandler(config) {
         "sprite"
       )}${req.params.scale || ""}.${req.params.format}`;
 
-      const data = fs.readFileSync(filePath);
+      const data = await fs.readFile(filePath);
 
       if (req.params.format === "json") {
         res.header("Content-Type", "application/json");
