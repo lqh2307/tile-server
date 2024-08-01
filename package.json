@@ -2,16 +2,6 @@
   "name": "tile-server",
   "description": "Vector/Raster tile server for serving xyz/wmts tiles",
   "version": "1.0.0",
-  "keywords": [
-    "leaflet",
-    "maplibre-gl",
-    "maplibre-gl-js",
-    "maplibre-gl-native",
-    "nodejs",
-    "javascript",
-    "tile-server"
-  ],
-  "license": "BSD-2-Clause",
   "main": "src/main.js",
   "type": "module",
   "scripts": {
