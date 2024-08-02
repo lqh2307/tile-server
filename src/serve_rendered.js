@@ -21,51 +21,50 @@ import {
 function getRenderedTileHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
+    const item = config.repo.rendereds[id];
+
+    /* Check rendered is exist? */
+    if (item === undefined) {
+      return res.status(404).send("Rendered is not found");
+    }
+
+    /* Check rendered tile scale */
+    const scale = Number(req.params.scale?.slice(1, -1)) || 1;
+
+    if (scale > config.options.maxScaleRender) {
+      return res.status(400).send("Rendered tile scale is invalid");
+    }
+
+    const z = Number(req.params.z);
+    const x = Number(req.params.x);
+    const y = Number(req.params.y);
+    const tileSize = Number(req.params.tileSize) || 256;
+    const tileCenter = mercator.ll(
+      [
+        ((x + 0.5) / (1 << z)) * (256 << z),
+        ((y + 0.5) / (1 << z)) * (256 << z),
+      ],
+      z
+    );
+
+    // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
+    const params = {
+      zoom: tileSize === 512 ? z : Math.max(0, z - 1),
+      center: tileCenter,
+      width: tileSize,
+      height: tileSize,
+    };
+
+    // HACK(Part 1) 256px tiles are a zoom level lower than maplibre-native default tiles.
+    // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
+    // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in Part 2.
+    if (z === 0 && tileSize === 256) {
+      params.width *= 2;
+      params.height *= 2;
+    }
+    // END HACK(Part 1)
 
     try {
-      const item = config.repo.rendereds[id];
-
-      /* Check rendered is exist? */
-      if (item === undefined) {
-        return res.status(404).send("Rendered is not found");
-      }
-
-      /* Check rendered tile scale */
-      const scale = Number(req.params.scale?.slice(1, -1)) || 1;
-
-      if (scale > config.options.maxScaleRender) {
-        return res.status(400).send("Rendered tile scale is invalid");
-      }
-
-      const z = Number(req.params.z);
-      const x = Number(req.params.x);
-      const y = Number(req.params.y);
-      const tileSize = Number(req.params.tileSize) || 256;
-      const tileCenter = mercator.ll(
-        [
-          ((x + 0.5) / (1 << z)) * (256 << z),
-          ((y + 0.5) / (1 << z)) * (256 << z),
-        ],
-        z
-      );
-
-      // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
-      const params = {
-        zoom: tileSize === 512 ? z : Math.max(0, z - 1),
-        center: tileCenter,
-        width: tileSize,
-        height: tileSize,
-      };
-
-      // HACK(Part 1) 256px tiles are a zoom level lower than maplibre-native default tiles.
-      // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-      // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in Part 2.
-      if (z === 0 && tileSize === 256) {
-        params.width *= 2;
-        params.height *= 2;
-      }
-      // END HACK(Part 1)
-
       const renderer = await item.renderers[scale - 1].acquire();
 
       renderer.render(params, (error, data) => {
@@ -128,14 +127,13 @@ function getRenderedTileHandler(config) {
 function getRenderedHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
+    const item = config.repo.rendereds[id];
+
+    if (item === undefined) {
+      return res.status(404).send("Rendered is not found");
+    }
 
     try {
-      const item = config.repo.rendereds[id];
-
-      if (item === undefined) {
-        return res.status(404).send("Rendered is not found");
-      }
-
       const info = {
         ...item.tileJSON,
         tiles: [

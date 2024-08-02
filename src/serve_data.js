@@ -19,26 +19,25 @@ import {
 function getDataTileHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
+    const item = config.repo.datas[id];
+
+    /* Check data is exist? */
+    if (item === undefined) {
+      return res.status(404).send("Data is not found");
+    }
+
+    /* Check data tile format */
+    if (req.params.format !== item.tileJSON.format) {
+      return res.status(400).send("Data tile format is invalid");
+    }
+
+    const z = Number(req.params.z);
+    const x = Number(req.params.x);
+    const y = Number(req.params.y);
+
+    let dataTile;
 
     try {
-      const item = config.repo.datas[id];
-
-      /* Check data is exist? */
-      if (item === undefined) {
-        return res.status(404).send("Data is not found");
-      }
-
-      /* Check data tile format */
-      if (req.params.format !== item.tileJSON.format) {
-        return res.status(400).send("Data tile format is invalid");
-      }
-
-      const z = Number(req.params.z);
-      const x = Number(req.params.x);
-      const y = Number(req.params.y);
-
-      let dataTile;
-
       /* Get data tile */
       if (item.sourceType === "mbtiles") {
         dataTile = await getMBTilesTile(item.source, z, x, y);
@@ -77,14 +76,13 @@ function getDataTileHandler(config) {
 function getDataHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
+    const item = config.repo.datas[id];
+
+    if (item === undefined) {
+      return res.status(404).send("Data is not found");
+    }
 
     try {
-      const item = config.repo.datas[id];
-
-      if (item === undefined) {
-        return res.status(404).send("Data is not found");
-      }
-
       const info = {
         ...item.tileJSON,
         tiles: [

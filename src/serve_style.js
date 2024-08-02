@@ -8,14 +8,13 @@ import { printLog, getRequestHost, validateStyle } from "./utils.js";
 function getStyleHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
+    const item = config.repo.styles[id];
+
+    if (item === undefined) {
+      return res.status(404).send("Style is not found");
+    }
 
     try {
-      const item = config.repo.styles[id];
-
-      if (item === undefined) {
-        return res.status(404).send("Style is not found");
-      }
-
       /* Clone style JSON */
       const stringJSON = JSON.stringify(item.styleJSON);
       const styleJSON = JSON.parse(stringJSON);
