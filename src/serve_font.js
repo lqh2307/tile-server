@@ -3,11 +3,11 @@
 import path from "node:path";
 import express from "express";
 import {
+  getRequestHost,
   validateFont,
   getFontsPBF,
   gzipAsync,
   printLog,
-  getURL,
 } from "./utils.js";
 
 function getFontHandler(config) {
@@ -37,14 +37,20 @@ function getFontHandler(config) {
 
 function getFontsListHandler(config) {
   return async (req, res, next) => {
-    const result = Object.keys(config.repo.fonts).map((id) => {
-      return {
-        name: id,
-        url: `${getURL(req)}fonts/${id}/{range}.pbf`,
-      };
-    });
+    try {
+      const result = Object.keys(config.repo.fonts).map((id) => {
+        return {
+          name: id,
+          url: `${getRequestHost(req)}fonts/${id}/{range}.pbf`,
+        };
+      });
 
-    return res.status(200).send(result);
+      return res.status(200).send(result);
+    } catch (error) {
+      printLog("error", `Failed to get fonts": ${error}`);
+
+      return res.status(500).send("Internal server error");
+    }
   };
 }
 

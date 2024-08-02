@@ -9,62 +9,63 @@ import mlgl from "@maplibre/maplibre-gl-native";
 import { createPool } from "generic-pool";
 import {
   responseEmptyTile,
+  getRequestHost,
   getPMTilesTile,
   getMBTilesTile,
   getFontsPBF,
   unzipAsync,
   printLog,
   mercator,
-  getURL,
 } from "./utils.js";
 
 function getRenderedTileHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
-    const item = config.repo.rendereds[id];
-
-    /* Check rendered is exist? */
-    if (item === undefined) {
-      return res.status(404).send("Rendered is not found");
-    }
-
-    /* Check rendered tile scale */
-    const scale = Number(req.params.scale?.slice(1, -1)) || 1;
-
-    if (scale > config.options.maxScaleRender) {
-      return res.status(400).send("Rendered tile scale is invalid");
-    }
-
-    const z = Number(req.params.z);
-    const x = Number(req.params.x);
-    const y = Number(req.params.y);
-    const tileSize = Number(req.params.tileSize) || 256;
-    const tileCenter = mercator.ll(
-      [
-        ((x + 0.5) / (1 << z)) * (256 << z),
-        ((y + 0.5) / (1 << z)) * (256 << z),
-      ],
-      z
-    );
-
-    // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
-    const params = {
-      zoom: tileSize === 512 ? z : Math.max(0, z - 1),
-      center: tileCenter,
-      width: tileSize,
-      height: tileSize,
-    };
-
-    // HACK(Part 1) 256px tiles are a zoom level lower than maplibre-native default tiles.
-    // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-    // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in Part 2.
-    if (z === 0 && tileSize === 256) {
-      params.width *= 2;
-      params.height *= 2;
-    }
-    // END HACK(Part 1)
 
     try {
+      const item = config.repo.rendereds[id];
+
+      /* Check rendered is exist? */
+      if (item === undefined) {
+        return res.status(404).send("Rendered is not found");
+      }
+
+      /* Check rendered tile scale */
+      const scale = Number(req.params.scale?.slice(1, -1)) || 1;
+
+      if (scale > config.options.maxScaleRender) {
+        return res.status(400).send("Rendered tile scale is invalid");
+      }
+
+      const z = Number(req.params.z);
+      const x = Number(req.params.x);
+      const y = Number(req.params.y);
+      const tileSize = Number(req.params.tileSize) || 256;
+      const tileCenter = mercator.ll(
+        [
+          ((x + 0.5) / (1 << z)) * (256 << z),
+          ((y + 0.5) / (1 << z)) * (256 << z),
+        ],
+        z
+      );
+
+      // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
+      const params = {
+        zoom: tileSize === 512 ? z : Math.max(0, z - 1),
+        center: tileCenter,
+        width: tileSize,
+        height: tileSize,
+      };
+
+      // HACK(Part 1) 256px tiles are a zoom level lower than maplibre-native default tiles.
+      // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
+      // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in Part 2.
+      if (z === 0 && tileSize === 256) {
+        params.width *= 2;
+        params.height *= 2;
+      }
+      // END HACK(Part 1)
+
       const renderer = await item.renderers[scale - 1].acquire();
 
       renderer.render(params, (error, data) => {
@@ -127,43 +128,56 @@ function getRenderedTileHandler(config) {
 function getRenderedHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
-    const item = config.repo.rendereds[id];
 
-    if (item === undefined) {
-      return res.status(404).send("Rendered is not found");
+    try {
+      const item = config.repo.rendereds[id];
+
+      if (item === undefined) {
+        return res.status(404).send("Rendered is not found");
+      }
+
+      const info = {
+        ...item.tileJSON,
+        tiles: [
+          `${getRequestHost(req)}styles/${id}/${
+            req.params.tileSize || 256
+          }/{z}/{x}/{y}.png`,
+        ],
+      };
+
+      res.header("Content-Type", "application/json");
+
+      return res.status(200).send(info);
+    } catch (error) {
+      printLog("error", `Failed to get rendered "${id}": ${error}`);
+
+      return res.status(500).send("Internal server error");
     }
-
-    const info = {
-      ...item.tileJSON,
-      tiles: [
-        `${getURL(req)}styles/${id}/${
-          req.params.tileSize || 256
-        }/{z}/{x}/{y}.png`,
-      ],
-    };
-
-    res.header("Content-Type", "application/json");
-
-    return res.status(200).send(info);
   };
 }
 
 function getRenderedsListHandler(config) {
   return async (req, res, next) => {
-    const rendereds = config.repo.rendereds;
+    try {
+      const rendereds = config.repo.rendereds;
 
-    const result = Object.keys(rendereds).map((id) => {
-      return {
-        id: id,
-        name: rendereds[id].tileJSON.name,
-        url: [
-          `${getURL(req)}styles/256/${id}.json`,
-          `${getURL(req)}styles/512/${id}.json`,
-        ],
-      };
-    });
+      const result = Object.keys(rendereds).map((id) => {
+        return {
+          id: id,
+          name: rendereds[id].tileJSON.name,
+          url: [
+            `${getRequestHost(req)}styles/256/${id}.json`,
+            `${getRequestHost(req)}styles/512/${id}.json`,
+          ],
+        };
+      });
 
-    return res.status(200).send(result);
+      return res.status(200).send(result);
+    } catch (error) {
+      printLog("error", `Failed to get rendereds": ${error}`);
+
+      return res.status(500).send("Internal server error");
+    }
   };
 }
 

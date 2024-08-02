@@ -41,7 +41,7 @@ export function responseEmptyTile(format, callback) {
         premultiplied: true,
         width: 1,
         height: 1,
-        channels: format === "jpeg" ? 3 : 4,
+        channels: 4,
       },
     })
       .toFormat(format)
@@ -87,24 +87,34 @@ export async function findFiles(dirPath, regex) {
 }
 
 /**
- * Get host URL from request
+ * Find matching folders in directory
+ * @param {string} dirPath
+ * @param {RegExp} regex
+ * @returns {Promise<string[]>}
+ */
+export async function findFolders(dirPath, regex) {
+  const folderNames = await fsPromise.readdir(dirPath);
+
+  const results = [];
+  for (const folderName of folderNames) {
+    const folderPath = path.join(dirPath, folderName);
+    const stat = await fsPromise.stat(folderPath);
+
+    if (regex.test(folderName) === true && stat.isDirectory() === true) {
+      results.push(folderName);
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Get request host
  * @param {Request} req
  * @returns {string}
  */
-export function getURL(req) {
-  const urlObject = new URL(`${req.protocol}://${req.headers.host}/`);
-
-  // support overriding hostname by sending X-Forwarded-Host http header
-  urlObject.hostname = req.hostname;
-
-  // support add url prefix by sending X-Forwarded-Path http header
-  const xForwardedPath = req.get("X-Forwarded-Path");
-  if (xForwardedPath) {
-    urlObject.pathname = path.posix.join(xForwardedPath, urlObject.pathname);
-  }
-
-  return urlObject.toString();
-}
+export const getRequestHost = (req) =>
+  new URL(`${req.protocol}://${req.headers.host}/`).toString();
 
 /**
  *
@@ -180,7 +190,7 @@ export async function validateFont(pbfDirPath) {
   const pbfFileNames = await findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
 
   if (pbfFileNames.length !== 256) {
-    throw new Error(`Pbf file count is not equal 256`);
+    throw new Error(`Missing some pbf files`);
   }
 }
 
@@ -309,35 +319,32 @@ export async function validateStyle(config, styleJSON) {
 
   /* Validate sources */
   Object.keys(styleJSON.sources).forEach((id) => {
-    const oldSource = styleJSON.sources[id];
-    const sourceURL = oldSource.url;
-    const sourceURLs = oldSource.urls;
-    const sourceTiles = oldSource.tiles;
+    const source = styleJSON.sources[id];
 
-    if (sourceURL !== undefined) {
+    if (source.url !== undefined) {
       if (
-        sourceURL.startsWith("pmtiles://") === true ||
-        sourceURL.startsWith("mbtiles://") === true
+        source.url.startsWith("pmtiles://") === true ||
+        source.url.startsWith("mbtiles://") === true
       ) {
-        const sourceID = sourceURL.slice(10);
+        const sourceID = source.url.slice(10);
 
         if (config.repo.datas[sourceID] === undefined) {
           throw new Error(`Source "${id}" is not found`);
         }
       } else if (
-        sourceURL.startsWith("https://") === false &&
-        sourceURL.startsWith("http://") === false
+        source.url.startsWith("https://") === false &&
+        source.url.startsWith("http://") === false
       ) {
         throw new Error(`Source "${id}" is invalid url`);
       }
     }
 
-    if (sourceURLs !== undefined) {
-      if (sourceURLs.length === 0) {
+    if (source.urls !== undefined) {
+      if (source.urls.length === 0) {
         throw new Error(`Source "${id}" is invalid urls`);
       }
 
-      sourceURLs.forEach((url) => {
+      source.urls.forEach((url) => {
         if (
           url.startsWith("pmtiles://") === true ||
           url.startsWith("mbtiles://") === true
@@ -356,12 +363,12 @@ export async function validateStyle(config, styleJSON) {
       });
     }
 
-    if (sourceTiles !== undefined) {
-      if (sourceTiles.length === 0) {
+    if (source.tiles !== undefined) {
+      if (source.tiles.length === 0) {
         throw new Error(`Source "${id}" is invalid tile urls`);
       }
 
-      sourceTiles.forEach((tile) => {
+      source.tiles.forEach((tile) => {
         if (
           tile.startsWith("pmtiles://") === true ||
           tile.startsWith("mbtiles://") === true
@@ -388,20 +395,28 @@ export async function validateStyle(config, styleJSON) {
  * @returns {Promise<void>}
  */
 export async function validateSprite(spriteDirPath) {
-  const jsonSpriteFileNames = await findFiles(
+  let spriteFileNames = await findFiles(
     spriteDirPath,
-    /^sprite(@\d+x)?\.json$/
+    /^sprite(@\d+x)?\.(json|png)$/
   );
 
-  if (jsonSpriteFileNames.length === 0) {
-    throw new Error(`Not found json sprite file`);
+  if (spriteFileNames.length === 0) {
+    throw new Error(`Not found any json or png file`);
   }
 
+  if (spriteFileNames.length % 2 === 1) {
+    throw new Error(`Missing some json or png files`);
+  }
+
+  spriteFileNames = spriteFileNames.map((spriteFileName) =>
+    path.basename(spriteFileName, path.extname(spriteFileName))
+  );
+
   await Promise.all(
-    jsonSpriteFileNames.map(async (jsonSpriteFileName) => {
+    spriteFileNames.map(async (spriteFileNames) => {
       /* Validate JSON sprite */
-      const jsonFilePath = path.join(spriteDirPath, jsonSpriteFileName);
-      const fileData = await fsPromise.readFile(jsonFilePath, "utf8");
+      let filePath = path.join(spriteDirPath, `${spriteFileNames}.json`);
+      const fileData = await fsPromise.readFile(filePath, "utf8");
       const jsonData = JSON.parse(fileData);
 
       Object.values(jsonData).forEach((value) => {
@@ -413,22 +428,17 @@ export async function validateSprite(spriteDirPath) {
           "x" in value === false ||
           "y" in value === false
         ) {
-          throw new Error(
-            `One of properties ("height", "pixelRatio", "width", "x", "y") is empty`
-          );
+          throw new Error(`Invalid json file`);
         }
       });
 
       /* Validate PNG sprite */
-      const pngFilePath = path.join(
-        spriteDirPath,
-        `${path.basename(jsonSpriteFileName, ".json")}.png`
-      );
+      filePath = path.join(spriteDirPath, `${spriteFileNames}.png`);
 
-      const pngMetadata = await sharp(pngFilePath).metadata();
+      const pngMetadata = await sharp(filePath).metadata();
 
       if (pngMetadata.format !== "png") {
-        throw new Error("Invalid png sprite file");
+        throw new Error("Invalid png file");
       }
     })
   );
