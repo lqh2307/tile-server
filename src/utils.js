@@ -400,11 +400,7 @@ export async function validateSprite(spriteDirPath) {
     /^sprite(@\d+x)?\.(json|png)$/
   );
 
-  if (spriteFileNames.length === 0) {
-    throw new Error(`Not found any json or png file`);
-  }
-
-  if (spriteFileNames.length % 2 === 1) {
+  if (spriteFileNames.length === 0 || spriteFileNames.length % 2 === 1) {
     throw new Error(`Missing some json or png files`);
   }
 
