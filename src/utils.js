@@ -189,7 +189,7 @@ export function printLog(level, msg) {
 export async function validateFont(pbfDirPath) {
   const pbfFileNames = await findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
 
-  if (pbfFileNames.length !== 256) {
+  if (pbfFileNames.length === 0) {
     throw new Error(`Missing some pbf files`);
   }
 }
@@ -395,17 +395,17 @@ export async function validateStyle(config, styleJSON) {
  * @returns {Promise<void>}
  */
 export async function validateSprite(spriteDirPath) {
-  let spriteFileNames = await findFiles(
-    spriteDirPath,
-    /^sprite(@\d+x)?\.(json|png)$/
-  );
+  const [jsonSpriteFileNames, pngSpriteNames] = await Promise.all([
+    findFiles(spriteDirPath, /^sprite(@\d+x)?\.json$/),
+    findFiles(spriteDirPath, /^sprite(@\d+x)?\.png$/),
+  ]);
 
-  if (spriteFileNames.length === 0 || spriteFileNames.length % 2 === 1) {
+  if (jsonSpriteFileNames.length !== pngSpriteNames.length) {
     throw new Error(`Missing some json or png files`);
   }
 
-  spriteFileNames = spriteFileNames.map((spriteFileName) =>
-    path.basename(spriteFileName, path.extname(spriteFileName))
+  const spriteFileNames = jsonSpriteFileNames.map((jsonSpriteFileName) =>
+    path.basename(jsonSpriteFileName, path.extname(jsonSpriteFileName))
   );
 
   await Promise.all(
