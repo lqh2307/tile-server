@@ -40,28 +40,7 @@
   <h1 style="display:none;">{{name}}</h1>
   <div id='map'></div>
   <script>
-    function isWebglSupported() {
-      if (window.WebGLRenderingContext) {
-        const canvas = document.createElement('canvas');
-        try {
-          const context = canvas.getContext('webgl2') || canvas.getContext('webgl');
-          if (context && typeof context.getParameter === 'function') {
-            return true;
-          }
-        } catch (e) {
-          // WebGL is supported, but disabled
-        }
-        return false;
-      }
-      // WebGL not supported
-      return false;
-    }
-
-    const q = (location.search || '').substr(1).split('&');
-    const preference =
-      q.indexOf('vector') >= 0 ? 'vector' :
-        (q.indexOf('raster') >= 0 ? 'raster' :
-          (isWebglSupported() ? 'vector' : 'raster'));
+    const preference = location.search.indexOf('raster') >= 0 ? 'raster' : 'vector';
 
     if (preference === 'vector') {
       maplibregl.setRTLTextPlugin('/mapbox-gl-rtl-text.js');

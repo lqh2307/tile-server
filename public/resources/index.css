@@ -81,15 +81,12 @@ section {
 
 .btn {
   display: block;
-  margin: 0;
-  line-height: 36px;
-}
-
-.btn:first-child {
+  line-height: 30px;
   position: relative;
-  padding: 0;
   overflow: hidden;
   border-radius: 4px;
+  margin-top: 20px;
+  margin-bottom: 20px;
   background-color: #499dce;
   background: linear-gradient(90deg, #5aaad8, #4a9ecf);
   color: #fff;
@@ -97,7 +94,7 @@ section {
   font-weight: bold;
 }
 
-.btn:first-child:hover {
+.btn:hover {
   background: #395d73;
 }
 
