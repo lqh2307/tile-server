@@ -8,10 +8,12 @@ import express from "express";
 import mlgl from "@maplibre/maplibre-gl-native";
 import { createPool } from "generic-pool";
 import {
+  createNewXYZTileJSON,
   responseEmptyTile,
   getRequestHost,
   getPMTilesTile,
   getMBTilesTile,
+  detectHeaders,
   getFontsPBF,
   unzipAsync,
   printLog,
@@ -29,7 +31,7 @@ function getRenderedTileHandler(config) {
     }
 
     /* Check rendered tile scale */
-    const scale = Number(req.params.scale?.slice(1, -1)) || 1;
+    const scale = Number(req.params.scale?.slice(1, -1)) || 1; // Default tile scale is 1
 
     if (scale > config.options.maxScaleRender) {
       return res.status(400).send("Rendered tile scale is invalid");
@@ -38,39 +40,72 @@ function getRenderedTileHandler(config) {
     const z = Number(req.params.z);
     const x = Number(req.params.x);
     const y = Number(req.params.y);
-    const tileSize = Number(req.params.tileSize) || 256;
-    const tileCenter = mercator.ll(
-      [
-        ((x + 0.5) / (1 << z)) * (256 << z),
-        ((y + 0.5) / (1 << z)) * (256 << z),
-      ],
-      z
-    );
+    const tileSize = Number(req.params.tileSize) || 256; // Default tile size is 256px x 256px
 
     // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
     const params = {
       zoom: tileSize === 512 ? z : Math.max(0, z - 1),
-      center: tileCenter,
+      center: mercator.ll(
+        [
+          ((x + 0.5) / (1 << z)) * (256 << z),
+          ((y + 0.5) / (1 << z)) * (256 << z),
+        ],
+        z
+      ),
       width: tileSize,
       height: tileSize,
     };
 
-    // HACK(Part 1) 256px tiles are a zoom level lower than maplibre-native default tiles.
+    // HACK1 256px tiles are a zoom level lower than maplibre-native default tiles.
     // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-    // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in Part 2.
+    // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in HACK2.
     if (z === 0 && tileSize === 256) {
-      params.width *= 2;
-      params.height *= 2;
+      params.width = 512;
+      params.height = 512;
     }
-    // END HACK(Part 1)
+    // END HACK1
 
     try {
       const renderer = await item.renderers[scale - 1].acquire();
 
-      renderer.render(params, (error, data) => {
-        item.renderers[scale - 1].release(renderer);
+      renderer.render(params, async (error, data) => {
+        try {
+          item.renderers[scale - 1].release(renderer);
 
-        if (error) {
+          if (error) {
+            throw error;
+          }
+
+          const image = sharp(data, {
+            raw: {
+              premultiplied: true,
+              width: params.width * scale,
+              height: params.height * scale,
+              channels: 4,
+            },
+          });
+
+          // HACK2 256px tiles are a zoom level lower than maplibre-native default tiles.
+          // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
+          // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
+          if (z === 0 && tileSize === 256) {
+            image.resize({
+              width: 256 * scale,
+              height: 256 * scale,
+            });
+          }
+          // END HACK2
+
+          const buffer = await image
+            .png({
+              compressionLevel: config.options.renderedCompression,
+            })
+            .toBuffer();
+
+          res.header("Content-Type", `image/png`);
+
+          return res.status(200).send(buffer);
+        } catch (error) {
           printLog(
             "error",
             `Failed to get rendered "${id}" - Tile ${z}/${x}/${y}: ${error}`
@@ -78,40 +113,6 @@ function getRenderedTileHandler(config) {
 
           return res.status(500).send("Internal server error");
         }
-
-        const image = sharp(data, {
-          raw: {
-            premultiplied: true,
-            width: params.width * scale,
-            height: params.height * scale,
-            channels: 4,
-          },
-        });
-
-        // HACK(Part 2) 256px tiles are a zoom level lower than maplibre-native default tiles.
-        // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-        // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
-        if (z === 0 && tileSize === 256) {
-          image.resize(tileSize * scale, tileSize * scale);
-        }
-        // END HACK(Part 2)
-
-        image
-          .png()
-          .toBuffer()
-          .then((data) => {
-            res.header("Content-Type", `image/png`);
-
-            return res.status(200).send(data);
-          })
-          .catch((error) => {
-            printLog(
-              "error",
-              `Failed to get rendered "${id}" - Tile ${z}/${x}/${y}: ${error}`
-            );
-
-            return res.status(500).send("Internal server error");
-          });
       });
     } catch (error) {
       printLog(
@@ -134,7 +135,7 @@ function getRenderedHandler(config) {
     }
 
     try {
-      const info = {
+      const renderedInfo = {
         ...item.tileJSON,
         tiles: [
           `${getRequestHost(req)}styles/${id}/${
@@ -145,7 +146,7 @@ function getRenderedHandler(config) {
 
       res.header("Content-Type", "application/json");
 
-      return res.status(200).send(info);
+      return res.status(200).send(renderedInfo);
     } catch (error) {
       printLog("error", `Failed to get rendered "${id}": ${error}`);
 
@@ -216,16 +217,10 @@ export const serve_rendered = {
         try {
           const item = config.repo.styles[id];
           const rendered = {
-            tileJSON: {
-              tilejson: "2.2.0",
-              name: item.styleJSON.name || "Unknown",
-              format: "png",
-              bounds: [-180, -85.051128779807, 180, 85.051128779807],
-              attribution: "<b>Viettel HighTech</b>",
-              type: "overlay",
-              minzoom: 0,
-              maxzoom: 22,
-            },
+            tileJSON: createNewXYZTileJSON({
+              name: item.styleJSON.name,
+              description: item.styleJSON.name,
+            }),
           };
 
           /* Fix center */
@@ -240,25 +235,16 @@ export const serve_rendered = {
           /* Fix source urls & Add attribution & Create pools */
           if (config.options.serveRendered === true) {
             /* Clone style JSON */
-            const styleJSON = {
-              ...item.styleJSON,
-              sources: {},
-            };
+            const stringJSON = JSON.stringify(item.styleJSON);
+            const styleJSON = JSON.parse(stringJSON);
 
             await Promise.all(
               // Fix source urls
-              Object.keys(item.styleJSON.sources).map(async (id) => {
-                const oldSource = item.styleJSON.sources[id];
-                const sourceURL = oldSource.url;
-                const sourceURLs = oldSource.urls;
-                const sourceTiles = oldSource.tiles;
+              Object.keys(styleJSON.sources).map(async (id) => {
+                const source = styleJSON.sources[id];
 
-                styleJSON.sources[id] = {
-                  ...oldSource,
-                };
-
-                if (sourceTiles !== undefined) {
-                  const tiles = sourceTiles.map((tile) => {
+                if (source.tiles !== undefined) {
+                  const tiles = source.tiles.map((tile) => {
                     if (
                       tile.startsWith("pmtiles://") === true ||
                       tile.startsWith("mbtiles://") === true
@@ -272,13 +258,13 @@ export const serve_rendered = {
                     return tile;
                   });
 
-                  styleJSON.sources[id].tiles = [...new Set(tiles)];
+                  source.tiles = [...new Set(tiles)];
                 }
 
-                if (sourceURLs !== undefined) {
+                if (source.urls !== undefined) {
                   const otherUrls = [];
 
-                  sourceURLs.forEach((url) => {
+                  source.urls.forEach((url) => {
                     if (
                       url.startsWith("pmtiles://") === true ||
                       url.startsWith("mbtiles://") === true
@@ -287,14 +273,12 @@ export const serve_rendered = {
                       const sourceData = config.repo.datas[sourceID];
                       const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
 
-                      if (styleJSON.sources[id].tiles !== undefined) {
-                        if (
-                          styleJSON.sources[id].tiles.includes(tile) === false
-                        ) {
-                          styleJSON.sources[id].tiles.push(tile);
+                      if (source.tiles !== undefined) {
+                        if (source.tiles.includes(tile) === false) {
+                          source.tiles.push(tile);
                         }
                       } else {
-                        styleJSON.sources[id].tiles = [tile];
+                        source.tiles = [tile];
                       }
                     } else {
                       if (otherUrls.includes(url) === false) {
@@ -304,42 +288,40 @@ export const serve_rendered = {
                   });
 
                   if (otherUrls.length === 0) {
-                    delete styleJSON.sources[id].urls;
+                    delete source.urls;
                   } else {
-                    styleJSON.sources[id].urls = otherUrls;
+                    source.urls = otherUrls;
                   }
                 }
 
-                if (sourceURL !== undefined) {
+                if (source.url !== undefined) {
                   if (
-                    sourceURL.startsWith("pmtiles://") === true ||
-                    sourceURL.startsWith("mbtiles://") === true
+                    source.url.startsWith("pmtiles://") === true ||
+                    source.url.startsWith("mbtiles://") === true
                   ) {
-                    const sourceID = sourceURL.slice(10);
+                    const sourceID = source.url.slice(10);
                     const sourceData = config.repo.datas[sourceID];
                     const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
 
-                    if (styleJSON.sources[id].tiles !== undefined) {
-                      if (
-                        styleJSON.sources[id].tiles.includes(tile) === false
-                      ) {
-                        styleJSON.sources[id].tiles.push(tile);
+                    if (source.tiles !== undefined) {
+                      if (source.tiles.includes(tile) === false) {
+                        source.tiles.push(tile);
                       }
                     } else {
-                      styleJSON.sources[id].tiles = [tile];
+                      source.tiles = [tile];
                     }
 
-                    delete styleJSON.sources[id].url;
+                    delete source.url;
                   }
                 }
 
                 if (
-                  styleJSON.sources[id].url === undefined &&
-                  styleJSON.sources[id].urls === undefined &&
-                  styleJSON.sources[id].tiles !== undefined
+                  source.url === undefined &&
+                  source.urls === undefined &&
+                  source.tiles !== undefined
                 ) {
-                  if (styleJSON.sources[id].tiles.length === 1) {
-                    const tileURL = styleJSON.sources[id].tiles[0];
+                  if (source.tiles.length === 1) {
+                    const tileURL = source.tiles[0];
                     if (
                       tileURL.startsWith("pmtiles://") === true ||
                       tileURL.startsWith("mbtiles://") === true
@@ -349,7 +331,7 @@ export const serve_rendered = {
 
                       styleJSON.sources[id] = {
                         ...sourceData.tileJSON,
-                        ...styleJSON.sources[id],
+                        ...source,
                         tiles: [tileURL],
                       };
                     }
@@ -358,12 +340,11 @@ export const serve_rendered = {
 
                 // Add atribution
                 if (
-                  oldSource.attribution &&
-                  rendered.tileJSON.attribution.includes(
-                    oldSource.attribution
-                  ) === false
+                  source.attribution &&
+                  rendered.tileJSON.attribution.includes(source.attribution) ===
+                    false
                 ) {
-                  rendered.tileJSON.attribution += ` | ${oldSource.attribution}`;
+                  rendered.tileJSON.attribution += ` | ${source.attribution}`;
                 }
               })
             );
@@ -418,7 +399,8 @@ export const serve_rendered = {
                               );
 
                               /* Unzip pbf font */
-                              if (data[0] === 0x1f && data[1] === 0x8b) {
+                              const headers = detectHeaders(data);
+                              if (headers["Content-Encoding"] !== undefined) {
                                 data = await unzipAsync(data);
                               }
 

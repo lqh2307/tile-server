@@ -18,11 +18,7 @@ function serveFrontPageHandler(config) {
     await Promise.all([
       ...Object.keys(config.repo.rendereds).map(async (id) => {
         const style = config.repo.rendereds[id];
-        let { name, center } = style.tileJSON;
-
-        if (center === undefined) {
-          center = [0, 0, 0];
-        }
+        const { name, center } = style.tileJSON;
 
         let thumbnail = "/images/placeholder.png";
         if (config.options.serveRendered === true) {
@@ -39,7 +35,7 @@ function serveFrontPageHandler(config) {
         }
 
         styles[id] = {
-          name: name || "Unknown",
+          name: name,
           xyz_link: xyzLink,
           viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
           thumbnail: thumbnail,
@@ -51,23 +47,7 @@ function serveFrontPageHandler(config) {
       }),
       ...Object.keys(config.repo.datas).map(async (id) => {
         const data = config.repo.datas[id];
-        let { name, center, format, bounds, minzoom, maxzoom } = data.tileJSON;
-
-        if (center === undefined) {
-          if (
-            bounds !== undefined &&
-            minzoom !== undefined &&
-            maxzoom !== undefined
-          ) {
-            center = [
-              (bounds[0] + bounds[2]) / 2,
-              (bounds[1] + bounds[3]) / 2,
-              Math.floor((minzoom + maxzoom) / 2),
-            ];
-          } else {
-            center = [0, 0, 0];
-          }
-        }
+        const { name, center, format } = data.tileJSON;
 
         let thumbnail = "/images/placeholder.png";
         if (format !== "pbf") {
@@ -228,13 +208,13 @@ export const serve_template = {
     }
 
     /* Serve style */
-    app.get("/styles/:id/$", serveStyleHandler(config));
-
-    /* Serve data */
-    app.use("/data/:id/$", serveDataHandler(config));
-
-    /* Serve front page */
     if (config.options.frontPage === true) {
+      app.get("/styles/:id/$", serveStyleHandler(config));
+
+      /* Serve data */
+      app.use("/data/:id/$", serveDataHandler(config));
+
+      /* Serve front page */
       app.get("/$", serveFrontPageHandler(config));
     }
 

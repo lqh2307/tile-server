@@ -41,6 +41,7 @@ Example config.json content:
 			"serveWMTS": true,
 			"serveRendered": true,
 			"maxScaleRender": 2,
+			"renderedCompression": 6,
 			"minPoolSize": 8,
 			"maxPoolSize": 16
 		},

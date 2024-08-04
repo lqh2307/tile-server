@@ -4,9 +4,9 @@ import path from "node:path";
 import express from "express";
 import {
   validateDataInfo,
+  getPMTilesInfos,
+  getMBTilesInfos,
   getRequestHost,
-  getPMTilesInfo,
-  getMBTilesInfo,
   getPMTilesTile,
   getMBTilesTile,
   downloadFile,
@@ -65,7 +65,7 @@ function getDataTileHandler(config) {
       );
 
       if (error.message === "Tile does not exist") {
-        return res.status(204).send("Data tile is empty");
+        return res.status(404).send(error.message);
       }
 
       return res.status(500).send("Internal server error");
@@ -83,7 +83,7 @@ function getDataHandler(config) {
     }
 
     try {
-      const info = {
+      const dataInfo = {
         ...item.tileJSON,
         tiles: [
           `${getRequestHost(req)}data/${id}/{z}/{x}/{y}.${item.tileJSON.format}`,
@@ -92,7 +92,7 @@ function getDataHandler(config) {
 
       res.header("Content-Type", "application/json");
 
-      return res.status(200).send(info);
+      return res.status(200).send(dataInfo);
     } catch (error) {
       printLog("error", `Failed to get data "${id}": ${error}`);
 
@@ -147,59 +147,49 @@ export const serve_data = {
       Object.keys(config.data).map(async (id) => {
         try {
           const item = config.data[id];
-          const dataInfo = {
-            tileJSON: {
-              tilejson: "2.2.0",
-            },
-          };
+          const dataInfo = {};
 
-          let inputDataFile;
+          let filePath;
 
           if (item.mbtiles) {
             if (
               item.mbtiles.startsWith("https://") === true ||
               item.mbtiles.startsWith("http://") === true
             ) {
-              inputDataFile = path.join(
+              filePath = path.join(
                 config.options.paths.mbtiles,
                 id,
                 `${id}.mbtiles`
               );
 
-              await downloadFile(item.mbtiles, inputDataFile);
+              await downloadFile(item.mbtiles, filePath);
 
               item.mbtiles = path.join(id, `${id}.mbtiles`);
             } else {
-              inputDataFile = path.join(
-                config.options.paths.mbtiles,
-                item.mbtiles
-              );
+              filePath = path.join(config.options.paths.mbtiles, item.mbtiles);
             }
 
             dataInfo.sourceType = "mbtiles";
-            dataInfo.source = await openMBTiles(inputDataFile);
-            Object.assign(
-              dataInfo.tileJSON,
-              await getMBTilesInfo(dataInfo.source)
+            dataInfo.source = await openMBTiles(filePath);
+            dataInfo.tileJSON = await getMBTilesInfos(
+              dataInfo.source,
+              config.options.frontPage
             );
           } else if (item.pmtiles) {
             if (
               item.pmtiles.startsWith("https://") === true ||
               item.pmtiles.startsWith("http://") === true
             ) {
-              inputDataFile = item.pmtiles;
+              filePath = item.pmtiles;
             } else {
-              inputDataFile = path.join(
-                config.options.paths.pmtiles,
-                item.pmtiles
-              );
+              filePath = path.join(config.options.paths.pmtiles, item.pmtiles);
             }
 
             dataInfo.sourceType = "pmtiles";
-            dataInfo.source = await openPMTiles(inputDataFile);
-            Object.assign(
-              dataInfo.tileJSON,
-              await getPMTilesInfo(dataInfo.source)
+            dataInfo.source = await openPMTiles(filePath);
+            dataInfo.tileJSON = await getPMTilesInfos(
+              dataInfo.source,
+              config.options.frontPage
             );
           } else {
             throw new Error(`"pmtiles" or "mbtiles" property is empty`);

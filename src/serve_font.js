@@ -4,6 +4,7 @@ import path from "node:path";
 import express from "express";
 import {
   getRequestHost,
+  detectHeaders,
   validateFont,
   getFontsPBF,
   gzipAsync,
@@ -18,13 +19,14 @@ function getFontHandler(config) {
       let data = await getFontsPBF(config, ids, req.params.range);
 
       /* Gzip pbf font */
-      if (data[0] !== 0x1f || data[1] !== 0x8b) {
+      const headers = detectHeaders(data);
+      if (headers["Content-Encoding"] === undefined) {
         data = await gzipAsync(data);
 
         res.header("Content-Encoding", "gzip");
       }
 
-      res.header("Content-Type", "application/x-protobuf");
+      res.set(headers);
 
       return res.status(200).send(data);
     } catch (error) {

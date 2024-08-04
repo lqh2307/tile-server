@@ -54,6 +54,7 @@ export function startServer() {
         frontPage: configData.options?.frontPage ?? true,
         serveWMTS: configData.options?.serveWMTS ?? true,
         serveRendered: configData.options?.serveRendered ?? true,
+        renderedCompression: configData.options?.renderedCompression || 6,
         maxScaleRender: configData.options?.maxScaleRender || 1,
         minPoolSize: configData.options?.minPoolSize || 8,
         maxPoolSize: configData.options?.maxPoolSize || 16,

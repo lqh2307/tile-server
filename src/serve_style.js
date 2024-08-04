@@ -3,7 +3,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import express from "express";
-import { printLog, getRequestHost, validateStyle } from "./utils.js";
+import { getRequestHost, validateStyle, printLog } from "./utils.js";
 
 function getStyleHandler(config) {
   return async (req, res, next) => {
@@ -40,7 +40,7 @@ function getStyleHandler(config) {
       }
 
       /* Fix source urls */
-      Object.keys(styleJSON.sources).forEach((id) => {
+      Object.keys(styleJSON.sources).forEach(async (id) => {
         const source = styleJSON.sources[id];
 
         if (source.url !== undefined) {
@@ -50,13 +50,12 @@ function getStyleHandler(config) {
           ) {
             const sourceID = source.url.slice(10);
 
-            styleJSON.sources[id].url =
-              `${getRequestHost(req)}data/${sourceID}.json`;
+            source.url = `${getRequestHost(req)}data/${sourceID}.json`;
           }
         }
 
         if (source.urls !== undefined) {
-          const urls = source.urls.map((url) => {
+          const urls = source.urls.map(async (url) => {
             if (
               url.startsWith("pmtiles://") === true ||
               url.startsWith("mbtiles://") === true
@@ -69,11 +68,11 @@ function getStyleHandler(config) {
             return url;
           });
 
-          styleJSON.sources[id].urls = [...new Set(urls)];
+          source.urls = [...new Set(urls)];
         }
 
         if (source.tiles !== undefined) {
-          const tiles = source.tiles.map((tile) => {
+          const tiles = source.tiles.map(async (tile) => {
             if (
               tile.startsWith("pmtiles://") === true ||
               tile.startsWith("mbtiles://") === true
@@ -87,7 +86,7 @@ function getStyleHandler(config) {
             return tile;
           });
 
-          styleJSON.sources[id].tiles = [...new Set(tiles)];
+          source.tiles = [...new Set(tiles)];
         }
       });
 
