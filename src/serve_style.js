@@ -40,7 +40,7 @@ function getStyleHandler(config) {
       }
 
       /* Fix source urls */
-      Object.keys(styleJSON.sources).forEach(async (id) => {
+      Object.keys(styleJSON.sources).forEach((id) => {
         const source = styleJSON.sources[id];
 
         if (source.url !== undefined) {
@@ -55,7 +55,7 @@ function getStyleHandler(config) {
         }
 
         if (source.urls !== undefined) {
-          const urls = source.urls.map(async (url) => {
+          const urls = source.urls.map((url) => {
             if (
               url.startsWith("pmtiles://") === true ||
               url.startsWith("mbtiles://") === true
@@ -72,7 +72,7 @@ function getStyleHandler(config) {
         }
 
         if (source.tiles !== undefined) {
-          const tiles = source.tiles.map(async (tile) => {
+          const tiles = source.tiles.map((tile) => {
             if (
               tile.startsWith("pmtiles://") === true ||
               tile.startsWith("mbtiles://") === true
