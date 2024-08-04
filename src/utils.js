@@ -112,8 +112,9 @@ export async function findFolders(dirPath, regex) {
  * @param {Request} req
  * @returns {string}
  */
-export const getRequestHost = (req) =>
-  new URL(`${req.protocol}://${req.headers.host}/`).toString();
+export function getRequestHost(req) {
+  return new URL(`${req.protocol}://${req.headers.host}/`).toString();
+}
 
 /**
  *
@@ -217,24 +218,18 @@ export async function validateDataInfo(info) {
   }
 
   /* Validate minzoom */
-  if (info.minzoom !== undefined) {
-    if (info.minzoom < 0 || info.minzoom > 22) {
-      throw new Error(`Data minzoom info is invalid`);
-    }
+  if (info.minzoom < 0 || info.minzoom > 22) {
+    throw new Error(`Data minzoom info is invalid`);
   }
 
   /* Validate maxzoom */
-  if (info.maxzoom !== undefined) {
-    if (info.maxzoom < 0 || info.maxzoom > 22) {
-      throw new Error(`Data maxzoom info is invalid`);
-    }
+  if (info.maxzoom < 0 || info.maxzoom > 22) {
+    throw new Error(`Data maxzoom info is invalid`);
   }
 
   /* Validate minzoom & maxzoom */
-  if (info.minzoom !== undefined && info.maxzoom !== undefined) {
-    if (info.minzoom > info.maxzoom) {
-      throw new Error(`Data zoom info is invalid`);
-    }
+  if (info.minzoom > info.maxzoom) {
+    throw new Error(`Data zoom info is invalid`);
   }
 
   /* Validate bounds */

@@ -1,12 +1,13 @@
 "use strict";
 
+import mlgl from "@maplibre/maplibre-gl-native";
+import { StatusCodes } from "http-status-codes";
+import { createPool } from "generic-pool";
 import fs from "node:fs/promises";
+import express from "express";
+import path from "node:path";
 import axios from "axios";
 import sharp from "sharp";
-import path from "node:path";
-import express from "express";
-import mlgl from "@maplibre/maplibre-gl-native";
-import { createPool } from "generic-pool";
 import {
   createNewXYZTileJSON,
   responseEmptyTile,
@@ -27,14 +28,16 @@ function getRenderedTileHandler(config) {
 
     /* Check rendered is exist? */
     if (item === undefined) {
-      return res.status(404).send("Rendered is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("Rendered is not found");
     }
 
     /* Check rendered tile scale */
     const scale = Number(req.params.scale?.slice(1, -1)) || 1; // Default tile scale is 1
 
     if (scale > config.options.maxScaleRender) {
-      return res.status(400).send("Rendered tile scale is invalid");
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .send("Rendered tile scale is invalid");
     }
 
     const z = Number(req.params.z);
@@ -104,14 +107,16 @@ function getRenderedTileHandler(config) {
 
           res.header("Content-Type", `image/png`);
 
-          return res.status(200).send(buffer);
+          return res.status(StatusCodes.OK).send(buffer);
         } catch (error) {
           printLog(
             "error",
             `Failed to get rendered "${id}" - Tile ${z}/${x}/${y}: ${error}`
           );
 
-          return res.status(500).send("Internal server error");
+          return res
+            .status(StatusCodes.INTERNAL_SERVER_ERROR)
+            .send("Internal server error");
         }
       });
     } catch (error) {
@@ -120,7 +125,9 @@ function getRenderedTileHandler(config) {
         `Failed to get rendered "${id}" - Tile ${z}/${x}/${y}: ${error}`
       );
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -131,7 +138,7 @@ function getRenderedHandler(config) {
     const item = config.repo.rendereds[id];
 
     if (item === undefined) {
-      return res.status(404).send("Rendered is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("Rendered is not found");
     }
 
     try {
@@ -146,11 +153,13 @@ function getRenderedHandler(config) {
 
       res.header("Content-Type", "application/json");
 
-      return res.status(200).send(renderedInfo);
+      return res.status(StatusCodes.OK).send(renderedInfo);
     } catch (error) {
       printLog("error", `Failed to get rendered "${id}": ${error}`);
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -171,11 +180,13 @@ function getRenderedsListHandler(config) {
         };
       });
 
-      return res.status(200).send(result);
+      return res.status(StatusCodes.OK).send(result);
     } catch (error) {
       printLog("error", `Failed to get rendereds": ${error}`);
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }

@@ -1,9 +1,10 @@
 "use strict";
 
-import fs from "node:fs/promises";
-import path from "node:path";
-import express from "express";
 import { printLog, getRequestHost, validateSprite } from "./utils.js";
+import { StatusCodes } from "http-status-codes";
+import fs from "node:fs/promises";
+import express from "express";
+import path from "node:path";
 
 function getSpriteHandler(config) {
   return async (req, res, next) => {
@@ -11,7 +12,7 @@ function getSpriteHandler(config) {
     const item = config.repo.sprites[id];
 
     if (item === undefined) {
-      return res.status(404).send("Sprite is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("Sprite is not found");
     }
 
     try {
@@ -29,11 +30,13 @@ function getSpriteHandler(config) {
         res.header("Content-Type", "image/png");
       }
 
-      return res.status(200).send(data);
+      return res.status(StatusCodes.OK).send(data);
     } catch (error) {
       printLog("error", `Failed to get sprite "${id}": ${error}`);
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -51,11 +54,13 @@ function getSpritesListHandler(config) {
         };
       });
 
-      return res.status(200).send(result);
+      return res.status(StatusCodes.OK).send(result);
     } catch (error) {
       printLog("error", `Failed to get sprites": ${error}`);
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }

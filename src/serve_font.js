@@ -1,7 +1,8 @@
 "use strict";
 
-import path from "node:path";
+import { StatusCodes } from "http-status-codes";
 import express from "express";
+import path from "node:path";
 import {
   getRequestHost,
   detectHeaders,
@@ -28,11 +29,13 @@ function getFontHandler(config) {
 
       res.set(headers);
 
-      return res.status(200).send(data);
+      return res.status(StatusCodes.OK).send(data);
     } catch (error) {
       printLog("error", `Failed to get font "${ids}": ${error}`);
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -47,11 +50,13 @@ function getFontsListHandler(config) {
         };
       });
 
-      return res.status(200).send(result);
+      return res.status(StatusCodes.OK).send(result);
     } catch (error) {
       printLog("error", `Failed to get fonts": ${error}`);
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }

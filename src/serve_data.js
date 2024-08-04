@@ -1,5 +1,6 @@
 "use strict";
 
+import { StatusCodes } from "http-status-codes";
 import path from "node:path";
 import express from "express";
 import {
@@ -23,12 +24,14 @@ function getDataTileHandler(config) {
 
     /* Check data is exist? */
     if (item === undefined) {
-      return res.status(404).send("Data is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("Data is not found");
     }
 
     /* Check data tile format */
     if (req.params.format !== item.tileJSON.format) {
-      return res.status(400).send("Data tile format is invalid");
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .send("Data tile format is invalid");
     }
 
     const z = Number(req.params.z);
@@ -57,7 +60,7 @@ function getDataTileHandler(config) {
 
       res.set(dataTile.headers);
 
-      return res.status(200).send(dataTile.data);
+      return res.status(StatusCodes.OK).send(dataTile.data);
     } catch (error) {
       printLog(
         "error",
@@ -65,10 +68,12 @@ function getDataTileHandler(config) {
       );
 
       if (error.message === "Tile does not exist") {
-        return res.status(404).send(error.message);
+        return res.status(StatusCodes.NOT_FOUND).send(error.message);
       }
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -79,7 +84,7 @@ function getDataHandler(config) {
     const item = config.repo.datas[id];
 
     if (item === undefined) {
-      return res.status(404).send("Data is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("Data is not found");
     }
 
     try {
@@ -92,11 +97,13 @@ function getDataHandler(config) {
 
       res.header("Content-Type", "application/json");
 
-      return res.status(200).send(dataInfo);
+      return res.status(StatusCodes.OK).send(dataInfo);
     } catch (error) {
       printLog("error", `Failed to get data "${id}": ${error}`);
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -114,11 +121,13 @@ function getDatasListHandler(config) {
         };
       });
 
-      return res.status(200).send(result);
+      return res.status(StatusCodes.OK).send(result);
     } catch (error) {
       printLog("error", `Failed to get datas": ${error}`);
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }

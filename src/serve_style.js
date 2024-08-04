@@ -1,9 +1,10 @@
 "use strict";
 
-import fs from "node:fs/promises";
-import path from "node:path";
-import express from "express";
 import { getRequestHost, validateStyle, printLog } from "./utils.js";
+import { StatusCodes } from "http-status-codes";
+import fs from "node:fs/promises";
+import express from "express";
+import path from "node:path";
 
 function getStyleHandler(config) {
   return async (req, res, next) => {
@@ -11,7 +12,7 @@ function getStyleHandler(config) {
     const item = config.repo.styles[id];
 
     if (item === undefined) {
-      return res.status(404).send("Style is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("Style is not found");
     }
 
     try {
@@ -92,11 +93,13 @@ function getStyleHandler(config) {
 
       res.header("Content-Type", "application/json");
 
-      return res.status(200).send(styleJSON);
+      return res.status(StatusCodes.OK).send(styleJSON);
     } catch (error) {
       printLog("error", `Failed to get style "${id}": ${error}`);
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -114,11 +117,13 @@ function getStylesListHandler(config) {
         };
       });
 
-      return res.status(200).send(result);
+      return res.status(StatusCodes.OK).send(result);
     } catch (error) {
       printLog("error", `Failed to get styles": ${error}`);
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }

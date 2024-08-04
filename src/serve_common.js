@@ -1,20 +1,23 @@
 "use strict";
 
-import express from "express";
+import { StatusCodes } from "http-status-codes";
 import { printLog } from "./utils.js";
+import express from "express";
 
 function serveHealthHandler(config) {
   return async (req, res, next) => {
     try {
       if (config.startupComplete === false) {
-        return res.status(503).send("Starting...");
+        return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
       }
 
-      return res.status(200).send("OK");
+      return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
       printLog("error", `Failed to check health server": ${error}`);
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -28,11 +31,13 @@ function serveRestartHandler() {
         process.exit(1);
       }, 0);
 
-      return res.status(200).send("OK");
+      return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
       printLog("error", `Failed to restart server": ${error}`);
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -46,11 +51,13 @@ function serveKillHandler() {
         process.exit(0);
       }, 0);
 
-      return res.status(200).send("OK");
+      return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
       printLog("error", `Failed to kill server": ${error}`);
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }

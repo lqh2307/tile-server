@@ -1,15 +1,16 @@
 "use strict";
 
-import fs from "node:fs/promises";
-import path from "node:path";
-import express from "express";
-import handlebars from "handlebars";
 import { getRequestHost, mercator } from "./utils.js";
+import { StatusCodes } from "http-status-codes";
+import handlebars from "handlebars";
+import fs from "node:fs/promises";
+import express from "express";
+import path from "node:path";
 
 function serveFrontPageHandler(config) {
   return async (req, res, next) => {
     if (config.startupComplete === false) {
-      return res.status(503).send("Starting...");
+      return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
     }
 
     const styles = {};
@@ -84,11 +85,13 @@ function serveFrontPageHandler(config) {
       );
       const compiled = handlebars.compile(fileData.toString())(serveData);
 
-      return res.status(200).send(compiled);
+      return res.status(StatusCodes.OK).send(compiled);
     } catch (error) {
       printLog("error", `Failed to serve front page": ${error}`);
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -96,14 +99,14 @@ function serveFrontPageHandler(config) {
 function serveStyleHandler(config) {
   return async (req, res, next) => {
     if (config.startupComplete === false) {
-      return res.status(503).send("Starting...");
+      return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
     }
 
     const id = decodeURI(req.params.id);
     const item = config.repo.rendereds[id];
 
     if (item === undefined) {
-      return res.status(404).send("Style is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("Style is not found");
     }
 
     const serveData = {
@@ -117,11 +120,13 @@ function serveStyleHandler(config) {
       );
       const compiled = handlebars.compile(fileData.toString())(serveData);
 
-      return res.status(200).send(compiled);
+      return res.status(StatusCodes.OK).send(compiled);
     } catch (error) {
       printLog("error", `Failed to serve style "${id}": ${error}`);
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -129,14 +134,14 @@ function serveStyleHandler(config) {
 function serveDataHandler(config) {
   return async (req, res, next) => {
     if (config.startupComplete === false) {
-      return res.status(503).send("Starting...");
+      return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
     }
 
     const id = decodeURI(req.params.id);
     const item = config.repo.datas[id];
 
     if (item === undefined) {
-      return res.status(404).send("Data is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("Data is not found");
     }
 
     const serveData = {
@@ -151,11 +156,13 @@ function serveDataHandler(config) {
       );
       const compiled = handlebars.compile(fileData.toString())(serveData);
 
-      return res.status(200).send(compiled);
+      return res.status(StatusCodes.OK).send(compiled);
     } catch (error) {
       printLog("error", `Failed to serve data "${id}": ${error}`);
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -166,7 +173,7 @@ function serveWMTSHandler(config) {
     const item = config.repo.rendereds[id];
 
     if (item === undefined) {
-      return res.status(404).send("WMTS is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("WMTS is not found");
     }
 
     const serveData = {
@@ -183,11 +190,13 @@ function serveWMTSHandler(config) {
 
       res.header("Content-Type", "text/xml");
 
-      return res.status(200).send(compiled);
+      return res.status(StatusCodes.OK).send(compiled);
     } catch (error) {
       printLog("error", `Failed to serve WMTS "${id}": ${error}`);
 
-      return res.status(500).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }

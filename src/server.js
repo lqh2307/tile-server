@@ -1,9 +1,5 @@
-import fs from "node:fs";
-import cors from "cors";
-import path from "node:path";
-import morgan from "morgan";
-import express from "express";
-import chokidar from "chokidar";
+"use strict";
+
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
 import { serve_common } from "./serve_common.js";
@@ -12,6 +8,12 @@ import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
 import { printLog } from "./utils.js";
+import chokidar from "chokidar";
+import express from "express";
+import path from "node:path";
+import morgan from "morgan";
+import fs from "node:fs";
+import cors from "cors";
 
 const DATA_DIR_PATH = path.resolve("data");
 const CONFIG_FILE_PATH = path.join(DATA_DIR_PATH, "config.json");
