@@ -155,7 +155,7 @@ export const serve_data = {
 
     /* Serve data xyz */
     app.get(
-      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp)`,
+      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp|gif)`,
       getDataTileHandler(config)
     );
 

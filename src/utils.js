@@ -29,7 +29,7 @@ const fallbackFont = "Open Sans Regular";
  * @returns {void}
  */
 export function responseEmptyTile(format, callback) {
-  if (["jpeg", "jpg", "png", "webp"].includes(format) === true) {
+  if (["jpeg", "jpg", "png", "webp", "gif"].includes(format) === true) {
     // sharp lib not support jpg format
     if (format === "jpg") {
       format = "jpeg";
@@ -213,7 +213,9 @@ export async function validateDataInfo(info) {
   }
 
   /* Validate format */
-  if (["jpeg", "jpg", "pbf", "png", "webp"].includes(info.format) === false) {
+  if (
+    ["jpeg", "jpg", "pbf", "png", "webp", "gif"].includes(info.format) === false
+  ) {
     throw new Error(`Data format info is invalid`);
   }
 
@@ -642,11 +644,11 @@ export async function getPMTilesTile(pmtilesSource, z, x, y) {
     throw new Error("Tile does not exist");
   }
 
-  const data = Buffer(zxyTile.data);
+  const data = Buffer.from(zxyTile.data);
 
   return {
     data: data,
-    headers: detectHeaders(data),
+    headers: detectFormatAndHeaders(data).headers,
   };
 }
 
@@ -695,11 +697,11 @@ export async function getMBTilesTile(mbtilesSource, z, x, y) {
           return reject(new Error("Tile does not exist"));
         }
 
-        const data = Buffer(row.tile_data);
+        const data = Buffer.from(row.tile_data);
 
         resolve({
           data: data,
-          headers: detectHeaders(data),
+          headers: detectFormatAndHeaders(data).headers,
         });
       }
     );
@@ -914,7 +916,7 @@ export async function getMBTilesInfos(mbtilesSource, includeJSON = false) {
     });
 
     if (tileData) {
-      metadata.format = detectFormat(tileData);
+      metadata.format = detectFormatAndHeaders(tileData).format;
     }
   }
 
@@ -946,70 +948,13 @@ export async function closeMBTiles(mbtilesSource) {
 }
 
 /**
- * Return either a format as an extension:
- * * png
- * * pbf
- * * jpg
- * * webp
- *
+ * Return either a format as an extension: png, pbf, jpg, webp, gif and
+ * headers - Content-Type and Content-Encoding - for a response containing this kind of image
  * @param {Buffer} buffer input
- * @returns {string} identifier
+ * @returns {object}
  */
-export function detectFormat(buffer) {
-  if (
-    buffer[0] === 0x89 &&
-    buffer[1] === 0x50 &&
-    buffer[2] === 0x4e &&
-    buffer[3] === 0x47 &&
-    buffer[4] === 0x0d &&
-    buffer[5] === 0x0a &&
-    buffer[6] === 0x1a &&
-    buffer[7] === 0x0a
-  ) {
-    return "png";
-  } else if (
-    buffer[0] === 0xff &&
-    buffer[1] === 0xd8 &&
-    buffer[buffer.length - 2] === 0xff &&
-    buffer[buffer.length - 1] === 0xd9
-  ) {
-    return "jpg";
-  } else if (
-    buffer[0] === 0x47 &&
-    buffer[1] === 0x49 &&
-    buffer[2] === 0x46 &&
-    buffer[3] === 0x38 &&
-    (buffer[4] === 0x39 || buffer[4] === 0x37) &&
-    buffer[5] === 0x61
-  ) {
-    return "gif";
-  } else if (
-    buffer[0] === 0x52 &&
-    buffer[1] === 0x49 &&
-    buffer[2] === 0x46 &&
-    buffer[3] === 0x46 &&
-    buffer[8] === 0x57 &&
-    buffer[9] === 0x45 &&
-    buffer[10] === 0x42 &&
-    buffer[11] === 0x50
-  ) {
-    return "webp";
-  } else if (
-    (buffer[0] === 0x78 && buffer[1] === 0x9c) || // pbf deflate
-    (buffer[0] === 0x1f && buffer[1] === 0x8b) // pbf gzip
-  ) {
-    return "pbf";
-  } else {
-    return "pbf";
-  }
-}
-
-/**
- * Return headers - Content-Type and Content-Encoding - for a response containing this kind of image
- * @param {Buffer} buffer input
- * @returns {object} headers
- */
-export function detectHeaders(buffer) {
+export function detectFormatAndHeaders(buffer) {
+  let format;
   const headers = {};
 
   if (
@@ -1022,6 +967,7 @@ export function detectHeaders(buffer) {
     buffer[6] === 0x1a &&
     buffer[7] === 0x0a
   ) {
+    format = "png";
     headers["Content-Type"] = "image/png";
   } else if (
     buffer[0] === 0xff &&
@@ -1029,6 +975,7 @@ export function detectHeaders(buffer) {
     buffer[buffer.length - 2] === 0xff &&
     buffer[buffer.length - 1] === 0xd9
   ) {
+    format = "jpeg";
     headers["Content-Type"] = "image/jpeg";
   } else if (
     buffer[0] === 0x47 &&
@@ -1038,6 +985,7 @@ export function detectHeaders(buffer) {
     (buffer[4] === 0x39 || buffer[4] === 0x37) &&
     buffer[5] === 0x61
   ) {
+    format = "gif";
     headers["Content-Type"] = "image/gif";
   } else if (
     buffer[0] === 0x52 &&
@@ -1049,16 +997,23 @@ export function detectHeaders(buffer) {
     buffer[10] === 0x42 &&
     buffer[11] === 0x50
   ) {
+    format = "webp";
     headers["Content-Type"] = "image/webp";
-  } else if (buffer[0] === 0x78 && buffer[1] === 0x9c) {
+  } else {
+    format = "pbf";
     headers["Content-Type"] = "application/x-protobuf";
-    headers["Content-Encoding"] = "deflate";
-  } else if (buffer[0] === 0x1f && buffer[1] === 0x8b) {
-    headers["Content-Type"] = "application/x-protobuf";
-    headers["Content-Encoding"] = "gzip";
+
+    if (buffer[0] === 0x78 && buffer[1] === 0x9c) {
+      headers["Content-Encoding"] = "deflate";
+    } else if (buffer[0] === 0x1f && buffer[1] === 0x8b) {
+      headers["Content-Encoding"] = "gzip";
+    }
   }
 
-  return headers;
+  return {
+    format,
+    headers,
+  };
 }
 
 export const gzipAsync = util.promisify(zlib.gzip);

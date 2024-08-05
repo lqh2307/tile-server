@@ -52,10 +52,6 @@ function getStyleHandler(config) {
             const sourceID = source.url.slice(10);
 
             source.url = `${getRequestHost(req)}data/${sourceID}.json`;
-
-            if (req.query.json === "true") {
-              source.url = `${source.url}?json=true`;
-            }
           }
         }
 
@@ -68,10 +64,6 @@ function getStyleHandler(config) {
               const sourceID = url.slice(10);
 
               url = `${getRequestHost(req)}data/${sourceID}.json`;
-
-              if (req.query.json === "true") {
-                url = `${url}?json=true`;
-              }
             }
 
             return url;

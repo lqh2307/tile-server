@@ -4,8 +4,8 @@ import { StatusCodes } from "http-status-codes";
 import express from "express";
 import path from "node:path";
 import {
+  detectFormatAndHeaders,
   getRequestHost,
-  detectHeaders,
   validateFont,
   getFontsPBF,
   gzipAsync,
@@ -20,7 +20,7 @@ function getFontHandler(config) {
       let data = await getFontsPBF(config, ids, req.params.range);
 
       /* Gzip pbf font */
-      const headers = detectHeaders(data);
+      const headers = detectFormatAndHeaders(data).headers;
       if (headers["Content-Encoding"] === undefined) {
         data = await gzipAsync(data);
 

@@ -9,12 +9,12 @@ import path from "node:path";
 import axios from "axios";
 import sharp from "sharp";
 import {
+  detectFormatAndHeaders,
   createNewXYZTileJSON,
   responseEmptyTile,
   getRequestHost,
   getPMTilesTile,
   getMBTilesTile,
-  detectHeaders,
   getFontsPBF,
   unzipAsync,
   printLog,
@@ -410,7 +410,8 @@ export const serve_rendered = {
                               );
 
                               /* Unzip pbf font */
-                              const headers = detectHeaders(data);
+                              const headers =
+                                detectFormatAndHeaders(data).headers;
                               if (headers["Content-Encoding"] !== undefined) {
                                 data = await unzipAsync(data);
                               }
