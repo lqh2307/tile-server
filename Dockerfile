@@ -18,6 +18,7 @@ RUN \
   libjpeg-turbo8-dev \
   libicu-dev \
   libopengl-dev \
+  libgif-dev \
   libpng-dev \
   libwebp-dev \
   libcurl4-openssl-dev; \
@@ -51,6 +52,7 @@ RUN \
   libuv1 \
   libjpeg-turbo8 \
   libicu70 \
+  libgif7 \
   libopengl0 \
   libpng16-16 \
   libwebp7 \
