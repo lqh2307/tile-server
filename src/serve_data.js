@@ -87,13 +87,24 @@ function getDataHandler(config) {
       return res.status(StatusCodes.NOT_FOUND).send("Data is not found");
     }
 
+    let dataInfo;
+
     try {
-      const dataInfo = {
-        ...item.tileJSON,
-        tiles: [
-          `${getRequestHost(req)}data/${id}/{z}/{x}/{y}.${item.tileJSON.format}`,
-        ],
-      };
+      if (item.sourceType === "mbtiles") {
+        dataInfo = await getMBTilesInfos(
+          item.source,
+          req.query.json === "true" ? true : false
+        );
+      } else {
+        dataInfo = await getMBTilesInfos(
+          item.source,
+          req.query.json === "true" ? true : false
+        );
+      }
+
+      dataInfo.tiles = [
+        `${getRequestHost(req)}data/${id}/{z}/{x}/{y}.${item.tileJSON.format}`,
+      ];
 
       res.header("Content-Type", "application/json");
 
@@ -180,10 +191,7 @@ export const serve_data = {
 
             dataInfo.sourceType = "mbtiles";
             dataInfo.source = await openMBTiles(filePath);
-            dataInfo.tileJSON = await getMBTilesInfos(
-              dataInfo.source,
-              config.options.frontPage
-            );
+            dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
           } else if (item.pmtiles) {
             if (
               item.pmtiles.startsWith("https://") === true ||
@@ -196,10 +204,7 @@ export const serve_data = {
 
             dataInfo.sourceType = "pmtiles";
             dataInfo.source = await openPMTiles(filePath);
-            dataInfo.tileJSON = await getPMTilesInfos(
-              dataInfo.source,
-              config.options.frontPage
-            );
+            dataInfo.tileJSON = await getPMTilesInfos(dataInfo.source);
           } else {
             throw new Error(`"pmtiles" or "mbtiles" property is empty`);
           }
