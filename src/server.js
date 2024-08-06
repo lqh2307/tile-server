@@ -15,29 +15,23 @@ import morgan from "morgan";
 import fs from "node:fs";
 import cors from "cors";
 
-const DATA_DIR_PATH = path.resolve("data");
-const CONFIG_FILE_PATH = path.join(DATA_DIR_PATH, "config.json");
-const MBTILES_DIR_PATH = path.join(DATA_DIR_PATH, "mbtiles");
-const PMTILES_DIR_PATH = path.join(DATA_DIR_PATH, "pmtiles");
-const FONTS_DIR_PATH = path.join(DATA_DIR_PATH, "fonts");
-const SPRITES_DIR_PATH = path.join(DATA_DIR_PATH, "sprites");
-const STYLES_DIR_PATH = path.join(DATA_DIR_PATH, "styles");
-
 function loadConfig() {
   printLog("info", "Loading config file...");
 
+  const configFilePath = path.resolve("data", "config.json");
+
   try {
-    const fileData = fs.readFileSync(CONFIG_FILE_PATH, "utf8");
+    const fileData = fs.readFileSync(configFilePath, "utf8");
     const configData = JSON.parse(fileData);
 
     const config = {
       options: {
         paths: {
-          styles: STYLES_DIR_PATH,
-          fonts: FONTS_DIR_PATH,
-          sprites: SPRITES_DIR_PATH,
-          mbtiles: MBTILES_DIR_PATH,
-          pmtiles: PMTILES_DIR_PATH,
+          styles: path.resolve("data", "styles"),
+          fonts: path.resolve("data", "fonts"),
+          sprites: path.resolve("data", "sprites"),
+          mbtiles: path.resolve("data", "mbtiles"),
+          pmtiles: path.resolve("data", "pmtiles"),
         },
         listenPort: configData.options?.listenPort || 8080,
         watchToKill: configData.options?.watchToKill || 0,
@@ -84,14 +78,14 @@ function loadConfig() {
       );
 
       chokidar
-        .watch(CONFIG_FILE_PATH, {
+        .watch(configFilePath, {
           usePolling: true,
           awaitWriteFinish: true,
           interval: config.options.watchToKill,
         })
         .on("change", () => {
           printLog("info", `Config file has changed. Killed server!`);
-          
+
           process.exit(0);
         });
     } else if (config.options.watchToRestart > 0) {
@@ -101,14 +95,14 @@ function loadConfig() {
       );
 
       chokidar
-        .watch(CONFIG_FILE_PATH, {
+        .watch(configFilePath, {
           usePolling: true,
           awaitWriteFinish: true,
           interval: config.options.watchToRestart,
         })
         .on("change", () => {
           printLog("info", `Config file has changed. Restarting server...`);
-          
+
           process.exit(1);
         });
     }
@@ -116,12 +110,12 @@ function loadConfig() {
     return config;
   } catch (error) {
     printLog("error", `Failed to load config file: ${error}. Exited!`);
-    
+
     process.exit(0);
   }
 }
 
-function startServer(config) {
+function setupServer(config) {
   printLog("info", "Starting HTTP server...");
 
   express()
@@ -137,8 +131,8 @@ function startServer(config) {
     .use("/styles", serve_style.init(config))
     .use("/styles", serve_rendered.init(config))
     .listen(config.options.listenPort, () => {
-    printLog("info", `Listening on port: ${config.options.listenPort}`);
-  });
+      printLog("info", `Listening on port: ${config.options.listenPort}`);
+    });
 }
 
 function loadData(config) {
@@ -153,18 +147,20 @@ function loadData(config) {
     .then(() => serve_rendered.add(config))
     .then(() => {
       printLog("info", "Completed startup!");
-      
+
       config.startupComplete = true;
     })
     .catch((error) => {
       printLog("error", `Failed to load data: ${error}. Exited!`);
-      
+
       process.exit(0);
     });
 }
 
-const config = loadConfig();
+export function startServer() {
+  const config = loadConfig();
 
-startServer(config);
+  setupServer(config);
 
-loadData(config);
+  loadData(config);
+}
