@@ -1,6 +1,5 @@
 "use strict";
 
-import { getRequestHost, printLog } from "./utils.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
 import { serve_common } from "./serve_common.js";
@@ -8,8 +7,7 @@ import { serve_sprite } from "./serve_sprite.js";
 import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
-import swaggerUi from "swagger-ui-express";
-import swaggerJsdoc from "swagger-jsdoc";
+import { printLog } from "./utils.js";
 import chokidar from "chokidar";
 import express from "express";
 import path from "node:path";
@@ -24,29 +22,6 @@ const PMTILES_DIR_PATH = path.join(DATA_DIR_PATH, "pmtiles");
 const FONTS_DIR_PATH = path.join(DATA_DIR_PATH, "fonts");
 const SPRITES_DIR_PATH = path.join(DATA_DIR_PATH, "sprites");
 const STYLES_DIR_PATH = path.join(DATA_DIR_PATH, "styles");
-
-function serveSwagger() {
-  return (req, res, next) => {
-    swaggerUi.setup(
-      swaggerJsdoc({
-        swaggerDefinition: {
-          openapi: "3.0.0",
-          info: {
-            title: "Tile Server API",
-            version: "1.0.0",
-            description: "API for tile server",
-          },
-          servers: [
-            {
-              url: getRequestHost(req),
-            },
-          ],
-        },
-        apis: ["src/*.js"],
-      })
-    )(req, res, next);
-  };
-}
 
 /**
  * Start server
@@ -81,6 +56,7 @@ export function startServer() {
         frontPage: configData.options?.frontPage ?? true,
         serveWMTS: configData.options?.serveWMTS ?? true,
         serveRendered: configData.options?.serveRendered ?? true,
+        serveSwagger: configData.options?.serveSwagger ?? true,
         renderedCompression: configData.options?.renderedCompression || 6,
         maxScaleRender: configData.options?.maxScaleRender || 1,
         minPoolSize: configData.options?.minPoolSize || 8,
@@ -168,12 +144,11 @@ export function startServer() {
         methods: "GET",
       })
     )
-    .use("/swagger/index.html", swaggerUi.serve, serveSwagger())
     .use("/", serve_common.init(config))
     .use("/", serve_template.init(config))
+    .use("/data", serve_data.init(config))
     .use("/fonts", serve_font.init(config))
     .use("/sprites", serve_sprite.init(config))
-    .use("/data", serve_data.init(config))
     .use("/styles", serve_style.init(config))
     .use("/styles", serve_rendered.init(config))
     .listen(config.options.listenPort, () => {

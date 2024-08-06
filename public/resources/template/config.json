@@ -8,6 +8,7 @@
     "frontPage": true,
     "serveWMTS": true,
     "serveRendered": true,
+    "serveSwagger": true,
     "maxScaleRender": 2,
     "renderedCompression": 6,
     "minPoolSize": 8,

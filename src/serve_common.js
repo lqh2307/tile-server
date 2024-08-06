@@ -1,8 +1,28 @@
 "use strict";
 
 import { StatusCodes } from "http-status-codes";
+import swaggerUi from "swagger-ui-express";
+import swaggerJsdoc from "swagger-jsdoc";
 import { printLog } from "./utils.js";
 import express from "express";
+
+function serveSwagger() {
+  return (req, res, next) => {
+    swaggerUi.setup(
+      swaggerJsdoc({
+        swaggerDefinition: {
+          openapi: "3.0.0",
+          info: {
+            title: "Tile Server API",
+            version: "1.0.0",
+            description: "API for tile server",
+          },
+        },
+        apis: ["src/*.js"],
+      })
+    )(req, res, next);
+  };
+}
 
 function serveHealthHandler(config) {
   return async (req, res, next) => {
@@ -65,6 +85,10 @@ function serveKillHandler() {
 export const serve_common = {
   init: (config) => {
     const app = express();
+
+    if (config.options.serveSwagger === true) {
+      app.use("/swagger/index.html", swaggerUi.serve, serveSwagger());
+    }
 
     /**
      * @swagger
