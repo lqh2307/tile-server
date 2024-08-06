@@ -147,13 +147,122 @@ export const serve_data = {
   init: (config) => {
     const app = express();
 
-    /* Get all datas */
+    /**
+     * @swagger
+     * tags:
+     *   - name: Data
+     *     description: Data related endpoints
+     * /data/datas.json:
+     *   get:
+     *     tags:
+     *       - Data
+     *     summary: Get all datas
+     *     responses:
+     *       200:
+     *         description: List of all datas
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: array
+     *               items:
+     *                 type: object
+     *                 properties:
+     *                   id:
+     *                     type: string
+     *                   name:
+     *                     type: string
+     *                   url:
+     *                     type: string
+     */
     app.get("/datas.json", getDatasListHandler(config));
 
-    /* Get data */
+    /**
+     * @swagger
+     * tags:
+     *   - name: Data
+     *     description: Data related endpoints
+     * /data/{id}.json:
+     *   get:
+     *     tags:
+     *       - Data
+     *     summary: Get data by ID
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: string
+     *         description: Data ID
+     *       - in: query
+     *         name: json
+     *         schema:
+     *           type: string
+     *           enum: [true, false]
+     *         description: Include vector_layers and tilestats fields in response
+     *     responses:
+     *       200:
+     *         description: Data information
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     */
     app.get("/:id.json", getDataHandler(config));
 
-    /* Serve data xyz */
+    /**
+     * @swagger
+     * tags:
+     *   - name: Data
+     *     description: Data related endpoints
+     * /data/{id}/{z}/{x}/{y}.{format}:
+     *   get:
+     *     tags:
+     *       - Data
+     *     summary: Get data tile
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: string
+     *         description: Data ID
+     *       - in: path
+     *         name: z
+     *         required: true
+     *         schema:
+     *           type: integer
+     *           example: 0
+     *         description: Zoom level
+     *       - in: path
+     *         name: x
+     *         required: true
+     *         schema:
+     *           type: integer
+     *           example: 0
+     *         description: Tile X coordinate
+     *       - in: path
+     *         name: y
+     *         required: true
+     *         schema:
+     *           type: integer
+     *           example: 0
+     *         description: Tile Y coordinate
+     *       - in: path
+     *         name: format
+     *         required: true
+     *         schema:
+     *           type: string
+     *           enum: [jpeg, jpg, pbf, png, webp, gif]
+     *         description: Tile format
+     *     responses:
+     *       200:
+     *         description: Data tile
+     *         content:
+     *           application/octet-stream:
+     *             schema:
+     *               type: string
+     *               format: binary
+     */
     app.get(
       `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp|gif)`,
       getDataTileHandler(config)

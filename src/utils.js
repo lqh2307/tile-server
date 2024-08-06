@@ -873,51 +873,57 @@ export async function getMBTilesInfos(mbtilesSource, includeJSON = false) {
   const metadata = await getMBTilesMetadatas(mbtilesSource);
 
   if (metadata.minzoom === undefined) {
-    const minZoom = await new Promise((resolve, reject) => {
+    await new Promise((resolve, reject) => {
       mbtilesSource.get(
         "SELECT MIN(zoom_level) AS minzoom FROM tiles",
         (error, row) => {
-          if (!error && row) {
-            resolve(row.minzoom);
+          if (error) {
+            return reject(error);
           }
+
+          if (row) {
+            metadata.minzoom = row.minzoom;
+          }
+
+          resolve();
         }
       );
     });
-
-    if (minZoom) {
-      metadata.minzoom = minZoom;
-    }
   }
 
   if (metadata.maxzoom === undefined) {
-    const maxZoom = await new Promise((resolve, reject) => {
+    await new Promise((resolve, reject) => {
       mbtilesSource.get(
         "SELECT MAX(zoom_level) AS maxzoom FROM tiles",
         (error, row) => {
-          if (!error && row) {
-            resolve(row.maxzoom);
+          if (error) {
+            return reject(error);
           }
+
+          if (row) {
+            metadata.maxzoom = row.maxzoom;
+          }
+
+          resolve();
         }
       );
     });
-
-    if (maxZoom) {
-      metadata.maxzoom = maxZoom;
-    }
   }
 
   if (metadata.format === undefined) {
-    const tileData = await new Promise((resolve, reject) => {
+    await new Promise((resolve, reject) => {
       mbtilesSource.get("SELECT tile_data FROM tiles LIMIT 1", (error, row) => {
-        if (!error && row) {
-          resolve(row.tile_data);
+        if (error) {
+          return reject(error);
         }
+
+        if (row) {
+          metadata.format = detectFormatAndHeaders(row.tile_data).format;
+        }
+
+        resolve();
       });
     });
-
-    if (tileData) {
-      metadata.format = detectFormatAndHeaders(tileData).format;
-    }
   }
 
   const xyzTileJSON = createNewXYZTileJSON(metadata);

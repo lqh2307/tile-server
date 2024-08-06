@@ -196,13 +196,145 @@ export const serve_rendered = {
     const app = express();
 
     if (config.options.serveRendered === true) {
-      /* Get all style rendereds */
+      /**
+       * @swagger
+       * tags:
+       *   - name: Rendered
+       *     description: Rendered related endpoints
+       * /styles/rendereds.json:
+       *   get:
+       *     tags:
+       *       - Rendered
+       *     summary: Get all style rendereds
+       *     responses:
+       *       200:
+       *         description: List of all style rendereds
+       *         content:
+       *           application/json:
+       *             schema:
+       *               type: array
+       *               items:
+       *                 type: object
+       *                 properties:
+       *                   id:
+       *                     type: string
+       *                     example: style1
+       *                   name:
+       *                     type: string
+       *                     example: Style 1
+       *                   url:
+       *                     type: array
+       *                     items:
+       *                       type: string
+       */
       app.get("/rendereds.json", getRenderedsListHandler(config));
 
-      /* Get style rendered */
+      /**
+       * @swagger
+       * tags:
+       *   - name: Rendered
+       *     description: Rendered related endpoints
+       * /styles/{tileSize}/{id}.json:
+       *   get:
+       *     tags:
+       *       - Rendered
+       *     summary: Get style rendered
+       *     parameters:
+       *       - in: path
+       *         name: tileSize
+       *         schema:
+       *           type: integer
+       *           enum: [256, 512]
+       *         required: true
+       *         description: Tile size (256 or 512)
+       *       - in: path
+       *         name: id
+       *         schema:
+       *           type: string
+       *         required: true
+       *         description: ID of the style rendered
+       *     responses:
+       *       200:
+       *         description: Style rendered
+       *         content:
+       *           application/json:
+       *             schema:
+       *               type: object
+       *               properties:
+       *                 tileJSON:
+       *                   type: object
+       *                 tiles:
+       *                   type: array
+       *                   items:
+       *                     type: string
+       *       404:
+       *         description: Rendered not found
+       *       500:
+       *         description: Internal server error
+       */
       app.get("/(:tileSize(256|512)/)?:id.json", getRenderedHandler(config));
 
-      /* Serve style xyz */
+      /**
+       * @swagger
+       * tags:
+       *   - name: Rendered
+       *     description: Rendered related endpoints
+       * /styles/{id}/{tileSize}/{z}/{x}/{y}{scale}.png:
+       *   get:
+       *     tags:
+       *       - Rendered
+       *     summary: Get style rendered tile
+       *     parameters:
+       *       - in: path
+       *         name: id
+       *         schema:
+       *           type: string
+       *         required: true
+       *         description: ID of the style
+       *       - in: path
+       *         name: tileSize
+       *         schema:
+       *           type: integer
+       *           enum: [256, 512]
+       *         required: true
+       *         description: Tile size (256 or 512)
+       *       - in: path
+       *         name: z
+       *         schema:
+       *           type: integer
+       *         required: true
+       *         description: Zoom level
+       *       - in: path
+       *         name: x
+       *         schema:
+       *           type: integer
+       *         required: true
+       *         description: X coordinate
+       *       - in: path
+       *         name: y
+       *         schema:
+       *           type: integer
+       *         required: true
+       *         description: Y coordinate
+       *       - in: path
+       *         name: scale
+       *         schema:
+       *           type: string
+       *         required: false
+       *         description: Scale of the tile (e.g., @2x)
+       *     responses:
+       *       200:
+       *         description: Style tile
+       *         content:
+       *           image/png:
+       *             schema:
+       *               type: string
+       *               format: binary
+       *       404:
+       *         description: Rendered not found
+       *       500:
+       *         description: Internal server error
+       */
       app.get(
         `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(@\\d+x)?.png`,
         getRenderedTileHandler(config)

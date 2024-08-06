@@ -65,10 +65,66 @@ export const serve_font = {
   init: (config) => {
     const app = express();
 
-    /* Get all fonts */
+    /**
+     * @swagger
+     * tags:
+     *   - name: Font
+     *     description: Font related endpoints
+     * /fonts/fonts.json:
+     *   get:
+     *     tags:
+     *       - Font
+     *     summary: Get all fonts
+     *     responses:
+     *       200:
+     *         description: List of fonts
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: array
+     *               items:
+     *                 type: object
+     *                 properties:
+     *                   name:
+     *                     type: string
+     *                   url:
+     *                     type: string
+     */
     app.get("/fonts.json", getFontsListHandler(config));
 
-    /* Get font */
+    /**
+     * @swagger
+     * tags:
+     *   - name: Font
+     *     description: Font related endpoints
+     * /fonts/{id}/{range}.pbf:
+     *   get:
+     *     tags:
+     *       - Font
+     *     summary: Get font
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: string
+     *         description: Font ID
+     *       - in: path
+     *         name: range
+     *         required: true
+     *         schema:
+     *           type: string
+     *           pattern: '\\d{1,5}-\\d{1,5}'
+     *         description: Font range
+     *     responses:
+     *       200:
+     *         description: Font data
+     *         content:
+     *           application/octet-stream:
+     *             schema:
+     *               type: string
+     *               format: binary
+     */
     app.get("/:id/:range(\\d{1,5}-\\d{1,5}).pbf", getFontHandler(config));
 
     return app;

@@ -8,6 +8,8 @@ import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
 import { printLog } from "./utils.js";
+import swaggerUi from "swagger-ui-express";
+import swaggerJsdoc from "swagger-jsdoc";
 import chokidar from "chokidar";
 import express from "express";
 import path from "node:path";
@@ -142,6 +144,28 @@ export function startServer() {
         origin: "*",
         methods: "GET",
       })
+    )
+    .use(
+      "/swagger/index.html",
+      swaggerUi.serve,
+      swaggerUi.setup(
+        swaggerJsdoc({
+          swaggerDefinition: {
+            openapi: "3.0.0",
+            info: {
+              title: "Tile Server API",
+              version: "1.0.0",
+              description: "API for tile server",
+            },
+            servers: [
+              {
+                url: `http://localhost:${config.options.listenPort}`,
+              },
+            ],
+          },
+          apis: ["src/*.js"],
+        })
+      )
     )
     .use("/", serve_common.init(config))
     .use("/", serve_template.init(config))

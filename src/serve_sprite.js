@@ -69,10 +69,81 @@ export const serve_sprite = {
   init: (config) => {
     const app = express();
 
-    /* Get all sprites */
+    /**
+     * @swagger
+     * tags:
+     *   - name: Sprite
+     *     description: Sprite related endpoints
+     * /sprites/sprites.json:
+     *   get:
+     *     tags:
+     *       - Sprite
+     *     summary: Get all sprites
+     *     responses:
+     *       200:
+     *         description: List of all sprites
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: array
+     *               items:
+     *                 type: object
+     *                 properties:
+     *                   name:
+     *                     type: string
+     *                   urls:
+     *                     type: array
+     *                     items:
+     *                       type: string
+     */
     app.get("/sprites.json", getSpritesListHandler(config));
 
-    /* Get sprite */
+    /**
+     * @swagger
+     * tags:
+     *   - name: Sprite
+     *     description: Sprite related endpoints
+     * /sprites/{id}/sprite{scale}.{format}:
+     *   get:
+     *     tags:
+     *       - Sprite
+     *     summary: Get sprite
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         schema:
+     *           type: string
+     *         required: true
+     *         description: ID of the sprite
+     *       - in: path
+     *         name: scale
+     *         schema:
+     *           type: string
+     *         required: false
+     *         description: Scale of the sprite (e.g., @2x)
+     *       - in: path
+     *         name: format
+     *         schema:
+     *           type: string
+     *           enum: [json, png]
+     *         required: true
+     *         description: Format of the sprite
+     *     responses:
+     *       200:
+     *         description: Sprite
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *           image/png:
+     *             schema:
+     *               type: string
+     *               format: binary
+     *       404:
+     *         description: Sprite not found
+     *       500:
+     *         description: Internal server error
+     */
     app.get(
       "/:id/sprite:scale(@\\d+x)?.:format(json|png)",
       getSpriteHandler(config)

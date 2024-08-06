@@ -208,22 +208,148 @@ export const serve_template = {
       express.static(path.resolve("public", "resources"))
     );
 
-    /* Get WMTS */
     if (
       config.options.serveRendered === true &&
       config.options.serveWMTS === true
     ) {
+      /**
+       * @swagger
+       * tags:
+       *   - name: WMTS
+       *     description: WMTS related endpoints
+       * /styles/{id}/wmts.xml:
+       *   get:
+       *     tags:
+       *       - WMTS
+       *     summary: Get WMTS XML for style
+       *     parameters:
+       *       - in: path
+       *         name: id
+       *         schema:
+       *           type: string
+       *         required: true
+       *         description: ID of the style
+       *     responses:
+       *       200:
+       *         description: WMTS XML for the style
+       *         content:
+       *           text/xml:
+       *             schema:
+       *               type: string
+       *       404:
+       *         description: Style not found
+       *       500:
+       *         description: Internal server error
+       */
       app.get("/styles/:id/wmts.xml", serveWMTSHandler(config));
     }
 
-    /* Serve style */
     if (config.options.frontPage === true) {
+      /**
+       * @swagger
+       * tags:
+       *   - name: Template
+       *     description: Template related endpoints
+       * /styles/{id}/:
+       *   get:
+       *     tags:
+       *       - Template
+       *     summary: Serve style page
+       *     parameters:
+       *       - in: path
+       *         name: id
+       *         schema:
+       *           type: string
+       *         required: true
+       *         description: ID of the style
+       *     responses:
+       *       200:
+       *         description: Style page
+       *         content:
+       *           text/html:
+       *             schema:
+       *               type: string
+       *       404:
+       *         description: Style not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
+       *       500:
+       *         description: Internal server error
+       */
       app.get("/styles/:id/$", serveStyleHandler(config));
 
       /* Serve data */
+      /**
+       * @swagger
+       * tags:
+       *   - name: Template
+       *     description: Template related endpoints
+       * /data/{id}/:
+       *   get:
+       *     tags:
+       *       - Template
+       *     summary: Serve data page
+       *     parameters:
+       *       - in: path
+       *         name: id
+       *         schema:
+       *           type: string
+       *         required: true
+       *         description: ID of the data
+       *     responses:
+       *       200:
+       *         description: Data page
+       *         content:
+       *           text/html:
+       *             schema:
+       *               type: string
+       *       404:
+       *         description: Data not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
+       *       500:
+       *         description: Internal server error
+       */
       app.use("/data/:id/$", serveDataHandler(config));
 
       /* Serve front page */
+      /**
+       * @swagger
+       * tags:
+       *   - name: Template
+       *     description: Template related endpoints
+       * /:
+       *   get:
+       *     tags:
+       *       - Template
+       *     summary: Serve front page
+       *     responses:
+       *       200:
+       *         description: Front page
+       *         content:
+       *           text/html:
+       *             schema:
+       *               type: string
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
+       *       500:
+       *         description: Internal server error
+       */
       app.get("/$", serveFrontPageHandler(config));
     }
 

@@ -66,16 +66,83 @@ export const serve_common = {
   init: (config) => {
     const app = express();
 
-    /* Check health */
+    /**
+     * @swagger
+     * tags:
+     *   - name: Common
+     *     description: Common related endpoints
+     * /health:
+     *   get:
+     *     tags:
+     *       - Common
+     *     summary: Check health of the server
+     *     responses:
+     *       200:
+     *         description: Server is healthy
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: OK
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
     app.get("/health", serveHealthHandler(config));
 
-    /* Restart */
     if (config.options.restartEndpoint === true) {
+      /**
+       * @swagger
+       * tags:
+       *   - name: Common
+       *     description: Common related endpoints
+       * /restart:
+       *   get:
+       *     tags:
+       *       - Common
+       *     summary: Restart the server
+       *     responses:
+       *       200:
+       *         description: Server will restart
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: OK
+       *       500:
+       *         description: Internal server error
+       */
       app.get("/restart", serveRestartHandler());
     }
 
-    /* Kill */
     if (config.options.killEndpoint === true) {
+      /**
+       * @swagger
+       * tags:
+       *   - name: Common
+       *     description: Common related endpoints
+       * /kill:
+       *   get:
+       *     tags:
+       *       - Common
+       *     summary: Kill the server
+       *     responses:
+       *       200:
+       *         description: Server will be killed
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: OK
+       *       500:
+       *         description: Internal server error
+       */
       app.get("/kill", serveKillHandler());
     }
 

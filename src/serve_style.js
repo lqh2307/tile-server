@@ -132,11 +132,65 @@ export const serve_style = {
   init: (config) => {
     const app = express();
 
-    /* Get style */
-    app.get("/:id/style.json", getStyleHandler(config));
-
-    /* Get all styles */
+    /**
+     * @swagger
+     * tags:
+     *   - name: Style
+     *     description: Style related endpoints
+     * /styles/styles.json:
+     *   get:
+     *     tags:
+     *       - Style
+     *     summary: Get all styles
+     *     responses:
+     *       200:
+     *         description: List of all styles
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: array
+     *               items:
+     *                 type: object
+     *                 properties:
+     *                   id:
+     *                     type: string
+     *                   name:
+     *                     type: string
+     *                   url:
+     *                     type: string
+     */
     app.get("/styles.json", getStylesListHandler(config));
+
+    /**
+     * @swagger
+     * tags:
+     *   - name: Style
+     *     description: Style related endpoints
+     * /styles/{id}/style.json:
+     *   get:
+     *     tags:
+     *       - Style
+     *     summary: Get style
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         schema:
+     *           type: string
+     *         required: true
+     *         description: ID of the style
+     *     responses:
+     *       200:
+     *         description: Style
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *       404:
+     *         description: Style not found
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/:id/style.json", getStyleHandler(config));
 
     return app;
   },
