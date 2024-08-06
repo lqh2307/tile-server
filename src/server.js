@@ -58,6 +58,9 @@ export function startServer() {
         serveRendered: configData.options?.serveRendered ?? true,
         serveSwagger: configData.options?.serveSwagger ?? true,
         renderedCompression: configData.options?.renderedCompression || 6,
+        loggerFormat:
+          configData.options?.loggerFormat ||
+          ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
         maxScaleRender: configData.options?.maxScaleRender || 1,
         minPoolSize: configData.options?.minPoolSize || 8,
         maxPoolSize: configData.options?.maxPoolSize || 16,
@@ -133,17 +136,8 @@ export function startServer() {
   express()
     .disable("x-powered-by")
     .enable("trust proxy")
-    .use(
-      morgan(
-        ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent"
-      )
-    )
-    .use(
-      cors({
-        origin: "*",
-        methods: "GET",
-      })
-    )
+    .use(cors())
+    .use(morgan(config.options.loggerFormat))
     .use("/", serve_common.init(config))
     .use("/", serve_template.init(config))
     .use("/data", serve_data.init(config))

@@ -42,6 +42,8 @@ Example config.json content:
 			"serveRendered": true,
 			"maxScaleRender": 2,
 			"renderedCompression": 6,
+			"serveSwagger": true,
+			"loggerFormat": ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
 			"minPoolSize": 8,
 			"maxPoolSize": 16
 		},
