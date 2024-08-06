@@ -7,7 +7,7 @@ import { serve_sprite } from "./serve_sprite.js";
 import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
-import { printLog } from "./utils.js";
+import { getRequestHost, printLog } from "./utils.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 import chokidar from "chokidar";
@@ -24,6 +24,29 @@ const PMTILES_DIR_PATH = path.join(DATA_DIR_PATH, "pmtiles");
 const FONTS_DIR_PATH = path.join(DATA_DIR_PATH, "fonts");
 const SPRITES_DIR_PATH = path.join(DATA_DIR_PATH, "sprites");
 const STYLES_DIR_PATH = path.join(DATA_DIR_PATH, "styles");
+
+function serveSwagger() {
+  return (req, res, next) => {
+    swaggerUi.setup(
+      swaggerJsdoc({
+        swaggerDefinition: {
+          openapi: "3.0.0",
+          info: {
+            title: "Tile Server API",
+            version: "1.0.0",
+            description: "API for tile server",
+          },
+          servers: [
+            {
+              url: getRequestHost(req),
+            },
+          ],
+        },
+        apis: ["src/*.js"],
+      })
+    )(req, res, next);
+  };
+}
 
 /**
  * Start server
@@ -145,28 +168,7 @@ export function startServer() {
         methods: "GET",
       })
     )
-    .use(
-      "/swagger/index.html",
-      swaggerUi.serve,
-      swaggerUi.setup(
-        swaggerJsdoc({
-          swaggerDefinition: {
-            openapi: "3.0.0",
-            info: {
-              title: "Tile Server API",
-              version: "1.0.0",
-              description: "API for tile server",
-            },
-            servers: [
-              {
-                url: `http://localhost:${config.options.listenPort}`,
-              },
-            ],
-          },
-          apis: ["src/*.js"],
-        })
-      )
-    )
+    .use("/swagger/index.html", swaggerUi.serve, serveSwagger())
     .use("/", serve_common.init(config))
     .use("/", serve_template.init(config))
     .use("/fonts", serve_font.init(config))
