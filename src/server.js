@@ -23,23 +23,14 @@ const FONTS_DIR_PATH = path.join(DATA_DIR_PATH, "fonts");
 const SPRITES_DIR_PATH = path.join(DATA_DIR_PATH, "sprites");
 const STYLES_DIR_PATH = path.join(DATA_DIR_PATH, "styles");
 
-/**
- * Start server
- * @returns {void}
- */
-export function startServer() {
-  /* Load config file */
+function loadConfig() {
   printLog("info", "Loading config file...");
 
-  let config;
-
   try {
-    /* Read config file */
     const fileData = fs.readFileSync(CONFIG_FILE_PATH, "utf8");
     const configData = JSON.parse(fileData);
 
-    /* Asign options */
-    config = {
+    const config = {
       options: {
         paths: {
           styles: STYLES_DIR_PATH,
@@ -79,16 +70,13 @@ export function startServer() {
       startupComplete: false,
     };
 
-    /* Check directory paths */
     Object.values(config.options.paths).forEach((path) => {
       const stat = fs.statSync(path);
-
       if (stat.isDirectory() === false) {
         throw new Error(`Directory "${path}" does not exist`);
       }
     });
 
-    /* Setup watch config file */
     if (config.options.watchToKill > 0) {
       printLog(
         "info",
@@ -103,7 +91,7 @@ export function startServer() {
         })
         .on("change", () => {
           printLog("info", `Config file has changed. Killed server!`);
-
+          
           process.exit(0);
         });
     } else if (config.options.watchToRestart > 0) {
@@ -120,17 +108,20 @@ export function startServer() {
         })
         .on("change", () => {
           printLog("info", `Config file has changed. Restarting server...`);
-
+          
           process.exit(1);
         });
     }
+
+    return config;
   } catch (error) {
     printLog("error", `Failed to load config file: ${error}. Exited!`);
-
+    
     process.exit(0);
   }
+}
 
-  /* Start http server */
+function startServer(config) {
   printLog("info", "Starting HTTP server...");
 
   express()
@@ -146,10 +137,11 @@ export function startServer() {
     .use("/styles", serve_style.init(config))
     .use("/styles", serve_rendered.init(config))
     .listen(config.options.listenPort, () => {
-      printLog("info", `Listening on port: ${config.options.listenPort}`);
-    });
+    printLog("info", `Listening on port: ${config.options.listenPort}`);
+  });
+}
 
-  /* Load data */
+function loadData(config) {
   printLog("info", "Loading data...");
 
   Promise.all([
@@ -161,12 +153,18 @@ export function startServer() {
     .then(() => serve_rendered.add(config))
     .then(() => {
       printLog("info", "Completed startup!");
-
+      
       config.startupComplete = true;
     })
     .catch((error) => {
       printLog("error", `Failed to load data: ${error}. Exited!`);
-
+      
       process.exit(0);
     });
 }
+
+const config = loadConfig();
+
+startServer(config);
+
+loadData(config);
