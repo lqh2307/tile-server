@@ -6,12 +6,10 @@ import swaggerJsdoc from "swagger-jsdoc";
 import { printLog } from "./utils.js";
 import express from "express";
 
-let swaggerSpec;
-
 function serveSwagger() {
   return (req, res, next) => {
-    if (!swaggerSpec) {
-      swaggerSpec = swaggerJsdoc({
+    swaggerUi.setup(
+      swaggerJsdoc({
         swaggerDefinition: {
           openapi: "3.0.0",
           info: {
@@ -21,10 +19,8 @@ function serveSwagger() {
           },
         },
         apis: ["src/*.js"],
-      });
-    }
-
-    swaggerUi.setup(swaggerSpec)(req, res, next);
+      })
+    )(req, res, next);
   };
 }
 
