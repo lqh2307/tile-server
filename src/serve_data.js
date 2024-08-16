@@ -96,7 +96,7 @@ function getDataHandler(config) {
           req.query.json === "true" ? true : false
         );
       } else {
-        dataInfo = await getMBTilesInfos(
+        dataInfo = await getPMTilesInfos(
           item.source,
           req.query.json === "true" ? true : false
         );
@@ -312,14 +312,14 @@ export const serve_data = {
             }
 
             dataInfo.sourceType = "pmtiles";
-            dataInfo.source = await openPMTiles(filePath);
+            dataInfo.source = openPMTiles(filePath);
             dataInfo.tileJSON = await getPMTilesInfos(dataInfo.source);
           } else {
             throw new Error(`"pmtiles" or "mbtiles" property is empty`);
           }
 
           /* Validate info */
-          await validateDataInfo(dataInfo.tileJSON);
+          validateDataInfo(dataInfo.tileJSON);
 
           /* Add to repo */
           config.repo.datas[id] = dataInfo;

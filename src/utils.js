@@ -197,9 +197,9 @@ export async function validateFont(pbfDirPath) {
 /**
  * Validate data info
  * @param {object} info
- * @returns {Promise<void>}
+ * @returns {void}
  */
-export async function validateDataInfo(info) {
+export function validateDataInfo(info) {
   /* Validate name */
   if (info.name === undefined) {
     throw new Error(`Data name info is invalid`);
@@ -241,7 +241,9 @@ export async function validateDataInfo(info) {
       Math.abs(info.bounds[0]) > 180 ||
       Math.abs(info.bounds[2]) > 180 ||
       Math.abs(info.bounds[1]) > 90 ||
-      Math.abs(info.bounds[3]) > 90
+      Math.abs(info.bounds[3]) > 90 ||
+      info.bounds[0] >= info.bounds[2] ||
+      info.bounds[1] >= info.bounds[3]
     ) {
       throw new Error(`Data bounds info is invalid`);
     }
@@ -309,75 +311,77 @@ export async function validateStyle(config, styleJSON) {
   }
 
   /* Validate sources */
-  Object.keys(styleJSON.sources).forEach((id) => {
-    const source = styleJSON.sources[id];
+  await Promise.all(
+    Object.keys(styleJSON.sources).map(async (id) => {
+      const source = styleJSON.sources[id];
 
-    if (source.url !== undefined) {
-      if (
-        source.url.startsWith("pmtiles://") === true ||
-        source.url.startsWith("mbtiles://") === true
-      ) {
-        const sourceID = source.url.slice(10);
-
-        if (config.repo.datas[sourceID] === undefined) {
-          throw new Error(`Source "${id}" is not found`);
-        }
-      } else if (
-        source.url.startsWith("https://") === false &&
-        source.url.startsWith("http://") === false
-      ) {
-        throw new Error(`Source "${id}" is invalid url`);
-      }
-    }
-
-    if (source.urls !== undefined) {
-      if (source.urls.length === 0) {
-        throw new Error(`Source "${id}" is invalid urls`);
-      }
-
-      source.urls.forEach((url) => {
+      if (source.url !== undefined) {
         if (
-          url.startsWith("pmtiles://") === true ||
-          url.startsWith("mbtiles://") === true
+          source.url.startsWith("pmtiles://") === true ||
+          source.url.startsWith("mbtiles://") === true
         ) {
-          const sourceID = url.slice(10);
+          const sourceID = source.url.slice(10);
 
           if (config.repo.datas[sourceID] === undefined) {
             throw new Error(`Source "${id}" is not found`);
           }
         } else if (
-          url.startsWith("https://") === false &&
-          url.startsWith("http://") === false
+          source.url.startsWith("https://") === false &&
+          source.url.startsWith("http://") === false
         ) {
+          throw new Error(`Source "${id}" is invalid url`);
+        }
+      }
+
+      if (source.urls !== undefined) {
+        if (source.urls.length === 0) {
           throw new Error(`Source "${id}" is invalid urls`);
         }
-      });
-    }
 
-    if (source.tiles !== undefined) {
-      if (source.tiles.length === 0) {
-        throw new Error(`Source "${id}" is invalid tile urls`);
+        source.urls.forEach((url) => {
+          if (
+            url.startsWith("pmtiles://") === true ||
+            url.startsWith("mbtiles://") === true
+          ) {
+            const sourceID = url.slice(10);
+
+            if (config.repo.datas[sourceID] === undefined) {
+              throw new Error(`Source "${id}" is not found`);
+            }
+          } else if (
+            url.startsWith("https://") === false &&
+            url.startsWith("http://") === false
+          ) {
+            throw new Error(`Source "${id}" is invalid urls`);
+          }
+        });
       }
 
-      source.tiles.forEach((tile) => {
-        if (
-          tile.startsWith("pmtiles://") === true ||
-          tile.startsWith("mbtiles://") === true
-        ) {
-          const sourceID = tile.slice(10);
-
-          if (config.repo.datas[sourceID] === undefined) {
-            throw new Error(`Source "${id}" is not found`);
-          }
-        } else if (
-          tile.startsWith("https://") === false &&
-          tile.startsWith("http://") === false
-        ) {
+      if (source.tiles !== undefined) {
+        if (source.tiles.length === 0) {
           throw new Error(`Source "${id}" is invalid tile urls`);
         }
-      });
-    }
-  });
+
+        source.tiles.forEach((tile) => {
+          if (
+            tile.startsWith("pmtiles://") === true ||
+            tile.startsWith("mbtiles://") === true
+          ) {
+            const sourceID = tile.slice(10);
+
+            if (config.repo.datas[sourceID] === undefined) {
+              throw new Error(`Source "${id}" is not found`);
+            }
+          } else if (
+            tile.startsWith("https://") === false &&
+            tile.startsWith("http://") === false
+          ) {
+            throw new Error(`Source "${id}" is invalid tile urls`);
+          }
+        });
+      }
+    })
+  );
 }
 
 /**
@@ -514,7 +518,7 @@ class PMTilesFileSource {
     return this.fd;
   }
 
-  async getBytes(offset, length) {
+  getBytes(offset, length) {
     const buffer = Buffer.alloc(length);
 
     fs.readSync(this.fd, buffer, 0, buffer.length, offset);
@@ -531,9 +535,9 @@ class PMTilesFileSource {
 /**
  * Open PMTiles
  * @param {string} filePath
- * @returns {Promise<object>}
+ * @returns {object}
  */
-export async function openPMTiles(filePath) {
+export function openPMTiles(filePath) {
   let source;
 
   if (
@@ -566,7 +570,7 @@ export async function getPMTilesInfos(pmtilesSource, includeJSON = false) {
     xyzTileJSON.tilestats = metadata.tilestats;
   }
 
-  return createNewXYZTileJSON(metadata);
+  return xyzTileJSON;
 }
 
 /**
@@ -639,7 +643,6 @@ export async function getPMTilesMetadatas(pmtilesSource) {
  */
 export async function getPMTilesTile(pmtilesSource, z, x, y) {
   const zxyTile = await pmtilesSource.getZxy(z, x, y);
-
   if (!zxyTile?.data) {
     throw new Error("Tile does not exist");
   }
