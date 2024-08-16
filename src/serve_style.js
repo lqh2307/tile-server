@@ -41,55 +41,57 @@ function getStyleHandler(config) {
       }
 
       /* Fix source urls */
-      Object.keys(styleJSON.sources).forEach((id) => {
-        const source = styleJSON.sources[id];
+      await Promise.all(
+        Object.keys(styleJSON.sources).map(async (id) => {
+          const source = styleJSON.sources[id];
 
-        if (source.url !== undefined) {
-          if (
-            source.url.startsWith("mbtiles://") === true ||
-            source.url.startsWith("pmtiles://") === true
-          ) {
-            const sourceID = source.url.slice(10);
+          if (source.url !== undefined) {
+            if (
+              source.url.startsWith("mbtiles://") === true ||
+              source.url.startsWith("pmtiles://") === true
+            ) {
+              const sourceID = source.url.slice(10);
 
-            source.url = `${getRequestHost(req)}data/${sourceID}.json`;
+              source.url = `${getRequestHost(req)}data/${sourceID}.json`;
+            }
           }
-        }
 
-        if (source.urls !== undefined) {
-          const urls = source.urls.map((url) => {
-            if (
-              url.startsWith("pmtiles://") === true ||
-              url.startsWith("mbtiles://") === true
-            ) {
-              const sourceID = url.slice(10);
+          if (source.urls !== undefined) {
+            const urls = source.urls.map((url) => {
+              if (
+                url.startsWith("pmtiles://") === true ||
+                url.startsWith("mbtiles://") === true
+              ) {
+                const sourceID = url.slice(10);
 
-              url = `${getRequestHost(req)}data/${sourceID}.json`;
-            }
+                url = `${getRequestHost(req)}data/${sourceID}.json`;
+              }
 
-            return url;
-          });
+              return url;
+            });
 
-          source.urls = [...new Set(urls)];
-        }
+            source.urls = [...new Set(urls)];
+          }
 
-        if (source.tiles !== undefined) {
-          const tiles = source.tiles.map((tile) => {
-            if (
-              tile.startsWith("pmtiles://") === true ||
-              tile.startsWith("mbtiles://") === true
-            ) {
-              const sourceID = tile.slice(10);
-              const format = config.repo.datas[sourceID].tileJSON.format;
+          if (source.tiles !== undefined) {
+            const tiles = source.tiles.map((tile) => {
+              if (
+                tile.startsWith("pmtiles://") === true ||
+                tile.startsWith("mbtiles://") === true
+              ) {
+                const sourceID = tile.slice(10);
+                const format = config.repo.datas[sourceID].tileJSON.format;
 
-              tile = `${getRequestHost(req)}data/${sourceID}/{z}/{x}/{y}.${format}`;
-            }
+                tile = `${getRequestHost(req)}data/${sourceID}/{z}/{x}/{y}.${format}`;
+              }
 
-            return tile;
-          });
+              return tile;
+            });
 
-          source.tiles = [...new Set(tiles)];
-        }
-      });
+            source.tiles = [...new Set(tiles)];
+          }
+        })
+      );
 
       res.header("Content-Type", "application/json");
 
