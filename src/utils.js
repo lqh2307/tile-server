@@ -254,7 +254,7 @@ export async function validateFont(pbfDirPath) {
 }
 
 /**
- * Validate data info
+ * Validate data info (no validate json field)
  * @param {object} info
  * @returns {void}
  */
@@ -495,7 +495,7 @@ export async function validateSprite(spriteDirPath) {
 }
 
 /**
- *
+ * Create repo file
  * @param {object} repo
  * @param {string} repoFilePath
  */
@@ -875,10 +875,12 @@ export async function getMBTilesInfos(mbtilesSource, includeJSON = false) {
         rows.forEach((row) => {
           switch (row.name) {
             case "json":
-              try {
-                Object.assign(metadata, JSON.parse(row.value));
-              } catch (error) {
-                return reject(error);
+              if (includeJSON === true) {
+                try {
+                  Object.assign(metadata, JSON.parse(row.value));
+                } catch (error) {
+                  return reject(error);
+                }
               }
 
               break;
