@@ -14,6 +14,7 @@ import path from "node:path";
 import morgan from "morgan";
 import fs from "node:fs";
 import cors from "cors";
+import os from "os";
 
 function loadConfig() {
   printLog("info", "Loading config file...");
@@ -47,8 +48,8 @@ function loadConfig() {
           configData.options?.loggerFormat ||
           ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
         maxScaleRender: configData.options?.maxScaleRender || 1,
-        minPoolSize: configData.options?.minPoolSize || 8,
-        maxPoolSize: configData.options?.maxPoolSize || 16,
+        minPoolSize: configData.options?.minPoolSize || os.cpus().length,
+        maxPoolSize: configData.options?.maxPoolSize || os.cpus().length * 2,
       },
       styles: configData.styles || {},
       data: configData.data || {},
