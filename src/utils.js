@@ -81,6 +81,28 @@ export function responseEmptyTile(format, callback) {
 }
 
 /**
+ * Render tile
+ * @param {object} renderSource
+ * * @param {object} params
+ * @returns {Promise<Buffer>}
+ */
+export async function renderTile(renderSource, params) {
+  const renderer = await renderSource.acquire();
+
+  return new Promise((resolve, reject) => {
+    renderer.render(params, async (error, data) => {
+      renderSource.release(renderer);
+
+      if (error) {
+        return reject(error);
+      }
+
+      resolve(data);
+    });
+  });
+}
+
+/**
  * Check file is valid?
  * @param {string} filePath
  * @returns {Promise<boolean>}

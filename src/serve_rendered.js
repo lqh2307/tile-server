@@ -17,6 +17,7 @@ import {
   getMBTilesTile,
   getFontsPBF,
   unzipAsync,
+  renderTile,
   printLog,
   mercator,
 } from "./utils.js";
@@ -69,56 +70,37 @@ function getRenderedTileHandler(config) {
     // END HACK1
 
     try {
-      const renderer = await item.renderers[scale - 1].acquire();
+      const data = await renderTile(item.renderers[scale - 1], params);
 
-      renderer.render(params, async (error, data) => {
-        try {
-          item.renderers[scale - 1].release(renderer);
-
-          if (error) {
-            throw error;
-          }
-
-          const image = sharp(data, {
-            raw: {
-              premultiplied: true,
-              width: params.width * scale,
-              height: params.height * scale,
-              channels: 4,
-            },
-          });
-
-          // HACK2 256px tiles are a zoom level lower than maplibre-native default tiles.
-          // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-          // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
-          if (z === 0 && tileSize === 256) {
-            image.resize({
-              width: 256 * scale,
-              height: 256 * scale,
-            });
-          }
-          // END HACK2
-
-          const buffer = await image
-            .png({
-              compressionLevel: config.options.renderedCompression,
-            })
-            .toBuffer();
-
-          res.header("Content-Type", `image/png`);
-
-          return res.status(StatusCodes.OK).send(buffer);
-        } catch (error) {
-          printLog(
-            "error",
-            `Failed to get rendered "${id}" - Tile ${z}/${x}/${y}: ${error}`
-          );
-
-          return res
-            .status(StatusCodes.INTERNAL_SERVER_ERROR)
-            .send("Internal server error");
-        }
+      const image = sharp(data, {
+        raw: {
+          premultiplied: true,
+          width: params.width * scale,
+          height: params.height * scale,
+          channels: 4,
+        },
       });
+
+      // HACK2 256px tiles are a zoom level lower than maplibre-native default tiles.
+      // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
+      // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
+      if (z === 0 && tileSize === 256) {
+        image.resize({
+          width: 256 * scale,
+          height: 256 * scale,
+        });
+      }
+      // END HACK2
+
+      const buffer = await image
+        .png({
+          compressionLevel: config.options.renderedCompression,
+        })
+        .toBuffer();
+
+      res.header("Content-Type", `image/png`);
+
+      return res.status(StatusCodes.OK).send(buffer);
     } catch (error) {
       printLog(
         "error",
