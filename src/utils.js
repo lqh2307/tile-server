@@ -1,20 +1,20 @@
 "use strict";
 
-import zlib from "zlib";
-import util from "util";
-import fs from "node:fs";
+import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
+import SphericalMercator from "@mapbox/sphericalmercator";
+import glyphCompose from "@mapbox/glyph-pbf-composite";
+import { PMTiles, FetchSource } from "pmtiles";
+import fsPromise from "node:fs/promises";
+import handlebars from "handlebars";
+import sqlite3 from "sqlite3";
+import path from "node:path";
 import Color from "color";
 import axios from "axios";
 import sharp from "sharp";
 import chalk from "chalk";
-import path from "node:path";
-import sqlite3 from "sqlite3";
-import handlebars from "handlebars";
-import fsPromise from "node:fs/promises";
-import { PMTiles, FetchSource } from "pmtiles";
-import glyphCompose from "@mapbox/glyph-pbf-composite";
-import SphericalMercator from "@mapbox/sphericalmercator";
-import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
+import fs from "node:fs";
+import zlib from "zlib";
+import util from "util";
 
 export const mercator = new SphericalMercator();
 
@@ -590,24 +590,6 @@ export function openPMTiles(filePath) {
  * @returns {Promise<object>}
  */
 export async function getPMTilesInfos(pmtilesSource, includeJSON = false) {
-  const metadata = await getPMTilesMetadatas(pmtilesSource);
-
-  const xyzTileJSON = createNewXYZTileJSON(metadata);
-
-  if (includeJSON === true) {
-    xyzTileJSON.vector_layers = metadata.vector_layers;
-    xyzTileJSON.tilestats = metadata.tilestats;
-  }
-
-  return xyzTileJSON;
-}
-
-/**
- * Get PMTiles metadata
- * @param {object} pmtilesSource
- * @returns {Promise<object>}
- */
-export async function getPMTilesMetadatas(pmtilesSource) {
   const [header, metadata] = await Promise.all([
     pmtilesSource.getHeader(),
     pmtilesSource.getMetadata(),
@@ -659,7 +641,14 @@ export async function getPMTilesMetadatas(pmtilesSource) {
     ];
   }
 
-  return metadata;
+  const xyzTileJSON = createNewXYZTileJSON(metadata);
+
+  if (includeJSON === true) {
+    xyzTileJSON.vector_layers = metadata.vector_layers;
+    xyzTileJSON.tilestats = metadata.tilestats;
+  }
+
+  return xyzTileJSON;
 }
 
 /**
@@ -846,18 +835,19 @@ export function createNewXYZTileJSON(metadata) {
 }
 
 /**
- * Get MBTiles metadata
+ * Get MBTiles infos
  * @param {object} mbtilesSource
+ * @param {boolean} includeJSON
  * @returns {Promise<object>}
  */
-export async function getMBTilesMetadatas(mbtilesSource) {
-  return new Promise((resolve, reject) => {
+export async function getMBTilesInfos(mbtilesSource, includeJSON = false) {
+  const metadata = {};
+
+  await new Promise((resolve, reject) => {
     mbtilesSource.all("SELECT name, value FROM metadata", (error, rows) => {
       if (error) {
         return reject(error);
       }
-
-      const metadata = {};
 
       if (rows) {
         rows.forEach((row) => {
@@ -890,19 +880,9 @@ export async function getMBTilesMetadatas(mbtilesSource) {
         });
       }
 
-      resolve(metadata);
+      resolve();
     });
   });
-}
-
-/**
- * Get MBTiles infos
- * @param {object} mbtilesSource
- * @param {boolean} includeJSON
- * @returns {Promise<object>}
- */
-export async function getMBTilesInfos(mbtilesSource, includeJSON = false) {
-  const metadata = await getMBTilesMetadatas(mbtilesSource);
 
   if (metadata.minzoom === undefined) {
     await new Promise((resolve, reject) => {

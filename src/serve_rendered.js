@@ -638,7 +638,7 @@ export const serve_rendered = {
 
                       return renderer;
                     },
-                    destroy: async (renderer) => {
+                    destroy: (renderer) => {
                       renderer.release();
                     },
                   },
