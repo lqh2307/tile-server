@@ -1,18 +1,22 @@
 "use strict";
 
-import { getRequestHost, mercator } from "./utils.js";
+import { compileTemplate, getRequestHost, mercator } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
-import handlebars from "handlebars";
-import fs from "node:fs/promises";
 import express from "express";
 import path from "node:path";
 
-function serveFrontPageHandler(config) {
-  return async (req, res, next) => {
+function checkHealth(config) {
+  return (req, res, next) => {
     if (config.startupComplete === false) {
       return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
     }
 
+    next();
+  };
+}
+
+function serveFrontPageHandler(config) {
+  return async (req, res, next) => {
     const styles = {};
     const datas = {};
 
@@ -24,10 +28,11 @@ function serveFrontPageHandler(config) {
         let thumbnail = "/images/placeholder.png";
         if (config.options.serveRendered === true) {
           const centerPx = mercator.px([center[0], center[1]], center[2]);
+          const z = center[2];
+          const x = Math.floor(centerPx[0] / 256);
+          const y = Math.floor(centerPx[1] / 256);
 
-          thumbnail = `${getRequestHost(req)}styles/${id}/256/${
-            center[2]
-          }/${Math.floor(centerPx[0] / 256)}/${Math.floor(centerPx[1] / 256)}.png`;
+          thumbnail = `${getRequestHost(req)}styles/${id}/256/${z}/${x}/${y}.png`;
         }
 
         let xyzLink;
@@ -53,12 +58,11 @@ function serveFrontPageHandler(config) {
         let thumbnail = "/images/placeholder.png";
         if (format !== "pbf") {
           const centerPx = mercator.px([center[0], center[1]], center[2]);
+          const z = center[2];
           const x = Math.floor(centerPx[0] / 256);
           const y = Math.floor(centerPx[1] / 256);
 
-          thumbnail = `${getRequestHost(req)}data/${id}/${
-            center[2]
-          }/${x}/${y}.${format}`;
+          thumbnail = `${getRequestHost(req)}data/${id}/${z}/${x}/${y}.${format}`;
         }
 
         datas[id] = {
@@ -80,10 +84,7 @@ function serveFrontPageHandler(config) {
     };
 
     try {
-      const fileData = await fs.readFile(
-        path.resolve("public", "templates", "index.tmpl")
-      );
-      const compiled = handlebars.compile(fileData.toString())(serveData);
+      const compiled = await compileTemplate("index", serveData);
 
       return res.status(StatusCodes.OK).send(compiled);
     } catch (error) {
@@ -98,10 +99,6 @@ function serveFrontPageHandler(config) {
 
 function serveStyleHandler(config) {
   return async (req, res, next) => {
-    if (config.startupComplete === false) {
-      return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
-    }
-
     const id = decodeURI(req.params.id);
     const item = config.repo.rendereds[id];
 
@@ -115,10 +112,7 @@ function serveStyleHandler(config) {
     };
 
     try {
-      const fileData = await fs.readFile(
-        path.resolve("public", "templates", "viewer.tmpl")
-      );
-      const compiled = handlebars.compile(fileData.toString())(serveData);
+      const compiled = await compileTemplate("viewer", serveData);
 
       return res.status(StatusCodes.OK).send(compiled);
     } catch (error) {
@@ -133,10 +127,6 @@ function serveStyleHandler(config) {
 
 function serveDataHandler(config) {
   return async (req, res, next) => {
-    if (config.startupComplete === false) {
-      return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
-    }
-
     const id = decodeURI(req.params.id);
     const item = config.repo.datas[id];
 
@@ -151,10 +141,7 @@ function serveDataHandler(config) {
     };
 
     try {
-      const fileData = await fs.readFile(
-        path.resolve("public", "templates", "data.tmpl")
-      );
-      const compiled = handlebars.compile(fileData.toString())(serveData);
+      const compiled = await compileTemplate("data", serveData);
 
       return res.status(StatusCodes.OK).send(compiled);
     } catch (error) {
@@ -183,10 +170,7 @@ function serveWMTSHandler(config) {
     };
 
     try {
-      const fileData = await fs.readFile(
-        path.resolve("public", "templates", "wmts.tmpl")
-      );
-      const compiled = handlebars.compile(fileData.toString())(serveData);
+      const compiled = await compileTemplate("wmts", serveData);
 
       res.header("Content-Type", "text/xml");
 
@@ -281,7 +265,7 @@ export const serve_template = {
        *       500:
        *         description: Internal server error
        */
-      app.get("/styles/:id/$", serveStyleHandler(config));
+      app.get("/styles/:id/$", checkHealth(config), serveStyleHandler(config));
 
       /* Serve data */
       /**
@@ -320,7 +304,7 @@ export const serve_template = {
        *       500:
        *         description: Internal server error
        */
-      app.use("/data/:id/$", serveDataHandler(config));
+      app.use("/data/:id/$", checkHealth(config), serveDataHandler(config));
 
       /* Serve front page */
       /**
@@ -350,7 +334,7 @@ export const serve_template = {
        *       500:
        *         description: Internal server error
        */
-      app.get("/$", serveFrontPageHandler(config));
+      app.get("/$", checkHealth(config), serveFrontPageHandler(config));
     }
 
     return app;

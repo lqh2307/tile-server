@@ -13,6 +13,7 @@ import {
   downloadFile,
   openMBTiles,
   openPMTiles,
+  isValidFile,
   gzipAsync,
   printLog,
 } from "./utils.js";
@@ -291,7 +292,9 @@ export const serve_data = {
                 `${id}.mbtiles`
               );
 
-              await downloadFile(item.mbtiles, filePath);
+              if (isValidFile(filePath) === false) {
+                await downloadFile(item.mbtiles, filePath);
+              }
 
               item.mbtiles = path.join(id, `${id}.mbtiles`);
             } else {

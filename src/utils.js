@@ -9,6 +9,7 @@ import sharp from "sharp";
 import chalk from "chalk";
 import path from "node:path";
 import sqlite3 from "sqlite3";
+import handlebars from "handlebars";
 import fsPromise from "node:fs/promises";
 import { PMTiles, FetchSource } from "pmtiles";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
@@ -21,6 +22,22 @@ const emptyBufferColor = Buffer.from(new Color("rgba(255,255,255,0)").array());
 const emptyBuffer = Buffer.alloc(0);
 
 const fallbackFont = "Open Sans Regular";
+
+/**
+ * Compile template
+ * @param {string} template
+ * @param {object} data
+ * @returns {Promise<string>}
+ */
+export async function compileTemplate(template, data) {
+  const filePath = path.resolve("public", "templates", `${template}.tmpl`);
+
+  const fileData = await fsPromise.readFile(filePath, "utf8");
+
+  const compiler = handlebars.compile(fileData);
+
+  return compiler(data);
+}
 
 /**
  * Create an empty tile response
@@ -64,6 +81,28 @@ export function responseEmptyTile(format, callback) {
 }
 
 /**
+ * Check file is valid?
+ * @param {string} filePath
+ * @returns {Promise<boolean>}
+ */
+export async function isValidFile(filePath) {
+  const stat = await fsPromise.stat(filePath);
+
+  return stat.isFile() === true && stat.size > 0;
+}
+
+/**
+ * Check folder is valid?
+ * @param {string} dirPath
+ * @returns {Promise<boolean>}
+ */
+export async function isValidFolder(dirPath) {
+  const stat = await fsPromise.stat(dirPath);
+
+  return stat.isDirectory() === true;
+}
+
+/**
  * Find matching files in directory
  * @param {string} dirPath
  * @param {RegExp} regex
@@ -75,9 +114,8 @@ export async function findFiles(dirPath, regex) {
   const results = [];
   for (const fileName of fileNames) {
     const filePath = path.join(dirPath, fileName);
-    const stat = await fsPromise.stat(filePath);
 
-    if (regex.test(fileName) === true && stat.isFile() === true) {
+    if (regex.test(fileName) === true && (await isValidFile(filePath))) {
       results.push(fileName);
     }
   }
@@ -97,9 +135,8 @@ export async function findFolders(dirPath, regex) {
   const results = [];
   for (const folderName of folderNames) {
     const folderPath = path.join(dirPath, folderName);
-    const stat = await fsPromise.stat(folderPath);
 
-    if (regex.test(folderName) === true && stat.isDirectory() === true) {
+    if (regex.test(dirPath) === true && (await isValidFolder(folderPath))) {
       results.push(folderName);
     }
   }
@@ -472,15 +509,7 @@ export async function createRepoFile(repo, repoFilePath) {
  * @returns {Promise<string>}
  * @returns
  */
-export async function downloadFile(url, outputPath, overwrite = false) {
-  try {
-    const stat = await fsPromise.stat(outputPath);
-
-    if (stat.isFile() === true && stat.size > 0 && overwrite === false) {
-      return outputPath;
-    }
-  } catch (_) {}
-
+export async function downloadFile(url, outputPath) {
   await fsPromise.mkdir(path.dirname(outputPath), {
     recursive: true,
   });
