@@ -19,9 +19,9 @@ import os from "os";
 function loadConfig() {
   printLog("info", "Loading config file...");
 
-  const configFilePath = path.resolve("data", "config.json");
-
   try {
+    /* Read config.json file */
+    const configFilePath = path.resolve("data", "config.json");
     const fileData = fs.readFileSync(configFilePath, "utf8");
     const configData = JSON.parse(fileData);
 
@@ -63,56 +63,61 @@ function loadConfig() {
         sprites: {},
       },
       startupComplete: false,
+      filePath: configFilePath,
     };
 
+    /* Validate dirs */
     Object.values(config.options.paths).forEach((path) => {
       const stat = fs.statSync(path);
+
       if (stat.isDirectory() === false) {
         throw new Error(`Directory "${path}" does not exist`);
       }
     });
-
-    if (config.options.watchToKill > 0) {
-      printLog(
-        "info",
-        `Watch config file changes interval ${config.options.watchToKill}ms to kill server`
-      );
-
-      chokidar
-        .watch(configFilePath, {
-          usePolling: true,
-          awaitWriteFinish: true,
-          interval: config.options.watchToKill,
-        })
-        .on("change", () => {
-          printLog("info", `Config file has changed. Killed server!`);
-
-          process.exit(0);
-        });
-    } else if (config.options.watchToRestart > 0) {
-      printLog(
-        "info",
-        `Watch config file changes interval ${config.options.watchToRestart}ms to restart server`
-      );
-
-      chokidar
-        .watch(configFilePath, {
-          usePolling: true,
-          awaitWriteFinish: true,
-          interval: config.options.watchToRestart,
-        })
-        .on("change", () => {
-          printLog("info", `Config file has changed. Restarting server...`);
-
-          process.exit(1);
-        });
-    }
 
     return config;
   } catch (error) {
     printLog("error", `Failed to load config file: ${error}. Exited!`);
 
     process.exit(0);
+  }
+}
+
+function setupWatchConfigFile(config) {
+  if (config.options.watchToKill > 0) {
+    printLog(
+      "info",
+      `Watch config file changes interval ${config.options.watchToKill}ms to kill server`
+    );
+
+    chokidar
+      .watch(config.filePath, {
+        usePolling: true,
+        awaitWriteFinish: true,
+        interval: config.options.watchToKill,
+      })
+      .on("change", () => {
+        printLog("info", `Config file has changed. Killed server!`);
+
+        process.exit(0);
+      });
+  } else if (config.options.watchToRestart > 0) {
+    printLog(
+      "info",
+      `Watch config file changes interval ${config.options.watchToRestart}ms to restart server`
+    );
+
+    chokidar
+      .watch(config.filePath, {
+        usePolling: true,
+        awaitWriteFinish: true,
+        interval: config.options.watchToRestart,
+      })
+      .on("change", () => {
+        printLog("info", `Config file has changed. Restarting server...`);
+
+        process.exit(1);
+      });
   }
 }
 
@@ -160,6 +165,8 @@ function loadData(config) {
 
 export function startServer() {
   const config = loadConfig();
+
+  setupWatchConfigFile(config);
 
   setupServer(config);
 

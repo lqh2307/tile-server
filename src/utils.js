@@ -278,6 +278,13 @@ export function validateDataInfo(info) {
     throw new Error(`Data format info is invalid`);
   }
 
+  /* Validate json */
+  /*
+  if (info.format === "pbf" && info.json === undefined) {
+    throw new Error(`Data json info is invalid`);
+  }
+  */
+
   /* Validate minzoom */
   if (info.minzoom < 0 || info.minzoom > 22) {
     throw new Error(`Data minzoom info is invalid`);
