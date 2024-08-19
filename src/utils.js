@@ -16,12 +16,41 @@ import fs from "node:fs";
 import zlib from "zlib";
 import util from "util";
 
-export const mercator = new SphericalMercator();
+const mercator = new SphericalMercator();
 
 const emptyBufferColor = Buffer.from(new Color("rgba(255,255,255,0)").array());
 const emptyBuffer = Buffer.alloc(0);
 
 const fallbackFont = "Open Sans Regular";
+
+/**
+ * Get lon lat center from xyz tile
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ * @returns {[number,number]}
+ */
+export function getLonLatCenterFromXYZ(x, y, z) {
+  return mercator.ll(
+    [((x + 0.5) / (1 << z)) * (256 << z), ((y + 0.5) / (1 << z)) * (256 << z)],
+    z
+  );
+}
+
+/**
+ * Get xyz tile center from lon lat z
+ * @param {number} lon
+ * @param {number} lat
+ * @param {number} z
+ * @returns {[number,number,number]}
+ */
+export function getXYZCenterFromLonLatZ(lon, lat, z) {
+  const centerPx = mercator.px([lon, lat], z);
+  const x = Math.floor(centerPx[0] / 256);
+  const y = Math.floor(centerPx[1] / 256);
+
+  return [x, y, z];
+}
 
 /**
  * Compile template
@@ -82,22 +111,74 @@ export function responseEmptyTile(format, callback) {
 
 /**
  * Render tile
- * @param {object} renderSource
- * * @param {object} params
+ * @param {object} config
+ * @param {object} item
+ * @param {number} scale
+ * @param {number} tileSize
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
  * @returns {Promise<Buffer>}
  */
-export async function renderTile(renderSource, params) {
-  const renderer = await renderSource.acquire();
+export async function renderTile(config, item, scale, tileSize, x, y, z) {
+  // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
+  const params = {
+    zoom: tileSize === 512 ? z : Math.max(0, z - 1),
+    center: getLonLatCenterFromXYZ(x, y, z),
+    width: tileSize,
+    height: tileSize,
+  };
+
+  // HACK1 256px tiles are a zoom level lower than maplibre-native default tiles.
+  // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
+  // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in HACK2.
+  if (z === 0 && tileSize === 256) {
+    params.width = 512;
+    params.height = 512;
+  }
+  // END HACK1
+
+  const renderer = await item.renderers[scale - 1].acquire();
 
   return new Promise((resolve, reject) => {
     renderer.render(params, async (error, data) => {
-      renderSource.release(renderer);
+      item.renderers[scale - 1].release(renderer);
 
       if (error) {
         return reject(error);
       }
 
-      resolve(data);
+      const image = sharp(data, {
+        raw: {
+          premultiplied: true,
+          width: params.width * scale,
+          height: params.height * scale,
+          channels: 4,
+        },
+      });
+
+      // HACK2 256px tiles are a zoom level lower than maplibre-native default tiles.
+      // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
+      // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
+      if (z === 0 && tileSize === 256) {
+        image.resize({
+          width: 256 * scale,
+          height: 256 * scale,
+        });
+      }
+      // END HACK2
+
+      image
+        .png({
+          compressionLevel: config.options.renderedCompression,
+        })
+        .toBuffer((error, buffer) => {
+          if (error) {
+            return reject(error);
+          }
+
+          resolve(buffer);
+        });
     });
   });
 }

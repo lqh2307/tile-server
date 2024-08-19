@@ -1,9 +1,13 @@
 "use strict";
 
-import { compileTemplate, getRequestHost, mercator } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import express from "express";
 import path from "node:path";
+import {
+  getXYZCenterFromLonLatZ,
+  compileTemplate,
+  getRequestHost,
+} from "./utils.js";
 
 function checkHealth(config) {
   return (req, res, next) => {
@@ -27,10 +31,11 @@ function serveFrontPageHandler(config) {
 
         let thumbnail = "/images/placeholder.png";
         if (config.options.serveRendered === true) {
-          const centerPx = mercator.px([center[0], center[1]], center[2]);
-          const z = center[2];
-          const x = Math.floor(centerPx[0] / 256);
-          const y = Math.floor(centerPx[1] / 256);
+          const [x, y, z] = getXYZCenterFromLonLatZ(
+            center[0],
+            center[1],
+            center[2]
+          );
 
           thumbnail = `${getRequestHost(req)}styles/${id}/256/${z}/${x}/${y}.png`;
         }
@@ -57,10 +62,11 @@ function serveFrontPageHandler(config) {
 
         let thumbnail = "/images/placeholder.png";
         if (format !== "pbf") {
-          const centerPx = mercator.px([center[0], center[1]], center[2]);
-          const z = center[2];
-          const x = Math.floor(centerPx[0] / 256);
-          const y = Math.floor(centerPx[1] / 256);
+          const [x, y, z] = getXYZCenterFromLonLatZ(
+            center[0],
+            center[1],
+            center[2]
+          );
 
           thumbnail = `${getRequestHost(req)}data/${id}/${z}/${x}/${y}.${format}`;
         }

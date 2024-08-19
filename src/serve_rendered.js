@@ -7,7 +7,6 @@ import fs from "node:fs/promises";
 import express from "express";
 import path from "node:path";
 import axios from "axios";
-import sharp from "sharp";
 import {
   detectFormatAndHeaders,
   createNewXYZTileJSON,
@@ -19,7 +18,6 @@ import {
   unzipAsync,
   renderTile,
   printLog,
-  mercator,
 } from "./utils.js";
 
 function getRenderedTileHandler(config) {
@@ -46,61 +44,12 @@ function getRenderedTileHandler(config) {
     const y = Number(req.params.y);
     const tileSize = Number(req.params.tileSize) || 256; // Default tile size is 256px x 256px
 
-    // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
-    const params = {
-      zoom: tileSize === 512 ? z : Math.max(0, z - 1),
-      center: mercator.ll(
-        [
-          ((x + 0.5) / (1 << z)) * (256 << z),
-          ((y + 0.5) / (1 << z)) * (256 << z),
-        ],
-        z
-      ),
-      width: tileSize,
-      height: tileSize,
-    };
-
-    // HACK1 256px tiles are a zoom level lower than maplibre-native default tiles.
-    // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-    // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in HACK2.
-    if (z === 0 && tileSize === 256) {
-      params.width = 512;
-      params.height = 512;
-    }
-    // END HACK1
-
     try {
-      const data = await renderTile(item.renderers[scale - 1], params);
-
-      const image = sharp(data, {
-        raw: {
-          premultiplied: true,
-          width: params.width * scale,
-          height: params.height * scale,
-          channels: 4,
-        },
-      });
-
-      // HACK2 256px tiles are a zoom level lower than maplibre-native default tiles.
-      // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-      // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
-      if (z === 0 && tileSize === 256) {
-        image.resize({
-          width: 256 * scale,
-          height: 256 * scale,
-        });
-      }
-      // END HACK2
-
-      const buffer = await image
-        .png({
-          compressionLevel: config.options.renderedCompression,
-        })
-        .toBuffer();
+      const data = await renderTile(config, item, scale, tileSize, x, y, z);
 
       res.header("Content-Type", `image/png`);
 
-      return res.status(StatusCodes.OK).send(buffer);
+      return res.status(StatusCodes.OK).send(data);
     } catch (error) {
       printLog(
         "error",
