@@ -17,7 +17,7 @@ import util from "util";
 
 const mercator = new SphericalMercator();
 
-const emptyBufferColor = Buffer.from(["0xff", "0xff", "0xff", "0x00"]);
+const emptyBufferColor = Buffer.from([0xff, 0xff, 0xff, 0x00]);
 const emptyBuffer = Buffer.alloc(0);
 
 const fallbackFont = "Open Sans Regular";
