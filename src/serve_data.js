@@ -39,15 +39,12 @@ function getDataTileHandler(config) {
     const x = Number(req.params.x);
     const y = Number(req.params.y);
 
-    let dataTile;
-
     try {
       /* Get data tile */
-      if (item.sourceType === "mbtiles") {
-        dataTile = await getMBTilesTile(item.source, z, x, y);
-      } else {
-        dataTile = await getPMTilesTile(item.source, z, x, y);
-      }
+      const dataTile =
+        item.sourceType === "mbtiles"
+          ? await getMBTilesTile(item.source, z, x, y)
+          : await getPMTilesTile(item.source, z, x, y);
 
       /* Gzip pbf data tile */
       if (
@@ -88,20 +85,13 @@ function getDataHandler(config) {
       return res.status(StatusCodes.NOT_FOUND).send("Data is not found");
     }
 
-    let dataInfo;
+    const includeJSON = req.query.json === "true" ? true : false;
 
     try {
-      if (item.sourceType === "mbtiles") {
-        dataInfo = await getMBTilesInfos(
-          item.source,
-          req.query.json === "true" ? true : false
-        );
-      } else {
-        dataInfo = await getPMTilesInfos(
-          item.source,
-          req.query.json === "true" ? true : false
-        );
-      }
+      const dataInfo =
+        item.sourceType === "mbtiles"
+          ? await getMBTilesInfos(item.source, includeJSON)
+          : await getPMTilesInfos(item.source, includeJSON);
 
       dataInfo.tiles = [
         `${getRequestHost(req)}data/${id}/{z}/{x}/{y}.${item.tileJSON.format}`,
@@ -278,7 +268,6 @@ export const serve_data = {
         try {
           const item = config.data[id];
           const dataInfo = {};
-
           let filePath;
 
           if (item.mbtiles) {

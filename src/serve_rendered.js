@@ -485,25 +485,12 @@ export const serve_rendered = {
                       const y = Number(parts[5].split(".")[0]);
                       const sourceData = config.repo.datas[sourceID];
 
-                      let dataTile;
-
                       try {
                         /* Get rendered tile */
-                        if (sourceData.sourceType === "mbtiles") {
-                          dataTile = await getMBTilesTile(
-                            sourceData.source,
-                            z,
-                            x,
-                            y
-                          );
-                        } else {
-                          dataTile = await getPMTilesTile(
-                            sourceData.source,
-                            z,
-                            x,
-                            y
-                          );
-                        }
+                        const dataTile =
+                          sourceData.sourceType === "mbtiles"
+                            ? await getMBTilesTile(sourceData.source, z, x, y)
+                            : await getPMTilesTile(sourceData.source, z, x, y);
 
                         /* Unzip pbf rendered tile */
                         if (
