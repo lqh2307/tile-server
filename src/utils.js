@@ -8,7 +8,6 @@ import fsPromise from "node:fs/promises";
 import handlebars from "handlebars";
 import sqlite3 from "sqlite3";
 import path from "node:path";
-import Color from "color";
 import axios from "axios";
 import sharp from "sharp";
 import chalk from "chalk";
@@ -18,7 +17,7 @@ import util from "util";
 
 const mercator = new SphericalMercator();
 
-const emptyBufferColor = Buffer.from(new Color("rgba(255,255,255,0)").array());
+const emptyBufferColor = Buffer.from(["0xff", "0xff", "0xff", "0x00"]);
 const emptyBuffer = Buffer.alloc(0);
 
 const fallbackFont = "Open Sans Regular";
