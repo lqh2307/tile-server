@@ -24,20 +24,6 @@ const emptyBuffer = Buffer.alloc(0);
 const fallbackFont = "Open Sans Regular";
 
 /**
- * Get lon lat center from xyz tile
- * @param {number} x
- * @param {number} y
- * @param {number} z
- * @returns {[number,number]}
- */
-export function getLonLatCenterFromXYZ(x, y, z) {
-  return mercator.ll(
-    [((x + 0.5) / (1 << z)) * (256 << z), ((y + 0.5) / (1 << z)) * (256 << z)],
-    z
-  );
-}
-
-/**
  * Get xyz tile center from lon lat z
  * @param {number} lon
  * @param {number} lat
@@ -124,7 +110,13 @@ export async function renderTile(config, item, scale, tileSize, x, y, z) {
   // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
   const params = {
     zoom: tileSize === 512 ? z : Math.max(0, z - 1),
-    center: getLonLatCenterFromXYZ(x, y, z),
+    center: mercator.ll(
+      [
+        ((x + 0.5) / (1 << z)) * (256 << z),
+        ((y + 0.5) / (1 << z)) * (256 << z),
+      ],
+      z
+    ),
     width: tileSize,
     height: tileSize,
   };

@@ -40,14 +40,12 @@ function serveFrontPageHandler(config) {
           thumbnail = `${getRequestHost(req)}styles/${id}/256/${z}/${x}/${y}.png`;
         }
 
-        let xyzLink;
-        if (config.options.serveRendered === true) {
-          xyzLink = `${getRequestHost(req)}styles/${id}/256/{z}/{x}/{y}.png`;
-        }
-
         styles[id] = {
           name: name,
-          xyz_link: xyzLink,
+          xyz_link:
+            config.options.serveRendered === true
+              ? `${getRequestHost(req)}styles/${id}/256/{z}/{x}/{y}.png`
+              : undefined,
           viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
           thumbnail: thumbnail,
           serve_wmts:
