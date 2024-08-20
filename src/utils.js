@@ -35,6 +35,20 @@ export function getXYZCenterFromLonLatZ(lon, lat, z) {
 }
 
 /**
+ * Get lon lat tile center from x, y, z
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ * @returns {[number,number]}
+ */
+export function getLonLatCenterFromXYZ(x, y, z) {
+  return mercator.ll(
+    [((x + 0.5) / (1 << z)) * (256 << z), ((y + 0.5) / (1 << z)) * (256 << z)],
+    z
+  );
+}
+
+/**
  * Compile template
  * @param {string} template
  * @param {object} data
@@ -52,26 +66,19 @@ export async function compileTemplate(template, data) {
 
 /**
  * Render tile
- * @param {object} config
  * @param {object} item
  * @param {number} scale
+ * @param {number} compression
  * @param {number} tileSize
  * @param {number} x
  * @param {number} y
  * @param {number} z
  * @returns {Promise<Buffer>}
  */
-export async function renderTile(config, item, scale, tileSize, x, y, z) {
-  // For 512px tiles, use the actual maplibre-native zoom. For 256px tiles, use zoom - 1
+export async function renderTile(item, scale, compression, tileSize, x, y, z) {
   const params = {
-    zoom: tileSize === 512 ? z : Math.max(0, z - 1),
-    center: mercator.ll(
-      [
-        ((x + 0.5) / (1 << z)) * (256 << z),
-        ((y + 0.5) / (1 << z)) * (256 << z),
-      ],
-      z
-    ),
+    zoom: z,
+    center: getLonLatCenterFromXYZ(x, y, z),
     width: tileSize,
     height: tileSize,
   };
@@ -79,9 +86,15 @@ export async function renderTile(config, item, scale, tileSize, x, y, z) {
   // HACK1 256px tiles are a zoom level lower than maplibre-native default tiles.
   // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
   // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in HACK2.
-  if (z === 0 && tileSize === 256) {
-    params.width = 512;
-    params.height = 512;
+  if (tileSize === 256) {
+    // For 256px tiles, use zoom - 1
+    params.zoom = z - 1;
+
+    if (z === 0) {
+      params.zoom = 0;
+      params.width = 512;
+      params.height = 512;
+    }
   }
   // END HACK1
 
@@ -117,7 +130,7 @@ export async function renderTile(config, item, scale, tileSize, x, y, z) {
 
       image
         .png({
-          compressionLevel: config.options.renderedCompression,
+          compressionLevel: compression,
         })
         .toBuffer((error, buffer) => {
           if (error) {

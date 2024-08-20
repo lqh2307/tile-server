@@ -44,7 +44,15 @@ function getRenderedTileHandler(config) {
     const tileSize = Number(req.params.tileSize) || 256; // Default tile size is 256px x 256px
 
     try {
-      const data = await renderTile(config, item, scale, tileSize, x, y, z);
+      const data = await renderTile(
+        item,
+        scale,
+        config.options.renderedCompression,
+        tileSize,
+        x,
+        y,
+        z
+      );
 
       res.header("Content-Type", `image/png`);
 
