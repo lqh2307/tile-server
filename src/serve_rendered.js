@@ -83,7 +83,8 @@ function getRenderedHandler(config) {
       const renderedInfo = {
         ...item.tileJSON,
         tiles: [
-          `${getRequestHost(req)}styles/${id}/${req.params.tileSize || 256
+          `${getRequestHost(req)}styles/${id}/${
+            req.params.tileSize || 256
           }/{z}/{x}/{y}.png`,
         ],
       };
@@ -392,11 +393,7 @@ export const serve_rendered = {
 
               try {
                 const data = await fs.readFile(
-                  path.join(
-                    config.options.paths.sprites,
-                    spriteDir,
-                    spriteFile
-                  )
+                  path.join(config.options.paths.sprites, spriteDir, spriteFile)
                 );
 
                 callback(null, {
@@ -445,7 +442,7 @@ export const serve_rendered = {
                 /* Unzip pbf rendered tile */
                 if (
                   dataTile.headers["Content-Type"] ===
-                  "application/x-protobuf" &&
+                    "application/x-protobuf" &&
                   dataTile.headers["Content-Encoding"] !== undefined
                 ) {
                   dataTile.data = await unzipAsync(dataTile.data);
@@ -480,8 +477,7 @@ export const serve_rendered = {
 
                 callback(null, {
                   data: emptyTileDatas[
-                    url.slice(url.lastIndexOf(".") + 1) ||
-                    emptyTileDatas.other
+                    url.slice(url.lastIndexOf(".") + 1) || emptyTileDatas.other
                   ],
                 });
               }
@@ -492,7 +488,7 @@ export const serve_rendered = {
         renderer.load(styleJSON);
 
         return renderer;
-      };
+      }
 
       await Promise.all(
         Object.keys(config.repo.styles).map(async (id) => {
@@ -623,8 +619,9 @@ export const serve_rendered = {
                   // Add atribution
                   if (
                     source.attribution &&
-                    rendered.tileJSON.attribution.includes(source.attribution) ===
-                    false
+                    rendered.tileJSON.attribution.includes(
+                      source.attribution
+                    ) === false
                   ) {
                     rendered.tileJSON.attribution += ` | ${source.attribution}`;
                   }

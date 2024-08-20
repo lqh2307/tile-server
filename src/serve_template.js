@@ -25,38 +25,42 @@ function serveFrontPageHandler(config) {
     const datas = {};
 
     await Promise.all([
-      ...Object.keys(config.repo.rendereds).map(async (id) => {
+      ...(() => {
         if (config.options.serveRendered === true) {
-          const { name, center } = config.repo.rendereds[id].tileJSON;
+          return Object.keys(config.repo.rendereds).map(async (id) => {
+            const { name, center } = config.repo.rendereds[id].tileJSON;
 
-          const [x, y, z] = getXYZCenterFromLonLatZ(
-            center[0],
-            center[1],
-            center[2]
-          );
+            const [x, y, z] = getXYZCenterFromLonLatZ(
+              center[0],
+              center[1],
+              center[2]
+            );
 
-          styles[id] = {
-            name: name,
-            xyz_link: `${getRequestHost(req)}styles/${id}/256/{z}/{x}/{y}.png`,
-            viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
-            thumbnail: `${getRequestHost(req)}styles/${id}/256/${z}/${x}/${y}.png`,
-            serve_wmts: config.options.serveWMTS === true,
-            serve_rendered: true,
-          };
+            styles[id] = {
+              name: name,
+              xyz_link: `${getRequestHost(req)}styles/${id}/256/{z}/{x}/{y}.png`,
+              viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
+              thumbnail: `${getRequestHost(req)}styles/${id}/256/${z}/${x}/${y}.png`,
+              serve_wmts: config.options.serveWMTS === true,
+              serve_rendered: true,
+            };
+          });
         } else {
-          const {
-            name = "Unknown",
-            center = [0, 0],
-            zoom = 0,
-          } = config.repo.styles[id].styleJSON;
+          return Object.keys(config.repo.styles).map(async (id) => {
+            const {
+              name,
+              center = [0, 0],
+              zoom = 0,
+            } = config.repo.styles[id].styleJSON;
 
-          styles[id] = {
-            name: name,
-            viewer_hash: `#${zoom}/${center[1]}/${center[0]}`,
-            thumbnail: "/images/placeholder.png",
-          };
+            styles[id] = {
+              name: name || "Unknown",
+              viewer_hash: `#${zoom}/${center[1]}/${center[0]}`,
+              thumbnail: "/images/placeholder.png",
+            };
+          });
         }
-      }),
+      })(),
       ...Object.keys(config.repo.datas).map(async (id) => {
         const data = config.repo.datas[id];
         const { name, center, format } = data.tileJSON;
@@ -107,7 +111,7 @@ function serveFrontPageHandler(config) {
 function serveStyleHandler(config) {
   return async (req, res, next) => {
     const id = decodeURI(req.params.id);
-    const item = config.repo.rendereds[id];
+    const item = config.repo.styles[id];
 
     if (item === undefined) {
       return res.status(StatusCodes.NOT_FOUND).send("Style is not found");
@@ -115,7 +119,7 @@ function serveStyleHandler(config) {
 
     const serveData = {
       id: id,
-      name: item.tileJSON.name,
+      name: item.styleJSON.name || "Unknown",
     };
 
     try {
