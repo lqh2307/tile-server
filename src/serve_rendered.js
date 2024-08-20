@@ -10,10 +10,10 @@ import axios from "axios";
 import {
   detectFormatAndHeaders,
   createNewXYZTileJSON,
-  responseEmptyTile,
   getRequestHost,
   getPMTilesTile,
   getMBTilesTile,
+  emptyTileData,
   getFontsPBF,
   unzipAsync,
   renderTile,
@@ -510,7 +510,11 @@ export const serve_rendered = {
                           `Failed to get data "${sourceID}" - Tile ${z}/${x}/${y}: ${error}. Serving empty tile...`
                         );
 
-                        responseEmptyTile(sourceData.tileJSON.format, callback);
+                        callback(null, {
+                          data: emptyTileData[
+                            sourceData.tileJSON.format || "other"
+                          ],
+                        });
                       }
                     } else if (protocol === "http:" || protocol === "https:") {
                       try {
@@ -524,10 +528,11 @@ export const serve_rendered = {
                       } catch (error) {
                         printLog("warning", error);
 
-                        responseEmptyTile(
-                          url.slice(url.lastIndexOf(".") + 1),
-                          callback
-                        );
+                        callback(null, {
+                          data: emptyTileData[
+                            url.slice(url.lastIndexOf(".") + 1) || "other"
+                          ],
+                        });
                       }
                     }
                   },
