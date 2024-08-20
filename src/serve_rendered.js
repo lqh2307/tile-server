@@ -635,8 +635,8 @@ export const serve_rendered = {
               (_, scale) =>
                 createPool(
                   {
-                    create: async (styleJSON) => {
-                      return await createRenderer(scale, styleJSON);
+                    create: async () => {
+                      return await createRenderer(scale);
                     },
                     destroy: (renderer) => {
                       renderer.release();
