@@ -370,7 +370,7 @@ export const serve_rendered = {
           0x00, 0x01, 0x00, 0x01, 0x40, 0x26, 0x25, 0xa4, 0x00, 0x03, 0x70,
           0x00, 0xfe, 0xfd, 0x36, 0x68, 0x00,
         ]),
-        other: Buffer.alloc(0),
+        other: Buffer.from([]),
       };
 
       createRenderer = async (scale, styleJSON) => {
@@ -458,7 +458,9 @@ export const serve_rendered = {
                   );
 
                   callback(null, {
-                    data: emptyTileDatas[sourceData.tileJSON.format || "other"],
+                    data:
+                      emptyTileDatas[sourceData.tileJSON.format] ||
+                      emptyTileDatas.other,
                   });
                 }
               } else if (protocol === "http:" || protocol === "https:") {
@@ -475,7 +477,8 @@ export const serve_rendered = {
 
                   callback(null, {
                     data: emptyTileDatas[
-                      url.slice(url.lastIndexOf(".") + 1) || "other"
+                      url.slice(url.lastIndexOf(".") + 1) ||
+                        emptyTileDatas.other
                     ],
                   });
                 }
