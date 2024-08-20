@@ -373,7 +373,7 @@ export const serve_rendered = {
         other: Buffer.alloc(0),
       };
 
-      createRenderer = async (config, scale, styleJSON) => {
+      createRenderer = async (scale, styleJSON) => {
         {
           const renderer = new mlgl.Map({
             mode: "tile",
@@ -635,8 +635,8 @@ export const serve_rendered = {
               (_, scale) =>
                 createPool(
                   {
-                    create: async () => {
-                      return await createRenderer(scale);
+                    create: async (styleJSON) => {
+                      return await createRenderer(scale, styleJSON);
                     },
                     destroy: (renderer) => {
                       renderer.release();
