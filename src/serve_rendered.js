@@ -639,12 +639,8 @@ export const serve_rendered = {
                 (_, scale) =>
                   createPool(
                     {
-                      create: () => {
-                        return createRenderer(scale, styleJSON);
-                      },
-                      destroy: (renderer) => {
-                        renderer.release();
-                      },
+                      create: () => createRenderer(scale, styleJSON),
+                      destroy: (renderer) => renderer.release(),
                     },
                     {
                       min: config.options.minPoolSize,
