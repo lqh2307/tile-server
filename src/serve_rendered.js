@@ -276,6 +276,7 @@ export const serve_rendered = {
 
   add: async (config) => {
     let emptyTileDatas;
+    let createRenderer;
 
     if (config.options.serveRendered === true) {
       mlgl.on("message", (error) => {
@@ -370,6 +371,122 @@ export const serve_rendered = {
           0x00, 0xfe, 0xfd, 0x36, 0x68, 0x00,
         ]),
         other: Buffer.alloc(0),
+      };
+
+      createRenderer = async (config, scale, styleJSON) => {
+        {
+          const renderer = new mlgl.Map({
+            mode: "tile",
+            ratio: scale + 1,
+            request: async (req, callback) => {
+              const url = decodeURIComponent(req.url);
+              const parts = url.split("/");
+              const protocol = parts[0];
+
+              if (protocol === "sprites:") {
+                const spriteDir = parts[2];
+                const spriteFile = parts[3];
+
+                try {
+                  const data = await fs.readFile(
+                    path.join(
+                      config.options.paths.sprites,
+                      spriteDir,
+                      spriteFile
+                    )
+                  );
+
+                  callback(null, {
+                    data: data,
+                  });
+                } catch (error) {
+                  callback(error, {
+                    data: null,
+                  });
+                }
+              } else if (protocol === "fonts:") {
+                const fonts = parts[2];
+                const range = parts[3].split(".")[0];
+
+                try {
+                  let data = await getFontsPBF(config, fonts, range);
+
+                  /* Unzip pbf font */
+                  const headers = detectFormatAndHeaders(data).headers;
+                  if (headers["Content-Encoding"] !== undefined) {
+                    data = await unzipAsync(data);
+                  }
+
+                  callback(null, {
+                    data: data,
+                  });
+                } catch (error) {
+                  callback(error, {
+                    data: null,
+                  });
+                }
+              } else if (protocol === "mbtiles:" || protocol === "pmtiles:") {
+                const sourceID = parts[2];
+                const z = Number(parts[3]);
+                const x = Number(parts[4]);
+                const y = Number(parts[5].split(".")[0]);
+                const sourceData = config.repo.datas[sourceID];
+
+                try {
+                  /* Get rendered tile */
+                  const dataTile =
+                    sourceData.sourceType === "mbtiles"
+                      ? await getMBTilesTile(sourceData.source, z, x, y)
+                      : await getPMTilesTile(sourceData.source, z, x, y);
+
+                  /* Unzip pbf rendered tile */
+                  if (
+                    dataTile.headers["Content-Type"] ===
+                      "application/x-protobuf" &&
+                    dataTile.headers["Content-Encoding"] !== undefined
+                  ) {
+                    dataTile.data = await unzipAsync(dataTile.data);
+                  }
+
+                  callback(null, {
+                    data: dataTile.data,
+                  });
+                } catch (error) {
+                  printLog(
+                    "warning",
+                    `Failed to get data "${sourceID}" - Tile ${z}/${x}/${y}: ${error}. Serving empty tile...`
+                  );
+
+                  callback(null, {
+                    data: emptyTileDatas[sourceData.tileJSON.format || "other"],
+                  });
+                }
+              } else if (protocol === "http:" || protocol === "https:") {
+                try {
+                  const { data } = await axios.get(url, {
+                    responseType: "arraybuffer",
+                  });
+
+                  callback(null, {
+                    data: data,
+                  });
+                } catch (error) {
+                  printLog("warning", error);
+
+                  callback(null, {
+                    data: emptyTileDatas[
+                      url.slice(url.lastIndexOf(".") + 1) || "other"
+                    ],
+                  });
+                }
+              }
+            },
+          });
+
+          renderer.load(styleJSON);
+
+          return renderer;
+        }
       };
     }
 
@@ -509,127 +626,6 @@ export const serve_rendered = {
                 }
               })
             );
-
-            async function createRenderer(scale) {
-              {
-                const renderer = new mlgl.Map({
-                  mode: "tile",
-                  ratio: scale + 1,
-                  request: async (req, callback) => {
-                    const url = decodeURIComponent(req.url);
-                    const parts = url.split("/");
-                    const protocol = parts[0];
-
-                    if (protocol === "sprites:") {
-                      const spriteDir = parts[2];
-                      const spriteFile = parts[3];
-
-                      try {
-                        const data = await fs.readFile(
-                          path.join(
-                            config.options.paths.sprites,
-                            spriteDir,
-                            spriteFile
-                          )
-                        );
-
-                        callback(null, {
-                          data: data,
-                        });
-                      } catch (error) {
-                        callback(error, {
-                          data: null,
-                        });
-                      }
-                    } else if (protocol === "fonts:") {
-                      const fonts = parts[2];
-                      const range = parts[3].split(".")[0];
-
-                      try {
-                        let data = await getFontsPBF(config, fonts, range);
-
-                        /* Unzip pbf font */
-                        const headers = detectFormatAndHeaders(data).headers;
-                        if (headers["Content-Encoding"] !== undefined) {
-                          data = await unzipAsync(data);
-                        }
-
-                        callback(null, {
-                          data: data,
-                        });
-                      } catch (error) {
-                        callback(error, {
-                          data: null,
-                        });
-                      }
-                    } else if (
-                      protocol === "mbtiles:" ||
-                      protocol === "pmtiles:"
-                    ) {
-                      const sourceID = parts[2];
-                      const z = Number(parts[3]);
-                      const x = Number(parts[4]);
-                      const y = Number(parts[5].split(".")[0]);
-                      const sourceData = config.repo.datas[sourceID];
-
-                      try {
-                        /* Get rendered tile */
-                        const dataTile =
-                          sourceData.sourceType === "mbtiles"
-                            ? await getMBTilesTile(sourceData.source, z, x, y)
-                            : await getPMTilesTile(sourceData.source, z, x, y);
-
-                        /* Unzip pbf rendered tile */
-                        if (
-                          dataTile.headers["Content-Type"] ===
-                            "application/x-protobuf" &&
-                          dataTile.headers["Content-Encoding"] !== undefined
-                        ) {
-                          dataTile.data = await unzipAsync(dataTile.data);
-                        }
-
-                        callback(null, {
-                          data: dataTile.data,
-                        });
-                      } catch (error) {
-                        printLog(
-                          "warning",
-                          `Failed to get data "${sourceID}" - Tile ${z}/${x}/${y}: ${error}. Serving empty tile...`
-                        );
-
-                        callback(null, {
-                          data: emptyTileDatas[
-                            sourceData.tileJSON.format || "other"
-                          ],
-                        });
-                      }
-                    } else if (protocol === "http:" || protocol === "https:") {
-                      try {
-                        const { data } = await axios.get(url, {
-                          responseType: "arraybuffer",
-                        });
-
-                        callback(null, {
-                          data: data,
-                        });
-                      } catch (error) {
-                        printLog("warning", error);
-
-                        callback(null, {
-                          data: emptyTileDatas[
-                            url.slice(url.lastIndexOf(".") + 1) || "other"
-                          ],
-                        });
-                      }
-                    }
-                  },
-                });
-
-                renderer.load(styleJSON);
-
-                return renderer;
-              }
-            }
 
             // Create pools
             rendered.renderers = Array.from(
