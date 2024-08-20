@@ -26,33 +26,36 @@ function serveFrontPageHandler(config) {
 
     await Promise.all([
       ...Object.keys(config.repo.rendereds).map(async (id) => {
-        const style = config.repo.rendereds[id];
-        const { name, center } = style.tileJSON;
-
-        let thumbnail = "/images/placeholder.png";
         if (config.options.serveRendered === true) {
+          const { name, center } = config.repo.rendereds[id].tileJSON;
+
           const [x, y, z] = getXYZCenterFromLonLatZ(
             center[0],
             center[1],
             center[2]
           );
 
-          thumbnail = `${getRequestHost(req)}styles/${id}/256/${z}/${x}/${y}.png`;
-        }
+          styles[id] = {
+            name: name,
+            xyz_link: `${getRequestHost(req)}styles/${id}/256/{z}/{x}/{y}.png`,
+            viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
+            thumbnail: `${getRequestHost(req)}styles/${id}/256/${z}/${x}/${y}.png`,
+            serve_wmts: config.options.serveWMTS === true,
+            serve_rendered: true,
+          };
+        } else {
+          const {
+            name = "Unknown",
+            center = [0, 0],
+            zoom = 0,
+          } = config.repo.styles[id].styleJSON;
 
-        styles[id] = {
-          name: name,
-          xyz_link:
-            config.options.serveRendered === true
-              ? `${getRequestHost(req)}styles/${id}/256/{z}/{x}/{y}.png`
-              : undefined,
-          viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
-          thumbnail: thumbnail,
-          serve_wmts:
-            config.options.serveRendered === true &&
-            config.options.serveWMTS === true,
-          serve_rendered: config.options.serveRendered === true,
-        };
+          styles[id] = {
+            name: name,
+            viewer_hash: `#${zoom}/${center[1]}/${center[0]}`,
+            thumbnail: "/images/placeholder.png",
+          };
+        }
       }),
       ...Object.keys(config.repo.datas).map(async (id) => {
         const data = config.repo.datas[id];

@@ -83,8 +83,7 @@ function getRenderedHandler(config) {
       const renderedInfo = {
         ...item.tileJSON,
         tiles: [
-          `${getRequestHost(req)}styles/${id}/${
-            req.params.tileSize || 256
+          `${getRequestHost(req)}styles/${id}/${req.params.tileSize || 256
           }/{z}/{x}/{y}.png`,
         ],
       };
@@ -283,9 +282,6 @@ export const serve_rendered = {
   },
 
   add: async (config) => {
-    let emptyTileDatas;
-    let createRenderer;
-
     if (config.options.serveRendered === true) {
       mlgl.on("message", (error) => {
         if (error.severity === "ERROR") {
@@ -295,7 +291,7 @@ export const serve_rendered = {
         }
       });
 
-      emptyTileDatas = {
+      const emptyTileDatas = {
         gif: Buffer.from([
           0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80,
           0x00, 0x00, 0x4c, 0x69, 0x71, 0x00, 0x00, 0x00, 0x21, 0xff, 0x0b,
@@ -381,184 +377,211 @@ export const serve_rendered = {
         other: Buffer.from([]),
       };
 
-      createRenderer = async (scale, styleJSON) => {
-        {
-          const renderer = new mlgl.Map({
-            mode: "tile",
-            ratio: scale + 1,
-            request: async (req, callback) => {
-              const url = decodeURIComponent(req.url);
-              const parts = url.split("/");
-              const protocol = parts[0];
+      function createRenderer(scale, styleJSON) {
+        const renderer = new mlgl.Map({
+          mode: "tile",
+          ratio: scale + 1,
+          request: async (req, callback) => {
+            const url = decodeURIComponent(req.url);
+            const parts = url.split("/");
+            const protocol = parts[0];
 
-              if (protocol === "sprites:") {
-                const spriteDir = parts[2];
-                const spriteFile = parts[3];
+            if (protocol === "sprites:") {
+              const spriteDir = parts[2];
+              const spriteFile = parts[3];
 
-                try {
-                  const data = await fs.readFile(
-                    path.join(
-                      config.options.paths.sprites,
-                      spriteDir,
-                      spriteFile
-                    )
-                  );
+              try {
+                const data = await fs.readFile(
+                  path.join(
+                    config.options.paths.sprites,
+                    spriteDir,
+                    spriteFile
+                  )
+                );
 
-                  callback(null, {
-                    data: data,
-                  });
-                } catch (error) {
-                  callback(error, {
-                    data: null,
-                  });
-                }
-              } else if (protocol === "fonts:") {
-                const fonts = parts[2];
-                const range = parts[3].split(".")[0];
-
-                try {
-                  let data = await getFontsPBF(config, fonts, range);
-
-                  /* Unzip pbf font */
-                  const headers = detectFormatAndHeaders(data).headers;
-                  if (headers["Content-Encoding"] !== undefined) {
-                    data = await unzipAsync(data);
-                  }
-
-                  callback(null, {
-                    data: data,
-                  });
-                } catch (error) {
-                  callback(error, {
-                    data: null,
-                  });
-                }
-              } else if (protocol === "mbtiles:" || protocol === "pmtiles:") {
-                const sourceID = parts[2];
-                const z = Number(parts[3]);
-                const x = Number(parts[4]);
-                const y = Number(parts[5].split(".")[0]);
-                const sourceData = config.repo.datas[sourceID];
-
-                try {
-                  /* Get rendered tile */
-                  const dataTile =
-                    sourceData.sourceType === "mbtiles"
-                      ? await getMBTilesTile(sourceData.source, z, x, y)
-                      : await getPMTilesTile(sourceData.source, z, x, y);
-
-                  /* Unzip pbf rendered tile */
-                  if (
-                    dataTile.headers["Content-Type"] ===
-                      "application/x-protobuf" &&
-                    dataTile.headers["Content-Encoding"] !== undefined
-                  ) {
-                    dataTile.data = await unzipAsync(dataTile.data);
-                  }
-
-                  callback(null, {
-                    data: dataTile.data,
-                  });
-                } catch (error) {
-                  printLog(
-                    "warning",
-                    `Failed to get data "${sourceID}" - Tile ${z}/${x}/${y}: ${error}. Serving empty tile...`
-                  );
-
-                  callback(null, {
-                    data:
-                      emptyTileDatas[sourceData.tileJSON.format] ||
-                      emptyTileDatas.other,
-                  });
-                }
-              } else if (protocol === "http:" || protocol === "https:") {
-                try {
-                  const { data } = await axios.get(url, {
-                    responseType: "arraybuffer",
-                  });
-
-                  callback(null, {
-                    data: data,
-                  });
-                } catch (error) {
-                  printLog("warning", error);
-
-                  callback(null, {
-                    data: emptyTileDatas[
-                      url.slice(url.lastIndexOf(".") + 1) ||
-                        emptyTileDatas.other
-                    ],
-                  });
-                }
+                callback(null, {
+                  data: data,
+                });
+              } catch (error) {
+                callback(error, {
+                  data: null,
+                });
               }
-            },
-          });
+            } else if (protocol === "fonts:") {
+              const fonts = parts[2];
+              const range = parts[3].split(".")[0];
 
-          renderer.load(styleJSON);
+              try {
+                let data = await getFontsPBF(config, fonts, range);
 
-          return renderer;
-        }
-      };
-    }
-
-    await Promise.all(
-      Object.keys(config.repo.styles).map(async (id) => {
-        try {
-          const item = config.repo.styles[id];
-          const rendered = {
-            tileJSON: createNewXYZTileJSON({
-              name: item.styleJSON.name,
-              description: item.styleJSON.name,
-            }),
-          };
-
-          /* Fix center */
-          if (item.styleJSON.center?.length >= 2 && item.styleJSON.zoom) {
-            rendered.tileJSON.center = [
-              item.styleJSON.center[0],
-              item.styleJSON.center[1],
-              Math.floor(item.styleJSON.zoom),
-            ];
-          }
-
-          /* Fix source urls & Add attribution & Create pools */
-          if (config.options.serveRendered === true) {
-            /* Clone style JSON */
-            const stringJSON = JSON.stringify(item.styleJSON);
-            const styleJSON = JSON.parse(stringJSON);
-
-            await Promise.all(
-              // Fix source urls
-              Object.keys(styleJSON.sources).map(async (id) => {
-                const source = styleJSON.sources[id];
-
-                if (source.tiles !== undefined) {
-                  const tiles = source.tiles.map((tile) => {
-                    if (
-                      tile.startsWith("pmtiles://") === true ||
-                      tile.startsWith("mbtiles://") === true
-                    ) {
-                      const sourceID = tile.slice(10);
-                      const sourceData = config.repo.datas[sourceID];
-
-                      tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
-                    }
-
-                    return tile;
-                  });
-
-                  source.tiles = [...new Set(tiles)];
+                /* Unzip pbf font */
+                const headers = detectFormatAndHeaders(data).headers;
+                if (headers["Content-Encoding"] !== undefined) {
+                  data = await unzipAsync(data);
                 }
 
-                if (source.urls !== undefined) {
-                  const otherUrls = [];
+                callback(null, {
+                  data: data,
+                });
+              } catch (error) {
+                callback(error, {
+                  data: null,
+                });
+              }
+            } else if (protocol === "mbtiles:" || protocol === "pmtiles:") {
+              const sourceID = parts[2];
+              const z = Number(parts[3]);
+              const x = Number(parts[4]);
+              const y = Number(parts[5].split(".")[0]);
+              const sourceData = config.repo.datas[sourceID];
 
-                  source.urls.forEach((url) => {
+              try {
+                /* Get rendered tile */
+                const dataTile =
+                  sourceData.sourceType === "mbtiles"
+                    ? await getMBTilesTile(sourceData.source, z, x, y)
+                    : await getPMTilesTile(sourceData.source, z, x, y);
+
+                /* Unzip pbf rendered tile */
+                if (
+                  dataTile.headers["Content-Type"] ===
+                  "application/x-protobuf" &&
+                  dataTile.headers["Content-Encoding"] !== undefined
+                ) {
+                  dataTile.data = await unzipAsync(dataTile.data);
+                }
+
+                callback(null, {
+                  data: dataTile.data,
+                });
+              } catch (error) {
+                printLog(
+                  "warning",
+                  `Failed to get data "${sourceID}" - Tile ${z}/${x}/${y}: ${error}. Serving empty tile...`
+                );
+
+                callback(null, {
+                  data:
+                    emptyTileDatas[sourceData.tileJSON.format] ||
+                    emptyTileDatas.other,
+                });
+              }
+            } else if (protocol === "http:" || protocol === "https:") {
+              try {
+                const { data } = await axios.get(url, {
+                  responseType: "arraybuffer",
+                });
+
+                callback(null, {
+                  data: data,
+                });
+              } catch (error) {
+                printLog("warning", error);
+
+                callback(null, {
+                  data: emptyTileDatas[
+                    url.slice(url.lastIndexOf(".") + 1) ||
+                    emptyTileDatas.other
+                  ],
+                });
+              }
+            }
+          },
+        });
+
+        renderer.load(styleJSON);
+
+        return renderer;
+      };
+
+      await Promise.all(
+        Object.keys(config.repo.styles).map(async (id) => {
+          try {
+            const item = config.repo.styles[id];
+            const rendered = {
+              tileJSON: createNewXYZTileJSON({
+                name: item.styleJSON.name,
+                description: item.styleJSON.name,
+              }),
+            };
+
+            /* Fix center */
+            if (item.styleJSON.center?.length >= 2 && item.styleJSON.zoom) {
+              rendered.tileJSON.center = [
+                item.styleJSON.center[0],
+                item.styleJSON.center[1],
+                Math.floor(item.styleJSON.zoom),
+              ];
+            }
+
+            /* Fix source urls & Add attribution & Create pools */
+            if (config.options.serveRendered === true) {
+              /* Clone style JSON */
+              const stringJSON = JSON.stringify(item.styleJSON);
+              const styleJSON = JSON.parse(stringJSON);
+
+              await Promise.all(
+                // Fix source urls
+                Object.keys(styleJSON.sources).map(async (id) => {
+                  const source = styleJSON.sources[id];
+
+                  if (source.tiles !== undefined) {
+                    const tiles = source.tiles.map((tile) => {
+                      if (
+                        tile.startsWith("pmtiles://") === true ||
+                        tile.startsWith("mbtiles://") === true
+                      ) {
+                        const sourceID = tile.slice(10);
+                        const sourceData = config.repo.datas[sourceID];
+
+                        tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+                      }
+
+                      return tile;
+                    });
+
+                    source.tiles = [...new Set(tiles)];
+                  }
+
+                  if (source.urls !== undefined) {
+                    const otherUrls = [];
+
+                    source.urls.forEach((url) => {
+                      if (
+                        url.startsWith("pmtiles://") === true ||
+                        url.startsWith("mbtiles://") === true
+                      ) {
+                        const sourceID = url.slice(10);
+                        const sourceData = config.repo.datas[sourceID];
+                        const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+
+                        if (source.tiles !== undefined) {
+                          if (source.tiles.includes(tile) === false) {
+                            source.tiles.push(tile);
+                          }
+                        } else {
+                          source.tiles = [tile];
+                        }
+                      } else {
+                        if (otherUrls.includes(url) === false) {
+                          otherUrls.push(url);
+                        }
+                      }
+                    });
+
+                    if (otherUrls.length === 0) {
+                      delete source.urls;
+                    } else {
+                      source.urls = otherUrls;
+                    }
+                  }
+
+                  if (source.url !== undefined) {
                     if (
-                      url.startsWith("pmtiles://") === true ||
-                      url.startsWith("mbtiles://") === true
+                      source.url.startsWith("pmtiles://") === true ||
+                      source.url.startsWith("mbtiles://") === true
                     ) {
-                      const sourceID = url.slice(10);
+                      const sourceID = source.url.slice(10);
                       const sourceData = config.repo.datas[sourceID];
                       const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
 
@@ -569,107 +592,78 @@ export const serve_rendered = {
                       } else {
                         source.tiles = [tile];
                       }
-                    } else {
-                      if (otherUrls.includes(url) === false) {
-                        otherUrls.push(url);
-                      }
+
+                      delete source.url;
                     }
-                  });
-
-                  if (otherUrls.length === 0) {
-                    delete source.urls;
-                  } else {
-                    source.urls = otherUrls;
                   }
-                }
 
-                if (source.url !== undefined) {
                   if (
-                    source.url.startsWith("pmtiles://") === true ||
-                    source.url.startsWith("mbtiles://") === true
+                    source.url === undefined &&
+                    source.urls === undefined &&
+                    source.tiles !== undefined
                   ) {
-                    const sourceID = source.url.slice(10);
-                    const sourceData = config.repo.datas[sourceID];
-                    const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+                    if (source.tiles.length === 1) {
+                      const tileURL = source.tiles[0];
+                      if (
+                        tileURL.startsWith("pmtiles://") === true ||
+                        tileURL.startsWith("mbtiles://") === true
+                      ) {
+                        const sourceID = tileURL.split("/")[2];
+                        const sourceData = config.repo.datas[sourceID];
 
-                    if (source.tiles !== undefined) {
-                      if (source.tiles.includes(tile) === false) {
-                        source.tiles.push(tile);
+                        styleJSON.sources[id] = {
+                          ...sourceData.tileJSON,
+                          ...source,
+                          tiles: [tileURL],
+                        };
                       }
-                    } else {
-                      source.tiles = [tile];
-                    }
-
-                    delete source.url;
-                  }
-                }
-
-                if (
-                  source.url === undefined &&
-                  source.urls === undefined &&
-                  source.tiles !== undefined
-                ) {
-                  if (source.tiles.length === 1) {
-                    const tileURL = source.tiles[0];
-                    if (
-                      tileURL.startsWith("pmtiles://") === true ||
-                      tileURL.startsWith("mbtiles://") === true
-                    ) {
-                      const sourceID = tileURL.split("/")[2];
-                      const sourceData = config.repo.datas[sourceID];
-
-                      styleJSON.sources[id] = {
-                        ...sourceData.tileJSON,
-                        ...source,
-                        tiles: [tileURL],
-                      };
                     }
                   }
-                }
 
-                // Add atribution
-                if (
-                  source.attribution &&
-                  rendered.tileJSON.attribution.includes(source.attribution) ===
+                  // Add atribution
+                  if (
+                    source.attribution &&
+                    rendered.tileJSON.attribution.includes(source.attribution) ===
                     false
-                ) {
-                  rendered.tileJSON.attribution += ` | ${source.attribution}`;
-                }
-              })
-            );
-
-            // Create pools
-            rendered.renderers = Array.from(
-              {
-                length: config.options.maxScaleRender,
-              },
-              (_, scale) =>
-                createPool(
-                  {
-                    create: async () => {
-                      return await createRenderer(scale, styleJSON);
-                    },
-                    destroy: (renderer) => {
-                      renderer.release();
-                    },
-                  },
-                  {
-                    min: config.options.minPoolSize,
-                    max: config.options.maxPoolSize,
+                  ) {
+                    rendered.tileJSON.attribution += ` | ${source.attribution}`;
                   }
-                )
+                })
+              );
+
+              // Create pools
+              rendered.renderers = Array.from(
+                {
+                  length: config.options.maxScaleRender,
+                },
+                (_, scale) =>
+                  createPool(
+                    {
+                      create: () => {
+                        return createRenderer(scale, styleJSON);
+                      },
+                      destroy: (renderer) => {
+                        renderer.release();
+                      },
+                    },
+                    {
+                      min: config.options.minPoolSize,
+                      max: config.options.maxPoolSize,
+                    }
+                  )
+              );
+            }
+
+            /* Add to repo */
+            config.repo.rendereds[id] = rendered;
+          } catch (error) {
+            printLog(
+              "error",
+              `Failed to load rendered "${id}": ${error}. Skipping...`
             );
           }
-
-          /* Add to repo */
-          config.repo.rendereds[id] = rendered;
-        } catch (error) {
-          printLog(
-            "error",
-            `Failed to load rendered "${id}": ${error}. Skipping...`
-          );
-        }
-      })
-    );
+        })
+      );
+    }
   },
 };
