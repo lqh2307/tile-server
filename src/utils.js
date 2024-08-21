@@ -11,7 +11,6 @@ import sqlite3 from "sqlite3";
 import path from "node:path";
 import axios from "axios";
 import sharp from "sharp";
-import chalk from "chalk";
 import fs from "node:fs";
 import zlib from "zlib";
 import util from "util";
@@ -300,9 +299,9 @@ export function printLog(level, msg) {
   const dateTime = new Date().toISOString();
 
   if (level === "warning") {
-    console.warn(chalk.yellow(`${dateTime} [WARNING] ${msg}`));
+    console.warn(`${dateTime} [WARNING] ${msg}`);
   } else if (level === "error") {
-    console.error(chalk.red(`${dateTime} [ERROR] ${msg}`));
+    console.error(`${dateTime} [ERROR] ${msg}`);
   } else {
     console.info(`${dateTime} [INFO] ${msg}`);
   }
