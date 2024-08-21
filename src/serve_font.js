@@ -12,12 +12,12 @@ import {
   printLog,
 } from "./utils.js";
 
-function getFontHandler(config) {
+function getFontHandler() {
   return async (req, res, next) => {
     const ids = decodeURI(req.params.id);
 
     try {
-      let data = await getFontsPBF(config, ids, req.params.range);
+      let data = await getFontsPBF(ids, req.params.range);
 
       /* Gzip pbf font */
       const headers = detectFormatAndHeaders(data).headers;
@@ -125,7 +125,7 @@ export const serve_font = {
      *               type: string
      *               format: binary
      */
-    app.get("/:id/:range(\\d{1,5}-\\d{1,5}).pbf", getFontHandler(config));
+    app.get("/:id/:range(\\d{1,5}-\\d{1,5}).pbf", getFontHandler());
 
     return app;
   },

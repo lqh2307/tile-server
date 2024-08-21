@@ -1,10 +1,14 @@
 "use strict";
 
-import { printLog, getRequestHost, validateSprite } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
-import fs from "node:fs/promises";
 import express from "express";
 import path from "node:path";
+import {
+  getRequestHost,
+  validateSprite,
+  getSprite,
+  printLog,
+} from "./utils.js";
 
 function getSpriteHandler(config) {
   return async (req, res, next) => {
@@ -16,13 +20,10 @@ function getSpriteHandler(config) {
     }
 
     try {
-      const filePath = `${path.join(
-        config.options.paths.sprites,
+      const data = await getSprite(
         id,
-        "sprite"
-      )}${req.params.scale || ""}.${req.params.format}`;
-
-      const data = await fs.readFile(filePath);
+        req.url.slice(req.url.lastIndexOf("/") + 1)
+      );
 
       if (req.params.format === "json") {
         res.header("Content-Type", "application/json");

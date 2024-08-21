@@ -7,75 +7,22 @@ import { serve_sprite } from "./serve_sprite.js";
 import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
+import { loadConfigFile } from "./config.js";
 import { printLog } from "./utils.js";
 import chokidar from "chokidar";
 import express from "express";
-import path from "node:path";
 import morgan from "morgan";
-import fs from "node:fs";
 import cors from "cors";
-import os from "os";
 
+/**
+ * Load config.json file
+ * @returns {config}
+ */
 function loadConfig() {
   printLog("info", "Loading config file...");
 
   try {
-    /* Read config.json file */
-    const configFilePath = path.resolve("data", "config.json");
-    const fileData = fs.readFileSync(configFilePath, "utf8");
-    const configData = JSON.parse(fileData);
-
-    const config = {
-      options: {
-        paths: {
-          styles: path.resolve("data", "styles"),
-          fonts: path.resolve("data", "fonts"),
-          sprites: path.resolve("data", "sprites"),
-          mbtiles: path.resolve("data", "mbtiles"),
-          pmtiles: path.resolve("data", "pmtiles"),
-        },
-        listenPort: configData.options?.listenPort || 8080,
-        watchToKill: configData.options?.watchToKill || 0,
-        watchToRestart: configData.options?.watchToRestart || 0,
-        killEndpoint: configData.options?.killEndpoint ?? true,
-        restartEndpoint: configData.options?.restartEndpoint ?? true,
-        frontPage: configData.options?.frontPage ?? true,
-        serveWMTS: configData.options?.serveWMTS ?? true,
-        serveRendered: configData.options?.serveRendered ?? true,
-        serveSwagger: configData.options?.serveSwagger ?? true,
-        renderedCompression: configData.options?.renderedCompression || 6,
-        loggerFormat:
-          configData.options?.loggerFormat ||
-          ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
-        maxScaleRender: configData.options?.maxScaleRender || 1,
-        minPoolSize: configData.options?.minPoolSize || os.cpus().length,
-        maxPoolSize: configData.options?.maxPoolSize || os.cpus().length * 2,
-      },
-      styles: configData.styles || {},
-      data: configData.data || {},
-      sprites: configData.sprites || {},
-      fonts: configData.fonts || {},
-      repo: {
-        styles: {},
-        rendereds: {},
-        datas: {},
-        fonts: {},
-        sprites: {},
-      },
-      startupComplete: false,
-      filePath: configFilePath,
-    };
-
-    /* Validate dirs */
-    Object.values(config.options.paths).forEach((path) => {
-      const stat = fs.statSync(path);
-
-      if (stat.isDirectory() === false) {
-        throw new Error(`Directory "${path}" does not exist`);
-      }
-    });
-
-    return config;
+    return loadConfigFile();
   } catch (error) {
     printLog("error", `Failed to load config file: ${error}. Exited!`);
 
@@ -83,6 +30,11 @@ function loadConfig() {
   }
 }
 
+/**
+ * Setup watch config file
+ * @param {object} config
+ * @returns {void}
+ */
 function setupWatchConfigFile(config) {
   if (config.options.watchToKill > 0) {
     printLog(
@@ -121,6 +73,11 @@ function setupWatchConfigFile(config) {
   }
 }
 
+/**
+ * Setup express server
+ * @param {object} config
+ * @returns {void}
+ */
 function setupServer(config) {
   printLog("info", "Starting HTTP server...");
 
@@ -141,6 +98,11 @@ function setupServer(config) {
     });
 }
 
+/**
+ * Load data
+ * @param {object} config
+ * @returns {void}
+ */
 function loadData(config) {
   printLog("info", "Loading data...");
 
@@ -163,6 +125,10 @@ function loadData(config) {
     });
 }
 
+/**
+ * Start server
+ * @returns {void}
+ */
 export function startServer() {
   const config = loadConfig();
 

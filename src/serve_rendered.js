@@ -3,9 +3,7 @@
 import mlgl from "@maplibre/maplibre-gl-native";
 import { StatusCodes } from "http-status-codes";
 import { createPool } from "generic-pool";
-import fs from "node:fs/promises";
 import express from "express";
-import path from "node:path";
 import axios from "axios";
 import {
   detectFormatAndHeaders,
@@ -13,9 +11,11 @@ import {
   getRequestHost,
   getPMTilesTile,
   getMBTilesTile,
+  processImage,
   getFontsPBF,
   unzipAsync,
-  renderTile,
+  renderData,
+  getSprite,
   printLog,
 } from "./utils.js";
 
@@ -44,19 +44,19 @@ function getRenderedTileHandler(config) {
     const tileSize = Number(req.params.tileSize) || 256; // Default tile size is 256px x 256px
 
     try {
-      const data = await renderTile(
-        item,
+      const data = await renderData(item, scale, tileSize, x, y, z);
+
+      const image = await processImage(
+        data,
         scale,
         config.options.renderedCompression,
         tileSize,
-        x,
-        y,
         z
       );
 
       res.header("Content-Type", `image/png`);
 
-      return res.status(StatusCodes.OK).send(data);
+      return res.status(StatusCodes.OK).send(image);
     } catch (error) {
       printLog(
         "error",
@@ -292,7 +292,7 @@ export const serve_rendered = {
         }
       });
 
-      const emptyTileDatas = {
+      const emptyDatas = {
         gif: Buffer.from([
           0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80,
           0x00, 0x00, 0x4c, 0x69, 0x71, 0x00, 0x00, 0x00, 0x21, 0xff, 0x0b,
@@ -388,13 +388,11 @@ export const serve_rendered = {
             const protocol = parts[0];
 
             if (protocol === "sprites:") {
-              const spriteDir = parts[2];
-              const spriteFile = parts[3];
+              const id = parts[2];
+              const fileName = parts[3];
 
               try {
-                const data = await fs.readFile(
-                  path.join(config.options.paths.sprites, spriteDir, spriteFile)
-                );
+                const data = await getSprite(id, fileName);
 
                 callback(null, {
                   data: data,
@@ -409,7 +407,7 @@ export const serve_rendered = {
               const range = parts[3].split(".")[0];
 
               try {
-                let data = await getFontsPBF(config, fonts, range);
+                let data = await getFontsPBF(fonts, range);
 
                 /* Unzip pbf font */
                 const headers = detectFormatAndHeaders(data).headers;
@@ -459,8 +457,7 @@ export const serve_rendered = {
 
                 callback(null, {
                   data:
-                    emptyTileDatas[sourceData.tileJSON.format] ||
-                    emptyTileDatas.other,
+                    emptyDatas[sourceData.tileJSON.format] || emptyDatas.other,
                 });
               }
             } else if (protocol === "http:" || protocol === "https:") {
@@ -476,9 +473,9 @@ export const serve_rendered = {
                 printLog("warning", error);
 
                 callback(null, {
-                  data: emptyTileDatas[
-                    url.slice(url.lastIndexOf(".") + 1) || emptyTileDatas.other
-                  ],
+                  data:
+                    emptyDatas[url.slice(url.lastIndexOf(".") + 1)] ||
+                    emptyDatas.other,
                 });
               }
             }
@@ -488,6 +485,10 @@ export const serve_rendered = {
         renderer.load(styleJSON);
 
         return renderer;
+      }
+
+      function destroyRenderer(renderer) {
+        renderer.release();
       }
 
       await Promise.all(
@@ -636,7 +637,7 @@ export const serve_rendered = {
                 createPool(
                   {
                     create: () => createRenderer(config, scale + 1, styleJSON),
-                    destroy: (renderer) => renderer.release(),
+                    destroy: (renderer) => destroyRenderer(renderer),
                   },
                   {
                     min: config.options.minPoolSize,

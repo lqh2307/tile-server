@@ -5,6 +5,7 @@ import SphericalMercator from "@mapbox/sphericalmercator";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
 import { PMTiles, FetchSource } from "pmtiles";
 import fsPromise from "node:fs/promises";
+import { getConfig } from "./config.js";
 import handlebars from "handlebars";
 import sqlite3 from "sqlite3";
 import path from "node:path";
@@ -65,17 +66,16 @@ export async function compileTemplate(template, data) {
 }
 
 /**
- * Render tile
+ * Render data
  * @param {object} item
  * @param {number} scale
- * @param {number} compression
  * @param {number} tileSize
  * @param {number} x
  * @param {number} y
  * @param {number} z
  * @returns {Promise<Buffer>}
  */
-export async function renderTile(item, scale, compression, tileSize, x, y, z) {
+export async function renderData(item, scale, tileSize, x, y, z) {
   const params = {
     zoom: z,
     center: getLonLatCenterFromXYZ(x, y, z),
@@ -87,7 +87,6 @@ export async function renderTile(item, scale, compression, tileSize, x, y, z) {
   // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
   // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in HACK2.
   if (tileSize === 256) {
-    // For 256px tiles, use zoom - 1
     params.zoom = z - 1;
 
     if (z === 0) {
@@ -101,46 +100,52 @@ export async function renderTile(item, scale, compression, tileSize, x, y, z) {
   const renderer = await item.renderers[scale - 1].acquire();
 
   return new Promise((resolve, reject) => {
-    renderer.render(params, async (error, data) => {
+    renderer.render(params, (error, data) => {
       item.renderers[scale - 1].release(renderer);
 
       if (error) {
         return reject(error);
       }
 
-      const image = sharp(data, {
-        raw: {
-          premultiplied: true,
-          width: params.width * scale,
-          height: params.height * scale,
-          channels: 4,
-        },
-      });
-
-      // HACK2 256px tiles are a zoom level lower than maplibre-native default tiles.
-      // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-      // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized here.
-      if (z === 0 && tileSize === 256) {
-        image.resize({
-          width: 256 * scale,
-          height: 256 * scale,
-        });
-      }
-      // END HACK2
-
-      image
-        .png({
-          compressionLevel: compression,
-        })
-        .toBuffer((error, buffer) => {
-          if (error) {
-            return reject(error);
-          }
-
-          resolve(buffer);
-        });
+      resolve(data);
     });
   });
+}
+
+/**
+ * Render image
+ * @param {object} data
+ * @param {number} scale
+ * @param {number} compression
+ * @param {number} tileSize
+ * @param {number} z
+ * @returns {Promise<Buffer>}
+ */
+export async function processImage(data, scale, compression, tileSize, z) {
+  const image = sharp(data, {
+    raw: {
+      premultiplied: true,
+      width: tileSize * scale,
+      height: tileSize * scale,
+      channels: 4,
+    },
+  });
+
+  // HACK2 256px tiles are a zoom level lower than maplibre-native default tiles.
+  // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
+  if (z === 0 && tileSize === 256) {
+    image.resize({
+      width: 256 * scale,
+      height: 256 * scale,
+    });
+  }
+  // END HACK2
+
+  return await image
+    .png({
+      compressionLevel: compression,
+    })
+    .toBuffer();
 }
 
 /**
@@ -217,14 +222,14 @@ export function getRequestHost(req) {
 }
 
 /**
- *
- * @param {object} fontPath
+ * Get fonts pbf
  * @param {string} ids
  * @param {string} range
  * @returns {Promise<Buffer>}
- * @returns
  */
-export async function getFontsPBF(config, ids, range) {
+export async function getFontsPBF(ids, range) {
+  const config = getConfig();
+
   const data = await Promise.all(
     ids.split(",").map(async (id) => {
       try {
@@ -261,6 +266,20 @@ export async function getFontsPBF(config, ids, range) {
   );
 
   return glyphCompose.combine(data);
+}
+
+/**
+ * Get sprite
+ * @param {string} id
+ * @param {string} fileName
+ * @returns {Promise<Buffer>}
+ */
+export async function getSprite(id, fileName) {
+  const config = getConfig();
+
+  const filePath = path.join(config.options.paths.sprites, id, fileName);
+
+  return await fs.readFile(filePath);
 }
 
 /**
@@ -513,8 +532,8 @@ export async function validateSprite(spriteDirPath) {
   await Promise.all(
     spriteFileNames.map(async (spriteFileNames) => {
       /* Validate JSON sprite */
-      let filePath = path.join(spriteDirPath, `${spriteFileNames}.json`);
-      const fileData = await fsPromise.readFile(filePath, "utf8");
+      const jsonFilePath = path.join(spriteDirPath, `${spriteFileNames}.json`);
+      const fileData = await fsPromise.readFile(jsonFilePath, "utf8");
       const jsonData = JSON.parse(fileData);
 
       Object.values(jsonData).forEach((value) => {
@@ -531,9 +550,9 @@ export async function validateSprite(spriteDirPath) {
       });
 
       /* Validate PNG sprite */
-      filePath = path.join(spriteDirPath, `${spriteFileNames}.png`);
+      const pngFilePath = path.join(spriteDirPath, `${spriteFileNames}.png`);
 
-      const pngMetadata = await sharp(filePath).metadata();
+      const pngMetadata = await sharp(pngFilePath).metadata();
 
       if (pngMetadata.format !== "png") {
         throw new Error("Invalid png file");
@@ -543,41 +562,11 @@ export async function validateSprite(spriteDirPath) {
 }
 
 /**
- * Create repo file
- * @param {object} repo
- * @param {string} repoFilePath
- */
-export async function createRepoFile(repo, repoFilePath) {
-  function getCircularReplacer() {
-    const seen = new WeakMap();
-    const paths = new Map();
-
-    return (key, value) => {
-      if (typeof value === "object" && value !== null) {
-        if (seen.has(value)) {
-          return;
-        }
-
-        seen.set(value, true);
-        paths.set(value, key);
-      }
-
-      return value;
-    };
-  }
-
-  const jsonData = JSON.stringify(repo, getCircularReplacer(), 2);
-
-  await fsPromise.writeFile(repoFilePath, jsonData, "utf8");
-}
-
-/**
  * Download file
  * @param {string} url
  * @param {string} outputPath
  * @param {boolean} overwrite
  * @returns {Promise<string>}
- * @returns
  */
 export async function downloadFile(url, outputPath) {
   await fsPromise.mkdir(path.dirname(outputPath), {
