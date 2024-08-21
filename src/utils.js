@@ -154,9 +154,13 @@ export async function processImage(data, scale, compression, tileSize, z) {
  * @returns {Promise<boolean>}
  */
 export async function isValidFile(filePath) {
-  const stat = await fsPromise.stat(filePath);
+  try {
+    const stat = await fsPromise.stat(filePath);
 
-  return stat.isFile() === true && stat.size > 0;
+    return stat.isFile() === true && stat.size > 0;
+  } catch (error) {
+    return false;
+  }
 }
 
 /**
@@ -165,9 +169,13 @@ export async function isValidFile(filePath) {
  * @returns {Promise<boolean>}
  */
 export async function isValidFolder(dirPath) {
-  const stat = await fsPromise.stat(dirPath);
+  try {
+    const stat = await fsPromise.stat(dirPath);
 
-  return stat.isDirectory() === true;
+    return stat.isDirectory() === true;
+  } catch (error) {
+    return false;
+  }
 }
 
 /**
@@ -279,7 +287,7 @@ export async function getSprite(id, fileName) {
 
   const filePath = path.join(config.options.paths.sprites, id, fileName);
 
-  return await fs.readFile(filePath);
+  return await fsPromise.readFile(filePath);
 }
 
 /**
@@ -580,7 +588,7 @@ export async function downloadFile(url, outputPath) {
   });
 
   return new Promise((resolve, reject) => {
-    const writer = fsPromise.createWriteStream(outputPath);
+    const writer = fs.createWriteStream(outputPath);
 
     response.data.pipe(writer);
 

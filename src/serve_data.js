@@ -281,7 +281,7 @@ export const serve_data = {
                 `${id}.mbtiles`
               );
 
-              if (isValidFile(filePath) === false) {
+              if ((await isValidFile(filePath)) === false) {
                 await downloadFile(item.mbtiles, filePath);
               }
 
