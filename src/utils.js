@@ -133,7 +133,7 @@ export async function processImage(data, scale, compression, tileSize, z) {
     }
   }
 
-  image = sharp(data, {
+  const image = sharp(data, {
     raw: {
       premultiplied: true,
       width: tileSize * scale,
