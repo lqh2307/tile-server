@@ -240,10 +240,10 @@ export function getRequestHost(req) {
 /**
  * Get fonts pbf
  * @param {string} ids
- * @param {string} range
+ * @param {string} fileName
  * @returns {Promise<Buffer>}
  */
-export async function getFontsPBF(ids, range) {
+export async function getFontsPBF(ids, fileName) {
   const config = getConfig();
 
   const data = await Promise.all(
@@ -254,11 +254,7 @@ export async function getFontsPBF(ids, range) {
           throw new Error("Font is not found");
         }
 
-        const filePath = path.join(
-          config.options.paths.fonts,
-          id,
-          `${range}.pbf`
-        );
+        const filePath = path.join(config.options.paths.fonts, id, fileName);
 
         return await fsPromise.readFile(filePath);
       } catch (error) {
@@ -273,7 +269,7 @@ export async function getFontsPBF(ids, range) {
           "template",
           "fonts",
           fallbackFont,
-          `${range}.pbf`
+          fileName
         );
 
         return await fsPromise.readFile(filePath);

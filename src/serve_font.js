@@ -17,7 +17,10 @@ function getFontHandler() {
     const ids = decodeURI(req.params.id);
 
     try {
-      let data = await getFontsPBF(ids, req.params.range);
+      let data = await getFontsPBF(
+        ids,
+        req.url.slice(req.url.lastIndexOf("/") + 1)
+      );
 
       /* Gzip pbf font */
       const headers = detectFormatAndHeaders(data).headers;

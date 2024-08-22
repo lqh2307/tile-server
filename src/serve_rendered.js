@@ -403,11 +403,11 @@ export const serve_rendered = {
                 });
               }
             } else if (protocol === "fonts:") {
-              const fonts = parts[2];
-              const range = parts[3].split(".")[0];
+              const ids = parts[2];
+              const fileName = parts[3];
 
               try {
-                let data = await getFontsPBF(fonts, range);
+                let data = await getFontsPBF(ids, fileName);
 
                 /* Unzip pbf font */
                 const headers = detectFormatAndHeaders(data).headers;
