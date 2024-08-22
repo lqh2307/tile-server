@@ -82,7 +82,6 @@ export async function renderData(item, scale, tileSize, x, y, z) {
     } else {
       // HACK1 256px tiles are a zoom level lower than maplibre-native default tiles.
       // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-      z = 0;
       tileSize = 512;
       // END HACK1
     }
