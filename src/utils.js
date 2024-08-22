@@ -88,7 +88,7 @@ export async function renderData(item, scale, tileSize, x, y, z) {
     } else {
       // HACK1: This hack allows tile-server to support zoom level 0 - 256px tiles, which would actually be zoom -1 in maplibre-gl-native
       params.width = 512;
-      params.height - 512;
+      params.height = 512;
       // END HACK1
     }
   }
