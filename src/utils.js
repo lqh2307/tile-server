@@ -75,40 +75,39 @@ export async function compileTemplate(template, data) {
  * @returns {Promise<Buffer>}
  */
 export async function renderData(item, scale, tileSize, x, y, z) {
-  const params = {
-    center: getLonLatCenterFromXYZ(x, y, z),
-    width: tileSize,
-    height: tileSize,
-  };
-
   if (tileSize === 256) {
-    // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in HACK2.
-    params.zoom = z - 1;
-
-    // HACK1 256px tiles are a zoom level lower than maplibre-native default tiles.
-    // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-    if (z === 0) {
-      params.zoom = 0;
-      params.width = 512;
-      params.height = 512;
+    if (z !== 0) {
+      // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in HACK2.
+      z = z - 1;
+    } else {
+      // HACK1 256px tiles are a zoom level lower than maplibre-native default tiles.
+      // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
+      z = 0;
+      tileSize = 512;
+      // END HACK1
     }
-    // END HACK1
-  } else {
-    params.zoom = z;
   }
 
   const renderer = await item.renderers[scale - 1].acquire();
 
   return new Promise((resolve, reject) => {
-    renderer.render(params, (error, data) => {
-      item.renderers[scale - 1].release(renderer);
+    renderer.render(
+      {
+        center: getLonLatCenterFromXYZ(x, y, z),
+        zoom: z,
+        width: tileSize,
+        height: tileSize,
+      },
+      (error, data) => {
+        item.renderers[scale - 1].release(renderer);
 
-      if (error) {
-        return reject(error);
+        if (error) {
+          return reject(error);
+        }
+
+        resolve(data);
       }
-
-      resolve(data);
-    });
+    );
   });
 }
 
@@ -122,7 +121,20 @@ export async function renderData(item, scale, tileSize, x, y, z) {
  * @returns {Promise<Buffer>}
  */
 export async function processImage(data, scale, compression, tileSize, z) {
-  const image = sharp(data, {
+  let needDownSize = false;
+
+  if (tileSize === 256) {
+    if (z == 0) {
+      // HACK2 256px tiles are a zoom level lower than maplibre-native default tiles.
+      // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
+      tileSize = 512;
+
+      needDownSize = true;
+      // END HACK2
+    }
+  }
+
+  image = sharp(data, {
     raw: {
       premultiplied: true,
       width: tileSize * scale,
@@ -131,15 +143,12 @@ export async function processImage(data, scale, compression, tileSize, z) {
     },
   });
 
-  // HACK2 256px tiles are a zoom level lower than maplibre-native default tiles.
-  // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-  if (z === 0 && tileSize === 256) {
+  if (needDownSize === true) {
     image.resize({
       width: 256 * scale,
       height: 256 * scale,
     });
   }
-  // END HACK2
 
   return await image
     .png({
