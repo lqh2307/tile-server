@@ -76,25 +76,26 @@ export async function compileTemplate(template, data) {
  */
 export async function renderData(item, scale, tileSize, x, y, z) {
   const params = {
-    zoom: z,
     center: getLonLatCenterFromXYZ(x, y, z),
     width: tileSize,
     height: tileSize,
   };
 
-  // HACK1 256px tiles are a zoom level lower than maplibre-native default tiles.
-  // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
-  // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in HACK2.
   if (tileSize === 256) {
+    // Since zoom -1 isn't supported, a double sized zoom 0 tile is requested and resized in HACK2.
     params.zoom = z - 1;
 
+    // HACK1 256px tiles are a zoom level lower than maplibre-native default tiles.
+    // This hack allows tile-server to support zoom 0 256px tiles, which would actually be zoom -1 in maplibre-native.
     if (z === 0) {
       params.zoom = 0;
       params.width = 512;
       params.height = 512;
     }
+    // END HACK1
+  } else {
+    params.zoom = z;
   }
-  // END HACK1
 
   const renderer = await item.renderers[scale - 1].acquire();
 
