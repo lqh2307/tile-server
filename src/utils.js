@@ -17,8 +17,6 @@ import util from "util";
 
 const mercator = new SphericalMercator();
 
-const fallbackFont = "Open Sans Regular";
-
 /**
  * Get xyz tile center from lon lat z
  * @param {number} lon
@@ -56,7 +54,6 @@ export function getLonLatCenterFromXYZ(x, y, z) {
  */
 export async function compileTemplate(template, data) {
   const filePath = path.resolve("public", "templates", `${template}.tmpl`);
-
   const fileData = await fsPromise.readFile(filePath, "utf8");
 
   const compiler = handlebars.compile(fileData);
@@ -231,7 +228,7 @@ export async function findFolders(dirPath, regex) {
  * @returns {string}
  */
 export function getRequestHost(req) {
-  return new URL(`${req.protocol}://${req.headers.host}/`).toString();
+  return `${req.protocol}://${req.headers.host}/`;
 }
 
 /**
@@ -243,21 +240,25 @@ export function getRequestHost(req) {
 export async function getFontsPBF(ids, fileName) {
   const config = getConfig();
 
+  const fonts = ids.split(",");
+
   const data = await Promise.all(
-    ids.split(",").map(async (id) => {
+    fonts.map(async (font) => {
       try {
         /* Check font is exist? */
-        if (config.repo.fonts[id] === undefined) {
+        if (config.repo.fonts[font] === undefined) {
           throw new Error("Font is not found");
         }
 
-        const filePath = path.join(config.options.paths.fonts, id, fileName);
+        const filePath = path.join(config.options.paths.fonts, font, fileName);
 
         return await fsPromise.readFile(filePath);
       } catch (error) {
+        const fallbackFont = "Open Sans Regular";
+
         printLog(
           "warning",
-          `Failed to get font "${id}": ${error}. Using fallback font "${fallbackFont}"...`
+          `Failed to get font "${font}": ${error}. Using fallback font "${fallbackFont}"...`
         );
 
         const filePath = path.resolve(
@@ -813,7 +814,7 @@ export function createNewXYZTileJSON(metadata) {
     type: "overlay",
     format: "png",
     scheme: "xyz", // Guarantee scheme always is XYZ
-    bounds: [-180, -85.051128779807, 180, 85.051128779807],
+    bounds: [-180, -90, 180, 90],
     minzoom: 0,
     maxzoom: 22,
   };
