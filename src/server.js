@@ -94,7 +94,13 @@ function setupServer(config) {
     .use("/styles", serve_style.init(config))
     .use("/styles", serve_rendered.init(config))
     .listen(config.options.listenPort, () => {
-      printLog("info", `Listening on port: ${config.options.listenPort}`);
+      printLog(
+        "info",
+        `HTTP Server is listening on port: ${config.options.listenPort}`
+      );
+    })
+    .on("error", (error) => {
+      printLog("error", `HTTP server is stopped by: ${error}`);
     });
 }
 
