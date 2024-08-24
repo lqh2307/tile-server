@@ -48,32 +48,32 @@ Example config.json content:
 			"maxPoolSize": 16
 		},
 		"styles": {
-			"osm-basic": {
-				"style": "osm-basic/style.json"
+			"basic": {
+				"style": "basic/style.json"
 			},
-			"osm-positron": {
-				"style": "osm-positron/style.json"
+			"positron": {
+				"style": "positron/style.json"
 			},
-			"osm-dark-matter": {
-				"style": "osm-dark-matter/style.json"
+			"dark-matter": {
+				"style": "dark-matter/style.json"
 			},
-			"osm-fiord-color": {
-				"style": "osm-fiord-color/style.json"
+			"fiord-color": {
+				"style": "fiord-color/style.json"
 			},
-			"osm-liberty": {
-				"style": "osm-liberty/style.json"
+			"liberty": {
+				"style": "liberty/style.json"
 			},
-			"osm-terrain": {
-				"style": "osm-terrain/style.json"
+			"terrain": {
+				"style": "terrain/style.json"
 			},
-			"osm-toner": {
-				"style": "osm-toner/style.json"
+			"toner": {
+				"style": "toner/style.json"
 			},
-			"osm-bright": {
-				"style": "osm-bright/style.json"
+			"bright": {
+				"style": "bright/style.json"
 			},
-			"osm-3d": {
-				"style": "osm-3d/style.json"
+			"3d": {
+				"style": "3d/style.json"
 			},
 			"ncds_20c": {
 				"style": "ncds_20c/style.json"
@@ -86,8 +86,8 @@ Example config.json content:
 			"maptiler-osm-2020-02-10-v3.11-asia_vietnam": {
 				"mbtiles": "https://data.maptiler.com/download/WyI4ZGYyNjRmMi0yNmMzLTRmZTMtOWFjMS1kNDkyMGJkYWRmYzIiLCItMSIsMTcwMDld.ZsnBRw.ncIEITZnE-OUjfCpaLqiqPQv4sw/maptiler-osm-2020-02-10-v3.11-asia_vietnam.mbtiles"
 			},
-			"asia_cambodia": {
-				"mbtiles": "asia_vietnam/asia_cambodia.mbtiles"
+			"maptiler-osm-2020-02-10-v3.11-asia_cambodia.mbtiles": {
+				"mbtiles": "https://data.maptiler.com/download/WyI4ZGYyNjRmMi0yNmMzLTRmZTMtOWFjMS1kNDkyMGJkYWRmYzIiLCItMSIsMTY5Mjld.ZsngxA.VwWB3Ja4Tzb_haPX1lbrG9-hqOY/maptiler-osm-2020-02-10-v3.11-asia_cambodia.mbtiles"
 			},
 			"ncds_20c": {
 				"mbtiles": "ncds_20c/ncds_20c.mbtiles"
@@ -97,9 +97,6 @@ Example config.json content:
 			},
 			"protomaps_firenze": {
 				"pmtiles": "https://open.gishub.org/data/pmtiles/protomaps_firenze.pmtiles"
-			},
-			"overture": {
-				"pmtiles": "https://storage.googleapis.com/ahp-research/overture/pmtiles/overture.pmtiles"
 			},
 			"go_ms_building_footprints": {
 				"pmtiles": "https://data.source.coop/vida/google-microsoft-open-buildings/pmtiles/go_ms_building_footprints.pmtiles"
@@ -112,8 +109,8 @@ Example config.json content:
 			}
 		},
 		"sprites": {
-			"osm-liberty": true,
-			"osm-basic": true
+			"liberty": true,
+			"basic": true
 		},
 		"fonts": {
 			"Open Sans Regular": true,
