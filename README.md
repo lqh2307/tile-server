@@ -83,17 +83,14 @@ Example config.json content:
 			}
 		},
 		"data": {
-			"asia_vietnam": {
-				"mbtiles": "asia_vietnam.mbtiles"
+			"maptiler-osm-2020-02-10-v3.11-asia_vietnam": {
+				"mbtiles": "https://data.maptiler.com/download/WyI4ZGYyNjRmMi0yNmMzLTRmZTMtOWFjMS1kNDkyMGJkYWRmYzIiLCItMSIsMTcwMDld.ZsnBRw.ncIEITZnE-OUjfCpaLqiqPQv4sw/maptiler-osm-2020-02-10-v3.11-asia_vietnam.mbtiles"
 			},
 			"asia_cambodia": {
-				"mbtiles": "asia_cambodia.mbtiles"
+				"mbtiles": "asia_vietnam/asia_cambodia.mbtiles"
 			},
 			"ncds_20c": {
-				"mbtiles": "ncds_20c.mbtiles"
-			},
-			"vietnam": {
-				"mbtiles": "vietnam.mbtiles"
+				"mbtiles": "ncds_20c/ncds_20c.mbtiles"
 			},
 			"planet": {
 				"pmtiles": "https://data.source.coop/protomaps/openstreetmap/tiles/v3.pmtiles"
@@ -108,7 +105,7 @@ Example config.json content:
 				"pmtiles": "https://data.source.coop/vida/google-microsoft-open-buildings/pmtiles/go_ms_building_footprints.pmtiles"
 			},
 			"ODbL_firenze": {
-				"pmtiles": "ODbL_firenze.pmtiles"
+				"pmtiles": "ODbL_firenze/ODbL_firenze.pmtiles"
 			},
 			"zurich_switzerland": {
 				"mbtiles": "https://github.com/acalcutt/tileserver-gl/releases/download/test_data/zurich_switzerland.mbtiles"
