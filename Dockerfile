@@ -4,9 +4,9 @@ ARG TARGET_IMAGE=ubuntu:22.04
 FROM $BUILDER_IMAGE AS builder
 
 RUN \
-  set -ex && \
-  export DEBIAN_FRONTEND=noninteractive && \
-  apt-get -y update && \
+  set -ex; \
+  export DEBIAN_FRONTEND=noninteractive; \
+  apt-get -y update; \
   apt-get -y --no-install-recommends install \
     pkg-config \
     build-essential \
@@ -21,31 +21,32 @@ RUN \
     libgif-dev \
     libpng-dev \
     libwebp-dev \
-    libcurl4-openssl-dev && \
-  apt-get -y --purge autoremove && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/*
+    libcurl4-openssl-dev; \
+  apt-get -y --purge autoremove; \
+  apt-get clean; \
+  rm -rf /var/lib/apt/lists/*;
 
 RUN \
-  wget -c https://nodejs.org/dist/v20.17.0/node-v20.17.0-linux-x64.tar.xz && \
-  tar -xvf node-v20.17.0-linux-x64.tar.xz && \
-  cp -r node-v20.17.0-linux-x64/bin node-v20.17.0-linux-x64/include node-v20.17.0-linux-x64/lib node-v20.17.0-linux-x64/share /usr/ && \
-  npm i npm@latest && \
-  rm -rf node-v20.17.0-linux-x64*
+  wget -c https://nodejs.org/dist/v20.17.0/node-v20.17.0-linux-x64.tar.xz; \
+  tar -xvf node-v20.17.0-linux-x64.tar.xz; \
+  cp -r node-v20.17.0-linux-x64/bin node-v20.17.0-linux-x64/include node-v20.17.0-linux-x64/lib node-v20.17.0-linux-x64/share /usr/; \
+  rm -rf node-v20.17.0-linux-x64*;
 
 WORKDIR /tile-server
 
 ADD . .
 
-RUN npm install --omit=dev;
+RUN \
+  npm install npm@latest; \
+  npm install --omit=dev;
 
 
 FROM $TARGET_IMAGE AS final
 
 RUN \
-  set -ex && \
-  export DEBIAN_FRONTEND=noninteractive && \
-  apt-get -y update && \
+  set -ex; \
+  export DEBIAN_FRONTEND=noninteractive; \
+  apt-get -y update; \
   apt-get -y --no-install-recommends install \
     xvfb \
     libglfw3 \
@@ -57,9 +58,9 @@ RUN \
     libpng16-16 \
     libwebp7 \
     libcurl4 && \
-  apt-get -y --purge autoremove && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/*
+  apt-get -y --purge autoremove; \
+  apt-get clean; \
+  rm -rf /var/lib/apt/lists/*;
 
 WORKDIR /tile-server
 
