@@ -35,9 +35,7 @@ function serveHealthHandler(config) {
     } catch (error) {
       printLog("error", `Failed to check health server": ${error}`);
 
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send("Internal server error");
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
     }
   };
 }
@@ -45,19 +43,15 @@ function serveHealthHandler(config) {
 function serveRestartHandler() {
   return async (req, res, next) => {
     try {
-      printLog("info", "Received restart request. Restarting server...");
-
       setTimeout(() => {
-        process.exit(1);
+        process.kill(Number(process.env.MAIN_PID), "SIGTERM");
       }, 0);
 
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
       printLog("error", `Failed to restart server": ${error}`);
 
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send("Internal server error");
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
     }
   };
 }
@@ -65,19 +59,15 @@ function serveRestartHandler() {
 function serveKillHandler() {
   return async (req, res, next) => {
     try {
-      printLog("info", "Received kill request. Killed server!");
-
       setTimeout(() => {
-        process.exit(0);
+        process.kill(Number(process.env.MAIN_PID), "SIGINT");
       }, 0);
 
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
       printLog("error", `Failed to kill server": ${error}`);
 
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send("Internal server error");
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
     }
   };
 }
