@@ -20,25 +20,37 @@ const numThreads = Number(program.opts().num_threads);
 /* Setup envs & events */
 process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length * 2); // For libuv
 
-process.on("SIGINT", () => {
-  printLog("info", `Received "SIGINT" signal. Killed server!`);
-
-  process.exit(0);
-});
-
-process.on("SIGTERM", () => {
-  printLog("info", `Received "SIGTERM" signal. Killed server!`);
-
-  process.exit(0);
-});
-
 /* Start server */
 if (numThreads === 1) {
+  process.on("SIGINT", () => {
+    printLog("info", `Received "SIGINT" signal. Killed server!`);
+
+    process.exit(0);
+  });
+
+  process.on("SIGTERM", () => {
+    printLog("info", `Received "SIGTERM" signal. Killed server!`);
+
+    process.exit(0);
+  });
+
   printLog("info", `Starting server with ${numThreads} threads...`);
 
   startServer();
 } else {
   if (cluster.isPrimary === true) {
+    process.on("SIGINT", () => {
+      printLog("info", `Received "SIGINT" signal. Killed server!`);
+
+      process.exit(0);
+    });
+
+    process.on("SIGTERM", () => {
+      printLog("info", `Received "SIGTERM" signal. Killed server!`);
+
+      process.exit(0);
+    });
+
     printLog("info", `Starting server with ${numThreads} threads...`);
 
     for (let i = 0; i < numThreads; i++) {
