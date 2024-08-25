@@ -39,7 +39,7 @@ function loadConfig(workerID) {
           interval: config.options.watchToKill,
         })
         .on("change", () => {
-          printLog("info", `Config file has changed. Killed server!`, workerID);
+          printLog("info", `Config file has changed. Kill server...`, workerID);
 
           process.kill(Number(process.env.MAIN_PID), "SIGINT");
         });
