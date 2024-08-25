@@ -4,17 +4,9 @@ import path from "node:path";
 import fs from "node:fs";
 import os from "os";
 
-const configFilePath = path.resolve("data", "config.json");
-
-const folderPaths = {
-  styles: path.resolve("data", "styles"),
-  fonts: path.resolve("data", "fonts"),
-  sprites: path.resolve("data", "sprites"),
-  mbtiles: path.resolve("data", "mbtiles"),
-  pmtiles: path.resolve("data", "pmtiles"),
-};
-
-const config = {};
+let configFilePath;
+let folderPaths;
+let config;
 
 /**
  * Load config.json file
@@ -22,11 +14,21 @@ const config = {};
  */
 export function loadConfigFile() {
   /* Validate config file path */
+  configFilePath = path.resolve("data", "config.json");
+
   if (fs.statSync(configFilePath).isFile() === false) {
     throw new Error(`"config.json" file: ${configFilePath} does not exist`);
   }
 
   /* Validate folder paths */
+  folderPaths = {
+    styles: path.resolve("data", "styles"),
+    fonts: path.resolve("data", "fonts"),
+    sprites: path.resolve("data", "sprites"),
+    mbtiles: path.resolve("data", "mbtiles"),
+    pmtiles: path.resolve("data", "pmtiles"),
+  };
+
   Object.keys(folderPaths).forEach((name) => {
     if (fs.statSync(folderPaths[name]).isDirectory() === false) {
       throw new Error(`"${name}" folder: ${folderPaths[name]} does not exist`);
@@ -38,7 +40,7 @@ export function loadConfigFile() {
   const configData = JSON.parse(fileData);
 
   /* Create config object */
-  Object.assign(config, {
+  config = {
     options: {
       listenPort: configData.options?.listenPort || 8080,
       killEndpoint: configData.options?.killEndpoint ?? true,
@@ -67,7 +69,7 @@ export function loadConfigFile() {
       sprites: {},
     },
     startupComplete: false,
-  });
+  };
 
   return config;
 }
