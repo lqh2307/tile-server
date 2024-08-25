@@ -294,19 +294,15 @@ export async function getSprite(id, fileName) {
  * Print log to console
  * @param {"info"|"warning"|"error"} level
  * @param {string} msg
- * @param {string} prefix
  * @returns {void}
  */
-export function printLog(level, msg, prefix) {
-  const dateTime = new Date().toISOString();
-  prefix = prefix === undefined ? "" : `[${prefix}] `;
-
+export function printLog(level, msg) {
   if (level === "warning") {
-    console.warn(`${dateTime} [WARNING] ${prefix}${msg}`);
+    console.warn(`${new Date().toISOString()} [PID = ${process.id}] [WARNING] ${msg}`);
   } else if (level === "error") {
-    console.error(`${dateTime} [ERROR] ${prefix}${msg}`);
+    console.error(`${new Date().toISOString()} [PID = ${process.id}] [ERROR] ${msg}`);
   } else {
-    console.info(`${dateTime} [INFO] ${prefix}${msg}`);
+    console.info(`${new Date().toISOString()} [PID = ${process.id}] [INFO] ${msg}`);
   }
 }
 

@@ -16,11 +16,10 @@ import cors from "cors";
 
 /**
  * Load config.json file
- * @param {number} workerID
  * @returns {object}
  */
-function loadConfig(workerID) {
-  printLog("info", `Loading config file...`, workerID);
+function loadConfig() {
+  printLog("info", `Loading config file...`);
 
   try {
     const config = loadConfigFile();
@@ -28,8 +27,7 @@ function loadConfig(workerID) {
     if (config.options.watchToKill > 0) {
       printLog(
         "info",
-        `Watch config file changes interval ${config.options.watchToKill}ms to kill server`,
-        workerID
+        `Watch config file changes interval ${config.options.watchToKill}ms to kill server`
       );
 
       chokidar
@@ -39,15 +37,12 @@ function loadConfig(workerID) {
           interval: config.options.watchToKill,
         })
         .on("change", () => {
-          printLog("info", `Config file has changed. Kill server...`, workerID);
-
           process.kill(Number(process.env.MAIN_PID), "SIGINT");
         });
     } else if (config.options.watchToRestart > 0) {
       printLog(
         "info",
-        `Watch config file changes interval ${config.options.watchToRestart}ms to restart server`,
-        workerID
+        `Watch config file changes interval ${config.options.watchToRestart}ms to restart server`
       );
 
       chokidar
@@ -57,23 +52,13 @@ function loadConfig(workerID) {
           interval: config.options.watchToRestart,
         })
         .on("change", () => {
-          printLog(
-            "info",
-            `Config file has changed. Restarting server...`,
-            workerID
-          );
-
           process.kill(Number(process.env.MAIN_PID), "SIGTERM");
         });
     }
 
     return config;
   } catch (error) {
-    printLog(
-      "error",
-      `Failed to load config file: ${error}. Exited!`,
-      workerID
-    );
+    printLog("error", `Failed to load config file: ${error}. Exited!`);
 
     process.exit(0);
   }
@@ -81,12 +66,11 @@ function loadConfig(workerID) {
 
 /**
  * Setup express server
- * @param {number} workerID
  * @param {object} config
  * @returns {void}
  */
-function setupServer(workerID, config) {
-  printLog("info", `Starting HTTP server...`, workerID);
+function setupServer(config) {
+  printLog("info", `Starting HTTP server...`);
 
   express()
     .disable("x-powered-by")
@@ -103,23 +87,21 @@ function setupServer(workerID, config) {
     .listen(config.options.listenPort, () => {
       printLog(
         "info",
-        `HTTP Server is listening on port: ${config.options.listenPort}`,
-        workerID
+        `HTTP Server is listening on port: ${config.options.listenPort}`
       );
     })
     .on("error", (error) => {
-      printLog("error", `HTTP server is stopped by: ${error}`, workerID);
+      printLog("error", `HTTP server is stopped by: ${error}`);
     });
 }
 
 /**
  * Load data
- * @param {number} workerID
  * @param {object} config
  * @returns {void}
  */
-function loadData(workerID, config) {
-  printLog("info", `Loading data...`, workerID);
+function loadData(config) {
+  printLog("info", `Loading data...`);
 
   Promise.all([
     serve_font.add(config),
@@ -129,12 +111,12 @@ function loadData(workerID, config) {
     .then(() => serve_style.add(config))
     .then(() => serve_rendered.add(config))
     .then(() => {
-      printLog("info", `Completed startup!`, workerID);
+      printLog("info", `Completed startup!`);
 
       config.startupComplete = true;
     })
     .catch((error) => {
-      printLog("error", `Failed to load data: ${error}. Exited!`, workerID);
+      printLog("error", `Failed to load data: ${error}. Exited!`);
 
       process.exit(0);
     });
@@ -142,13 +124,12 @@ function loadData(workerID, config) {
 
 /**
  * Start server
- * @param {number} workerID
  * @returns {void}
  */
-export function startServer(workerID) {
-  const config = loadConfig(workerID);
+export function startServer() {
+  const config = loadConfig();
 
-  setupServer(workerID, config);
+  setupServer(config);
 
-  loadData(workerID, config);
+  loadData(config);
 }

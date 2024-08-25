@@ -69,7 +69,7 @@ function serveKillHandler() {
 
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
-      printLog("error", `Failed to kill server": ${error}`);
+      printLog("error", `Failed to Killing server": ${error}`);
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)

@@ -22,13 +22,13 @@ if (cluster.isPrimary === true) {
   process.env.MAIN_PID = process.pid;
 
   process.on("SIGINT", () => {
-    printLog("info", `Received "SIGINT" signal. Kill server...`);
+    printLog("info", `Received "SIGINT" signal. Killing server...`);
 
     process.exit(0);
   });
 
   process.on("SIGTERM", () => {
-    printLog("info", `Received "SIGTERM" signal. Kill all worker...`);
+    printLog("info", `Received "SIGTERM" signal. Killing all worker...`);
 
     for (const id in cluster.workers) {
       cluster.workers[id].kill("SIGTERM");
@@ -46,12 +46,11 @@ if (cluster.isPrimary === true) {
   cluster.on("exit", (worker, code, signal) => {
     printLog(
       "info",
-      `Worker is died - Code: ${code} - Signal: ${signal}. Creating new one...`,
-      worker.id
+      `Worker with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
     );
 
     cluster.fork();
   });
 } else {
-  startServer(cluster.worker.id);
+  startServer();
 }
