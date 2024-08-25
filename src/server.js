@@ -76,7 +76,7 @@ function setupServer(config) {
     .disable("x-powered-by")
     .enable("trust proxy")
     .use(cors())
-    .use(morgan(config.options.loggerFormat))
+    .use(morgan(`[PID = ${process.pid}] ${config.options.loggerFormat}`))
     .use("/", serve_common.init(config))
     .use("/", serve_template.init(config))
     .use("/data", serve_data.init(config))
