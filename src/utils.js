@@ -19,10 +19,6 @@ import {
   getConfig,
 } from "./config.js";
 
-const mercator = new SphericalMercator();
-
-const fallbackFont = "Open Sans Regular";
-
 /**
  * Get xyz tile center from lon lat z
  * @param {number} lon
@@ -31,11 +27,9 @@ const fallbackFont = "Open Sans Regular";
  * @returns {[number,number,number]}
  */
 export function getXYZCenterFromLonLatZ(lon, lat, z) {
-  const centerPx = mercator.px([lon, lat], z);
-  const x = Math.floor(centerPx[0] / 256);
-  const y = Math.floor(centerPx[1] / 256);
+  const centerPx = new SphericalMercator().px([lon, lat], z);
 
-  return [x, y, z];
+  return [Math.floor(centerPx[0] / 256), Math.floor(centerPx[1] / 256), z];
 }
 
 /**
@@ -46,7 +40,7 @@ export function getXYZCenterFromLonLatZ(lon, lat, z) {
  * @returns {[number,number]}
  */
 export function getLonLatCenterFromXYZ(x, y, z) {
-  return mercator.ll(
+  return new SphericalMercator().ll(
     [((x + 0.5) / (1 << z)) * (256 << z), ((y + 0.5) / (1 << z)) * (256 << z)],
     z
   );
@@ -258,6 +252,8 @@ export async function getFontsPBF(ids, fileName) {
 
         return await fsPromise.readFile(filePath);
       } catch (error) {
+        const fallbackFont = "Open Sans Regular";
+
         printLog(
           "warning",
           `Failed to get font "${font}": ${error}. Using fallback font "${fallbackFont}"...`
