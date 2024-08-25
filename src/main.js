@@ -27,18 +27,24 @@ process.on("SIGTERM", () => {
 });
 
 /* Start server */
-if (cluster.isMaster) {
+if (numThreads === 1) {
   printLog("info", `Starting server with ${numThreads} threads...`);
 
-  for (let i = 0; i < numThreads; i++) {
-    cluster.fork();
-  }
-
-  cluster.on("exit", (worker) => {
-    printLog("info", `Worker ${worker.process.pid} is died. Creating new one...`);
-
-    cluster.fork();
-  });
+  startServer();
 } else {
-  startServer(cluster.worker.id);
+  if (cluster.isPrimary === true) {
+    printLog("info", `Starting server with ${numThreads} threads...`);
+
+    for (let i = 0; i < numThreads; i++) {
+      cluster.fork();
+    }
+
+    cluster.on("exit", (worker) => {
+      printLog("info", `Worker ${worker.process.pid} is died. Creating new one...`);
+
+      cluster.fork();
+    });
+  } else {
+    startServer(cluster.worker.id);
+  }
 }

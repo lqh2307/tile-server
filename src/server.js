@@ -16,16 +16,16 @@ import cors from "cors";
 
 /**
  * Load config.json file
- * @param {workerID} worker ID
- * @returns {config}
+ * @param {number} worker ID
+ * @returns {object}
  */
 function loadConfig(workerID) {
-  printLog("info", `[${workerID}] Loading config file...`);
+  printLog("info", `Loading config file...`, workerID);
 
   try {
     return loadConfigFile();
   } catch (error) {
-    printLog("error", `[${workerID}] Failed to load config file: ${error}. Exited!`);
+    printLog("error", `Failed to load config file: ${error}. Exited!`, workerID);
 
     process.exit(0);
   }
@@ -33,13 +33,13 @@ function loadConfig(workerID) {
 
 /**
  * Setup watch config file
- * @param {workerID} worker ID
+ * @param {number} worker ID
  * @param {object} config
  * @returns {void}
  */
 function setupWatchConfigFile(workerID, config) {
   if (config.options.watchToKill > 0) {
-    printLog("info", `[${workerID}] Watch config file changes interval ${config.options.watchToKill}ms to kill server`);
+    printLog("info", `Watch config file changes interval ${config.options.watchToKill}ms to kill server`, workerID);
 
     chokidar
       .watch(config.filePath, {
@@ -48,12 +48,12 @@ function setupWatchConfigFile(workerID, config) {
         interval: config.options.watchToKill,
       })
       .on("change", () => {
-        printLog("info", `[${workerID}] Config file has changed. Killed server!`);
+        printLog("info", `Config file has changed. Killed server!`, workerID);
 
         process.exit(0);
       });
   } else if (config.options.watchToRestart > 0) {
-    printLog("info", `[${workerID}] Watch config file changes interval ${config.options.watchToRestart}ms to restart server`);
+    printLog("info", `Watch config file changes interval ${config.options.watchToRestart}ms to restart server`, workerID);
 
     chokidar
       .watch(config.filePath, {
@@ -62,7 +62,7 @@ function setupWatchConfigFile(workerID, config) {
         interval: config.options.watchToRestart,
       })
       .on("change", () => {
-        printLog("info", `[${workerID}] Config file has changed. Restarting server...`);
+        printLog("info", `Config file has changed. Restarting server...`, workerID);
 
         process.exit(1);
       });
@@ -71,12 +71,12 @@ function setupWatchConfigFile(workerID, config) {
 
 /**
  * Setup express server
- * @param {workerID} worker ID
+ * @param {number} worker ID
  * @param {object} config
  * @returns {void}
  */
 function setupServer(workerID, config) {
-  printLog("info", `[${workerID}] Starting HTTP server...`);
+  printLog("info", `Starting HTTP server...`, workerID);
 
   express()
     .disable("x-powered-by")
@@ -91,32 +91,32 @@ function setupServer(workerID, config) {
     .use("/styles", serve_style.init(config))
     .use("/styles", serve_rendered.init(config))
     .listen(config.options.listenPort, () => {
-      printLog("info", `[${workerID}] HTTP Server is listening on port: ${config.options.listenPort}`);
+      printLog("info", `HTTP Server is listening on port: ${config.options.listenPort}`, workerID);
     })
     .on("error", (error) => {
-      printLog("error", `[${workerID}] HTTP server is stopped by: ${error}`);
+      printLog("error", `HTTP server is stopped by: ${error}`, workerID);
     });
 }
 
 /**
  * Load data
- * @param {workerID} worker ID
+ * @param {number} worker ID
  * @param {object} config
  * @returns {void}
  */
 function loadData(workerID, config) {
-  printLog("info", `[${workerID}] Loading data...`);
+  printLog("info", `Loading data...`, workerID);
 
   Promise.all([serve_font.add(config), serve_sprite.add(config), serve_data.add(config)])
     .then(() => serve_style.add(config))
     .then(() => serve_rendered.add(config))
     .then(() => {
-      printLog("info", `[${workerID}] Completed startup!`);
+      printLog("info", `Completed startup!`, workerID);
 
       config.startupComplete = true;
     })
     .catch((error) => {
-      printLog("error", `[${workerID}] Failed to load data: ${error}. Exited!`);
+      printLog("error", `Failed to load data: ${error}. Exited!`, workerID);
 
       process.exit(0);
     });
@@ -124,7 +124,7 @@ function loadData(workerID, config) {
 
 /**
  * Start server
- * @param {workerID} worker ID
+ * @param {number} worker ID
  * @returns {void}
  */
 export function startServer(workerID) {
