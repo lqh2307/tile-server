@@ -16,7 +16,7 @@ import cors from "cors";
 
 /**
  * Load config.json file
- * @param {number} worker ID
+ * @param {number} workerID
  * @returns {object}
  */
 function loadConfig(workerID) {
@@ -37,7 +37,7 @@ function loadConfig(workerID) {
 
 /**
  * Setup watch config file
- * @param {number} worker ID
+ * @param {number} workerID
  * @param {object} config
  * @returns {void}
  */
@@ -87,7 +87,7 @@ function setupWatchConfigFile(workerID, config) {
 
 /**
  * Setup express server
- * @param {number} worker ID
+ * @param {number} workerID
  * @param {object} config
  * @returns {void}
  */
@@ -120,7 +120,7 @@ function setupServer(workerID, config) {
 
 /**
  * Load data
- * @param {number} worker ID
+ * @param {number} workerID
  * @param {object} config
  * @returns {void}
  */
@@ -148,7 +148,7 @@ function loadData(workerID, config) {
 
 /**
  * Start server
- * @param {number} worker ID
+ * @param {number} workerID
  * @returns {void}
  */
 export function startServer(workerID) {

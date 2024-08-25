@@ -17,6 +17,8 @@ import util from "util";
 
 const mercator = new SphericalMercator();
 
+const fallbackFont = "Open Sans Regular";
+
 /**
  * Get xyz tile center from lon lat z
  * @param {number} lon
@@ -240,10 +242,8 @@ export function getRequestHost(req) {
 export async function getFontsPBF(ids, fileName) {
   const config = getConfig();
 
-  const fonts = ids.split(",");
-
   const data = await Promise.all(
-    fonts.map(async (font) => {
+    ids.split(",").map(async (font) => {
       try {
         /* Check font is exist? */
         if (config.repo.fonts[font] === undefined) {
@@ -254,8 +254,6 @@ export async function getFontsPBF(ids, fileName) {
 
         return await fsPromise.readFile(filePath);
       } catch (error) {
-        const fallbackFont = "Open Sans Regular";
-
         printLog(
           "warning",
           `Failed to get font "${font}": ${error}. Using fallback font "${fallbackFont}"...`

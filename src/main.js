@@ -48,7 +48,7 @@ if (numThreads === 1) {
     cluster.on("exit", (worker) => {
       printLog(
         "info",
-        `Worker ${worker.process.pid} is died. Creating new one...`
+        `Worker with process ID ${worker.process.pid} is died. Creating new one...`
       );
 
       cluster.fork();
