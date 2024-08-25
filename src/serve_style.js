@@ -82,7 +82,9 @@ function getStyleHandler(config) {
                 const sourceID = tile.slice(10);
                 const format = config.repo.datas[sourceID].tileJSON.format;
 
-                tile = `${getRequestHost(req)}data/${sourceID}/{z}/{x}/{y}.${format}`;
+                tile = `${getRequestHost(
+                  req
+                )}data/${sourceID}/{z}/{x}/{y}.${format}`;
               }
 
               return tile;

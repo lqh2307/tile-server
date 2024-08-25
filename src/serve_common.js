@@ -35,7 +35,9 @@ function serveHealthHandler(config) {
     } catch (error) {
       printLog("error", `Failed to check health server": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -51,7 +53,9 @@ function serveRestartHandler() {
     } catch (error) {
       printLog("error", `Failed to restart server": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -67,7 +71,9 @@ function serveKillHandler() {
     } catch (error) {
       printLog("error", `Failed to kill server": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }

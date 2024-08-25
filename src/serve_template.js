@@ -38,9 +38,13 @@ function serveFrontPageHandler(config) {
 
             styles[id] = {
               name: name,
-              xyz_link: `${getRequestHost(req)}styles/${id}/256/{z}/{x}/{y}.png`,
+              xyz_link: `${getRequestHost(
+                req
+              )}styles/${id}/256/{z}/{x}/{y}.png`,
               viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
-              thumbnail: `${getRequestHost(req)}styles/${id}/256/${z}/${x}/${y}.png`,
+              thumbnail: `${getRequestHost(
+                req
+              )}styles/${id}/256/${z}/${x}/${y}.png`,
               serve_wmts: config.options.serveWMTS === true,
               serve_rendered: true,
             };
@@ -73,7 +77,9 @@ function serveFrontPageHandler(config) {
             center[2]
           );
 
-          thumbnail = `${getRequestHost(req)}data/${id}/${z}/${x}/${y}.${format}`;
+          thumbnail = `${getRequestHost(
+            req
+          )}data/${id}/${z}/${x}/${y}.${format}`;
         }
 
         datas[id] = {

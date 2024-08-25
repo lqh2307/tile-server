@@ -26,7 +26,11 @@ function loadConfig(workerID) {
     const config = loadConfigFile();
 
     if (config.options.watchToKill > 0) {
-      printLog("info", `Watch config file changes interval ${config.options.watchToKill}ms to kill server`, workerID);
+      printLog(
+        "info",
+        `Watch config file changes interval ${config.options.watchToKill}ms to kill server`,
+        workerID
+      );
 
       chokidar
         .watch(config.filePath, {
@@ -40,7 +44,11 @@ function loadConfig(workerID) {
           process.kill(Number(process.env.MAIN_PID), "SIGINT");
         });
     } else if (config.options.watchToRestart > 0) {
-      printLog("info", `Watch config file changes interval ${config.options.watchToRestart}ms to restart server`, workerID);
+      printLog(
+        "info",
+        `Watch config file changes interval ${config.options.watchToRestart}ms to restart server`,
+        workerID
+      );
 
       chokidar
         .watch(config.filePath, {
@@ -49,7 +57,11 @@ function loadConfig(workerID) {
           interval: config.options.watchToRestart,
         })
         .on("change", () => {
-          printLog("info", `Config file has changed. Restarting server...`, workerID);
+          printLog(
+            "info",
+            `Config file has changed. Restarting server...`,
+            workerID
+          );
 
           process.kill(Number(process.env.MAIN_PID), "SIGTERM");
         });
@@ -57,7 +69,11 @@ function loadConfig(workerID) {
 
     return config;
   } catch (error) {
-    printLog("error", `Failed to load config file: ${error}. Exited!`, workerID);
+    printLog(
+      "error",
+      `Failed to load config file: ${error}. Exited!`,
+      workerID
+    );
 
     process.exit(0);
   }
@@ -85,7 +101,11 @@ function setupServer(workerID, config) {
     .use("/styles", serve_style.init(config))
     .use("/styles", serve_rendered.init(config))
     .listen(config.options.listenPort, () => {
-      printLog("info", `HTTP Server is listening on port: ${config.options.listenPort}`, workerID);
+      printLog(
+        "info",
+        `HTTP Server is listening on port: ${config.options.listenPort}`,
+        workerID
+      );
     })
     .on("error", (error) => {
       printLog("error", `HTTP server is stopped by: ${error}`, workerID);
@@ -101,7 +121,11 @@ function setupServer(workerID, config) {
 function loadData(workerID, config) {
   printLog("info", `Loading data...`, workerID);
 
-  Promise.all([serve_font.add(config), serve_sprite.add(config), serve_data.add(config)])
+  Promise.all([
+    serve_font.add(config),
+    serve_sprite.add(config),
+    serve_data.add(config),
+  ])
     .then(() => serve_style.add(config))
     .then(() => serve_rendered.add(config))
     .then(() => {
