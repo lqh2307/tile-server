@@ -9,7 +9,6 @@ import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
 import { loadConfigFile } from "./config.js";
 import { printLog } from "./utils.js";
-import chokidar from "chokidar";
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
@@ -19,44 +18,10 @@ import cors from "cors";
  * @returns {object}
  */
 function loadConfig() {
-  printLog("info", `Loading config file...`);
-
   try {
-    const config = loadConfigFile();
+    printLog("info", `Loading config file...`);
 
-    if (config.options.watchToKill > 0) {
-      printLog(
-        "info",
-        `Watch config file changes interval ${config.options.watchToKill}ms to kill server`
-      );
-
-      chokidar
-        .watch(config.filePath, {
-          usePolling: true,
-          awaitWriteFinish: true,
-          interval: config.options.watchToKill,
-        })
-        .on("change", () => {
-          process.kill(Number(process.env.MAIN_PID), "SIGINT");
-        });
-    } else if (config.options.watchToRestart > 0) {
-      printLog(
-        "info",
-        `Watch config file changes interval ${config.options.watchToRestart}ms to restart server`
-      );
-
-      chokidar
-        .watch(config.filePath, {
-          usePolling: true,
-          awaitWriteFinish: true,
-          interval: config.options.watchToRestart,
-        })
-        .on("change", () => {
-          process.kill(Number(process.env.MAIN_PID), "SIGTERM");
-        });
-    }
-
-    return config;
+    return loadConfigFile();
   } catch (error) {
     printLog("error", `Failed to load config file: ${error}. Exited!`);
 
@@ -77,18 +42,15 @@ function setupServer(config) {
     .enable("trust proxy")
     .use(cors())
     .use(morgan(`[PID = ${process.pid}] ${config.options.loggerFormat}`))
-    .use("/", serve_common.init(config))
-    .use("/", serve_template.init(config))
-    .use("/data", serve_data.init(config))
-    .use("/fonts", serve_font.init(config))
-    .use("/sprites", serve_sprite.init(config))
-    .use("/styles", serve_style.init(config))
-    .use("/styles", serve_rendered.init(config))
+    .use("/", serve_common.init())
+    .use("/", serve_template.init())
+    .use("/data", serve_data.init())
+    .use("/fonts", serve_font.init())
+    .use("/sprites", serve_sprite.init())
+    .use("/styles", serve_style.init())
+    .use("/styles", serve_rendered.init())
     .listen(config.options.listenPort, () => {
-      printLog(
-        "info",
-        `HTTP Server is listening on port: ${config.options.listenPort}`
-      );
+      printLog("info", `HTTP server is listening on port: ${config.options.listenPort}`);
     })
     .on("error", (error) => {
       printLog("error", `HTTP server is stopped by: ${error}`);
@@ -103,13 +65,9 @@ function setupServer(config) {
 function loadData(config) {
   printLog("info", `Loading data...`);
 
-  Promise.all([
-    serve_font.add(config),
-    serve_sprite.add(config),
-    serve_data.add(config),
-  ])
-    .then(() => serve_style.add(config))
-    .then(() => serve_rendered.add(config))
+  Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()])
+    .then(() => serve_style.add())
+    .then(() => serve_rendered.add())
     .then(() => {
       printLog("info", `Completed startup!`);
 

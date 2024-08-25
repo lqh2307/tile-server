@@ -5,6 +5,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 import { printLog } from "./utils.js";
 import express from "express";
+import { getConfig } from "./config.js";
 
 function serveSwagger() {
   return (req, res, next) => {
@@ -24,9 +25,11 @@ function serveSwagger() {
   };
 }
 
-function serveHealthHandler(config) {
+function serveHealthHandler() {
   return async (req, res, next) => {
     try {
+      const config = getConfig();
+
       if (config.startupComplete === false) {
         return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
       }
@@ -35,9 +38,7 @@ function serveHealthHandler(config) {
     } catch (error) {
       printLog("error", `Failed to check health server": ${error}`);
 
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send("Internal server error");
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
     }
   };
 }
@@ -53,9 +54,7 @@ function serveRestartHandler() {
     } catch (error) {
       printLog("error", `Failed to restart server": ${error}`);
 
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send("Internal server error");
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
     }
   };
 }
@@ -71,16 +70,16 @@ function serveKillHandler() {
     } catch (error) {
       printLog("error", `Failed to Killing server": ${error}`);
 
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send("Internal server error");
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
     }
   };
 }
 
 export const serve_common = {
-  init: (config) => {
+  init: () => {
     const app = express();
+
+    const config = getConfig();
 
     if (config.options.serveSwagger === true) {
       app.use("/swagger/index.html", swaggerUi.serve, serveSwagger());
@@ -114,7 +113,7 @@ export const serve_common = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/health", serveHealthHandler(config));
+    app.get("/health", serveHealthHandler());
 
     if (config.options.restartEndpoint === true) {
       /**

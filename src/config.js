@@ -4,6 +4,16 @@ import path from "node:path";
 import fs from "node:fs";
 import os from "os";
 
+const configFilePath = path.resolve("data", "config.json");
+
+const folderPaths = {
+  styles: path.resolve("data", "styles"),
+  fonts: path.resolve("data", "fonts"),
+  sprites: path.resolve("data", "sprites"),
+  mbtiles: path.resolve("data", "mbtiles"),
+  pmtiles: path.resolve("data", "pmtiles"),
+};
+
 const config = {};
 
 /**
@@ -11,24 +21,26 @@ const config = {};
  * @returns {config}
  */
 export function loadConfigFile() {
+  /* Validate config file path */
+  if (fs.statSync(configFilePath).isFile() === false) {
+    throw new Error(`"config.json" file: ${configFilePath} does not exist`);
+  }
+
+  /* Validate folder paths */
+  Object.keys(folderPaths).forEach((name) => {
+    if (fs.statSync(folderPaths[name]).isDirectory() === false) {
+      throw new Error(`"${name}" folder: ${folderPaths[name]} does not exist`);
+    }
+  });
+
   /* Read config.json file */
-  const configFilePath = path.resolve("data", "config.json");
   const fileData = fs.readFileSync(configFilePath, "utf8");
   const configData = JSON.parse(fileData);
 
   /* Create config object */
   Object.assign(config, {
     options: {
-      paths: {
-        styles: path.resolve("data", "styles"),
-        fonts: path.resolve("data", "fonts"),
-        sprites: path.resolve("data", "sprites"),
-        mbtiles: path.resolve("data", "mbtiles"),
-        pmtiles: path.resolve("data", "pmtiles"),
-      },
       listenPort: configData.options?.listenPort || 8080,
-      watchToKill: configData.options?.watchToKill || 0,
-      watchToRestart: configData.options?.watchToRestart || 0,
       killEndpoint: configData.options?.killEndpoint ?? true,
       restartEndpoint: configData.options?.restartEndpoint ?? true,
       frontPage: configData.options?.frontPage ?? true,
@@ -36,9 +48,7 @@ export function loadConfigFile() {
       serveRendered: configData.options?.serveRendered ?? true,
       serveSwagger: configData.options?.serveSwagger ?? true,
       renderedCompression: configData.options?.renderedCompression || 6,
-      loggerFormat:
-        configData.options?.loggerFormat ||
-        ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
+      loggerFormat: configData.options?.loggerFormat || ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
       maxScaleRender: configData.options?.maxScaleRender || 1,
       minPoolSize: configData.options?.minPoolSize || os.cpus().length,
       maxPoolSize: configData.options?.maxPoolSize || os.cpus().length * 2,
@@ -55,16 +65,6 @@ export function loadConfigFile() {
       sprites: {},
     },
     startupComplete: false,
-    filePath: configFilePath,
-  });
-
-  /* Validate dirs */
-  Object.values(config.options.paths).forEach((path) => {
-    const stat = fs.statSync(path);
-
-    if (stat.isDirectory() === false) {
-      throw new Error(`Directory "${path}" does not exist`);
-    }
   });
 
   return config;
@@ -76,4 +76,52 @@ export function loadConfigFile() {
  */
 export function getConfig() {
   return config;
+}
+
+/**
+ * Get config file path
+ * @returns {string}
+ */
+export function getConfigFilePath() {
+  return configFilePath;
+}
+
+/**
+ * Get styles folder path
+ * @returns {string}
+ */
+export function getStylesFolderPath() {
+  return folderPaths.styles;
+}
+
+/**
+ * Get fonts folder path
+ * @returns {string}
+ */
+export function getFontsFolderPath() {
+  return folderPaths.fonts;
+}
+
+/**
+ * Get sprites folder path
+ * @returns {string}
+ */
+export function getSpritesFolderPath() {
+  return folderPaths.sprites;
+}
+
+/**
+ * Get MBTiles folder path
+ * @returns {string}
+ */
+export function getMBTilesFolderPath() {
+  return folderPaths.mbtiles;
+}
+
+/**
+ * Get PMTiles folder path
+ * @returns {string}
+ */
+export function getPMTilesFolderPath() {
+  return folderPaths.pmtiles;
 }

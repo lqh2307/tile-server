@@ -5,9 +5,12 @@ import { StatusCodes } from "http-status-codes";
 import fs from "node:fs/promises";
 import express from "express";
 import path from "node:path";
+import { getConfig, getStylesFolderPath } from "./config.js";
 
-function getStyleHandler(config) {
+function getStyleHandler() {
   return async (req, res, next) => {
+    const config = getConfig();
+
     const id = decodeURI(req.params.id);
     const item = config.repo.styles[id];
 
@@ -23,20 +26,14 @@ function getStyleHandler(config) {
       /* Fix sprite url */
       if (styleJSON.sprite !== undefined) {
         if (styleJSON.sprite.startsWith("sprites://") === true) {
-          styleJSON.sprite = styleJSON.sprite.replace(
-            "sprites://",
-            `${getRequestHost(req)}sprites/`
-          );
+          styleJSON.sprite = styleJSON.sprite.replace("sprites://", `${getRequestHost(req)}sprites/`);
         }
       }
 
       /* Fix fonts url */
       if (styleJSON.glyphs !== undefined) {
         if (styleJSON.glyphs.startsWith("fonts://") === true) {
-          styleJSON.glyphs = styleJSON.glyphs.replace(
-            "fonts://",
-            `${getRequestHost(req)}fonts/`
-          );
+          styleJSON.glyphs = styleJSON.glyphs.replace("fonts://", `${getRequestHost(req)}fonts/`);
         }
       }
 
@@ -46,10 +43,7 @@ function getStyleHandler(config) {
           const source = styleJSON.sources[id];
 
           if (source.url !== undefined) {
-            if (
-              source.url.startsWith("mbtiles://") === true ||
-              source.url.startsWith("pmtiles://") === true
-            ) {
+            if (source.url.startsWith("mbtiles://") === true || source.url.startsWith("pmtiles://") === true) {
               const sourceID = source.url.slice(10);
 
               source.url = `${getRequestHost(req)}data/${sourceID}.json`;
@@ -58,10 +52,7 @@ function getStyleHandler(config) {
 
           if (source.urls !== undefined) {
             const urls = source.urls.map((url) => {
-              if (
-                url.startsWith("pmtiles://") === true ||
-                url.startsWith("mbtiles://") === true
-              ) {
+              if (url.startsWith("pmtiles://") === true || url.startsWith("mbtiles://") === true) {
                 const sourceID = url.slice(10);
 
                 url = `${getRequestHost(req)}data/${sourceID}.json`;
@@ -75,16 +66,11 @@ function getStyleHandler(config) {
 
           if (source.tiles !== undefined) {
             const tiles = source.tiles.map((tile) => {
-              if (
-                tile.startsWith("pmtiles://") === true ||
-                tile.startsWith("mbtiles://") === true
-              ) {
+              if (tile.startsWith("pmtiles://") === true || tile.startsWith("mbtiles://") === true) {
                 const sourceID = tile.slice(10);
                 const format = config.repo.datas[sourceID].tileJSON.format;
 
-                tile = `${getRequestHost(
-                  req
-                )}data/${sourceID}/{z}/{x}/{y}.${format}`;
+                tile = `${getRequestHost(req)}data/${sourceID}/{z}/{x}/{y}.${format}`;
               }
 
               return tile;
@@ -101,22 +87,20 @@ function getStyleHandler(config) {
     } catch (error) {
       printLog("error", `Failed to get style "${id}": ${error}`);
 
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send("Internal server error");
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
     }
   };
 }
 
-function getStylesListHandler(config) {
+function getStylesListHandler() {
   return async (req, res, next) => {
     try {
-      const styles = config.repo.styles;
+      const config = getConfig();
 
-      const result = Object.keys(styles).map((id) => {
+      const result = Object.keys(config.repo.styles).map((id) => {
         return {
           id: id,
-          name: styles[id].styleJSON.name || "Unknown",
+          name: config.repo.styles[id].styleJSON.name || "Unknown",
           url: `${getRequestHost(req)}styles/${id}/style.json`,
         };
       });
@@ -125,15 +109,13 @@ function getStylesListHandler(config) {
     } catch (error) {
       printLog("error", `Failed to get styles": ${error}`);
 
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send("Internal server error");
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
     }
   };
 }
 
 export const serve_style = {
-  init: (config) => {
+  init: () => {
     const app = express();
 
     /**
@@ -163,7 +145,7 @@ export const serve_style = {
      *                   url:
      *                     type: string
      */
-    app.get("/styles.json", getStylesListHandler(config));
+    app.get("/styles.json", getStylesListHandler());
 
     /**
      * @swagger
@@ -194,12 +176,14 @@ export const serve_style = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/:id/style.json", getStyleHandler(config));
+    app.get("/:id/style.json", getStyleHandler());
 
     return app;
   },
 
-  add: async (config) => {
+  add: async () => {
+    const config = getConfig();
+
     await Promise.all(
       Object.keys(config.styles).map(async (id) => {
         try {
@@ -210,7 +194,7 @@ export const serve_style = {
           }
 
           /* Read style json file */
-          const filePath = path.join(config.options.paths.styles, stylePath);
+          const filePath = path.join(getStylesFolderPath(), stylePath);
           const fileData = await fs.readFile(filePath, "utf-8");
           const styleJSON = JSON.parse(fileData);
 
@@ -222,10 +206,7 @@ export const serve_style = {
             styleJSON: styleJSON,
           };
         } catch (error) {
-          printLog(
-            "error",
-            `Failed to load style "${id}": ${error}. Skipping...`
-          );
+          printLog("error", `Failed to load style "${id}": ${error}. Skipping...`);
         }
       })
     );
