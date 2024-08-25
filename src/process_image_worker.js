@@ -3,7 +3,13 @@ import { processImage } from "./utils.js";
 
 (async () => {
   try {
-    const data = await processImage(workerData.data, workerData.scale, workerData.compression, workerData.tileSize, workerData.z);
+    const data = await processImage(
+      workerData.data,
+      workerData.scale,
+      workerData.compression,
+      workerData.tileSize,
+      workerData.z
+    );
 
     parentPort.postMessage({
       data: data,
