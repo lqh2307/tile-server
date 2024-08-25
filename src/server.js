@@ -50,7 +50,10 @@ function setupServer(config) {
     .use("/styles", serve_style.init())
     .use("/styles", serve_rendered.init())
     .listen(config.options.listenPort, () => {
-      printLog("info", `HTTP server is listening on port: ${config.options.listenPort}`);
+      printLog(
+        "info",
+        `HTTP server is listening on port: ${config.options.listenPort}`
+      );
     })
     .on("error", (error) => {
       printLog("error", `HTTP server is stopped by: ${error}`);

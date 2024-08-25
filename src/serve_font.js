@@ -1,17 +1,27 @@
 "use strict";
 
+import { getConfig, getFontsFolderPath } from "./config.js";
 import { StatusCodes } from "http-status-codes";
 import express from "express";
 import path from "node:path";
-import { detectFormatAndHeaders, getRequestHost, validateFont, getFontsPBF, gzipAsync, printLog } from "./utils.js";
-import { getConfig, getFontsFolderPath } from "./config.js";
+import {
+  detectFormatAndHeaders,
+  getRequestHost,
+  validateFont,
+  getFontsPBF,
+  gzipAsync,
+  printLog,
+} from "./utils.js";
 
 function getFontHandler() {
   return async (req, res, next) => {
     const ids = decodeURI(req.params.id);
 
     try {
-      let data = await getFontsPBF(ids, req.url.slice(req.url.lastIndexOf("/") + 1));
+      let data = await getFontsPBF(
+        ids,
+        req.url.slice(req.url.lastIndexOf("/") + 1)
+      );
 
       /* Gzip pbf font */
       const headers = detectFormatAndHeaders(data).headers;
@@ -27,7 +37,9 @@ function getFontHandler() {
     } catch (error) {
       printLog("error", `Failed to get font "${ids}": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -48,7 +60,9 @@ function getFontsListHandler() {
     } catch (error) {
       printLog("error", `Failed to get fonts": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -136,7 +150,10 @@ export const serve_font = {
           /* Add to repo */
           config.repo.fonts[id] = true;
         } catch (error) {
-          printLog("error", `Failed to load font "${id}": ${error}. Skipping...`);
+          printLog(
+            "error",
+            `Failed to load font "${id}": ${error}. Skipping...`
+          );
         }
       })
     );

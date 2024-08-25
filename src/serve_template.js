@@ -1,10 +1,14 @@
 "use strict";
 
 import { StatusCodes } from "http-status-codes";
+import { getConfig } from "./config.js";
 import express from "express";
 import path from "node:path";
-import { getXYZCenterFromLonLatZ, compileTemplate, getRequestHost } from "./utils.js";
-import { getConfig } from "./config.js";
+import {
+  getXYZCenterFromLonLatZ,
+  compileTemplate,
+  getRequestHost,
+} from "./utils.js";
 
 function checkHealth() {
   return (req, res, next) => {
@@ -31,20 +35,32 @@ function serveFrontPageHandler() {
           return Object.keys(config.repo.rendereds).map(async (id) => {
             const { name, center } = config.repo.rendereds[id].tileJSON;
 
-            const [x, y, z] = getXYZCenterFromLonLatZ(center[0], center[1], center[2]);
+            const [x, y, z] = getXYZCenterFromLonLatZ(
+              center[0],
+              center[1],
+              center[2]
+            );
 
             styles[id] = {
               name: name,
-              xyz_link: `${getRequestHost(req)}styles/${id}/256/{z}/{x}/{y}.png`,
+              xyz_link: `${getRequestHost(
+                req
+              )}styles/${id}/256/{z}/{x}/{y}.png`,
               viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
-              thumbnail: `${getRequestHost(req)}styles/${id}/256/${z}/${x}/${y}.png`,
+              thumbnail: `${getRequestHost(
+                req
+              )}styles/${id}/256/${z}/${x}/${y}.png`,
               serve_wmts: config.options.serveWMTS === true,
               serve_rendered: true,
             };
           });
         } else {
           return Object.keys(config.repo.styles).map(async (id) => {
-            const { name, center = [0, 0], zoom = 0 } = config.repo.styles[id].styleJSON;
+            const {
+              name,
+              center = [0, 0],
+              zoom = 0,
+            } = config.repo.styles[id].styleJSON;
 
             styles[id] = {
               name: name || "Unknown",
@@ -60,9 +76,15 @@ function serveFrontPageHandler() {
 
         let thumbnail = "/images/placeholder.png";
         if (format !== "pbf") {
-          const [x, y, z] = getXYZCenterFromLonLatZ(center[0], center[1], center[2]);
+          const [x, y, z] = getXYZCenterFromLonLatZ(
+            center[0],
+            center[1],
+            center[2]
+          );
 
-          thumbnail = `${getRequestHost(req)}data/${id}/${z}/${x}/${y}.${format}`;
+          thumbnail = `${getRequestHost(
+            req
+          )}data/${id}/${z}/${x}/${y}.${format}`;
         }
 
         datas[id] = {
@@ -90,7 +112,9 @@ function serveFrontPageHandler() {
     } catch (error) {
       printLog("error", `Failed to serve front page": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -118,7 +142,9 @@ function serveStyleHandler() {
     } catch (error) {
       printLog("error", `Failed to serve style "${id}": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -147,7 +173,9 @@ function serveDataHandler() {
     } catch (error) {
       printLog("error", `Failed to serve data "${id}": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -178,18 +206,26 @@ function serveWMTSHandler() {
     } catch (error) {
       printLog("error", `Failed to serve WMTS "${id}": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
 
 export const serve_template = {
   init: () => {
-    const app = express().use("/", express.static(path.resolve("public", "resources")));
+    const app = express().use(
+      "/",
+      express.static(path.resolve("public", "resources"))
+    );
 
     const config = getConfig();
 
-    if (config.options.serveRendered === true && config.options.serveWMTS === true) {
+    if (
+      config.options.serveRendered === true &&
+      config.options.serveWMTS === true
+    ) {
       /**
        * @swagger
        * tags:

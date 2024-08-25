@@ -1,10 +1,15 @@
 "use strict";
 
+import { getConfig, getSpritesFolderPath } from "./config.js";
 import { StatusCodes } from "http-status-codes";
 import express from "express";
 import path from "node:path";
-import { getRequestHost, validateSprite, getSprite, printLog } from "./utils.js";
-import { getConfig, getSpritesFolderPath } from "./config.js";
+import {
+  getRequestHost,
+  validateSprite,
+  getSprite,
+  printLog,
+} from "./utils.js";
 
 function getSpriteHandler() {
   return async (req, res, next) => {
@@ -18,7 +23,10 @@ function getSpriteHandler() {
     }
 
     try {
-      const data = await getSprite(id, req.url.slice(req.url.lastIndexOf("/") + 1));
+      const data = await getSprite(
+        id,
+        req.url.slice(req.url.lastIndexOf("/") + 1)
+      );
 
       if (req.params.format === "json") {
         res.header("Content-Type", "application/json");
@@ -30,7 +38,9 @@ function getSpriteHandler() {
     } catch (error) {
       printLog("error", `Failed to get sprite "${id}": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -43,7 +53,10 @@ function getSpritesListHandler() {
       const result = Object.keys(config.repo.sprites).map((id) => {
         return {
           name: id,
-          urls: [`${getRequestHost(req)}sprites/${id}/sprite.json`, `${getRequestHost(req)}sprites/${id}/sprite.png`],
+          urls: [
+            `${getRequestHost(req)}sprites/${id}/sprite.json`,
+            `${getRequestHost(req)}sprites/${id}/sprite.png`,
+          ],
         };
       });
 
@@ -51,7 +64,9 @@ function getSpritesListHandler() {
     } catch (error) {
       printLog("error", `Failed to get sprites": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -154,7 +169,10 @@ export const serve_sprite = {
           /* Add to repo */
           config.repo.sprites[id] = true;
         } catch (error) {
-          printLog("error", `Failed to load sprite "${id}": ${error}. Skipping...`);
+          printLog(
+            "error",
+            `Failed to load sprite "${id}": ${error}. Skipping...`
+          );
         }
       })
     );

@@ -1,11 +1,11 @@
 "use strict";
 
 import { getRequestHost, validateStyle, printLog } from "./utils.js";
+import { getConfig, getStylesFolderPath } from "./config.js";
 import { StatusCodes } from "http-status-codes";
 import fs from "node:fs/promises";
 import express from "express";
 import path from "node:path";
-import { getConfig, getStylesFolderPath } from "./config.js";
 
 function getStyleHandler() {
   return async (req, res, next) => {
@@ -26,14 +26,20 @@ function getStyleHandler() {
       /* Fix sprite url */
       if (styleJSON.sprite !== undefined) {
         if (styleJSON.sprite.startsWith("sprites://") === true) {
-          styleJSON.sprite = styleJSON.sprite.replace("sprites://", `${getRequestHost(req)}sprites/`);
+          styleJSON.sprite = styleJSON.sprite.replace(
+            "sprites://",
+            `${getRequestHost(req)}sprites/`
+          );
         }
       }
 
       /* Fix fonts url */
       if (styleJSON.glyphs !== undefined) {
         if (styleJSON.glyphs.startsWith("fonts://") === true) {
-          styleJSON.glyphs = styleJSON.glyphs.replace("fonts://", `${getRequestHost(req)}fonts/`);
+          styleJSON.glyphs = styleJSON.glyphs.replace(
+            "fonts://",
+            `${getRequestHost(req)}fonts/`
+          );
         }
       }
 
@@ -43,7 +49,10 @@ function getStyleHandler() {
           const source = styleJSON.sources[id];
 
           if (source.url !== undefined) {
-            if (source.url.startsWith("mbtiles://") === true || source.url.startsWith("pmtiles://") === true) {
+            if (
+              source.url.startsWith("mbtiles://") === true ||
+              source.url.startsWith("pmtiles://") === true
+            ) {
               const sourceID = source.url.slice(10);
 
               source.url = `${getRequestHost(req)}data/${sourceID}.json`;
@@ -52,7 +61,10 @@ function getStyleHandler() {
 
           if (source.urls !== undefined) {
             const urls = source.urls.map((url) => {
-              if (url.startsWith("pmtiles://") === true || url.startsWith("mbtiles://") === true) {
+              if (
+                url.startsWith("pmtiles://") === true ||
+                url.startsWith("mbtiles://") === true
+              ) {
                 const sourceID = url.slice(10);
 
                 url = `${getRequestHost(req)}data/${sourceID}.json`;
@@ -66,11 +78,16 @@ function getStyleHandler() {
 
           if (source.tiles !== undefined) {
             const tiles = source.tiles.map((tile) => {
-              if (tile.startsWith("pmtiles://") === true || tile.startsWith("mbtiles://") === true) {
+              if (
+                tile.startsWith("pmtiles://") === true ||
+                tile.startsWith("mbtiles://") === true
+              ) {
                 const sourceID = tile.slice(10);
                 const format = config.repo.datas[sourceID].tileJSON.format;
 
-                tile = `${getRequestHost(req)}data/${sourceID}/{z}/{x}/{y}.${format}`;
+                tile = `${getRequestHost(
+                  req
+                )}data/${sourceID}/{z}/{x}/{y}.${format}`;
               }
 
               return tile;
@@ -87,7 +104,9 @@ function getStyleHandler() {
     } catch (error) {
       printLog("error", `Failed to get style "${id}": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -109,7 +128,9 @@ function getStylesListHandler() {
     } catch (error) {
       printLog("error", `Failed to get styles": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -206,7 +227,10 @@ export const serve_style = {
             styleJSON: styleJSON,
           };
         } catch (error) {
-          printLog("error", `Failed to load style "${id}": ${error}. Skipping...`);
+          printLog(
+            "error",
+            `Failed to load style "${id}": ${error}. Skipping...`
+          );
         }
       })
     );

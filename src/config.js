@@ -48,7 +48,9 @@ export function loadConfigFile() {
       serveRendered: configData.options?.serveRendered ?? true,
       serveSwagger: configData.options?.serveSwagger ?? true,
       renderedCompression: configData.options?.renderedCompression || 6,
-      loggerFormat: configData.options?.loggerFormat || ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
+      loggerFormat:
+        configData.options?.loggerFormat ||
+        ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
       maxScaleRender: configData.options?.maxScaleRender || 1,
       minPoolSize: configData.options?.minPoolSize || os.cpus().length,
       maxPoolSize: configData.options?.maxPoolSize || os.cpus().length * 2,

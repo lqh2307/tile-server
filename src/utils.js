@@ -5,7 +5,6 @@ import SphericalMercator from "@mapbox/sphericalmercator";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
 import { PMTiles, FetchSource } from "pmtiles";
 import fsPromise from "node:fs/promises";
-import { getConfig, getFontsFolderPath, getSpritesFolderPath } from "./config.js";
 import handlebars from "handlebars";
 import sqlite3 from "sqlite3";
 import path from "node:path";
@@ -14,6 +13,11 @@ import sharp from "sharp";
 import fs from "node:fs";
 import zlib from "zlib";
 import util from "util";
+import {
+  getSpritesFolderPath,
+  getFontsFolderPath,
+  getConfig,
+} from "./config.js";
 
 const mercator = new SphericalMercator();
 
@@ -42,7 +46,10 @@ export function getXYZCenterFromLonLatZ(lon, lat, z) {
  * @returns {[number,number]}
  */
 export function getLonLatCenterFromXYZ(x, y, z) {
-  return mercator.ll([((x + 0.5) / (1 << z)) * (256 << z), ((y + 0.5) / (1 << z)) * (256 << z)], z);
+  return mercator.ll(
+    [((x + 0.5) / (1 << z)) * (256 << z), ((y + 0.5) / (1 << z)) * (256 << z)],
+    z
+  );
 }
 
 /**
@@ -251,9 +258,19 @@ export async function getFontsPBF(ids, fileName) {
 
         return await fsPromise.readFile(filePath);
       } catch (error) {
-        printLog("warning", `Failed to get font "${font}": ${error}. Using fallback font "${fallbackFont}"...`);
+        printLog(
+          "warning",
+          `Failed to get font "${font}": ${error}. Using fallback font "${fallbackFont}"...`
+        );
 
-        const filePath = path.resolve("public", "resources", "template", "fonts", fallbackFont, fileName);
+        const filePath = path.resolve(
+          "public",
+          "resources",
+          "template",
+          "fonts",
+          fallbackFont,
+          fileName
+        );
 
         return await fsPromise.readFile(filePath);
       }
@@ -270,8 +287,6 @@ export async function getFontsPBF(ids, fileName) {
  * @returns {Promise<Buffer>}
  */
 export async function getSprite(id, fileName) {
-  const config = getConfig();
-
   const filePath = path.join(getSpritesFolderPath(), id, fileName);
 
   return await fsPromise.readFile(filePath);
@@ -285,11 +300,17 @@ export async function getSprite(id, fileName) {
  */
 export function printLog(level, msg) {
   if (level === "warning") {
-    console.warn(`[PID = ${process.pid}] ${new Date().toISOString()} [WARNING] ${msg}`);
+    console.warn(
+      `[PID = ${process.pid}] ${new Date().toISOString()} [WARNING] ${msg}`
+    );
   } else if (level === "error") {
-    console.error(`[PID = ${process.pid}] ${new Date().toISOString()} [ERROR] ${msg}`);
+    console.error(
+      `[PID = ${process.pid}] ${new Date().toISOString()} [ERROR] ${msg}`
+    );
   } else {
-    console.info(`[PID = ${process.pid}] ${new Date().toISOString()} [INFO] ${msg}`);
+    console.info(
+      `[PID = ${process.pid}] ${new Date().toISOString()} [INFO] ${msg}`
+    );
   }
 }
 
@@ -325,7 +346,9 @@ export function validateDataInfo(info) {
   }
 
   /* Validate format */
-  if (["jpeg", "jpg", "pbf", "png", "webp", "gif"].includes(info.format) === false) {
+  if (
+    ["jpeg", "jpg", "pbf", "png", "webp", "gif"].includes(info.format) === false
+  ) {
     throw new Error(`Data format info is invalid`);
   }
 
@@ -353,14 +376,28 @@ export function validateDataInfo(info) {
 
   /* Validate bounds */
   if (info.bounds !== undefined) {
-    if (info.bounds.length !== 4 || Math.abs(info.bounds[0]) > 180 || Math.abs(info.bounds[2]) > 180 || Math.abs(info.bounds[1]) > 90 || Math.abs(info.bounds[3]) > 90 || info.bounds[0] >= info.bounds[2] || info.bounds[1] >= info.bounds[3]) {
+    if (
+      info.bounds.length !== 4 ||
+      Math.abs(info.bounds[0]) > 180 ||
+      Math.abs(info.bounds[2]) > 180 ||
+      Math.abs(info.bounds[1]) > 90 ||
+      Math.abs(info.bounds[3]) > 90 ||
+      info.bounds[0] >= info.bounds[2] ||
+      info.bounds[1] >= info.bounds[3]
+    ) {
       throw new Error(`Data bounds info is invalid`);
     }
   }
 
   /* Validate center */
   if (info.center !== undefined) {
-    if (info.center.length !== 3 || Math.abs(info.center[0]) > 180 || Math.abs(info.center[1]) > 90 || info.center[2] < 0 || info.center[2] > 22) {
+    if (
+      info.center.length !== 3 ||
+      Math.abs(info.center[0]) > 180 ||
+      Math.abs(info.center[1]) > 90 ||
+      info.center[2] < 0 ||
+      info.center[2] > 22
+    ) {
       throw new Error(`Data center info is invalid`);
     }
   }
@@ -376,12 +413,20 @@ export async function validateStyle(config, styleJSON) {
   /* Validate style */
   const validationErrors = validateStyleMin(styleJSON);
   if (validationErrors.length > 0) {
-    throw new Error(validationErrors.map((validationError) => "\n\t" + validationError.message).join());
+    throw new Error(
+      validationErrors
+        .map((validationError) => "\n\t" + validationError.message)
+        .join()
+    );
   }
 
   /* Validate fonts */
   if (styleJSON.glyphs !== undefined) {
-    if (styleJSON.glyphs.startsWith("fonts://") === false && styleJSON.glyphs.startsWith("https://") === false && styleJSON.glyphs.startsWith("http://") === false) {
+    if (
+      styleJSON.glyphs.startsWith("fonts://") === false &&
+      styleJSON.glyphs.startsWith("https://") === false &&
+      styleJSON.glyphs.startsWith("http://") === false
+    ) {
       throw new Error("Invalid fonts url");
     }
   }
@@ -389,12 +434,18 @@ export async function validateStyle(config, styleJSON) {
   /* Validate sprite */
   if (styleJSON.sprite !== undefined) {
     if (styleJSON.sprite.startsWith("sprites://") === true) {
-      const spriteID = styleJSON.sprite.slice(10, styleJSON.sprite.lastIndexOf("/"));
+      const spriteID = styleJSON.sprite.slice(
+        10,
+        styleJSON.sprite.lastIndexOf("/")
+      );
 
       if (config.repo.sprites[spriteID] === undefined) {
         throw new Error(`Sprite "${spriteID}" is not found`);
       }
-    } else if (styleJSON.sprite.startsWith("https://") === false && styleJSON.sprite.startsWith("http://") === false) {
+    } else if (
+      styleJSON.sprite.startsWith("https://") === false &&
+      styleJSON.sprite.startsWith("http://") === false
+    ) {
       throw new Error("Invalid sprite url");
     }
   }
@@ -405,13 +456,19 @@ export async function validateStyle(config, styleJSON) {
       const source = styleJSON.sources[id];
 
       if (source.url !== undefined) {
-        if (source.url.startsWith("pmtiles://") === true || source.url.startsWith("mbtiles://") === true) {
+        if (
+          source.url.startsWith("pmtiles://") === true ||
+          source.url.startsWith("mbtiles://") === true
+        ) {
           const sourceID = source.url.slice(10);
 
           if (config.repo.datas[sourceID] === undefined) {
             throw new Error(`Source "${id}" is not found`);
           }
-        } else if (source.url.startsWith("https://") === false && source.url.startsWith("http://") === false) {
+        } else if (
+          source.url.startsWith("https://") === false &&
+          source.url.startsWith("http://") === false
+        ) {
           throw new Error(`Source "${id}" is invalid url`);
         }
       }
@@ -422,13 +479,19 @@ export async function validateStyle(config, styleJSON) {
         }
 
         source.urls.forEach((url) => {
-          if (url.startsWith("pmtiles://") === true || url.startsWith("mbtiles://") === true) {
+          if (
+            url.startsWith("pmtiles://") === true ||
+            url.startsWith("mbtiles://") === true
+          ) {
             const sourceID = url.slice(10);
 
             if (config.repo.datas[sourceID] === undefined) {
               throw new Error(`Source "${id}" is not found`);
             }
-          } else if (url.startsWith("https://") === false && url.startsWith("http://") === false) {
+          } else if (
+            url.startsWith("https://") === false &&
+            url.startsWith("http://") === false
+          ) {
             throw new Error(`Source "${id}" is invalid urls`);
           }
         });
@@ -440,13 +503,19 @@ export async function validateStyle(config, styleJSON) {
         }
 
         source.tiles.forEach((tile) => {
-          if (tile.startsWith("pmtiles://") === true || tile.startsWith("mbtiles://") === true) {
+          if (
+            tile.startsWith("pmtiles://") === true ||
+            tile.startsWith("mbtiles://") === true
+          ) {
             const sourceID = tile.slice(10);
 
             if (config.repo.datas[sourceID] === undefined) {
               throw new Error(`Source "${id}" is not found`);
             }
-          } else if (tile.startsWith("https://") === false && tile.startsWith("http://") === false) {
+          } else if (
+            tile.startsWith("https://") === false &&
+            tile.startsWith("http://") === false
+          ) {
             throw new Error(`Source "${id}" is invalid tile urls`);
           }
         });
@@ -461,13 +530,18 @@ export async function validateStyle(config, styleJSON) {
  * @returns {Promise<void>}
  */
 export async function validateSprite(spriteDirPath) {
-  const [jsonSpriteFileNames, pngSpriteNames] = await Promise.all([findFiles(spriteDirPath, /^sprite(@\d+x)?\.json$/), findFiles(spriteDirPath, /^sprite(@\d+x)?\.png$/)]);
+  const [jsonSpriteFileNames, pngSpriteNames] = await Promise.all([
+    findFiles(spriteDirPath, /^sprite(@\d+x)?\.json$/),
+    findFiles(spriteDirPath, /^sprite(@\d+x)?\.png$/),
+  ]);
 
   if (jsonSpriteFileNames.length !== pngSpriteNames.length) {
     throw new Error(`Missing some json or png files`);
   }
 
-  const spriteFileNames = jsonSpriteFileNames.map((jsonSpriteFileName) => path.basename(jsonSpriteFileName, path.extname(jsonSpriteFileName)));
+  const spriteFileNames = jsonSpriteFileNames.map((jsonSpriteFileName) =>
+    path.basename(jsonSpriteFileName, path.extname(jsonSpriteFileName))
+  );
 
   await Promise.all(
     spriteFileNames.map(async (spriteFileNames) => {
@@ -477,7 +551,14 @@ export async function validateSprite(spriteDirPath) {
       const jsonData = JSON.parse(fileData);
 
       Object.values(jsonData).forEach((value) => {
-        if (typeof value !== "object" || "height" in value === false || "pixelRatio" in value === false || "width" in value === false || "x" in value === false || "y" in value === false) {
+        if (
+          typeof value !== "object" ||
+          "height" in value === false ||
+          "pixelRatio" in value === false ||
+          "width" in value === false ||
+          "x" in value === false ||
+          "y" in value === false
+        ) {
           throw new Error(`Invalid json file`);
         }
       });
@@ -545,7 +626,10 @@ class PMTilesFileSource {
     fs.readSync(this.fd, buffer, 0, buffer.length, offset);
 
     return {
-      data: buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
+      data: buffer.buffer.slice(
+        buffer.byteOffset,
+        buffer.byteOffset + buffer.byteLength
+      ),
     };
   }
 }
@@ -558,7 +642,10 @@ class PMTilesFileSource {
 export function openPMTiles(filePath) {
   let source;
 
-  if (filePath.startsWith("https://") === true || filePath.startsWith("http://") === true) {
+  if (
+    filePath.startsWith("https://") === true ||
+    filePath.startsWith("http://") === true
+  ) {
     source = new FetchSource(filePath);
   } else {
     const fileData = fs.openSync(filePath, "r");
@@ -576,7 +663,10 @@ export function openPMTiles(filePath) {
  * @returns {Promise<object>}
  */
 export async function getPMTilesInfos(pmtilesSource, includeJSON = false) {
-  const [header, metadata] = await Promise.all([pmtilesSource.getHeader(), pmtilesSource.getMetadata()]);
+  const [header, metadata] = await Promise.all([
+    pmtilesSource.getHeader(),
+    pmtilesSource.getMetadata(),
+  ]);
 
   if (header.tileType === 1) {
     metadata.format = "pbf";
@@ -598,12 +688,30 @@ export async function getPMTilesInfos(pmtilesSource, includeJSON = false) {
     metadata.maxzoom = Number(header.maxZoom);
   }
 
-  if (header.minLon !== undefined && header.minLat !== undefined && header.maxLon !== undefined && header.maxLat !== undefined) {
-    metadata.bounds = [Number(header.minLon), Number(header.minLat), Number(header.maxLon), Number(header.maxLat)];
+  if (
+    header.minLon !== undefined &&
+    header.minLat !== undefined &&
+    header.maxLon !== undefined &&
+    header.maxLat !== undefined
+  ) {
+    metadata.bounds = [
+      Number(header.minLon),
+      Number(header.minLat),
+      Number(header.maxLon),
+      Number(header.maxLat),
+    ];
   }
 
-  if (header.centerLon !== undefined && header.centerLat !== undefined && header.centerZoom !== undefined) {
-    metadata.center = [Number(header.centerLon), Number(header.centerLat), Number(header.centerZoom)];
+  if (
+    header.centerLon !== undefined &&
+    header.centerLat !== undefined &&
+    header.centerZoom !== undefined
+  ) {
+    metadata.center = [
+      Number(header.centerLon),
+      Number(header.centerLat),
+      Number(header.centerZoom),
+    ];
   }
 
   const xyzTileJSON = createNewXYZTileJSON(metadata);
@@ -645,13 +753,17 @@ export async function getPMTilesTile(pmtilesSource, z, x, y) {
  */
 export async function openMBTiles(filePath) {
   return new Promise((resolve, reject) => {
-    const mbtilesSource = new sqlite3.Database(filePath, sqlite3.OPEN_READONLY, (error) => {
-      if (error) {
-        return reject(error);
-      }
+    const mbtilesSource = new sqlite3.Database(
+      filePath,
+      sqlite3.OPEN_READONLY,
+      (error) => {
+        if (error) {
+          return reject(error);
+        }
 
-      resolve(mbtilesSource);
-    });
+        resolve(mbtilesSource);
+      }
+    );
   });
 }
 
@@ -785,7 +897,11 @@ export function createNewXYZTileJSON(metadata) {
   }
 
   if (data.center === undefined) {
-    data.center = [(data.bounds[0] + data.bounds[2]) / 2, (data.bounds[1] + data.bounds[3]) / 2, Math.floor((data.minzoom + data.maxzoom) / 2)];
+    data.center = [
+      (data.bounds[0] + data.bounds[2]) / 2,
+      (data.bounds[1] + data.bounds[3]) / 2,
+      Math.floor((data.minzoom + data.maxzoom) / 2),
+    ];
   }
 
   return data;
@@ -826,7 +942,9 @@ export async function getMBTilesInfos(mbtilesSource, includeJSON = false) {
               break;
             case "center":
             case "bounds":
-              metadata[row.name] = row.value.split(",").map((elm) => Number(elm));
+              metadata[row.name] = row.value
+                .split(",")
+                .map((elm) => Number(elm));
 
               break;
             default:
@@ -843,33 +961,39 @@ export async function getMBTilesInfos(mbtilesSource, includeJSON = false) {
 
   if (metadata.minzoom === undefined) {
     await new Promise((resolve, reject) => {
-      mbtilesSource.get("SELECT MIN(zoom_level) AS minzoom FROM tiles", (error, row) => {
-        if (error) {
-          return reject(error);
-        }
+      mbtilesSource.get(
+        "SELECT MIN(zoom_level) AS minzoom FROM tiles",
+        (error, row) => {
+          if (error) {
+            return reject(error);
+          }
 
-        if (row) {
-          metadata.minzoom = row.minzoom;
-        }
+          if (row) {
+            metadata.minzoom = row.minzoom;
+          }
 
-        resolve();
-      });
+          resolve();
+        }
+      );
     });
   }
 
   if (metadata.maxzoom === undefined) {
     await new Promise((resolve, reject) => {
-      mbtilesSource.get("SELECT MAX(zoom_level) AS maxzoom FROM tiles", (error, row) => {
-        if (error) {
-          return reject(error);
-        }
+      mbtilesSource.get(
+        "SELECT MAX(zoom_level) AS maxzoom FROM tiles",
+        (error, row) => {
+          if (error) {
+            return reject(error);
+          }
 
-        if (row) {
-          metadata.maxzoom = row.maxzoom;
-        }
+          if (row) {
+            metadata.maxzoom = row.maxzoom;
+          }
 
-        resolve();
-      });
+          resolve();
+        }
+      );
     });
   }
 
@@ -926,16 +1050,46 @@ export function detectFormatAndHeaders(buffer) {
   let format;
   const headers = {};
 
-  if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47 && buffer[4] === 0x0d && buffer[5] === 0x0a && buffer[6] === 0x1a && buffer[7] === 0x0a) {
+  if (
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a
+  ) {
     format = "png";
     headers["Content-Type"] = "image/png";
-  } else if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[buffer.length - 2] === 0xff && buffer[buffer.length - 1] === 0xd9) {
+  } else if (
+    buffer[0] === 0xff &&
+    buffer[1] === 0xd8 &&
+    buffer[buffer.length - 2] === 0xff &&
+    buffer[buffer.length - 1] === 0xd9
+  ) {
     format = "jpeg"; // equivalent jpg
     headers["Content-Type"] = "image/jpeg"; // equivalent image/jpg
-  } else if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x38 && (buffer[4] === 0x39 || buffer[4] === 0x37) && buffer[5] === 0x61) {
+  } else if (
+    buffer[0] === 0x47 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x38 &&
+    (buffer[4] === 0x39 || buffer[4] === 0x37) &&
+    buffer[5] === 0x61
+  ) {
     format = "gif";
     headers["Content-Type"] = "image/gif";
-  } else if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 && buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50) {
+  } else if (
+    buffer[0] === 0x52 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x46 &&
+    buffer[8] === 0x57 &&
+    buffer[9] === 0x45 &&
+    buffer[10] === 0x42 &&
+    buffer[11] === 0x50
+  ) {
     format = "webp";
     headers["Content-Type"] = "image/webp";
   } else {

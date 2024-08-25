@@ -11,7 +11,19 @@ import os from "os";
 /* Start server */
 if (cluster.isPrimary === true) {
   /* Setup commands */
-  program.description("tile-server startup options").usage("tile-server [options]").option("-n, --num_threads <num>", "Number of threads", 1).option("-r, --restart_interval <num>", "Interval time to restart server", 1000).option("-k, --kill_interval <num>", "Interval time to kill server", 0).version("1.0.0", "-v, --version").showHelpAfterError().parse(process.argv);
+  program
+    .description("tile-server startup options")
+    .usage("tile-server [options]")
+    .option("-n, --num_threads <num>", "Number of threads", 1)
+    .option(
+      "-r, --restart_interval <num>",
+      "Interval time to restart server",
+      1000
+    )
+    .option("-k, --kill_interval <num>", "Interval time to kill server", 0)
+    .version("1.0.0", "-v, --version")
+    .showHelpAfterError()
+    .parse(process.argv);
 
   /* Setup envs & events */
   process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length * 2); // For libuv
@@ -44,14 +56,20 @@ if (cluster.isPrimary === true) {
   }
 
   cluster.on("exit", (worker, code, signal) => {
-    printLog("info", `Worker with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`);
+    printLog(
+      "info",
+      `Worker with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
+    );
 
     cluster.fork();
   });
 
   /* Setup watch config file change */
   if (options.killInterval > 0) {
-    printLog("info", `Watch config file changes interval ${options.killInterval}ms to kill server`);
+    printLog(
+      "info",
+      `Watch config file changes interval ${options.killInterval}ms to kill server`
+    );
 
     chokidar
       .watch(getConfigFilePath(), {
@@ -65,7 +83,10 @@ if (cluster.isPrimary === true) {
         process.exit(0);
       });
   } else if (options.restartInterval > 0) {
-    printLog("info", `Watch config file changes interval ${options.restartInterval}ms to restart server`);
+    printLog(
+      "info",
+      `Watch config file changes interval ${options.restartInterval}ms to restart server`
+    );
 
     chokidar
       .watch(getConfigFilePath(), {

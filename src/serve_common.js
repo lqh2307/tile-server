@@ -3,9 +3,9 @@
 import { StatusCodes } from "http-status-codes";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
+import { getConfig } from "./config.js";
 import { printLog } from "./utils.js";
 import express from "express";
-import { getConfig } from "./config.js";
 
 function serveSwagger() {
   return (req, res, next) => {
@@ -38,7 +38,9 @@ function serveHealthHandler() {
     } catch (error) {
       printLog("error", `Failed to check health server": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -54,7 +56,9 @@ function serveRestartHandler() {
     } catch (error) {
       printLog("error", `Failed to restart server": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -70,7 +74,9 @@ function serveKillHandler() {
     } catch (error) {
       printLog("error", `Failed to Killing server": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
