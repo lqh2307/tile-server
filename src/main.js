@@ -7,7 +7,13 @@ import cluster from "cluster";
 import os from "os";
 
 /* Setup commands */
-program.description("tile-server startup options").usage("tile-server [options]").option("--num_threads <num>", "Number of threads", 1).version("1.0.0", "-v, --version").showHelpAfterError().parse(process.argv);
+program
+  .description("tile-server startup options")
+  .usage("tile-server [options]")
+  .option("--num_threads <num>", "Number of threads", 1)
+  .version("1.0.0", "-v, --version")
+  .showHelpAfterError()
+  .parse(process.argv);
 
 const numThreads = Number(program.opts().num_threads);
 
@@ -40,7 +46,10 @@ if (numThreads === 1) {
     }
 
     cluster.on("exit", (worker) => {
-      printLog("info", `Worker ${worker.process.pid} is died. Creating new one...`);
+      printLog(
+        "info",
+        `Worker ${worker.process.pid} is died. Creating new one...`
+      );
 
       cluster.fork();
     });
