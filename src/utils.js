@@ -298,11 +298,11 @@ export async function getSprite(id, fileName) {
  */
 export function printLog(level, msg) {
   if (level === "warning") {
-    console.warn(`${new Date().toISOString()} [PID = ${process.id}] [WARNING] ${msg}`);
+    console.warn(`${new Date().toISOString()} [PID = ${process.pid}] [WARNING] ${msg}`);
   } else if (level === "error") {
-    console.error(`${new Date().toISOString()} [PID = ${process.id}] [ERROR] ${msg}`);
+    console.error(`${new Date().toISOString()} [PID = ${process.pid}] [ERROR] ${msg}`);
   } else {
-    console.info(`${new Date().toISOString()} [PID = ${process.id}] [INFO] ${msg}`);
+    console.info(`${new Date().toISOString()} [PID = ${process.pid}] [INFO] ${msg}`);
   }
 }
 
