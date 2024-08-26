@@ -19,8 +19,6 @@ import cors from "cors";
  */
 export async function startServer() {
   try {
-    printLog("info", `Starting server...`);
-
     printLog("info", `Loading config file...`);
 
     const config = await loadConfigFile();
