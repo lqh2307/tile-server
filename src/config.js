@@ -7,6 +7,7 @@ import os from "os";
 let configFilePath;
 let folderPaths;
 let config;
+let startupComplete = false;
 
 /**
  * Load config.json file
@@ -68,7 +69,6 @@ export function loadConfigFile() {
       fonts: {},
       sprites: {},
     },
-    startupComplete: false,
   };
 
   return config;
@@ -128,4 +128,21 @@ export function getMBTilesFolderPath() {
  */
 export function getPMTilesFolderPath() {
   return folderPaths.pmtiles;
+}
+
+/**
+ * Set startup status
+ * @param {boolean} status
+ * @returns {void}
+ */
+export function setStartupStatus(status) {
+  startupComplete = status;
+}
+
+/**
+ * Get startup status
+ * @returns {boolean}
+ */
+export function getStartupStatus() {
+  return startupComplete;
 }

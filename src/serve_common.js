@@ -1,9 +1,9 @@
 "use strict";
 
+import { getConfig, getStartupStatus } from "./config.js";
 import { StatusCodes } from "http-status-codes";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
-import { getConfig } from "./config.js";
 import { printLog } from "./utils.js";
 import express from "express";
 
@@ -28,9 +28,7 @@ function serveSwagger() {
 function serveHealthHandler() {
   return async (req, res, next) => {
     try {
-      const config = getConfig();
-
-      if (config.startupComplete === false) {
+      if (getStartupStatus() === false) {
         return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
       }
 

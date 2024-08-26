@@ -36,11 +36,9 @@ if (cluster.isPrimary === true) {
   });
 
   process.on("SIGTERM", () => {
-    printLog("info", `Received "SIGTERM" signal. Killing all worker...`);
+    printLog("info", `Received "SIGTERM" signal. Restaring server...`);
 
-    for (const id in cluster.workers) {
-      cluster.workers[id].kill("SIGTERM");
-    }
+    process.exit(1);
   });
 
   const options = {
@@ -97,9 +95,7 @@ if (cluster.isPrimary === true) {
       .on("change", () => {
         printLog("info", `Config file has changed. Restaring server...`);
 
-        for (const id in cluster.workers) {
-          cluster.workers[id].kill("SIGTERM");
-        }
+        process.exit(1);
       });
   }
 } else {

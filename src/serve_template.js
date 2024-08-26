@@ -1,7 +1,7 @@
 "use strict";
 
+import { getConfig, getStartupStatus } from "./config.js";
 import { StatusCodes } from "http-status-codes";
-import { getConfig } from "./config.js";
 import express from "express";
 import path from "node:path";
 import {
@@ -12,9 +12,7 @@ import {
 
 function checkHealth() {
   return (req, res, next) => {
-    const config = getConfig();
-
-    if (config.startupComplete === false) {
+    if (getStartupStatus() === false) {
       return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
     }
 

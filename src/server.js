@@ -1,5 +1,6 @@
 "use strict";
 
+import { loadConfigFile, setStartupStatus } from "./config.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
 import { serve_common } from "./serve_common.js";
@@ -7,7 +8,6 @@ import { serve_sprite } from "./serve_sprite.js";
 import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
-import { loadConfigFile } from "./config.js";
 import { printLog } from "./utils.js";
 import express from "express";
 import morgan from "morgan";
@@ -62,10 +62,9 @@ function setupServer(config) {
 
 /**
  * Load data
- * @param {object} config
  * @returns {void}
  */
-function loadData(config) {
+function loadData() {
   printLog("info", `Loading data...`);
 
   Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()])
@@ -74,7 +73,7 @@ function loadData(config) {
     .then(() => {
       printLog("info", `Completed startup!`);
 
-      config.startupComplete = true;
+      setStartupStatus(true);
     })
     .catch((error) => {
       printLog("error", `Failed to load data: ${error}. Exited!`);
@@ -92,5 +91,5 @@ export function startServer() {
 
   setupServer(config);
 
-  loadData(config);
+  loadData();
 }
