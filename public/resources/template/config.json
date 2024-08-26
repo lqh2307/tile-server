@@ -1,8 +1,6 @@
 {
   "options": {
     "listenPort": 8080,
-    "watchToKill": 0,
-    "watchToRestart": 1000,
     "killEndpoint": true,
     "restartEndpoint": true,
     "frontPage": true,

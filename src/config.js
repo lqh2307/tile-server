@@ -1,43 +1,45 @@
 "use strict";
 
+import fsPromise from "node:fs/promises";
 import path from "node:path";
-import fs from "node:fs";
 import os from "os";
 
-let configFilePath;
-let folderPaths;
-let config;
+const configFilePath = path.resolve("data", "config.json");
+const folders = {
+  styles: path.resolve("data", "styles"),
+  fonts: path.resolve("data", "fonts"),
+  sprites: path.resolve("data", "sprites"),
+  mbtiles: path.resolve("data", "mbtiles"),
+  pmtiles: path.resolve("data", "pmtiles"),
+};
 let startupComplete = false;
+let config;
 
 /**
  * Load config.json file
- * @returns {config}
+ * @returns {Promise<config>}
  */
-export function loadConfigFile() {
-  /* Validate config file path */
-  configFilePath = path.resolve("data", "config.json");
+export async function loadConfigFile() {
+  /* Validate config file and folders paths */
+  await Promise.all([
+    (async () => {
+      const stat = await fsPromise.stat(configFilePath);
 
-  if (fs.statSync(configFilePath).isFile() === false) {
-    throw new Error(`"config.json" file: ${configFilePath} does not exist`);
-  }
+      if (stat.isFile() === false) {
+        throw new Error(`"config.json" file: ${configFilePath} does not exist`);
+      }
+    })(),
+    ...Object.keys(folders).map(async (name) => {
+      const stat = await fsPromise.stat(folders[name]);
 
-  /* Validate folder paths */
-  folderPaths = {
-    styles: path.resolve("data", "styles"),
-    fonts: path.resolve("data", "fonts"),
-    sprites: path.resolve("data", "sprites"),
-    mbtiles: path.resolve("data", "mbtiles"),
-    pmtiles: path.resolve("data", "pmtiles"),
-  };
-
-  Object.keys(folderPaths).forEach((name) => {
-    if (fs.statSync(folderPaths[name]).isDirectory() === false) {
-      throw new Error(`"${name}" folder: ${folderPaths[name]} does not exist`);
-    }
-  });
+      if (stat.isDirectory() === false) {
+        throw new Error(`"${name}" folder: ${folders[name]} does not exist`);
+      }
+    }),
+  ]);
 
   /* Read config.json file */
-  const fileData = fs.readFileSync(configFilePath, "utf8");
+  const fileData = await fsPromise.readFile(configFilePath, "utf8");
   const configData = JSON.parse(fileData);
 
   /* Create config object */
@@ -95,7 +97,7 @@ export function getConfigFilePath() {
  * @returns {string}
  */
 export function getStylesFolderPath() {
-  return folderPaths.styles;
+  return folders.styles;
 }
 
 /**
@@ -103,7 +105,7 @@ export function getStylesFolderPath() {
  * @returns {string}
  */
 export function getFontsFolderPath() {
-  return folderPaths.fonts;
+  return folders.fonts;
 }
 
 /**
@@ -111,7 +113,7 @@ export function getFontsFolderPath() {
  * @returns {string}
  */
 export function getSpritesFolderPath() {
-  return folderPaths.sprites;
+  return folders.sprites;
 }
 
 /**
@@ -119,7 +121,7 @@ export function getSpritesFolderPath() {
  * @returns {string}
  */
 export function getMBTilesFolderPath() {
-  return folderPaths.mbtiles;
+  return folders.mbtiles;
 }
 
 /**
@@ -127,7 +129,7 @@ export function getMBTilesFolderPath() {
  * @returns {string}
  */
 export function getPMTilesFolderPath() {
-  return folderPaths.pmtiles;
+  return folders.pmtiles;
 }
 
 /**

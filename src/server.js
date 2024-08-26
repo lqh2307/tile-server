@@ -14,82 +14,59 @@ import morgan from "morgan";
 import cors from "cors";
 
 /**
- * Load config.json file
- * @returns {object}
+ * Start server
+ * @returns {Promise<void>}
  */
-function loadConfig() {
+export async function startServer() {
   try {
+    printLog("info", `Starting server...`);
+
     printLog("info", `Loading config file...`);
 
-    return loadConfigFile();
+    const config = await loadConfigFile();
+
+    printLog("info", `Starting HTTP server...`);
+
+    express()
+      .disable("x-powered-by")
+      .enable("trust proxy")
+      .use(cors())
+      .use(morgan(`[PID = ${process.pid}] ${config.options.loggerFormat}`))
+      .use("/", serve_common.init())
+      .use("/", serve_template.init())
+      .use("/data", serve_data.init())
+      .use("/fonts", serve_font.init())
+      .use("/sprites", serve_sprite.init())
+      .use("/styles", serve_style.init())
+      .use("/styles", serve_rendered.init())
+      .listen(config.options.listenPort, () => {
+        printLog(
+          "info",
+          `HTTP server is listening on port: ${config.options.listenPort}`
+        );
+      })
+      .on("error", (error) => {
+        printLog("error", `HTTP server is stopped by: ${error}`);
+      });
+
+    printLog("info", `Loading data...`);
+
+    Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()])
+      .then(() => serve_style.add())
+      .then(() => serve_rendered.add())
+      .then(() => {
+        printLog("info", `Completed startup!`);
+
+        setStartupStatus(true);
+      })
+      .catch((error) => {
+        printLog("error", `Failed to load data: ${error}. Exited!`);
+
+        process.kill(Number(process.env.MAIN_PID), "SIGINT");
+      });
   } catch (error) {
-    printLog("error", `Failed to load config file: ${error}. Exited!`);
+    printLog("error", `Failed to start server: ${error}. Exited!`);
 
-    process.exit(0);
+    process.kill(Number(process.env.MAIN_PID), "SIGINT");
   }
-}
-
-/**
- * Setup express server
- * @param {object} config
- * @returns {void}
- */
-function setupServer(config) {
-  printLog("info", `Starting HTTP server...`);
-
-  express()
-    .disable("x-powered-by")
-    .enable("trust proxy")
-    .use(cors())
-    .use(morgan(`[PID = ${process.pid}] ${config.options.loggerFormat}`))
-    .use("/", serve_common.init())
-    .use("/", serve_template.init())
-    .use("/data", serve_data.init())
-    .use("/fonts", serve_font.init())
-    .use("/sprites", serve_sprite.init())
-    .use("/styles", serve_style.init())
-    .use("/styles", serve_rendered.init())
-    .listen(config.options.listenPort, () => {
-      printLog(
-        "info",
-        `HTTP server is listening on port: ${config.options.listenPort}`
-      );
-    })
-    .on("error", (error) => {
-      printLog("error", `HTTP server is stopped by: ${error}`);
-    });
-}
-
-/**
- * Load data
- * @returns {void}
- */
-function loadData() {
-  printLog("info", `Loading data...`);
-
-  Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()])
-    .then(() => serve_style.add())
-    .then(() => serve_rendered.add())
-    .then(() => {
-      printLog("info", `Completed startup!`);
-
-      setStartupStatus(true);
-    })
-    .catch((error) => {
-      printLog("error", `Failed to load data: ${error}. Exited!`);
-
-      process.exit(0);
-    });
-}
-
-/**
- * Start server
- * @returns {void}
- */
-export function startServer() {
-  const config = loadConfig();
-
-  setupServer(config);
-
-  loadData();
 }
