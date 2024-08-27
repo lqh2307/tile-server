@@ -84,7 +84,7 @@ if (cluster.isPrimary === true) {
       });
   }
 
-  /* Start server */
+  /* Fork servers */
   printLog("info", `Starting server with ${options.numThreads} threads...`);
 
   if (options.numThreads > 1) {
