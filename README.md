@@ -31,54 +31,57 @@ Run container:
 Example config.json content:
 
 	{
-		"options": {
-			"listenPort": 8080,
-			"killEndpoint": true,
-			"restartEndpoint": true,
-			"frontPage": true,
-			"serveWMTS": true,
-			"serveRendered": true,
-			"maxScaleRender": 1,
-			"renderedCompression": 6,
-			"serveSwagger": true,
-			"loggerFormat": ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
-			"minPoolSize": 8,
-			"maxPoolSize": 16
-		},
-		"styles": {
-			"liberty": {
-				"style": "liberty/style.json"
-			},
-			"zurich_switzerland": {
-				"style": "zurich_switzerland/style.json"
-			}
-		},
-		"data": {
-			"maptiler-osm-2020-02-10-v3.11-asia_vietnam": {
-				"mbtiles": "https://data.maptiler.com/download/WyI4ZGYyNjRmMi0yNmMzLTRmZTMtOWFjMS1kNDkyMGJkYWRmYzIiLCItMSIsMTcwMDld.ZsnBRw.ncIEITZnE-OUjfCpaLqiqPQv4sw/maptiler-osm-2020-02-10-v3.11-asia_vietnam.mbtiles"
-			},
-			"maptiler-osm-2020-02-10-v3.11-asia_cambodia.mbtiles": {
-				"mbtiles": "https://data.maptiler.com/download/WyI4ZGYyNjRmMi0yNmMzLTRmZTMtOWFjMS1kNDkyMGJkYWRmYzIiLCItMSIsMTY5Mjld.ZsngxA.VwWB3Ja4Tzb_haPX1lbrG9-hqOY/maptiler-osm-2020-02-10-v3.11-asia_cambodia.mbtiles"
-			},
-			"planet": {
-				"pmtiles": "https://data.source.coop/protomaps/openstreetmap/tiles/v3.pmtiles"
-			},
-			"building_footprints": {
-				"pmtiles": "https://data.source.coop/vida/google-microsoft-open-buildings/pmtiles/go_ms_building_footprints.pmtiles"
-			},
-			"ODbL_firenze": {
-				"pmtiles": "ODbL_firenze/ODbL_firenze.pmtiles"
-			},
-			"zurich_switzerland": {
-				"mbtiles": "https://github.com/acalcutt/tileserver-gl/releases/download/test_data/zurich_switzerland.mbtiles"
-			}
-		},
-		"sprites": {
-			"liberty": true,
-			"basic": true
-		},
-		"fonts": {
-			"Open Sans Regular": true,
-			"Times New Roman": true
-		}
+	  "options": {
+	    "listenPort": 8080,
+	    "killEndpoint": true,
+	    "restartEndpoint": true,
+	    "frontPage": true,
+	    "serveWMTS": true,
+	    "serveRendered": true,
+	    "maxScaleRender": 1,
+	    "renderedCompression": 6,
+	    "serveSwagger": true,
+	    "loggerFormat": ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
+	    "minPoolSize": 8,
+	    "maxPoolSize": 16
+	  },
+	  "styles": {
+	    "vietnam": {
+	      "style": "vietnam/style.json"
+	    },
+	    "cambodia": {
+	      "style": "cambodia/style.json"
+	    },
+	    "zurich_switzerland": {
+	      "style": "zurich_switzerland/style.json"
+	    }
+	  },
+	  "data": {
+	    "maptiler-osm-2020-02-10-v3.11-asia_vietnam": {
+	      "mbtiles": "https://data.maptiler.com/download/WyI4ZGYyNjRmMi0yNmMzLTRmZTMtOWFjMS1kNDkyMGJkYWRmYzIiLCItMSIsMTcwMDld.ZsnBRw.ncIEITZnE-OUjfCpaLqiqPQv4sw/maptiler-osm-2020-02-10-v3.11-asia_vietnam.mbtiles"
+	    },
+	    "maptiler-osm-2020-02-10-v3.11-asia_cambodia": {
+	      "mbtiles": "https://data.maptiler.com/download/WyI4ZGYyNjRmMi0yNmMzLTRmZTMtOWFjMS1kNDkyMGJkYWRmYzIiLCItMSIsMTY5Mjld.ZsngxA.VwWB3Ja4Tzb_haPX1lbrG9-hqOY/maptiler-osm-2020-02-10-v3.11-asia_cambodia.mbtiles"
+	    },
+	    "planet": {
+	      "pmtiles": "https://data.source.coop/protomaps/openstreetmap/tiles/v3.pmtiles"
+	    },
+	    "building_footprints": {
+	      "pmtiles": "https://data.source.coop/vida/google-microsoft-open-buildings/pmtiles/go_ms_building_footprints.pmtiles"
+	    },
+	    "ODbL_firenze": {
+	      "pmtiles": "ODbL_firenze/ODbL_firenze.pmtiles"
+	    },
+	    "zurich_switzerland": {
+	      "mbtiles": "https://github.com/acalcutt/tileserver-gl/releases/download/test_data/zurich_switzerland.mbtiles"
+	    }
+	  },
+	  "sprites": {
+	    "liberty": true,
+	    "basic": true
+	  },
+	  "fonts": {
+	    "Open Sans Regular": true,
+	    "Times New Roman": true
+	  }
 	}
