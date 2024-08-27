@@ -1,7 +1,7 @@
 "use strict";
 
-import { config, startupComplete } from "./config.js";
 import { StatusCodes } from "http-status-codes";
+import { config } from "./config.js";
 import express from "express";
 import path from "node:path";
 import {
@@ -12,7 +12,7 @@ import {
 
 function checkHealth() {
   return (req, res, next) => {
-    if (startupComplete === false) {
+    if (config.startupComplete === false) {
       return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
     }
 

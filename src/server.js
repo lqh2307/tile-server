@@ -1,11 +1,11 @@
 "use strict";
 
-import { loadConfigFile, startupComplete } from "./config.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
 import { serve_style } from "./serve_style.js";
+import { loadConfigFile } from "./config.js";
 import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
 import { printLog } from "./utils.js";
@@ -55,7 +55,7 @@ export async function startServer() {
       .then(() => {
         printLog("info", `Completed startup!`);
 
-        startupComplete = true;
+        config.startupComplete = true;
       })
       .catch((error) => {
         printLog("error", `Failed to load data: ${error}. Exited!`);

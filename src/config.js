@@ -12,7 +12,6 @@ const folderPaths = {
   mbtiles: path.resolve("data", "mbtiles"),
   pmtiles: path.resolve("data", "pmtiles"),
 };
-let startupComplete = false;
 let config;
 
 /**
@@ -73,9 +72,10 @@ export async function loadConfigFile() {
       fonts: {},
       sprites: {},
     },
+    startupComplete: false,
   };
 
   return config;
 }
 
-export { configFilePath, folderPaths, startupComplete, config };
+export { configFilePath, folderPaths, config };
