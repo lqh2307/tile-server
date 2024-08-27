@@ -3,7 +3,7 @@
 import { getRequestHost, validateStyle, printLog } from "./utils.js";
 import { config, folderPaths } from "./config.js";
 import { StatusCodes } from "http-status-codes";
-import fs from "node:fs/promises";
+import fsPromise from "node:fs/promises";
 import express from "express";
 import path from "node:path";
 
@@ -210,7 +210,7 @@ export const serve_style = {
 
           /* Read style json file */
           const filePath = path.join(folderPaths.styles, stylePath);
-          const fileData = await fs.readFile(filePath, "utf-8");
+          const fileData = await fsPromise.readFile(filePath, "utf-8");
           const styleJSON = JSON.parse(fileData);
 
           /* Validate style */

@@ -4,21 +4,22 @@ import fsPromise from "node:fs/promises";
 import path from "node:path";
 import os from "os";
 
-const configFilePath = path.resolve("data", "config.json");
 const folderPaths = {
-  styles: path.resolve("data", "styles"),
   fonts: path.resolve("data", "fonts"),
+  styles: path.resolve("data", "styles"),
   sprites: path.resolve("data", "sprites"),
   mbtiles: path.resolve("data", "mbtiles"),
   pmtiles: path.resolve("data", "pmtiles"),
 };
+const configFilePath = path.resolve("data", "config.json");
+
 let config;
 
 /**
  * Load config.json file
  * @returns {Promise<config>}
  */
-export async function loadConfigFile() {
+async function loadConfigFile() {
   /* Validate config file and folders paths */
   await Promise.all([
     (async () => {
@@ -78,4 +79,4 @@ export async function loadConfigFile() {
   return config;
 }
 
-export { configFilePath, folderPaths, config };
+export { configFilePath, loadConfigFile, folderPaths, config };
