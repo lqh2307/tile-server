@@ -4,48 +4,27 @@ import fsPromise from "node:fs/promises";
 import path from "node:path";
 import os from "os";
 
-const folderPaths = {
-  fonts: path.resolve("data", "fonts"),
-  styles: path.resolve("data", "styles"),
-  sprites: path.resolve("data", "sprites"),
-  mbtiles: path.resolve("data", "mbtiles"),
-  pmtiles: path.resolve("data", "pmtiles"),
-};
-const configFilePath = path.resolve("data", "config.json");
-
 let config;
 
 /**
  * Load config.json file
- * @returns {Promise<config>}
+ * @param {string} configFilePath
+ * @returns {Promise<void>}
  */
-async function loadConfigFile() {
-  /* Validate config file and folders paths */
-  await Promise.all([
-    (async () => {
-      const stat = await fsPromise.stat(configFilePath);
-
-      if (stat.isFile() === false) {
-        throw new Error(`"config.json" file: ${configFilePath} does not exist`);
-      }
-    })(),
-    ...Object.keys(folderPaths).map(async (name) => {
-      const stat = await fsPromise.stat(folderPaths[name]);
-
-      if (stat.isDirectory() === false) {
-        throw new Error(
-          `"${name}" folder: ${folderPaths[name]} does not exist`
-        );
-      }
-    }),
-  ]);
-
+async function loadConfigFile(configFilePath) {
   /* Read config.json file */
   const fileData = await fsPromise.readFile(configFilePath, "utf8");
   const configData = JSON.parse(fileData);
 
   /* Create config object */
   config = {
+    paths: {
+      fonts: path.resolve("data", "fonts"),
+      styles: path.resolve("data", "styles"),
+      sprites: path.resolve("data", "sprites"),
+      mbtiles: path.resolve("data", "mbtiles"),
+      pmtiles: path.resolve("data", "pmtiles"),
+    },
     options: {
       listenPort: configData.options?.listenPort || 8080,
       killEndpoint: configData.options?.killEndpoint ?? true,
@@ -76,7 +55,18 @@ async function loadConfigFile() {
     startupComplete: false,
   };
 
-  return config;
+  /* Validate folders paths */
+  await Promise.all(
+    Object.keys(config.paths).map(async (name) => {
+      const stat = await fsPromise.stat(config.paths[name]);
+
+      if (stat.isDirectory() === false) {
+        throw new Error(
+          `"${name}" folder: ${config.paths[name]} does not exist`
+        );
+      }
+    })
+  );
 }
 
-export { configFilePath, loadConfigFile, folderPaths, config };
+export { loadConfigFile, config };

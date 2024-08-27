@@ -1,7 +1,7 @@
 "use strict";
 
-import { config, folderPaths } from "./config.js";
 import { StatusCodes } from "http-status-codes";
+import { config } from "./config.js";
 import express from "express";
 import path from "node:path";
 import {
@@ -156,7 +156,7 @@ export const serve_sprite = {
       Object.keys(config.sprites).map(async (id) => {
         try {
           /* Validate sprite */
-          const dirPath = path.join(folderPaths.sprites, id);
+          const dirPath = path.join(config.paths.sprites, id);
 
           await validateSprite(dirPath);
 

@@ -1,7 +1,7 @@
 "use strict";
 
-import { config, folderPaths } from "./config.js";
 import { StatusCodes } from "http-status-codes";
+import { config } from "./config.js";
 import express from "express";
 import path from "node:path";
 import {
@@ -139,7 +139,7 @@ export const serve_font = {
       Object.keys(config.fonts).map(async (id) => {
         try {
           /* Validate font */
-          const dirPath = path.join(folderPaths.fonts, id);
+          const dirPath = path.join(config.paths.fonts, id);
 
           await validateFont(dirPath);
 

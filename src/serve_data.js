@@ -1,7 +1,7 @@
 "use strict";
 
-import { folderPaths, config } from "./config.js";
 import { StatusCodes } from "http-status-codes";
+import { config } from "./config.js";
 import express from "express";
 import path from "node:path";
 import {
@@ -274,7 +274,7 @@ export const serve_data = {
               item.mbtiles.startsWith("https://") === true ||
               item.mbtiles.startsWith("http://") === true
             ) {
-              filePath = path.join(folderPaths.mbtiles, id, `${id}.mbtiles`);
+              filePath = path.join(config.paths.mbtiles, id, `${id}.mbtiles`);
 
               if ((await isValidFile(filePath)) === false) {
                 await downloadFile(item.mbtiles, filePath);
@@ -282,7 +282,7 @@ export const serve_data = {
 
               item.mbtiles = path.join(id, `${id}.mbtiles`);
             } else {
-              filePath = path.join(folderPaths.mbtiles, item.mbtiles);
+              filePath = path.join(config.paths.mbtiles, item.mbtiles);
             }
 
             dataInfo.sourceType = "mbtiles";
@@ -295,7 +295,7 @@ export const serve_data = {
             ) {
               filePath = item.pmtiles;
             } else {
-              filePath = path.join(folderPaths.pmtiles, item.pmtiles);
+              filePath = path.join(config.paths.pmtiles, item.pmtiles);
             }
 
             dataInfo.sourceType = "pmtiles";

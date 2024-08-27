@@ -1,9 +1,9 @@
 "use strict";
 
 import { getRequestHost, validateStyle, printLog } from "./utils.js";
-import { config, folderPaths } from "./config.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
+import { config } from "./config.js";
 import express from "express";
 import path from "node:path";
 
@@ -209,7 +209,7 @@ export const serve_style = {
           }
 
           /* Read style json file */
-          const filePath = path.join(folderPaths.styles, stylePath);
+          const filePath = path.join(config.paths.styles, stylePath);
           const fileData = await fsPromise.readFile(filePath, "utf-8");
           const styleJSON = JSON.parse(fileData);
 

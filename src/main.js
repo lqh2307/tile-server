@@ -1,12 +1,13 @@
 "use strict";
 
-import { configFilePath } from "./config.js";
 import { startServer } from "./server.js";
 import { printLog } from "./utils.js";
 import { program } from "commander";
 import chokidar from "chokidar";
 import cluster from "cluster";
 import os from "os";
+
+const configFilePath = path.resolve("data", "config.json");
 
 /* Start server */
 if (cluster.isPrimary === true) {
@@ -47,6 +48,26 @@ if (cluster.isPrimary === true) {
     restartInterval: Number(program.opts().restart_interval),
   };
 
+  /* Fork servers */
+  printLog("info", `Starting server with ${options.numThreads} processes...`);
+
+  if (options.numThreads > 1) {
+    for (let i = 0; i < options.numThreads; i++) {
+      cluster.fork();
+    }
+
+    cluster.on("exit", (worker, code, signal) => {
+      printLog(
+        "info",
+        `Process with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
+      );
+
+      cluster.fork();
+    });
+  } else {
+    startServer(configFilePath);
+  }
+
   /* Setup watch config file change */
   if (options.killInterval > 0) {
     printLog(
@@ -83,26 +104,6 @@ if (cluster.isPrimary === true) {
         process.exit(1);
       });
   }
-
-  /* Fork servers */
-  printLog("info", `Starting server with ${options.numThreads} threads...`);
-
-  if (options.numThreads > 1) {
-    for (let i = 0; i < options.numThreads; i++) {
-      cluster.fork();
-    }
-
-    cluster.on("exit", (worker, code, signal) => {
-      printLog(
-        "info",
-        `Worker with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
-      );
-
-      cluster.fork();
-    });
-  } else {
-    startServer();
-  }
 } else {
-  startServer();
+  startServer(configFilePath);
 }

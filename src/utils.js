@@ -3,9 +3,9 @@
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import SphericalMercator from "@mapbox/sphericalmercator";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
-import { folderPaths, config } from "./config.js";
 import { PMTiles, FetchSource } from "pmtiles";
 import fsPromise from "node:fs/promises";
+import { config } from "./config.js";
 import handlebars from "handlebars";
 import sqlite3 from "sqlite3";
 import path from "node:path";
@@ -242,7 +242,7 @@ export async function getFontsPBF(ids, fileName) {
           throw new Error("Font is not found");
         }
 
-        const filePath = path.join(folderPaths, font, fileName);
+        const filePath = path.join(config.paths, font, fileName);
 
         return await fsPromise.readFile(filePath);
       } catch (error) {
@@ -277,7 +277,7 @@ export async function getFontsPBF(ids, fileName) {
  * @returns {Promise<Buffer>}
  */
 export async function getSprite(id, fileName) {
-  const filePath = path.join(folderPaths.sprites, id, fileName);
+  const filePath = path.join(config.paths.sprites, id, fileName);
 
   return await fsPromise.readFile(filePath);
 }
