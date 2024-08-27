@@ -16,7 +16,7 @@ if (cluster.isPrimary === true) {
   program
     .description("========== tile-server startup options ==========")
     .usage("tile-server [options]")
-    .option("-n, --num_threads <num>", "Number of threads", 1)
+    .option("-n, --num_processes <num>", "Number of processes", 1)
     .option(
       "-r, --restart_interval <num>",
       "Interval time to restart server",
@@ -44,7 +44,7 @@ if (cluster.isPrimary === true) {
   });
 
   const options = {
-    numThreads: Number(program.opts().num_threads),
+    numProcesses: Number(program.opts().num_processes),
     killInterval: Number(program.opts().kill_interval),
     restartInterval: Number(program.opts().restart_interval),
   };
@@ -52,18 +52,18 @@ if (cluster.isPrimary === true) {
   /* Fork servers */
   printLog(
     "info",
-    `========== Starting server with ${options.numThreads} threads... ==========`
+    `========== Starting server with ${options.numProcesses} processes... ==========`
   );
 
-  if (options.numThreads > 1) {
-    for (let i = 0; i < options.numThreads; i++) {
+  if (options.numProcesses > 1) {
+    for (let i = 0; i < options.numProcesses; i++) {
       cluster.fork();
     }
 
     cluster.on("exit", (worker, code, signal) => {
       printLog(
         "info",
-        `Worker with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
+        `Process with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
       );
 
       cluster.fork();
