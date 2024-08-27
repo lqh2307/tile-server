@@ -4,7 +4,7 @@ import mlgl from "@maplibre/maplibre-gl-native";
 import { StatusCodes } from "http-status-codes";
 import { Worker } from "node:worker_threads";
 import { createPool } from "generic-pool";
-import { getConfig } from "./config.js";
+import { config } from "./config.js";
 import express from "express";
 import path from "node:path";
 import axios from "axios";
@@ -53,8 +53,6 @@ async function processImageInWorker(data, scale, compression, tileSize, z) {
 
 function getRenderedTileHandler() {
   return async (req, res, next) => {
-    const config = getConfig();
-
     const id = decodeURI(req.params.id);
     const item = config.repo.rendereds[id];
 
@@ -114,8 +112,6 @@ function getRenderedTileHandler() {
 
 function getRenderedHandler() {
   return async (req, res, next) => {
-    const config = getConfig();
-
     const id = decodeURI(req.params.id);
     const item = config.repo.rendereds[id];
 
@@ -149,8 +145,6 @@ function getRenderedHandler() {
 function getRenderedsListHandler() {
   return async (req, res, next) => {
     try {
-      const config = getConfig();
-
       const result = Object.keys(config.repo.rendereds).map((id) => {
         return {
           id: id,
@@ -176,8 +170,6 @@ function getRenderedsListHandler() {
 export const serve_rendered = {
   init: () => {
     const app = express();
-
-    const config = getConfig();
 
     if (config.options.serveRendered === true) {
       /**
@@ -329,8 +321,6 @@ export const serve_rendered = {
   },
 
   add: async () => {
-    const config = getConfig();
-
     if (config.options.serveRendered === true) {
       mlgl.on("message", (error) => {
         if (error.severity === "ERROR") {

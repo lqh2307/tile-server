@@ -1,6 +1,6 @@
 "use strict";
 
-import { getConfig, getSpritesFolderPath } from "./config.js";
+import { config, folderPaths } from "./config.js";
 import { StatusCodes } from "http-status-codes";
 import express from "express";
 import path from "node:path";
@@ -13,8 +13,6 @@ import {
 
 function getSpriteHandler() {
   return async (req, res, next) => {
-    const config = getConfig();
-
     const id = decodeURI(req.params.id);
     const item = config.repo.sprites[id];
 
@@ -48,8 +46,6 @@ function getSpriteHandler() {
 function getSpritesListHandler() {
   return async (req, res, next) => {
     try {
-      const config = getConfig();
-
       const result = Object.keys(config.repo.sprites).map((id) => {
         return {
           name: id,
@@ -156,13 +152,11 @@ export const serve_sprite = {
   },
 
   add: async () => {
-    const config = getConfig();
-
     await Promise.all(
       Object.keys(config.sprites).map(async (id) => {
         try {
           /* Validate sprite */
-          const dirPath = path.join(getSpritesFolderPath(), id);
+          const dirPath = path.join(folderPaths.sprites, id);
 
           await validateSprite(dirPath);
 

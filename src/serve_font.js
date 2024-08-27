@@ -1,6 +1,6 @@
 "use strict";
 
-import { getConfig, getFontsFolderPath } from "./config.js";
+import { config, folderPaths } from "./config.js";
 import { StatusCodes } from "http-status-codes";
 import express from "express";
 import path from "node:path";
@@ -47,8 +47,6 @@ function getFontHandler() {
 function getFontsListHandler() {
   return async (req, res, next) => {
     try {
-      const config = getConfig();
-
       const result = Object.keys(config.repo.fonts).map((id) => {
         return {
           name: id,
@@ -137,13 +135,11 @@ export const serve_font = {
   },
 
   add: async () => {
-    const config = getConfig();
-
     await Promise.all(
       Object.keys(config.fonts).map(async (id) => {
         try {
           /* Validate font */
-          const dirPath = path.join(getFontsFolderPath(), id);
+          const dirPath = path.join(folderPaths.fonts, id);
 
           await validateFont(dirPath);
 

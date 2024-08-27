@@ -1,6 +1,6 @@
 "use strict";
 
-import { getConfig, getStartupStatus } from "./config.js";
+import { config, startupComplete } from "./config.js";
 import { StatusCodes } from "http-status-codes";
 import express from "express";
 import path from "node:path";
@@ -12,7 +12,7 @@ import {
 
 function checkHealth() {
   return (req, res, next) => {
-    if (getStartupStatus() === false) {
+    if (startupComplete === false) {
       return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
     }
 
@@ -22,8 +22,6 @@ function checkHealth() {
 
 function serveFrontPageHandler() {
   return async (req, res, next) => {
-    const config = getConfig();
-
     const styles = {};
     const datas = {};
 
@@ -119,8 +117,6 @@ function serveFrontPageHandler() {
 
 function serveStyleHandler() {
   return async (req, res, next) => {
-    const config = getConfig();
-
     const id = decodeURI(req.params.id);
     const item = config.repo.styles[id];
 
@@ -149,8 +145,6 @@ function serveStyleHandler() {
 
 function serveDataHandler() {
   return async (req, res, next) => {
-    const config = getConfig();
-
     const id = decodeURI(req.params.id);
     const item = config.repo.datas[id];
 
@@ -180,8 +174,6 @@ function serveDataHandler() {
 
 function serveWMTSHandler() {
   return async (req, res, next) => {
-    const config = getConfig();
-
     const id = decodeURI(req.params.id);
     const item = config.repo.rendereds[id];
 
@@ -217,8 +209,6 @@ export const serve_template = {
       "/",
       express.static(path.resolve("public", "resources"))
     );
-
-    const config = getConfig();
 
     if (
       config.options.serveRendered === true &&

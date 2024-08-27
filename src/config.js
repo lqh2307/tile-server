@@ -5,7 +5,7 @@ import path from "node:path";
 import os from "os";
 
 const configFilePath = path.resolve("data", "config.json");
-const folders = {
+const folderPaths = {
   styles: path.resolve("data", "styles"),
   fonts: path.resolve("data", "fonts"),
   sprites: path.resolve("data", "sprites"),
@@ -29,11 +29,13 @@ export async function loadConfigFile() {
         throw new Error(`"config.json" file: ${configFilePath} does not exist`);
       }
     })(),
-    ...Object.keys(folders).map(async (name) => {
-      const stat = await fsPromise.stat(folders[name]);
+    ...Object.keys(folderPaths).map(async (name) => {
+      const stat = await fsPromise.stat(folderPaths[name]);
 
       if (stat.isDirectory() === false) {
-        throw new Error(`"${name}" folder: ${folders[name]} does not exist`);
+        throw new Error(
+          `"${name}" folder: ${folderPaths[name]} does not exist`
+        );
       }
     }),
   ]);
@@ -76,75 +78,4 @@ export async function loadConfigFile() {
   return config;
 }
 
-/**
- * Get config
- * @returns {object}
- */
-export function getConfig() {
-  return config;
-}
-
-/**
- * Get config file path
- * @returns {string}
- */
-export function getConfigFilePath() {
-  return configFilePath;
-}
-
-/**
- * Get styles folder path
- * @returns {string}
- */
-export function getStylesFolderPath() {
-  return folders.styles;
-}
-
-/**
- * Get fonts folder path
- * @returns {string}
- */
-export function getFontsFolderPath() {
-  return folders.fonts;
-}
-
-/**
- * Get sprites folder path
- * @returns {string}
- */
-export function getSpritesFolderPath() {
-  return folders.sprites;
-}
-
-/**
- * Get MBTiles folder path
- * @returns {string}
- */
-export function getMBTilesFolderPath() {
-  return folders.mbtiles;
-}
-
-/**
- * Get PMTiles folder path
- * @returns {string}
- */
-export function getPMTilesFolderPath() {
-  return folders.pmtiles;
-}
-
-/**
- * Set startup status
- * @param {boolean} status
- * @returns {void}
- */
-export function setStartupStatus(status) {
-  startupComplete = status;
-}
-
-/**
- * Get startup status
- * @returns {boolean}
- */
-export function getStartupStatus() {
-  return startupComplete;
-}
+export { configFilePath, folderPaths, startupComplete, config };

@@ -3,6 +3,7 @@
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import SphericalMercator from "@mapbox/sphericalmercator";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
+import { folderPaths, config } from "./config.js";
 import { PMTiles, FetchSource } from "pmtiles";
 import fsPromise from "node:fs/promises";
 import handlebars from "handlebars";
@@ -13,11 +14,6 @@ import sharp from "sharp";
 import fs from "node:fs";
 import zlib from "zlib";
 import util from "util";
-import {
-  getSpritesFolderPath,
-  getFontsFolderPath,
-  getConfig,
-} from "./config.js";
 
 /**
  * Get xyz tile center from lon lat z
@@ -238,8 +234,6 @@ export function getRequestHost(req) {
  * @returns {Promise<Buffer>}
  */
 export async function getFontsPBF(ids, fileName) {
-  const config = getConfig();
-
   const data = await Promise.all(
     ids.split(",").map(async (font) => {
       try {
@@ -248,7 +242,7 @@ export async function getFontsPBF(ids, fileName) {
           throw new Error("Font is not found");
         }
 
-        const filePath = path.join(getFontsFolderPath(), font, fileName);
+        const filePath = path.join(folderPaths, font, fileName);
 
         return await fsPromise.readFile(filePath);
       } catch (error) {
@@ -283,7 +277,7 @@ export async function getFontsPBF(ids, fileName) {
  * @returns {Promise<Buffer>}
  */
 export async function getSprite(id, fileName) {
-  const filePath = path.join(getSpritesFolderPath(), id, fileName);
+  const filePath = path.join(folderPaths.sprites, id, fileName);
 
   return await fsPromise.readFile(filePath);
 }

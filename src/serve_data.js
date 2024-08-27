@@ -1,13 +1,9 @@
 "use strict";
 
+import { folderPaths, config } from "./config.js";
 import { StatusCodes } from "http-status-codes";
 import express from "express";
 import path from "node:path";
-import {
-  getMBTilesFolderPath,
-  getPMTilesFolderPath,
-  getConfig,
-} from "./config.js";
 import {
   validateDataInfo,
   getPMTilesInfos,
@@ -25,8 +21,6 @@ import {
 
 function getDataTileHandler() {
   return async (req, res, next) => {
-    const config = getConfig();
-
     const id = decodeURI(req.params.id);
     const item = config.repo.datas[id];
 
@@ -85,8 +79,6 @@ function getDataTileHandler() {
 
 function getDataHandler() {
   return async (req, res, next) => {
-    const config = getConfig();
-
     const id = decodeURI(req.params.id);
     const item = config.repo.datas[id];
 
@@ -122,8 +114,6 @@ function getDataHandler() {
 function getDatasListHandler() {
   return async (req, res, next) => {
     try {
-      const config = getConfig();
-
       const result = Object.keys(config.repo.datas).map((id) => {
         return {
           id: id,
@@ -272,8 +262,6 @@ export const serve_data = {
   },
 
   add: async () => {
-    const config = getConfig();
-
     await Promise.all(
       Object.keys(config.data).map(async (id) => {
         try {
@@ -286,7 +274,7 @@ export const serve_data = {
               item.mbtiles.startsWith("https://") === true ||
               item.mbtiles.startsWith("http://") === true
             ) {
-              filePath = path.join(getMBTilesFolderPath(), id, `${id}.mbtiles`);
+              filePath = path.join(folderPaths.mbtiles, id, `${id}.mbtiles`);
 
               if ((await isValidFile(filePath)) === false) {
                 await downloadFile(item.mbtiles, filePath);
@@ -294,7 +282,7 @@ export const serve_data = {
 
               item.mbtiles = path.join(id, `${id}.mbtiles`);
             } else {
-              filePath = path.join(getMBTilesFolderPath(), item.mbtiles);
+              filePath = path.join(folderPaths.mbtiles, item.mbtiles);
             }
 
             dataInfo.sourceType = "mbtiles";
@@ -307,7 +295,7 @@ export const serve_data = {
             ) {
               filePath = item.pmtiles;
             } else {
-              filePath = path.join(getPMTilesFolderPath(), item.pmtiles);
+              filePath = path.join(folderPaths.pmtiles, item.pmtiles);
             }
 
             dataInfo.sourceType = "pmtiles";

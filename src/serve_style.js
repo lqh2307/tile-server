@@ -1,7 +1,7 @@
 "use strict";
 
 import { getRequestHost, validateStyle, printLog } from "./utils.js";
-import { getConfig, getStylesFolderPath } from "./config.js";
+import { config, folderPaths } from "./config.js";
 import { StatusCodes } from "http-status-codes";
 import fs from "node:fs/promises";
 import express from "express";
@@ -9,8 +9,6 @@ import path from "node:path";
 
 function getStyleHandler() {
   return async (req, res, next) => {
-    const config = getConfig();
-
     const id = decodeURI(req.params.id);
     const item = config.repo.styles[id];
 
@@ -114,8 +112,6 @@ function getStyleHandler() {
 function getStylesListHandler() {
   return async (req, res, next) => {
     try {
-      const config = getConfig();
-
       const result = Object.keys(config.repo.styles).map((id) => {
         return {
           id: id,
@@ -203,8 +199,6 @@ export const serve_style = {
   },
 
   add: async () => {
-    const config = getConfig();
-
     await Promise.all(
       Object.keys(config.styles).map(async (id) => {
         try {
@@ -215,7 +209,7 @@ export const serve_style = {
           }
 
           /* Read style json file */
-          const filePath = path.join(getStylesFolderPath(), stylePath);
+          const filePath = path.join(folderPaths.styles, stylePath);
           const fileData = await fs.readFile(filePath, "utf-8");
           const styleJSON = JSON.parse(fileData);
 

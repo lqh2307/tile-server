@@ -1,6 +1,6 @@
 "use strict";
 
-import { loadConfigFile, setStartupStatus } from "./config.js";
+import { loadConfigFile, startupComplete } from "./config.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
 import { serve_common } from "./serve_common.js";
@@ -55,7 +55,7 @@ export async function startServer() {
       .then(() => {
         printLog("info", `Completed startup!`);
 
-        setStartupStatus(true);
+        startupComplete = true;
       })
       .catch((error) => {
         printLog("error", `Failed to load data: ${error}. Exited!`);
