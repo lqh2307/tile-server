@@ -106,7 +106,10 @@ if (cluster.isPrimary === true) {
   }
 
   /* Fork servers */
-  printLog("info", `========== Starting server with ${options.numThreads} threads... ==========`);
+  printLog(
+    "info",
+    `========== Starting server with ${options.numThreads} threads... ==========`
+  );
 
   if (options.numThreads > 1) {
     for (let i = 0; i < options.numThreads; i++) {
