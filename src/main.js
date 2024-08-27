@@ -13,7 +13,7 @@ const configFilePath = path.resolve("data", "config.json");
 if (cluster.isPrimary === true) {
   /* Setup commands */
   program
-    .description("tile-server startup options")
+    .description("========== tile-server startup options ==========")
     .usage("tile-server [options]")
     .option("-n, --num_threads <num>", "Number of threads", 1)
     .option(
@@ -28,7 +28,7 @@ if (cluster.isPrimary === true) {
 
   /* Setup envs & events */
   process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length * 2); // For libuv
-  process.env.MAIN_PID = process.pid;
+  process.env.MAIN_PID = process.pid; // Store main PID
 
   process.on("SIGINT", () => {
     printLog("info", `Received "SIGINT" signal. Killing server...`);
@@ -103,6 +103,26 @@ if (cluster.isPrimary === true) {
 
         process.exit(1);
       });
+  }
+
+  /* Fork servers */
+  printLog("info", `========== Starting server with ${options.numThreads} threads... ==========`);
+
+  if (options.numThreads > 1) {
+    for (let i = 0; i < options.numThreads; i++) {
+      cluster.fork();
+    }
+
+    cluster.on("exit", (worker, code, signal) => {
+      printLog(
+        "info",
+        `Worker with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
+      );
+
+      cluster.fork();
+    });
+  } else {
+    startServer();
   }
 } else {
   startServer(configFilePath);
