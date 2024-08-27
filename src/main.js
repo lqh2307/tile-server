@@ -5,6 +5,7 @@ import { printLog } from "./utils.js";
 import { program } from "commander";
 import chokidar from "chokidar";
 import cluster from "cluster";
+import path from "node:path";
 import os from "os";
 
 const configFilePath = path.resolve("data", "config.json");
