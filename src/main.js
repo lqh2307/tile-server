@@ -50,7 +50,10 @@ if (cluster.isPrimary === true) {
   };
 
   /* Fork servers */
-  printLog("info", `Starting server with ${options.numThreads} processes...`);
+  printLog(
+    "info",
+    `========== Starting server with ${options.numThreads} threads... ==========`
+  );
 
   if (options.numThreads > 1) {
     for (let i = 0; i < options.numThreads; i++) {
@@ -60,7 +63,7 @@ if (cluster.isPrimary === true) {
     cluster.on("exit", (worker, code, signal) => {
       printLog(
         "info",
-        `Process with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
+        `Worker with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
       );
 
       cluster.fork();
@@ -104,29 +107,6 @@ if (cluster.isPrimary === true) {
 
         process.exit(1);
       });
-  }
-
-  /* Fork servers */
-  printLog(
-    "info",
-    `========== Starting server with ${options.numThreads} threads... ==========`
-  );
-
-  if (options.numThreads > 1) {
-    for (let i = 0; i < options.numThreads; i++) {
-      cluster.fork();
-    }
-
-    cluster.on("exit", (worker, code, signal) => {
-      printLog(
-        "info",
-        `Worker with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
-      );
-
-      cluster.fork();
-    });
-  } else {
-    startServer();
   }
 } else {
   startServer(configFilePath);
