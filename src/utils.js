@@ -242,7 +242,7 @@ export async function getFontsPBF(ids, fileName) {
           throw new Error("Font is not found");
         }
 
-        const filePath = path.join(config.paths, font, fileName);
+        const filePath = path.join(config.paths.fonts, font, fileName);
 
         return await fsPromise.readFile(filePath);
       } catch (error) {
