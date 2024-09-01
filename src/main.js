@@ -13,22 +13,10 @@ const configFilePath = path.resolve("data", "config.json");
 /* Start server */
 if (cluster.isPrimary === true) {
   /* Setup commands */
-  program
-    .description("========== tile-server startup options ==========")
-    .usage("tile-server [options]")
-    .option("-n, --num_processes <num>", "Number of processes", 1)
-    .option(
-      "-r, --restart_interval <num>",
-      "Interval time to restart server",
-      1000
-    )
-    .option("-k, --kill_interval <num>", "Interval time to kill server", 0)
-    .version("1.0.0", "-v, --version")
-    .showHelpAfterError()
-    .parse(process.argv);
+  program.description("========== tile-server startup options ==========").usage("tile-server [options]").option("-n, --num_processes <num>", "Number of processes", 1).option("-r, --restart_interval <num>", "Interval time to restart server", 1000).option("-k, --kill_interval <num>", "Interval time to kill server", 0).version("1.0.0", "-v, --version").showHelpAfterError().parse(process.argv);
 
   /* Setup envs & events */
-  process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length * 2); // For libuv
+  process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length); // For libuv
   process.env.MAIN_PID = process.pid; // Store main PID
 
   process.on("SIGINT", () => {
@@ -50,10 +38,7 @@ if (cluster.isPrimary === true) {
   };
 
   /* Fork servers */
-  printLog(
-    "info",
-    `========== Starting server with ${options.numProcesses} processes... ==========`
-  );
+  printLog("info", `========== Starting server with ${options.numProcesses} processes... ==========`);
 
   if (options.numProcesses > 1) {
     for (let i = 0; i < options.numProcesses; i++) {
@@ -61,10 +46,7 @@ if (cluster.isPrimary === true) {
     }
 
     cluster.on("exit", (worker, code, signal) => {
-      printLog(
-        "info",
-        `Process with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
-      );
+      printLog("info", `Process with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`);
 
       cluster.fork();
     });
@@ -74,10 +56,7 @@ if (cluster.isPrimary === true) {
 
   /* Setup watch config file change */
   if (options.killInterval > 0) {
-    printLog(
-      "info",
-      `Watch config file changes interval ${options.killInterval}ms to kill server`
-    );
+    printLog("info", `Watch config file changes interval ${options.killInterval}ms to kill server`);
 
     chokidar
       .watch(configFilePath, {
@@ -91,10 +70,7 @@ if (cluster.isPrimary === true) {
         process.exit(0);
       });
   } else if (options.restartInterval > 0) {
-    printLog(
-      "info",
-      `Watch config file changes interval ${options.restartInterval}ms to restart server`
-    );
+    printLog("info", `Watch config file changes interval ${options.restartInterval}ms to restart server`);
 
     chokidar
       .watch(configFilePath, {
