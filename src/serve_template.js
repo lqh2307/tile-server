@@ -3,7 +3,6 @@
 import { StatusCodes } from "http-status-codes";
 import { config } from "./config.js";
 import express from "express";
-import path from "node:path";
 import {
   getXYZCenterFromLonLatZ,
   compileTemplate,
@@ -205,10 +204,7 @@ function serveWMTSHandler() {
 
 export const serve_template = {
   init: () => {
-    const app = express().use(
-      "/",
-      express.static(path.resolve("public", "resources"))
-    );
+    const app = express().use("/", express.static("public/resources"));
 
     if (
       config.options.serveRendered === true &&

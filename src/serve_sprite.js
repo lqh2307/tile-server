@@ -3,7 +3,6 @@
 import { StatusCodes } from "http-status-codes";
 import { config } from "./config.js";
 import express from "express";
-import path from "node:path";
 import {
   getRequestHost,
   validateSprite,
@@ -156,7 +155,7 @@ export const serve_sprite = {
       Object.keys(config.sprites).map(async (id) => {
         try {
           /* Validate sprite */
-          const dirPath = path.join(config.paths.sprites, id);
+          const dirPath = `${config.paths.sprites}/${id}`;
 
           await validateSprite(dirPath);
 

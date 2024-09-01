@@ -6,7 +6,6 @@ import { Worker } from "node:worker_threads";
 import { createPool } from "generic-pool";
 import { config } from "./config.js";
 import express from "express";
-import path from "node:path";
 import axios from "axios";
 import {
   detectFormatAndHeaders,
@@ -24,7 +23,7 @@ import {
 
 async function processImageInWorker(data, scale, compression, tileSize, z) {
   return new Promise((resolve, reject) => {
-    new Worker(path.resolve("src", "process_image_worker.js"), {
+    new Worker("src/process_image_worker.js", {
       workerData: {
         data,
         scale,

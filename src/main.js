@@ -5,19 +5,13 @@ import { printLog } from "./utils.js";
 import { program } from "commander";
 import chokidar from "chokidar";
 import cluster from "cluster";
-import path from "node:path";
 import os from "os";
-
-const configFilePath = path.resolve("data", "config.json");
 
 /* Start server */
 if (cluster.isPrimary === true) {
-  /* Setup commands */
-  program.description("========== tile-server startup options ==========").usage("tile-server [options]").option("-n, --num_processes <num>", "Number of processes", 1).option("-r, --restart_interval <num>", "Interval time to restart server", 1000).option("-k, --kill_interval <num>", "Interval time to kill server", 0).version("1.0.0", "-v, --version").showHelpAfterError().parse(process.argv);
-
   /* Setup envs & events */
   process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length); // For libuv
-  process.env.MAIN_PID = process.pid; // Store main PID
+  process.env.MAIN_PID = process.pid; // Store main PID in other processes
 
   process.on("SIGINT", () => {
     printLog("info", `Received "SIGINT" signal. Killing server...`);
@@ -31,52 +25,82 @@ if (cluster.isPrimary === true) {
     process.exit(1);
   });
 
-  const options = {
-    numProcesses: Number(program.opts().num_processes),
-    killInterval: Number(program.opts().kill_interval),
-    restartInterval: Number(program.opts().restart_interval),
+  /* Setup commands */
+  program
+    .description("========== tile-server startup options ==========")
+    .usage("tile-server [options]")
+    .option("-n, --num_processes <num>", "Number of processes", 1)
+    .option(
+      "-r, --restart_interval <num>",
+      "Interval time to restart server",
+      1000
+    )
+    .option("-k, --kill_interval <num>", "Interval time to kill server", 0)
+    .version("1.0.0", "-v, --version")
+    .showHelpAfterError()
+    .parse(process.argv);
+
+  /* Load args */
+  const argOpts = program.opts();
+
+  const opts = {
+    numProcesses: Number(argOpts.num_processes),
+    killInterval: Number(argOpts.kill_interval),
+    restartInterval: Number(argOpts.restart_interval),
   };
 
   /* Fork servers */
-  printLog("info", `========== Starting server with ${options.numProcesses} processes... ==========`);
+  printLog(
+    "info",
+    `========== Starting server with ${opts.numProcesses} processes... ==========`
+  );
 
-  if (options.numProcesses > 1) {
-    for (let i = 0; i < options.numProcesses; i++) {
+  if (opts.numProcesses > 1) {
+    for (let i = 0; i < opts.numProcesses; i++) {
       cluster.fork();
     }
 
     cluster.on("exit", (worker, code, signal) => {
-      printLog("info", `Process with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`);
+      printLog(
+        "info",
+        `Process with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
+      );
 
       cluster.fork();
     });
   } else {
-    startServer(configFilePath);
+    startServer("data/config.json");
   }
 
   /* Setup watch config file change */
-  if (options.killInterval > 0) {
-    printLog("info", `Watch config file changes interval ${options.killInterval}ms to kill server`);
+  if (opts.killInterval > 0) {
+    printLog(
+      "info",
+      `Watch config file changes interval ${opts.killInterval}ms to kill server`
+    );
 
     chokidar
-      .watch(configFilePath, {
+      .watch("data/config.json", {
         usePolling: true,
         awaitWriteFinish: true,
-        interval: options.killInterval,
+        interval: opts.killInterval,
       })
       .on("change", () => {
         printLog("info", `Config file has changed. Killing server...`);
 
         process.exit(0);
       });
-  } else if (options.restartInterval > 0) {
-    printLog("info", `Watch config file changes interval ${options.restartInterval}ms to restart server`);
+  } else if (opts.restartInterval > 0) {
+    printLog(
+      "info",
+      `Watch config file changes interval ${opts.restartInterval}ms to restart server`
+    );
 
     chokidar
-      .watch(configFilePath, {
+      .watch("data/config.json", {
         usePolling: true,
         awaitWriteFinish: true,
-        interval: options.restartInterval,
+        interval: opts.restartInterval,
       })
       .on("change", () => {
         printLog("info", `Config file has changed. Restaring server...`);
@@ -85,5 +109,5 @@ if (cluster.isPrimary === true) {
       });
   }
 } else {
-  startServer(configFilePath);
+  startServer("data/config.json");
 }

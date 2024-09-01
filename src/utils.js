@@ -49,7 +49,7 @@ export function getLonLatCenterFromXYZ(x, y, z) {
  * @returns {Promise<string>}
  */
 export async function compileTemplate(template, data) {
-  const filePath = path.resolve("public", "templates", `${template}.tmpl`);
+  const filePath = `public/templates/${template}.tmpl`;
   const fileData = await fsPromise.readFile(filePath, "utf8");
 
   const compiler = handlebars.compile(fileData);
@@ -187,7 +187,7 @@ export async function findFiles(dirPath, regex) {
 
   const results = [];
   for (const fileName of fileNames) {
-    const filePath = path.join(dirPath, fileName);
+    const filePath = `${dirPath}/${fileName}`;
 
     if (regex.test(fileName) === true && (await isValidFile(filePath))) {
       results.push(fileName);
@@ -208,7 +208,7 @@ export async function findFolders(dirPath, regex) {
 
   const results = [];
   for (const folderName of folderNames) {
-    const folderPath = path.join(dirPath, folderName);
+    const folderPath = `${dirPath}/${folderName}`;
 
     if (regex.test(dirPath) === true && (await isValidFolder(folderPath))) {
       results.push(folderName);
@@ -242,25 +242,16 @@ export async function getFontsPBF(ids, fileName) {
           throw new Error("Font is not found");
         }
 
-        const filePath = path.join(config.paths.fonts, font, fileName);
+        const filePath = `${config.paths.fonts}/${font}/${fileName}`;
 
         return await fsPromise.readFile(filePath);
       } catch (error) {
-        const fallbackFont = "Open Sans Regular";
-
         printLog(
           "warning",
-          `Failed to get font "${font}": ${error}. Using fallback font "${fallbackFont}"...`
+          `Failed to get font "${font}": ${error}. Using fallback font "${config.fallbackFont}"...`
         );
 
-        const filePath = path.resolve(
-          "public",
-          "resources",
-          "template",
-          "fonts",
-          fallbackFont,
-          fileName
-        );
+        const filePath = `public/resources/template/fonts/${config.fallbackFont}/${fileName}`;
 
         return await fsPromise.readFile(filePath);
       }
@@ -277,7 +268,7 @@ export async function getFontsPBF(ids, fileName) {
  * @returns {Promise<Buffer>}
  */
 export async function getSprite(id, fileName) {
-  const filePath = path.join(config.paths.sprites, id, fileName);
+  const filePath = `${config.paths.sprites}/${id}/${fileName}`;
 
   return await fsPromise.readFile(filePath);
 }
@@ -536,7 +527,7 @@ export async function validateSprite(spriteDirPath) {
   await Promise.all(
     spriteFileNames.map(async (spriteFileNames) => {
       /* Validate JSON sprite */
-      const jsonFilePath = path.join(spriteDirPath, `${spriteFileNames}.json`);
+      const jsonFilePath = `${spriteDirPath}/${spriteFileNames}.json`;
       const fileData = await fsPromise.readFile(jsonFilePath, "utf8");
       const jsonData = JSON.parse(fileData);
 
@@ -554,7 +545,7 @@ export async function validateSprite(spriteDirPath) {
       });
 
       /* Validate PNG sprite */
-      const pngFilePath = path.join(spriteDirPath, `${spriteFileNames}.png`);
+      const pngFilePath = `${spriteDirPath}/${spriteFileNames}.png`;
 
       const pngMetadata = await sharp(pngFilePath).metadata();
 

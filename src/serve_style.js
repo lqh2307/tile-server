@@ -5,7 +5,6 @@ import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { config } from "./config.js";
 import express from "express";
-import path from "node:path";
 
 function getStyleHandler() {
   return async (req, res, next) => {
@@ -209,7 +208,7 @@ export const serve_style = {
           }
 
           /* Read style json file */
-          const filePath = path.join(config.paths.styles, stylePath);
+          const filePath = `${config.paths.styles}/${stylePath}`;
           const fileData = await fsPromise.readFile(filePath, "utf-8");
           const styleJSON = JSON.parse(fileData);
 

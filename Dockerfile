@@ -7,7 +7,7 @@ RUN \
   set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
   apt-get -y update; \
-  apt-get -y --no-install-recommends install \
+  apt-get -y install \
     pkg-config \
     build-essential \
     ca-certificates \
@@ -47,7 +47,7 @@ RUN \
   set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
   apt-get -y update; \
-  apt-get -y --no-install-recommends install \
+  apt-get -y install \
     xvfb \
     libglfw3 \
     libuv1 \

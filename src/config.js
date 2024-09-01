@@ -1,7 +1,6 @@
 "use strict";
 
 import fsPromise from "node:fs/promises";
-import path from "node:path";
 import os from "os";
 
 let config;
@@ -19,11 +18,11 @@ async function loadConfigFile(configFilePath) {
   /* Create config object */
   config = {
     paths: {
-      fonts: path.resolve("data", "fonts"),
-      styles: path.resolve("data", "styles"),
-      sprites: path.resolve("data", "sprites"),
-      mbtiles: path.resolve("data", "mbtiles"),
-      pmtiles: path.resolve("data", "pmtiles"),
+      fonts: "data/fonts",
+      styles: "data/styles",
+      sprites: "data/sprites",
+      mbtiles: "data/mbtiles",
+      pmtiles: "data/pmtiles",
     },
     options: {
       listenPort: configData.options?.listenPort || 8080,
@@ -52,6 +51,7 @@ async function loadConfigFile(configFilePath) {
       fonts: {},
       sprites: {},
     },
+    fallbackFont: "Open Sans Regular",
     startupComplete: false,
   };
 
