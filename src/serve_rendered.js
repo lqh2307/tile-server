@@ -201,6 +201,17 @@ export const serve_rendered = {
        *                     type: array
        *                     items:
        *                       type: string
+       *       404:
+       *         description: Not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
+       *       500:
+       *         description: Internal server error
        */
       app.get("/rendereds.json", getRenderedsListHandler());
 
@@ -243,7 +254,14 @@ export const serve_rendered = {
        *                   items:
        *                     type: string
        *       404:
-       *         description: Rendered not found
+       *         description: Not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
        *       500:
        *         description: Internal server error
        */
@@ -306,7 +324,14 @@ export const serve_rendered = {
        *               type: string
        *               format: binary
        *       404:
-       *         description: Rendered not found
+       *         description: Not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
        *       500:
        *         description: Internal server error
        */

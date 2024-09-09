@@ -92,6 +92,17 @@ export const serve_font = {
      *                     type: string
      *                   url:
      *                     type: string
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
      */
     app.get("/fonts.json", getFontsListHandler());
 
@@ -127,6 +138,17 @@ export const serve_font = {
      *             schema:
      *               type: string
      *               format: binary
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
      */
     app.get("/:id/:range(\\d{1,5}-\\d{1,5}).pbf", getFontHandler());
 

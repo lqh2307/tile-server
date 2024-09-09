@@ -100,7 +100,8 @@
                 <div class="details">
                   <h3 class="name">{{name}}</h3>
                   <div class="identifier">identifier: {{@key}}</div>
-                  <div class="identifier">type: {{#if is_vector}}vector{{else}}raster{{/if}} {{#if source_type}} | ext: {{source_type}}{{/if}}</div>
+                  <div class="identifier">type: {{#if is_vector}}vector{{else}}raster{{/if}}</div>
+                  <div class="identifier">ext: {{source_type}}</div>
                   <p class="services">
                     services: <a href="/data/{{@key}}.json">TileJSON</a>
                     {{#if xyz_link}}

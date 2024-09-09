@@ -235,7 +235,14 @@ export const serve_template = {
        *             schema:
        *               type: string
        *       404:
-       *         description: Style not found
+       *         description: Not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
        *       500:
        *         description: Internal server error
        */
@@ -268,7 +275,7 @@ export const serve_template = {
        *             schema:
        *               type: string
        *       404:
-       *         description: Style not found
+       *         description: Not found
        *       503:
        *         description: Server is starting up
        *         content:
@@ -307,7 +314,7 @@ export const serve_template = {
        *             schema:
        *               type: string
        *       404:
-       *         description: Data not found
+       *         description: Not found
        *       503:
        *         description: Server is starting up
        *         content:
@@ -338,6 +345,8 @@ export const serve_template = {
        *           text/html:
        *             schema:
        *               type: string
+       *       404:
+       *         description: Not found
        *       503:
        *         description: Server is starting up
        *         content:

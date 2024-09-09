@@ -105,6 +105,8 @@ export const serve_common = {
      *             schema:
      *               type: string
      *               example: OK
+     *       404:
+     *         description: Not found
      *       503:
      *         description: Server is starting up
      *         content:
@@ -136,6 +138,15 @@ export const serve_common = {
        *             schema:
        *               type: string
        *               example: OK
+       *       404:
+       *         description: Not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
        *       500:
        *         description: Internal server error
        */
@@ -161,6 +172,15 @@ export const serve_common = {
        *             schema:
        *               type: string
        *               example: OK
+       *       404:
+       *         description: Not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
        *       500:
        *         description: Internal server error
        */

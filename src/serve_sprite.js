@@ -96,6 +96,17 @@ export const serve_sprite = {
      *                     type: array
      *                     items:
      *                       type: string
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
      */
     app.get("/sprites.json", getSpritesListHandler());
 
@@ -141,7 +152,14 @@ export const serve_sprite = {
      *               type: string
      *               format: binary
      *       404:
-     *         description: Sprite not found
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
      *       500:
      *         description: Internal server error
      */

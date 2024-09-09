@@ -66,7 +66,7 @@ function getDataTileHandler() {
       );
 
       if (error.message === "Tile does not exist") {
-        return res.status(StatusCodes.NOT_FOUND).send(error.message);
+        return res.status(StatusCodes.NO_CONTENT).send(error.message);
       }
 
       return res
@@ -162,6 +162,17 @@ export const serve_data = {
      *                     type: string
      *                   url:
      *                     type: string
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
      */
     app.get("/datas.json", getDatasListHandler());
 
@@ -195,6 +206,17 @@ export const serve_data = {
      *           application/json:
      *             schema:
      *               type: object
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
      */
     app.get("/:id.json", getDataHandler());
 
@@ -251,6 +273,17 @@ export const serve_data = {
      *             schema:
      *               type: string
      *               format: binary
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
      */
     app.get(
       `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp|gif)`,

@@ -160,6 +160,17 @@ export const serve_style = {
      *                     type: string
      *                   url:
      *                     type: string
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
      */
     app.get("/styles.json", getStylesListHandler());
 
@@ -188,7 +199,14 @@ export const serve_style = {
      *             schema:
      *               type: object
      *       404:
-     *         description: Style not found
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
      *       500:
      *         description: Internal server error
      */
