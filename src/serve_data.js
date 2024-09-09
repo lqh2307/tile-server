@@ -273,6 +273,8 @@ export const serve_data = {
      *             schema:
      *               type: string
      *               format: binary
+     *       204:
+     *         description: No content
      *       404:
      *         description: Not found
      *       503:
