@@ -6,6 +6,7 @@ FROM $BUILDER_IMAGE AS builder
 RUN \
   set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
+  apt-get -y upgrade; \
   apt-get -y update; \
   apt-get -y install \
     pkg-config \
@@ -46,6 +47,7 @@ FROM $TARGET_IMAGE AS final
 RUN \
   set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
+  apt-get -y upgrade; \
   apt-get -y update; \
   apt-get -y install \
     xvfb \

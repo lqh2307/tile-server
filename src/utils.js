@@ -146,36 +146,6 @@ export async function processImage(data, scale, compression, tileSize, z) {
 }
 
 /**
- * Check file is valid?
- * @param {string} filePath
- * @returns {Promise<boolean>}
- */
-export async function isValidFile(filePath) {
-  try {
-    const stat = await fsPromise.stat(filePath);
-
-    return stat.isFile() === true && stat.size > 0;
-  } catch (error) {
-    return false;
-  }
-}
-
-/**
- * Check folder is valid?
- * @param {string} dirPath
- * @returns {Promise<boolean>}
- */
-export async function isValidFolder(dirPath) {
-  try {
-    const stat = await fsPromise.stat(dirPath);
-
-    return stat.isDirectory() === true;
-  } catch (error) {
-    return false;
-  }
-}
-
-/**
  * Find matching files in directory
  * @param {string} dirPath
  * @param {RegExp} regex
@@ -187,8 +157,9 @@ export async function findFiles(dirPath, regex) {
   const results = [];
   for (const fileName of fileNames) {
     const filePath = `${dirPath}/${fileName}`;
+    const stat = await fsPromise.stat(filePath);
 
-    if (regex.test(fileName) === true && (await isValidFile(filePath))) {
+    if (regex.test(fileName) === true && stat.isFile() === true && stat.size > 0) {
       results.push(fileName);
     }
   }
@@ -208,8 +179,9 @@ export async function findFolders(dirPath, regex) {
   const results = [];
   for (const folderName of folderNames) {
     const folderPath = `${dirPath}/${folderName}`;
+    const stat = await fsPromise.stat(folderPath);
 
-    if (regex.test(dirPath) === true && (await isValidFolder(folderPath))) {
+    if (regex.test(dirPath) === true && stat.isDirectory() === true) {
       results.push(folderName);
     }
   }
@@ -303,7 +275,7 @@ export async function validateFont(pbfDirPath) {
   const pbfFileNames = await findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
 
   if (pbfFileNames.length === 0) {
-    throw new Error(`Missing some pbf files`);
+    throw new Error(`Missing some PBF files`);
   }
 }
 
@@ -443,19 +415,19 @@ export async function validateStyle(config, styleJSON) {
           const sourceID = source.url.slice(10);
 
           if (config.repo.datas[sourceID] === undefined) {
-            throw new Error(`Source "${id}" is not found`);
+            throw new Error(`Source "${id}" is not found data source "${sourceID}"`);
           }
         } else if (
           source.url.startsWith("https://") === false &&
           source.url.startsWith("http://") === false
         ) {
-          throw new Error(`Source "${id}" is invalid url`);
+          throw new Error(`Source "${id}" is invalid data url "${url}"`);
         }
       }
 
       if (source.urls !== undefined) {
         if (source.urls.length === 0) {
-          throw new Error(`Source "${id}" is invalid urls`);
+          throw new Error(`Source "${id}" is invalid data urls`);
         }
 
         source.urls.forEach((url) => {
@@ -466,13 +438,13 @@ export async function validateStyle(config, styleJSON) {
             const sourceID = url.slice(10);
 
             if (config.repo.datas[sourceID] === undefined) {
-              throw new Error(`Source "${id}" is not found`);
+              throw new Error(`Source "${id}" is not found data source "${sourceID}"`);
             }
           } else if (
             url.startsWith("https://") === false &&
             url.startsWith("http://") === false
           ) {
-            throw new Error(`Source "${id}" is invalid urls`);
+            throw new Error(`Source "${id}" is invalid data url "${url}"`);
           }
         });
       }
@@ -490,13 +462,13 @@ export async function validateStyle(config, styleJSON) {
             const sourceID = tile.slice(10);
 
             if (config.repo.datas[sourceID] === undefined) {
-              throw new Error(`Source "${id}" is not found`);
+              throw new Error(`Source "${id}" is not found data source "${sourceID}"`);
             }
           } else if (
             tile.startsWith("https://") === false &&
             tile.startsWith("http://") === false
           ) {
-            throw new Error(`Source "${id}" is invalid tile urls`);
+            throw new Error(`Source "${id}" is invalid tile url "${url}"`);
           }
         });
       }
@@ -516,7 +488,7 @@ export async function validateSprite(spriteDirPath) {
   ]);
 
   if (jsonSpriteFileNames.length !== pngSpriteNames.length) {
-    throw new Error(`Missing some json or png files`);
+    throw new Error(`Missing some JSON or PNG files`);
   }
 
   const spriteFileNames = jsonSpriteFileNames.map((jsonSpriteFileName) =>
@@ -539,7 +511,7 @@ export async function validateSprite(spriteDirPath) {
           "x" in value === false ||
           "y" in value === false
         ) {
-          throw new Error(`Invalid json file`);
+          throw new Error(`Invalid JSON file`);
         }
       });
 
@@ -549,7 +521,7 @@ export async function validateSprite(spriteDirPath) {
       const pngMetadata = await sharp(pngFilePath).metadata();
 
       if (pngMetadata.format !== "png") {
-        throw new Error("Invalid png file");
+        throw new Error("Invalid PNG file");
       }
     })
   );

@@ -13,7 +13,6 @@ import {
   downloadFile,
   openMBTiles,
   openPMTiles,
-  isValidFile,
   gzipAsync,
   printLog,
 } from "./utils.js";
@@ -309,8 +308,9 @@ export const serve_data = {
               item.mbtiles.startsWith("http://") === true
             ) {
               filePath = `${config.paths.mbtiles}/${id}/${id}.mbtiles`;
+              const stat = await fsPromise.stat(filePath);
 
-              if ((await isValidFile(filePath)) === false) {
+              if (stat.isFile() === false || stat.size <= 0) {
                 await downloadFile(item.mbtiles, filePath);
               }
 

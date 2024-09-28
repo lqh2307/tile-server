@@ -4,7 +4,7 @@
 
 Clone source:
 
-	git clone https://github.com/lqh2307/tile-server.git
+	git clone --single-branch -b 1.0.0 https://github.com/lqh2307/tile-server.git
 
 Switch to 1.0.0:
 
