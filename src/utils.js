@@ -36,10 +36,7 @@ export function getXYZCenterFromLonLatZ(lon, lat, z) {
  * @returns {[number,number]}
  */
 export function getLonLatCenterFromXYZ(x, y, z) {
-  return new SphericalMercator().ll(
-    [(x + 0.5) * 256, (y + 0.5) * 256],
-    z
-  );
+  return new SphericalMercator().ll([(x + 0.5) * 256, (y + 0.5) * 256], z);
 }
 
 /**
@@ -159,7 +156,11 @@ export async function findFiles(dirPath, regex) {
     const filePath = `${dirPath}/${fileName}`;
     const stat = await fsPromise.stat(filePath);
 
-    if (regex.test(fileName) === true && stat.isFile() === true && stat.size > 0) {
+    if (
+      regex.test(fileName) === true &&
+      stat.isFile() === true &&
+      stat.size > 0
+    ) {
       results.push(fileName);
     }
   }
@@ -415,7 +416,9 @@ export async function validateStyle(config, styleJSON) {
           const sourceID = source.url.slice(10);
 
           if (config.repo.datas[sourceID] === undefined) {
-            throw new Error(`Source "${id}" is not found data source "${sourceID}"`);
+            throw new Error(
+              `Source "${id}" is not found data source "${sourceID}"`
+            );
           }
         } else if (
           source.url.startsWith("https://") === false &&
@@ -438,7 +441,9 @@ export async function validateStyle(config, styleJSON) {
             const sourceID = url.slice(10);
 
             if (config.repo.datas[sourceID] === undefined) {
-              throw new Error(`Source "${id}" is not found data source "${sourceID}"`);
+              throw new Error(
+                `Source "${id}" is not found data source "${sourceID}"`
+              );
             }
           } else if (
             url.startsWith("https://") === false &&
@@ -462,7 +467,9 @@ export async function validateStyle(config, styleJSON) {
             const sourceID = tile.slice(10);
 
             if (config.repo.datas[sourceID] === undefined) {
-              throw new Error(`Source "${id}" is not found data source "${sourceID}"`);
+              throw new Error(
+                `Source "${id}" is not found data source "${sourceID}"`
+              );
             }
           } else if (
             tile.startsWith("https://") === false &&

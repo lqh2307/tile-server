@@ -4,7 +4,19 @@ import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { config } from "./config.js";
 import express from "express";
-import { validateDataInfo, getPMTilesInfos, getMBTilesInfos, getRequestHost, getPMTilesTile, getMBTilesTile, downloadFile, openMBTiles, openPMTiles, gzipAsync, printLog } from "./utils.js";
+import {
+  validateDataInfo,
+  getPMTilesInfos,
+  getMBTilesInfos,
+  getRequestHost,
+  getPMTilesTile,
+  getMBTilesTile,
+  downloadFile,
+  openMBTiles,
+  openPMTiles,
+  gzipAsync,
+  printLog,
+} from "./utils.js";
 
 function getDataTileHandler() {
   return async (req, res, next) => {
@@ -18,7 +30,9 @@ function getDataTileHandler() {
 
     /* Check data tile format */
     if (req.params.format !== item.tileJSON.format) {
-      return res.status(StatusCodes.BAD_REQUEST).send("Data tile format is invalid");
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .send("Data tile format is invalid");
     }
 
     const z = Number(req.params.z);
@@ -27,10 +41,16 @@ function getDataTileHandler() {
 
     try {
       /* Get data tile */
-      const dataTile = item.sourceType === "mbtiles" ? await getMBTilesTile(item.source, z, x, y) : await getPMTilesTile(item.source, z, x, y);
+      const dataTile =
+        item.sourceType === "mbtiles"
+          ? await getMBTilesTile(item.source, z, x, y)
+          : await getPMTilesTile(item.source, z, x, y);
 
       /* Gzip pbf data tile */
-      if (dataTile.headers["Content-Type"] === "application/x-protobuf" && dataTile.headers["Content-Encoding"] === undefined) {
+      if (
+        dataTile.headers["Content-Type"] === "application/x-protobuf" &&
+        dataTile.headers["Content-Encoding"] === undefined
+      ) {
         dataTile.data = await gzipAsync(dataTile.data);
 
         dataTile.headers["Content-Encoding"] = "gzip";
@@ -40,13 +60,18 @@ function getDataTileHandler() {
 
       return res.status(StatusCodes.OK).send(dataTile.data);
     } catch (error) {
-      printLog("error", `Failed to get data "${id}" - Tile ${z}/${x}/${y}: ${error}`);
+      printLog(
+        "error",
+        `Failed to get data "${id}" - Tile ${z}/${x}/${y}: ${error}`
+      );
 
       if (error.message === "Tile does not exist") {
         return res.status(StatusCodes.NO_CONTENT).send(error.message);
       }
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -63,9 +88,14 @@ function getDataHandler() {
     const includeJSON = req.query.json === "true" ? true : false;
 
     try {
-      const dataInfo = item.sourceType === "mbtiles" ? await getMBTilesInfos(item.source, includeJSON) : await getPMTilesInfos(item.source, includeJSON);
+      const dataInfo =
+        item.sourceType === "mbtiles"
+          ? await getMBTilesInfos(item.source, includeJSON)
+          : await getPMTilesInfos(item.source, includeJSON);
 
-      dataInfo.tiles = [`${getRequestHost(req)}data/${id}/{z}/{x}/{y}.${item.tileJSON.format}`];
+      dataInfo.tiles = [
+        `${getRequestHost(req)}data/${id}/{z}/{x}/{y}.${item.tileJSON.format}`,
+      ];
 
       res.header("Content-Type", "application/json");
 
@@ -73,7 +103,9 @@ function getDataHandler() {
     } catch (error) {
       printLog("error", `Failed to get data "${id}": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -93,7 +125,9 @@ function getDatasListHandler() {
     } catch (error) {
       printLog("error", `Failed to get datas": ${error}`);
 
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal server error");
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
   };
 }
@@ -253,7 +287,10 @@ export const serve_data = {
      *       500:
      *         description: Internal server error
      */
-    app.get(`/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp|gif)`, getDataTileHandler());
+    app.get(
+      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp|gif)`,
+      getDataTileHandler()
+    );
 
     return app;
   },
@@ -267,7 +304,10 @@ export const serve_data = {
           let filePath;
 
           if (item.mbtiles) {
-            if (item.mbtiles.startsWith("https://") === true || item.mbtiles.startsWith("http://") === true) {
+            if (
+              item.mbtiles.startsWith("https://") === true ||
+              item.mbtiles.startsWith("http://") === true
+            ) {
               filePath = `${config.paths.mbtiles}/${id}/${id}.mbtiles`;
               const stat = await fsPromise.stat(filePath);
 
@@ -284,7 +324,10 @@ export const serve_data = {
             dataInfo.source = await openMBTiles(filePath);
             dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
           } else if (item.pmtiles) {
-            if (item.pmtiles.startsWith("https://") === true || item.pmtiles.startsWith("http://") === true) {
+            if (
+              item.pmtiles.startsWith("https://") === true ||
+              item.pmtiles.startsWith("http://") === true
+            ) {
               filePath = item.pmtiles;
             } else {
               filePath = `${config.paths.pmtiles}/${item.pmtiles}`;
@@ -303,7 +346,10 @@ export const serve_data = {
           /* Add to repo */
           config.repo.datas[id] = dataInfo;
         } catch (error) {
-          printLog("error", `Failed to load data "${id}": ${error}. Skipping...`);
+          printLog(
+            "error",
+            `Failed to load data "${id}": ${error}. Skipping...`
+          );
         }
       })
     );
