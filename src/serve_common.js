@@ -108,8 +108,8 @@ function serveInfoHandler() {
           result.data.mbtiles.size += stat.size;
         } else {
           if (
-            config.repo.datas[data].pmtiles.startsWith("https://") !== true &&
-            config.repo.datas[data].pmtiles.startsWith("http://") !== true
+            config.data[data].pmtiles.startsWith("https://") !== true &&
+            config.data[data].pmtiles.startsWith("http://") !== true
           ) {
             const filePath = `${config.paths.pmtiles}/${config.data[data].pmtiles}`;
             const stat = await fsPromise.stat(filePath);
