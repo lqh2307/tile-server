@@ -45,6 +45,8 @@ function serveInfoHandler() {
           size: 0,
         },
         data: {
+          count: 0,
+          size: 0,
           mbtiles: {
             count: 0,
             size: 0,
@@ -86,11 +88,11 @@ function serveInfoHandler() {
         const dirPath = `${config.paths.sprites}/${sprite}`;
         const fileNames = await fsPromise.readdir(dirPath);
 
+        result.sprite.count += 1;
+
         for (const fileName of fileNames) {
           const filePath = `${dirPath}/${fileName}`;
           const stat = await fsPromise.stat(filePath);
-
-          result.sprite.count += 1;
 
           if (
             /^sprite(@\d+x)?\.(json|png)$/.test(fileName) === true &&
@@ -109,6 +111,8 @@ function serveInfoHandler() {
           result.data.mbtiles.count += 1;
           result.data.mbtiles.size += stat.size;
         } else {
+          result.data.pmtiles.count += 1;
+
           if (
             config.data[data].pmtiles.startsWith("https://") !== true &&
             config.data[data].pmtiles.startsWith("http://") !== true
@@ -116,11 +120,13 @@ function serveInfoHandler() {
             const filePath = `${config.paths.pmtiles}/${config.data[data].pmtiles}`;
             const stat = await fsPromise.stat(filePath);
 
-            result.data.pmtiles.count += 1;
             result.data.pmtiles.size += stat.size;
           }
         }
       }
+
+      result.data.count = result.data.mbtiles.count + result.data.pmtiles.count;
+      result.data.size = result.data.mbtiles.size + result.data.pmtiles.size;
 
       for (const style in config.repo.styles) {
         const filePath = `${config.paths.styles}/${config.styles[style].style}`;
