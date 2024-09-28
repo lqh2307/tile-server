@@ -30,8 +30,9 @@ RUN \
 RUN \
   wget -q https://nodejs.org/download/release/v22.9.0/node-v22.9.0-linux-x64.tar.xz; \
   mkdir -p /usr/local/lib/nodejs && tar -xJf node-v22.9.0-linux-x64.tar.xz --strip-components=1 -C /usr/local/lib/nodejs; \
-  echo 'export PATH=/usr/local/lib/nodejs/bin:$PATH' >> ~/.bashrc && source ~/.bashrc; \
   rm -rf node-v22.9.0-linux-x64.tar.xz;
+
+RUN export PATH=/usr/local/lib/nodejs/bin:$PATH
 
 WORKDIR /tile-server
 
@@ -68,7 +69,7 @@ COPY --from=builder /tile-server .
 COPY --from=builder /tile-server/public/resources/template ./data
 COPY --from=builder /usr/local/lib/nodejs /usr/local/lib/nodejs
 
-RUN echo 'export PATH=/usr/local/lib/nodejs/bin:$PATH' >> ~/.bashrc && source ~/.bashrc;
+RUN export PATH=/usr/local/lib/nodejs/bin:$PATH
 
 VOLUME /tile-server/data
 
