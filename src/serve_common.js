@@ -25,6 +25,119 @@ function serveSwagger() {
   };
 }
 
+function serveInfoHandler() {
+  return async (req, res, next) => {
+    try {
+      if (config.startupComplete === false) {
+        return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
+      }
+
+      const result = {
+        version: JSON.parse(await fsPromise.readFile("package.json", "utf8"))
+          .version,
+        font: {
+          count: 0,
+          size: 0,
+        },
+        sprite: {
+          count: 0,
+          size: 0,
+        },
+        data: {
+          mbtiles: {
+            count: 0,
+            size: 0,
+          },
+          pmtiles: {
+            count: 0,
+            size: 0,
+          },
+        },
+        style: {
+          count: 0,
+          size: 0,
+        },
+        rendered: {
+          count: Object.keys(config.repo.rendereds).length,
+        },
+      };
+
+      for (const font in config.repo.fonts) {
+        const dirPath = `${config.paths.fonts}/${font}`;
+        const fileNames = await fsPromise.readdir(dirPath);
+
+        for (const fileName of fileNames) {
+          const filePath = `${dirPath}/${fileName}`;
+          const stat = await fsPromise.stat(filePath);
+
+          if (
+            /^\d{1,5}-\d{1,5}\.pbf$/.test(fileName) === true &&
+            stat.isFile() === true
+          ) {
+            result.font.count += 1;
+            result.font.size += stat.size;
+          }
+        }
+      }
+
+      for (const sprite in config.repo.sprites) {
+        const dirPath = `${config.paths.sprites}/${sprite}`;
+        const fileNames = await fsPromise.readdir(dirPath);
+
+        for (const fileName of fileNames) {
+          const filePath = `${dirPath}/${fileName}`;
+          const stat = await fsPromise.stat(filePath);
+
+          if (
+            /^sprite(@\d+x)?\.(json|png)$/.test(fileName) === true &&
+            stat.isFile() === true
+          ) {
+            result.sprite.count += 1;
+            result.sprite.size += stat.size;
+          }
+        }
+      }
+
+      for (const data in config.repo.datas) {
+        if (config.repo.datas[data].sourceType === "mbtiles") {
+          const filePath = `${config.paths.mbtiles}/${config.data[data].mbtiles}`;
+          const stat = await fsPromise.stat(filePath);
+
+          result.data.mbtiles.count += 1;
+          result.data.mbtiles.size += stat.size;
+        } else {
+          if (
+            config.repo.datas[data].pmtiles.startsWith("https://") !== true &&
+            config.repo.datas[data].pmtiles.startsWith("http://") !== true
+          ) {
+            const filePath = `${config.paths.pmtiles}/${config.data[data].pmtiles}`;
+            const stat = await fsPromise.stat(filePath);
+
+            result.data.pmtiles.count += 1;
+            result.data.pmtiles.size += stat.size;
+          }
+        }
+      }
+
+      for (const style in config.repo.styles) {
+        const filePath = `${config.paths.styles}/${config.styles[style].style}`;
+        const stat = await fsPromise.stat(filePath);
+
+        result.style.count += 1;
+        result.style.size += stat.size;
+      }
+
+      return res.status(StatusCodes.OK).send(result);
+    } catch (error) {
+      printLog("error", `Failed to get info": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
 function serveHealthHandler() {
   return async (req, res, next) => {
     try {
@@ -86,6 +199,37 @@ export const serve_common = {
     if (config.options.serveSwagger === true) {
       app.use("/swagger/index.html", swaggerUi.serve, serveSwagger());
     }
+
+    /**
+     * @swagger
+     * tags:
+     *   - name: Common
+     *     description: Common related endpoints
+     * /health:
+     *   get:
+     *     tags:
+     *       - Common
+     *     summary: Get info
+     *     responses:
+     *       200:
+     *         description: Info
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/info", serveInfoHandler());
 
     /**
      * @swagger
