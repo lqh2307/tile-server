@@ -2,6 +2,7 @@
 
 import { StatusCodes } from "http-status-codes";
 import swaggerUi from "swagger-ui-express";
+import fsPromise from "node:fs/promises";
 import swaggerJsdoc from "swagger-jsdoc";
 import { printLog } from "./utils.js";
 import { config } from "./config.js";
