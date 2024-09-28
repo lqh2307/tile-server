@@ -37,7 +37,7 @@ export function getXYZCenterFromLonLatZ(lon, lat, z) {
  */
 export function getLonLatCenterFromXYZ(x, y, z) {
   return new SphericalMercator().ll(
-    [((x + 0.5) / (1 << z)) * (256 << z), ((y + 0.5) / (1 << z)) * (256 << z)],
+    [(x + 0.5) * 256, (y + 0.5) * 256],
     z
   );
 }
@@ -51,7 +51,6 @@ export function getLonLatCenterFromXYZ(x, y, z) {
 export async function compileTemplate(template, data) {
   const filePath = `public/templates/${template}.tmpl`;
   const fileData = await fsPromise.readFile(filePath, "utf8");
-
   const compiler = handlebars.compile(fileData);
 
   return compiler(data);
