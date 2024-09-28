@@ -67,6 +67,8 @@ function serveInfoHandler() {
         const dirPath = `${config.paths.fonts}/${font}`;
         const fileNames = await fsPromise.readdir(dirPath);
 
+        result.font.count += 1;
+
         for (const fileName of fileNames) {
           const filePath = `${dirPath}/${fileName}`;
           const stat = await fsPromise.stat(filePath);
@@ -75,7 +77,6 @@ function serveInfoHandler() {
             /^\d{1,5}-\d{1,5}\.pbf$/.test(fileName) === true &&
             stat.isFile() === true
           ) {
-            result.font.count += 1;
             result.font.size += stat.size;
           }
         }
@@ -89,11 +90,12 @@ function serveInfoHandler() {
           const filePath = `${dirPath}/${fileName}`;
           const stat = await fsPromise.stat(filePath);
 
+          result.sprite.count += 1;
+
           if (
             /^sprite(@\d+x)?\.(json|png)$/.test(fileName) === true &&
             stat.isFile() === true
           ) {
-            result.sprite.count += 1;
             result.sprite.size += stat.size;
           }
         }
