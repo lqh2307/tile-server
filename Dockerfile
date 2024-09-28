@@ -1,7 +1,7 @@
 ARG BUILDER_IMAGE=ubuntu:22.04
 ARG TARGET_IMAGE=ubuntu:22.04
 
-FROM $BUILDER_IMAGE AS builder
+FROM ${BUILDER_IMAGE} AS builder
 
 RUN \
   set -ex; \
@@ -28,21 +28,19 @@ RUN \
   rm -rf /var/lib/apt/lists/*;
 
 RUN \
-  wget -c https://nodejs.org/dist/v20.17.0/node-v20.17.0-linux-x64.tar.xz; \
-  tar -xvf node-v20.17.0-linux-x64.tar.xz; \
-  cp -r node-v20.17.0-linux-x64/bin node-v20.17.0-linux-x64/include node-v20.17.0-linux-x64/lib node-v20.17.0-linux-x64/share /usr/; \
-  rm -rf node-v20.17.0-linux-x64*;
+  wget -q https://nodejs.org/download/release/v22.9.0/node-v22.9.0-linux-x64.tar.xz; \
+  mkdir -p /usr/local/lib/nodejs && tar -xJf node-v22.9.0-linux-x64.tar.xz --strip-components=1 -C /usr/local/lib/nodejs; \
+  echo 'export PATH=/usr/local/lib/nodejs/bin:$PATH' >> ~/.bashrc && source ~/.bashrc; \
+  rm -rf node-v22.9.0-linux-x64.tar.xz;
 
 WORKDIR /tile-server
 
 ADD . .
 
-RUN \
-  npm install npm@latest; \
-  npm install --omit=dev;
+RUN npm install --omit=dev;
 
 
-FROM $TARGET_IMAGE AS final
+FROM ${TARGET_IMAGE} AS final
 
 RUN \
   set -ex; \
@@ -68,9 +66,9 @@ WORKDIR /tile-server
 
 COPY --from=builder /tile-server .
 COPY --from=builder /tile-server/public/resources/template ./data
-COPY --from=builder /usr/bin/node /usr/bin/node
-COPY --from=builder /usr/include/node /usr/include/node
-COPY --from=builder /usr/share/doc/node /usr/share/doc/node
+COPY --from=builder /usr/local/lib/nodejs /usr/local/lib/nodejs
+
+RUN echo 'export PATH=/usr/local/lib/nodejs/bin:$PATH' >> ~/.bashrc && source ~/.bashrc;
 
 VOLUME /tile-server/data
 
