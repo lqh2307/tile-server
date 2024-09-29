@@ -94,6 +94,7 @@ function serveFrontPageHandler() {
       ...Object.keys(config.repo.fonts).map(async (id) => {
         fonts[id] = {
           name: id,
+          font: `${getRequestHost(req)}fonts/${id}/{range}.pbf`,
         };
       }),
       ...Object.keys(config.repo.sprites).map(async (id) => {

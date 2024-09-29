@@ -133,6 +133,10 @@
                 <div class="details">
                   <h3 class="name">{{name}}</h3>
                   <div class="identifier">identifier: {{@key}}</div>
+                  <p class="services">
+                    <a href="#" onclick="toggleURL('font_{{@key}}', event)">URL</a>
+                    <input id="font_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{font}}" onclick="copyToClipboard(this)" />
+                  </p>
                 </div>
               </div>
             {{/each}}
