@@ -4,7 +4,6 @@ ARG TARGET_IMAGE=ubuntu:22.04
 FROM ${BUILDER_IMAGE} AS builder
 
 RUN \
-  set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
   apt-get -y update; \
   apt-get -y upgrade; \
@@ -44,7 +43,6 @@ RUN npm install --omit=dev;
 FROM ${TARGET_IMAGE} AS final
 
 RUN \
-  set -ex; \
   export DEBIAN_FRONTEND=noninteractive; \
   apt-get -y update; \
   apt-get -y upgrade; \
