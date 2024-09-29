@@ -48,7 +48,7 @@ if (cluster.isPrimary === true) {
     numProcesses: Number(argOpts.num_processes),
     killInterval: Number(argOpts.kill_interval),
     restartInterval: Number(argOpts.restart_interval),
-    dataDir: data_dir,
+    dataDir: argOpts.data_dir,
   };
 
   /* Fork servers */
