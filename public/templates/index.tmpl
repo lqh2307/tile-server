@@ -141,7 +141,7 @@
       } else if (tabId === 'sprites-tab') {
         document.querySelector('#sprites-tab').innerHTML = `
           <div class="box">
-            {{#each sprite}}
+            {{#each sprites}}
               <div class="item">
                 <img src="{{thumbnail}}" alt="{{name}} preview" />
                 <div class="details">
@@ -150,7 +150,7 @@
                   <p class="services">
                     services: <a href="/sprites/{{@key}}/sprite.json">JSON</a>
                     | <a href="#" onclick="toggleURL('sprite_{{@key}}', event)">URL</a>
-                    <input id="sprite_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{sprite_link}}" onclick="copyToClipboard(this)" />
+                    <input id="sprite_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{sprite}}" onclick="copyToClipboard(this)" />
                   </p>
                 </div>
               </div>

@@ -99,7 +99,7 @@ function serveFrontPageHandler() {
       ...Object.keys(config.repo.sprites).map(async (id) => {
         sprites[id] = {
           name: id,
-          url: `${getRequestHost(req)}sprites/${id}/sprite`,
+          sprite: `${getRequestHost(req)}sprites/${id}/sprite`,
           thumbnail: `${getRequestHost(req)}sprites/${id}/sprite.png`,
         };
       }),
