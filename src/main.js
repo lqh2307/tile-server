@@ -29,13 +29,14 @@ if (cluster.isPrimary === true) {
   program
     .description("========== tile-server startup options ==========")
     .usage("tile-server [options]")
-    .option("-n, --num_processes <num>", "Number of processes", 1)
+    .option("-n, --num_processes <num>", "Number of processes", "1")
     .option(
       "-r, --restart_interval <num>",
       "Interval time to restart server",
-      1000
+      "1000"
     )
-    .option("-k, --kill_interval <num>", "Interval time to kill server", 0)
+    .option("-k, --kill_interval <num>", "Interval time to kill server", "0")
+    .option("-d, --data_dir <dir>", "Data directory", "data")
     .version("1.0.0", "-v, --version")
     .showHelpAfterError()
     .parse(process.argv);
@@ -47,6 +48,7 @@ if (cluster.isPrimary === true) {
     numProcesses: Number(argOpts.num_processes),
     killInterval: Number(argOpts.kill_interval),
     restartInterval: Number(argOpts.restart_interval),
+    dataDir: data_dir,
   };
 
   /* Fork servers */
@@ -69,7 +71,7 @@ if (cluster.isPrimary === true) {
       cluster.fork();
     });
   } else {
-    startServer("data/config.json");
+    startServer(opts.dataDir);
   }
 
   /* Setup watch config file change */
@@ -80,7 +82,7 @@ if (cluster.isPrimary === true) {
     );
 
     chokidar
-      .watch("data/config.json", {
+      .watch(`${opts.dataDir}/config.json`, {
         usePolling: true,
         awaitWriteFinish: true,
         interval: opts.killInterval,
@@ -97,7 +99,7 @@ if (cluster.isPrimary === true) {
     );
 
     chokidar
-      .watch("data/config.json", {
+      .watch(`${opts.dataDir}/config.json`, {
         usePolling: true,
         awaitWriteFinish: true,
         interval: opts.restartInterval,
@@ -109,5 +111,5 @@ if (cluster.isPrimary === true) {
       });
   }
 } else {
-  startServer("data/config.json");
+  startServer(opts.dataDir);
 }

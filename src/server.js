@@ -15,14 +15,14 @@ import cors from "cors";
 
 /**
  * Start server
- * @param {string} configFilePath
+ * @param {string} dataDir
  * @returns {Promise<void>}
  */
-export async function startServer(configFilePath) {
+export async function startServer(dataDir) {
   try {
     printLog("info", `Loading config file...`);
 
-    await loadConfigFile(configFilePath);
+    await loadConfigFile(dataDir);
 
     printLog("info", `Starting HTTP server...`);
 

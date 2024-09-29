@@ -7,22 +7,23 @@ let config;
 
 /**
  * Load config.json file
- * @param {string} configFilePath
+ * @param {string} dataDir
  * @returns {Promise<void>}
  */
-async function loadConfigFile(configFilePath) {
+async function loadConfigFile(dataDir) {
   /* Read config.json file */
-  const fileData = await fsPromise.readFile(configFilePath, "utf8");
-  const configData = JSON.parse(fileData);
+  const configData = JSON.parse(
+    await fsPromise.readFile(`${dataDir}/config.json`, "utf8")
+  );
 
   /* Create config object */
   config = {
     paths: {
-      fonts: "data/fonts",
-      styles: "data/styles",
-      sprites: "data/sprites",
-      mbtiles: "data/mbtiles",
-      pmtiles: "data/pmtiles",
+      fonts: `${dataDir}/fonts`,
+      styles: `${dataDir}/styles`,
+      sprites: `${dataDir}/sprites`,
+      mbtiles: `${dataDir}/mbtiles`,
+      pmtiles: `${dataDir}/pmtiles`,
     },
     options: {
       listenPort: configData.options?.listenPort || 8080,
