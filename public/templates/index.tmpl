@@ -6,7 +6,7 @@
   <title>Preview - Tile Server</title>
   <link rel="stylesheet" type="text/css" href="/index.css" />
   <script>
-    function toggleXYZ(id, event) {
+    function toggleURL(id, event) {
       event.preventDefault();
 
       const el = document.getElementById(id);
@@ -52,8 +52,12 @@
 
       if (tabId === 'styles-tab' && !document.querySelector('#styles-tab').innerHTML.trim()) {
         renderDatas('styles-tab');
-      } else if (tabId === 'data-tab' && !document.querySelector('#data-tab').innerHTML.trim()) {
-        renderDatas('data-tab');
+      } else if (tabId === 'datas-tab' && !document.querySelector('#datas-tab').innerHTML.trim()) {
+        renderDatas('datas-tab');
+      } else if (tabId === 'fonts-tab' && !document.querySelector('#fonts-tab').innerHTML.trim()) {
+        renderDatas('fonts-tab');
+      } else if (tabId === 'sprites-tab' && !document.querySelector('#sprites-tab').innerHTML.trim()) {
+        renderDatas('sprites-tab');
       }
     }
 
@@ -75,9 +79,9 @@
                     {{#if serve_wmts}}
                       | <a href="/styles/{{@key}}/wmts.xml">WMTS</a>
                     {{/if}}
-                    {{#if xyz_link}}
-                      | <a href="#" onclick="toggleXYZ('xyz_style_{{@key}}', event)">XYZ</a>
-                      <input id="xyz_style_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz_link}}" onclick="copyToClipboard(this)" />
+                    {{#if xyz}}
+                      | <a href="#" onclick="toggleURL('xyz_style_{{@key}}', event)">XYZ</a>
+                      <input id="xyz_style_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz}}" onclick="copyToClipboard(this)" />
                     {{/if}}
                   </p>
                 </div>
@@ -91,10 +95,10 @@
             {{/each}}
           </div>
         `;
-      } else if (tabId === 'data-tab') {
-        document.querySelector('#data-tab').innerHTML = `
+      } else if (tabId === 'datas-tab') {
+        document.querySelector('#datas-tab').innerHTML = `
           <div class="box">
-            {{#each data}}
+            {{#each datas}}
               <div class="item">
                 <img src="{{thumbnail}}" alt="{{name}} preview" />
                 <div class="details">
@@ -104,9 +108,9 @@
                   <div class="identifier">ext: {{source_type}}</div>
                   <p class="services">
                     services: <a href="/data/{{@key}}.json">TileJSON</a>
-                    {{#if xyz_link}}
-                      | <a href="#" onclick="toggleXYZ('xyz_data_{{@key}}', event)">XYZ</a>
-                      <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz_link}}" onclick="copyToClipboard(this)" />
+                    {{#if xyz}}
+                      | <a href="#" onclick="toggleURL('xyz_data_{{@key}}', event)">XYZ</a>
+                      <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz}}" onclick="copyToClipboard(this)" />
                     {{/if}}
                   </p>
                 </div>
@@ -116,6 +120,38 @@
                   {{else}}
                       <a class="btn" href="/data/{{@key}}/{{viewer_hash}}">View</a>
                   {{/if}}
+                </div>
+              </div>
+            {{/each}}
+          </div>
+        `;
+      } else if (tabId === 'fonts-tab') {
+        document.querySelector('#fonts-tab').innerHTML = `
+          <div class="box">
+            {{#each fonts}}
+              <div class="item">
+                <div class="details">
+                  <h3 class="name">{{name}}</h3>
+                  <div class="identifier">identifier: {{@key}}</div>
+                </div>
+              </div>
+            {{/each}}
+          </div>
+        `;
+      } else if (tabId === 'sprites-tab') {
+        document.querySelector('#sprites-tab').innerHTML = `
+          <div class="box">
+            {{#each sprite}}
+              <div class="item">
+                <img src="{{thumbnail}}" alt="{{name}} preview" />
+                <div class="details">
+                  <h3 class="name">{{name}}</h3>
+                  <div class="identifier">identifier: {{@key}}</div>
+                  <p class="services">
+                    services: <a href="/sprites/{{@key}}/sprite.json">JSON</a>
+                    | <a href="#" onclick="toggleURL('sprite_{{@key}}', event)">URL</a>
+                    <input id="sprite_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{sprite_link}}" onclick="copyToClipboard(this)" />
+                  </p>
                 </div>
               </div>
             {{/each}}
@@ -141,13 +177,17 @@
 </head>
 <body>
   <section>
-    <h1 class="title">Styles and Datas preview</h1>
+    <h1 class="title">Tile server preview</h1>
     <div class="tabs">
       <div class="tab active" onclick="switchTab(event, 'styles-tab')">STYLES ({{style_count}})</div>
-      <div class="tab" onclick="switchTab(event, 'data-tab')">DATA ({{data_count}})</div>
+      <div class="tab" onclick="switchTab(event, 'datas-tab')">DATAS ({{data_count}})</div>
+      <div class="tab" onclick="switchTab(event, 'fonts-tab')">FONTS ({{font_count}})</div>
+      <div class="tab" onclick="switchTab(event, 'sprites-tab')">SPRITES ({{sprite_count}})</div>
     </div>
     <div id="styles-tab" class="tab-content active"></div>
-    <div id="data-tab" class="tab-content"></div>
+    <div id="datas-tab" class="tab-content"></div>
+    <div id="fonts-tab" class="tab-content"></div>
+    <div id="sprites-tab" class="tab-content"></div>
   </section>
   <a href="#" class="back-to-top" onclick="scrollToTop(event)">Back to top</a>
 </body>

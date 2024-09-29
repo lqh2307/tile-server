@@ -23,6 +23,8 @@ function serveFrontPageHandler() {
   return async (req, res, next) => {
     const styles = {};
     const datas = {};
+    const fonts = {};
+    const sprites = {};
 
     await Promise.all([
       ...(() => {
@@ -38,9 +40,7 @@ function serveFrontPageHandler() {
 
             styles[id] = {
               name: name,
-              xyz_link: `${getRequestHost(
-                req
-              )}styles/${id}/256/{z}/{x}/{y}.png`,
+              xyz: `${getRequestHost(req)}styles/${id}/256/{z}/{x}/{y}.png`,
               viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
               thumbnail: `${getRequestHost(
                 req
@@ -84,24 +84,38 @@ function serveFrontPageHandler() {
 
         datas[id] = {
           name: name,
-          xyz_link: `${getRequestHost(req)}data/${id}/{z}/{x}/{y}.${format}`,
+          xyz: `${getRequestHost(req)}data/${id}/{z}/{x}/{y}.${format}`,
           viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
           thumbnail: thumbnail,
           source_type: data.sourceType,
           is_vector: format === "pbf",
         };
       }),
+      ...Object.keys(config.repo.fonts).map(async (id) => {
+        fonts[id] = {
+          name: id,
+        };
+      }),
+      ...Object.keys(config.repo.sprites).map(async (id) => {
+        sprites[id] = {
+          name: id,
+          url: `${getRequestHost(req)}sprites/${id}/sprite`,
+          thumbnail: `${getRequestHost(req)}sprites/${id}/sprite.png`,
+        };
+      }),
     ]);
 
-    const serveData = {
-      styles: styles,
-      data: datas,
-      style_count: Object.keys(styles).length,
-      data_count: Object.keys(datas).length,
-    };
-
     try {
-      const compiled = await compileTemplate("index", serveData);
+      const compiled = await compileTemplate("index", {
+        styles: styles,
+        datas: datas,
+        fonts: fonts,
+        sprites: sprites,
+        style_count: Object.keys(styles).length,
+        data_count: Object.keys(datas).length,
+        font_count: Object.keys(fonts).length,
+        sprite_count: Object.keys(sprites).length,
+      });
 
       return res.status(StatusCodes.OK).send(compiled);
     } catch (error) {
@@ -123,13 +137,11 @@ function serveStyleHandler() {
       return res.status(StatusCodes.NOT_FOUND).send("Style is not found");
     }
 
-    const serveData = {
-      id: id,
-      name: item.styleJSON.name || "Unknown",
-    };
-
     try {
-      const compiled = await compileTemplate("viewer", serveData);
+      const compiled = await compileTemplate("viewer", {
+        id: id,
+        name: item.styleJSON.name || "Unknown",
+      });
 
       return res.status(StatusCodes.OK).send(compiled);
     } catch (error) {
@@ -151,14 +163,12 @@ function serveDataHandler() {
       return res.status(StatusCodes.NOT_FOUND).send("Data is not found");
     }
 
-    const serveData = {
-      id: id,
-      name: item.tileJSON.name,
-      is_vector: item.tileJSON.format === "pbf",
-    };
-
     try {
-      const compiled = await compileTemplate("data", serveData);
+      const compiled = await compileTemplate("data", {
+        id: id,
+        name: item.tileJSON.name,
+        is_vector: item.tileJSON.format === "pbf",
+      });
 
       return res.status(StatusCodes.OK).send(compiled);
     } catch (error) {
@@ -180,14 +190,12 @@ function serveWMTSHandler() {
       return res.status(StatusCodes.NOT_FOUND).send("WMTS is not found");
     }
 
-    const serveData = {
-      id: id,
-      name: item.tileJSON.name,
-      base_url: getRequestHost(req),
-    };
-
     try {
-      const compiled = await compileTemplate("wmts", serveData);
+      const compiled = await compileTemplate("wmts", {
+        id: id,
+        name: item.tileJSON.name,
+        base_url: getRequestHost(req),
+      });
 
       res.header("Content-Type", "text/xml");
 

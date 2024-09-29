@@ -33,9 +33,9 @@ function serveInfoHandler() {
         return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
       }
 
+      // Init info
       const result = {
-        version: JSON.parse(await fsPromise.readFile("package.json", "utf8"))
-          .version,
+        version: "1.0.0",
         font: {
           count: 0,
           size: 0,
@@ -61,10 +61,16 @@ function serveInfoHandler() {
           size: 0,
         },
         rendered: {
-          count: Object.keys(config.repo.rendereds).length,
+          count: 0,
         },
       };
 
+      // Version info
+      result.version = JSON.parse(
+        await fsPromise.readFile("package.json", "utf8")
+      ).version;
+
+      // Fonts info
       for (const font in config.repo.fonts) {
         const dirPath = `${config.paths.fonts}/${font}`;
         const fileNames = await fsPromise.readdir(dirPath);
@@ -84,6 +90,7 @@ function serveInfoHandler() {
         }
       }
 
+      // Sprites info
       for (const sprite in config.repo.sprites) {
         const dirPath = `${config.paths.sprites}/${sprite}`;
         const fileNames = await fsPromise.readdir(dirPath);
@@ -103,6 +110,7 @@ function serveInfoHandler() {
         }
       }
 
+      // Datas info
       for (const data in config.repo.datas) {
         if (config.repo.datas[data].sourceType === "mbtiles") {
           const filePath = `${config.paths.mbtiles}/${config.data[data].mbtiles}`;
@@ -128,6 +136,7 @@ function serveInfoHandler() {
       result.data.count = result.data.mbtiles.count + result.data.pmtiles.count;
       result.data.size = result.data.mbtiles.size + result.data.pmtiles.size;
 
+      // Styles info
       for (const style in config.repo.styles) {
         const filePath = `${config.paths.styles}/${config.styles[style].style}`;
         const stat = await fsPromise.stat(filePath);
@@ -135,6 +144,13 @@ function serveInfoHandler() {
         result.style.count += 1;
         result.style.size += stat.size;
       }
+
+      // Rendereds info
+      if (config.options.serveRendered === true) {
+        result.rendered.count = Object.keys(config.repo.rendereds).length;
+      }
+
+      res.header("Content-Type", "application/json");
 
       return res.status(StatusCodes.OK).send(result);
     } catch (error) {
