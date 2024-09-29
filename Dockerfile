@@ -66,7 +66,6 @@ RUN \
 WORKDIR /tile-server
 
 COPY --from=builder /tile-server .
-COPY --from=builder /tile-server/public/resources/template ./data
 COPY --from=builder /usr/local/lib/nodejs /usr/local/lib/nodejs
 
 ENV PATH=/usr/local/lib/nodejs/bin:$PATH
