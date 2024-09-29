@@ -1,18 +1,20 @@
-===== Tile server =====
+# Tile server
 
 ## Build & Run
+
+### Prepare
 
 Clone source:
 
 	git clone --single-branch -b 1.0.0 https://github.com/lqh2307/tile-server.git
 
+Jump to folder:
+
+	cd tile-server
+
 Switch to 1.0.0:
 
 	git checkout 1.0.0
-
-Build image:
-
-	docker build -t tile-server:1.0.0 .
 
 Create data folder in local with structure:
 
@@ -24,11 +26,21 @@ Create data folder in local with structure:
 		- styles folder
 		- config.json file
 
+### Run with nodejs
+
+	npm run start -- -d path_to_data_folder
+
+### Run with docker
+
+Build image:
+
+	docker build -t tile-server:1.0.0 .
+
 Run container:
 
-	docker run --rm -it -p 8080:8080 --name tile-server -v /path_to_data_folder:/tile-server/data tile-server:1.0.0
+	docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile-server/data tile-server:1.0.0
 
-Example config.json content:
+## Example config.json
 
 	{
 	  "options": {
