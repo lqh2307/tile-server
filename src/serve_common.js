@@ -1,10 +1,10 @@
 "use strict";
 
+import { checkReadyMiddleware, printLog } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import swaggerUi from "swagger-ui-express";
 import fsPromise from "node:fs/promises";
 import swaggerJsdoc from "swagger-jsdoc";
-import { printLog } from "./utils.js";
 import { config } from "./config.js";
 import express from "express";
 
@@ -38,24 +38,6 @@ function serveConfigHandler() {
       return res.status(StatusCodes.OK).send(configJSON);
     } catch (error) {
       printLog("error", `Failed to get config": ${error}`);
-
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send("Internal server error");
-    }
-  };
-}
-
-function serveReadyHandler() {
-  return async (req, res, next) => {
-    try {
-      if (config.startupComplete === false) {
-        return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
-      }
-
-      next();
-    } catch (error) {
-      printLog("error", `Failed to check ready server": ${error}`);
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -284,7 +266,7 @@ export const serve_common = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/info", serveReadyHandler(), serveInfoHandler());
+    app.get("/info", checkReadyMiddleware(), serveInfoHandler());
 
     /**
      * @swagger

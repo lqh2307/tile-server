@@ -16,6 +16,28 @@ import zlib from "zlib";
 import util from "util";
 
 /**
+ * Check ready middleware
+ * @returns {void}
+ */
+export function checkReadyMiddleware() {
+  return async (req, res, next) => {
+    try {
+      if (config.startupComplete === false) {
+        return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
+      }
+
+      next();
+    } catch (error) {
+      printLog("error", `Failed to check ready server": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
+/**
  * Get xyz tile center from lon lat z
  * @param {number} lon
  * @param {number} lat
