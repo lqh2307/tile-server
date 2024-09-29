@@ -223,7 +223,7 @@ export async function getFontsPBF(ids, fileName) {
           `Failed to get font "${font}": ${error}. Using fallback font "${config.fallbackFont}"...`
         );
 
-        const filePath = `public/resources/template/fonts/${config.fallbackFont}/${fileName}`;
+        const filePath = `public/resources/fonts/${config.fallbackFont}/${fileName}`;
 
         return await fsPromise.readFile(filePath);
       }
