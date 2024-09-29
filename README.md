@@ -47,6 +47,7 @@ Run container:
 	    "listenPort": 8080,
 	    "killEndpoint": true,
 	    "restartEndpoint": true,
+		"configEndpoint": true,
 	    "frontPage": true,
 	    "serveWMTS": true,
 	    "serveRendered": true,

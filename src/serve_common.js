@@ -26,13 +26,47 @@ function serveSwagger() {
   };
 }
 
-function serveInfoHandler() {
+function serveConfigHandler() {
+  return async (req, res, next) => {
+    try {
+      const configJSON = JSON.parse(
+        await fsPromise.readFile(config.configFilePath, "utf-8")
+      );
+
+      res.header("Content-Type", "application/json");
+
+      return res.status(StatusCodes.OK).send(configJSON);
+    } catch (error) {
+      printLog("error", `Failed to get config": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
+function serveReadyHandler() {
   return async (req, res, next) => {
     try {
       if (config.startupComplete === false) {
         return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
       }
 
+      next();
+    } catch (error) {
+      printLog("error", `Failed to check ready server": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
+function serveInfoHandler() {
+  return async (req, res, next) => {
+    try {
       // Init info
       const result = {
         version: "1.0.0",
@@ -166,10 +200,6 @@ function serveInfoHandler() {
 function serveHealthHandler() {
   return async (req, res, next) => {
     try {
-      if (config.startupComplete === false) {
-        return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
-      }
-
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
       printLog("error", `Failed to check health server": ${error}`);
@@ -254,7 +284,7 @@ export const serve_common = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/info", serveInfoHandler());
+    app.get("/info", serveReadyHandler(), serveInfoHandler());
 
     /**
      * @swagger
@@ -287,6 +317,40 @@ export const serve_common = {
      *         description: Internal server error
      */
     app.get("/health", serveHealthHandler());
+
+    if (config.options.configEndpoint === true) {
+      /**
+       * @swagger
+       * tags:
+       *   - name: Common
+       *     description: Common related endpoints
+       * /restart:
+       *   get:
+       *     tags:
+       *       - Common
+       *     summary: Get config
+       *     responses:
+       *       200:
+       *         description: Config
+       *         content:
+       *         content:
+       *           application/json:
+       *             schema:
+       *               type: object
+       *       404:
+       *         description: Not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
+       *       500:
+       *         description: Internal server error
+       */
+      app.get("/config", serveConfigHandler());
+    }
 
     if (config.options.restartEndpoint === true) {
       /**

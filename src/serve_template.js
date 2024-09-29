@@ -9,16 +9,6 @@ import {
   getRequestHost,
 } from "./utils.js";
 
-function checkHealth() {
-  return (req, res, next) => {
-    if (config.startupComplete === false) {
-      return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
-    }
-
-    next();
-  };
-}
-
 function serveFrontPageHandler() {
   return async (req, res, next) => {
     const styles = {};
@@ -295,7 +285,7 @@ export const serve_template = {
        *       500:
        *         description: Internal server error
        */
-      app.get("/styles/:id/$", checkHealth(), serveStyleHandler());
+      app.get("/styles/:id/$", serveStyleHandler());
 
       /* Serve data */
       /**
@@ -334,7 +324,7 @@ export const serve_template = {
        *       500:
        *         description: Internal server error
        */
-      app.use("/data/:id/$", checkHealth(), serveDataHandler());
+      app.use("/data/:id/$", serveDataHandler());
 
       /* Serve front page */
       /**
@@ -366,7 +356,7 @@ export const serve_template = {
        *       500:
        *         description: Internal server error
        */
-      app.get("/$", checkHealth(), serveFrontPageHandler());
+      app.get("/$", serveFrontPageHandler());
     }
 
     return app;

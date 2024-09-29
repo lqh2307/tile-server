@@ -29,6 +29,7 @@ async function loadConfigFile(dataDir) {
       listenPort: configData.options?.listenPort || 8080,
       killEndpoint: configData.options?.killEndpoint ?? true,
       restartEndpoint: configData.options?.restartEndpoint ?? true,
+      configEndpoint: configData.options?.configEndpoint ?? true,
       frontPage: configData.options?.frontPage ?? true,
       serveWMTS: configData.options?.serveWMTS ?? true,
       serveRendered: configData.options?.serveRendered ?? true,
@@ -52,6 +53,7 @@ async function loadConfigFile(dataDir) {
       fonts: {},
       sprites: {},
     },
+    configFilePath: `${dataDir}/config.json`,
     fallbackFont: "Open Sans Regular",
     startupComplete: false,
   };
