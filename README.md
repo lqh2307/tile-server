@@ -16,16 +16,6 @@ Switch to 1.0.0:
 
 	git checkout 1.0.0
 
-Create data folder in local with structure:
-
-	data_folder
-		- fonts folder
-		- mbtiles folder
-		- pmtiles folder
-		- sprites folder
-		- styles folder
-		- config.json file
-
 ### Run with nodejs
 
 	npm run start -- -d path_to_data_folder
@@ -47,7 +37,7 @@ Run container:
 	    "listenPort": 8080,
 	    "killEndpoint": true,
 	    "restartEndpoint": true,
-		"configEndpoint": true,
+	    "configEndpoint": true,
 	    "frontPage": true,
 	    "serveWMTS": true,
 	    "serveRendered": true,
