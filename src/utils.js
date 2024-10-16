@@ -753,10 +753,10 @@ async function isExistTilesIndex(mbtilesSource) {
     });
   });
 
-  if (indexes) {
+  if (indexes !== undefined) {
     for (let i = 0; i < indexes.length; i++) {
       const found = await new Promise((resolve, reject) => {
-        mbtilesSource.all(`PRAGMA index_info (${indexes.name})`, (err, columns) => {
+        mbtilesSource.all(`PRAGMA index_info (${indexes[i].name})`, (err, columns) => {
           if (err) {
             return reject(err);
           }
@@ -800,10 +800,10 @@ async function isExistMetadataIndex(mbtilesSource) {
     });
   });
 
-  if (indexes) {
+  if (indexes !== undefined) {
     for (let i = 0; i < indexes.length; i++) {
       const found = await new Promise((resolve, reject) => {
-        mbtilesSource.all(`PRAGMA index_info (${indexes.name})`, (err, columns) => {
+        mbtilesSource.all(`PRAGMA index_info (${indexes[i].name})`, (err, columns) => {
           if (err) {
             return reject(err);
           }
