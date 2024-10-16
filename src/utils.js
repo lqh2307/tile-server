@@ -68,8 +68,7 @@ export function getLonLatCenterFromXYZ(x, y, z) {
  * @returns {Promise<string>}
  */
 export async function compileTemplate(template, data) {
-  const filePath = `public/templates/${template}.tmpl`;
-  const fileData = await fsPromise.readFile(filePath, "utf8");
+  const fileData = await fsPromise.readFile(`public/templates/${template}.tmpl`, "utf8");
   const compiler = handlebars.compile(fileData);
 
   return compiler(data);
@@ -175,8 +174,7 @@ export async function findFiles(dirPath, regex) {
 
   const results = [];
   for (const fileName of fileNames) {
-    const filePath = `${dirPath}/${fileName}`;
-    const stat = await fsPromise.stat(filePath);
+    const stat = await fsPromise.stat(`${dirPath}/${fileName}`);
 
     if (
       regex.test(fileName) === true &&
@@ -236,18 +234,14 @@ export async function getFontsPBF(ids, fileName) {
           throw new Error("Font is not found");
         }
 
-        const filePath = `${config.paths.fonts}/${font}/${fileName}`;
-
-        return await fsPromise.readFile(filePath);
+        return await fsPromise.readFile(`${config.paths.fonts}/${font}/${fileName}`);
       } catch (error) {
         printLog(
           "warning",
           `Failed to get font "${font}": ${error}. Using fallback font "${config.fallbackFont}"...`
         );
 
-        const filePath = `public/resources/fonts/${config.fallbackFont}/${fileName}`;
-
-        return await fsPromise.readFile(filePath);
+        return await fsPromise.readFile(`public/resources/fonts/${config.fallbackFont}/${fileName}`);
       }
     })
   );
@@ -262,9 +256,7 @@ export async function getFontsPBF(ids, fileName) {
  * @returns {Promise<Buffer>}
  */
 export async function getSprite(id, fileName) {
-  const filePath = `${config.paths.sprites}/${id}/${fileName}`;
-
-  return await fsPromise.readFile(filePath);
+  return await fsPromise.readFile(`${config.paths.sprites}/${id}/${fileName}`);
 }
 
 /**
@@ -527,8 +519,7 @@ export async function validateSprite(spriteDirPath) {
   await Promise.all(
     spriteFileNames.map(async (spriteFileNames) => {
       /* Validate JSON sprite */
-      const jsonFilePath = `${spriteDirPath}/${spriteFileNames}.json`;
-      const fileData = await fsPromise.readFile(jsonFilePath, "utf8");
+      const fileData = await fsPromise.readFile(`${spriteDirPath}/${spriteFileNames}.json`, "utf8");
       const jsonData = JSON.parse(fileData);
 
       Object.values(jsonData).forEach((value) => {
@@ -545,9 +536,7 @@ export async function validateSprite(spriteDirPath) {
       });
 
       /* Validate PNG sprite */
-      const pngFilePath = `${spriteDirPath}/${spriteFileNames}.png`;
-
-      const pngMetadata = await sharp(pngFilePath).metadata();
+      const pngMetadata = await sharp(`${spriteDirPath}/${spriteFileNames}.png`).metadata();
 
       if (pngMetadata.format !== "png") {
         throw new Error("Invalid PNG file");
@@ -743,6 +732,144 @@ export async function openMBTiles(filePath) {
         }
 
         resolve(mbtilesSource);
+      }
+    );
+  });
+}
+
+/**
+ * Check unique index is exist on the tiles table?
+ * @param {object} mbtilesSource
+ * @returns {Promise<boolean>}
+ */
+async function isExistTilesIndex(mbtilesSource) {
+  const indexes = await new Promise((resolve, reject) => {
+    mbtilesSource.all("PRAGMA index_list ('tiles')", (error, indexes) => {
+      if (error) {
+        return reject(error);
+      }
+
+      resolve(indexes);
+    });
+  });
+
+  if (indexes) {
+    for (let i = 0; i < indexes.length; i++) {
+      const found = await new Promise((resolve, reject) => {
+        mbtilesSource.all(`PRAGMA index_info (${indexes.name})`, (err, columns) => {
+          if (err) {
+            return reject(err);
+          }
+
+          const columnNames = columns.map((col) => col.name);
+
+          if (
+            columnNames.includes("zoom_level") === true &&
+            columnNames.includes("tile_column") === true &&
+            columnNames.includes("tile_row") === true
+          ) {
+            return resolve(true);
+          }
+
+          resolve(false);
+        });
+      });
+
+      if (found === true) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Check unique index is exist on the metadata table?
+ * @param {object} mbtilesSource
+ * @returns {Promise<boolean>}
+ */
+async function isExistMetadataIndex(mbtilesSource) {
+  const indexes = await new Promise((resolve, reject) => {
+    mbtilesSource.all("PRAGMA index_list ('metadata')", (error, indexes) => {
+      if (error) {
+        return reject(error);
+      }
+
+      resolve(indexes);
+    });
+  });
+
+  if (indexes) {
+    for (let i = 0; i < indexes.length; i++) {
+      const found = await new Promise((resolve, reject) => {
+        mbtilesSource.all(`PRAGMA index_info (${indexes.name})`, (err, columns) => {
+          if (err) {
+            return reject(err);
+          }
+
+          const columnNames = columns.map((col) => col.name);
+
+          if (columnNames.includes("name") === true) {
+            return resolve(true);
+          }
+
+          resolve(false);
+        });
+      });
+
+      if (found === true) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Create unique index on the metadata table
+ * @param {object} mbtilesSource
+ * @returns {Promise<void>}
+ */
+export async function createMetadataIndex(mbtilesSource) {
+  if (await isExistMetadataIndex(mbtilesSource) === true) {
+    return
+  }
+
+  return new Promise((resolve, reject) => {
+    mbtilesSource.run(
+      "CREATE INDEX IF NOT EXISTS idx_metadata ON metadata (name)",
+      (error) => {
+        if (error) {
+          return reject(error);
+        }
+
+        resolve();
+      }
+    );
+  });
+}
+
+/**
+ * Create unique index on the tiles table
+ * @param {object} mbtilesSource
+ * @returns {Promise<void>}
+ */
+export async function createTilesIndex(mbtilesSource) {
+  if (await isExistTilesIndex(mbtilesSource) === true) {
+    return
+  }
+
+  return new Promise((resolve, reject) => {
+    mbtilesSource.run(
+      "CREATE INDEX IF NOT EXISTS idx_tiles ON tiles (zoom_level, tile_column, tile_row)",
+      (error) => {
+        if (error) {
+          return reject(error);
+        }
+
+        resolve();
       }
     );
   });

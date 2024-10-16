@@ -5,6 +5,8 @@ import fsPromise from "node:fs/promises";
 import { config } from "./config.js";
 import express from "express";
 import {
+  createMetadataIndex,
+  createTilesIndex,
   validateDataInfo,
   getPMTilesInfos,
   getMBTilesInfos,
@@ -323,6 +325,14 @@ export const serve_data = {
             dataInfo.sourceType = "mbtiles";
             dataInfo.source = await openMBTiles(filePath);
             dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
+
+            if (config.options.createMetadataIndex === true) {
+              await createMetadataIndex(dataInfo.source)
+            }
+
+            if (config.options.createTilesIndex === true) {
+              await createTilesIndex(dataInfo.source)
+            }
           } else if (item.pmtiles) {
             if (
               item.pmtiles.startsWith("https://") === true ||

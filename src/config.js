@@ -34,6 +34,8 @@ async function loadConfigFile(dataDir) {
       serveWMTS: configData.options?.serveWMTS ?? true,
       serveRendered: configData.options?.serveRendered ?? true,
       serveSwagger: configData.options?.serveSwagger ?? true,
+      createTilesIndex: configData.options?.createTilesIndex ?? true,
+      createMetadataIndex: configData.options?.createMetadataIndex ?? true,
       renderedCompression: configData.options?.renderedCompression || 6,
       loggerFormat:
         configData.options?.loggerFormat ||
