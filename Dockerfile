@@ -37,7 +37,9 @@ WORKDIR /tile-server
 
 ADD . .
 
-RUN npm install --omit=dev;
+RUN \
+  npm install -g npm@latest; \  
+  npm install --omit=dev;
 
 
 FROM ${TARGET_IMAGE} AS final
