@@ -17,7 +17,11 @@
     "maxPoolSize": 16
   },
   "styles": {},
-  "data": {},
+  "data": {
+    "gis_osm_pofw_free_1": {
+      "mbtiles": "gis_osm_pofw_free_1.mbtiles"
+    }
+  },
   "sprites": {},
   "fonts": {}
 }
