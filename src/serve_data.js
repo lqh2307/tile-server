@@ -322,17 +322,17 @@ export const serve_data = {
               filePath = `${config.paths.mbtiles}/${item.mbtiles}`;
             }
 
-            dataInfo.sourceType = "mbtiles";
-            dataInfo.source = await openMBTiles(filePath);
-            dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
-
             if (config.options.createMetadataIndex === true) {
-              await createMetadataIndex(dataInfo.source)
+              await createMetadataIndex(filePath)
             }
 
             if (config.options.createTilesIndex === true) {
-              await createTilesIndex(dataInfo.source)
+              await createTilesIndex(filePath)
             }
+
+            dataInfo.sourceType = "mbtiles";
+            dataInfo.source = await openMBTiles(filePath);
+            dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
           } else if (item.pmtiles) {
             if (
               item.pmtiles.startsWith("https://") === true ||

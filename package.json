@@ -11,7 +11,7 @@
     "@mapbox/glyph-pbf-composite": "0.0.3",
     "@mapbox/sphericalmercator": "1.2.0",
     "@maplibre/maplibre-gl-native": "6.0.0",
-    "@maplibre/maplibre-gl-style-spec": "20.3.1",
+    "@maplibre/maplibre-gl-style-spec": "20.4.0",
     "axios": "1.7.7",
     "chokidar": "4.0.1",
     "commander": "12.1.0",

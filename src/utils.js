@@ -756,9 +756,9 @@ async function isExistTilesIndex(mbtilesSource) {
   if (indexes !== undefined) {
     for (let i = 0; i < indexes.length; i++) {
       const found = await new Promise((resolve, reject) => {
-        mbtilesSource.all(`PRAGMA index_info (${indexes[i].name})`, (err, columns) => {
-          if (err) {
-            return reject(err);
+        mbtilesSource.all(`PRAGMA index_info (${indexes[i].name})`, (error, columns) => {
+          if (error) {
+            return reject(error);
           }
 
           const columnNames = columns.map((col) => col.name);
@@ -803,9 +803,9 @@ async function isExistMetadataIndex(mbtilesSource) {
   if (indexes !== undefined) {
     for (let i = 0; i < indexes.length; i++) {
       const found = await new Promise((resolve, reject) => {
-        mbtilesSource.all(`PRAGMA index_info (${indexes[i].name})`, (err, columns) => {
-          if (err) {
-            return reject(err);
+        mbtilesSource.all(`PRAGMA index_info (${indexes[i].name})`, (error, columns) => {
+          if (error) {
+            return reject(error);
           }
 
           const columnNames = columns.map((col) => col.name);
@@ -829,10 +829,20 @@ async function isExistMetadataIndex(mbtilesSource) {
 
 /**
  * Create unique index on the metadata table
- * @param {object} mbtilesSource
+ * @param {string} mbtilesFilePath
  * @returns {Promise<void>}
  */
-export async function createMetadataIndex(mbtilesSource) {
+export async function createMetadataIndex(mbtilesFilePath) {
+  const mbtilesSource = await new Promise((resolve, reject) => {
+    const mbtilesSource = new sqlite3.Database(mbtilesFilePath, sqlite3.OPEN_READWRITE, (error) => {
+      if (error) {
+        return reject(error);
+      }
+
+      resolve(mbtilesSource);
+    });
+  });
+
   if (await isExistMetadataIndex(mbtilesSource) === true) {
     return
   }
@@ -848,15 +858,27 @@ export async function createMetadataIndex(mbtilesSource) {
         resolve();
       }
     );
+  }).finally(() => {
+    mbtilesSource.close();
   });
 }
 
 /**
  * Create unique index on the tiles table
- * @param {object} mbtilesSource
+ * @param {string} mbtilesFilePath
  * @returns {Promise<void>}
  */
-export async function createTilesIndex(mbtilesSource) {
+export async function createTilesIndex(mbtilesFilePath) {
+  const mbtilesSource = await new Promise((resolve, reject) => {
+    const mbtilesSource = new sqlite3.Database(mbtilesFilePath, sqlite3.OPEN_READWRITE, (error) => {
+      if (error) {
+        return reject(error);
+      }
+
+      resolve(mbtilesSource);
+    });
+  });
+
   if (await isExistTilesIndex(mbtilesSource) === true) {
     return
   }
@@ -872,6 +894,8 @@ export async function createTilesIndex(mbtilesSource) {
         resolve();
       }
     );
+  }).finally(() => {
+    mbtilesSource.close();
   });
 }
 
