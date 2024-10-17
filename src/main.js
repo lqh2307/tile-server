@@ -7,6 +7,32 @@ import chokidar from "chokidar";
 import cluster from "cluster";
 import os from "os";
 
+/* Setup commands */
+program
+  .description("========== tile-server startup options ==========")
+  .usage("tile-server [options]")
+  .option("-n, --num_processes <num>", "Number of processes", "1")
+  .option(
+    "-r, --restart_interval <num>",
+    "Interval time to restart server",
+    "1000"
+  )
+  .option("-k, --kill_interval <num>", "Interval time to kill server", "0")
+  .option("-d, --data_dir <dir>", "Data directory", "data")
+  .version("1.0.0", "-v, --version")
+  .showHelpAfterError()
+  .parse(process.argv);
+
+/* Load args */
+const argOpts = program.opts();
+
+const opts = {
+  numProcesses: Number(argOpts.num_processes),
+  killInterval: Number(argOpts.kill_interval),
+  restartInterval: Number(argOpts.restart_interval),
+  dataDir: argOpts.data_dir,
+};
+
 /* Start server */
 if (cluster.isPrimary === true) {
   /* Setup envs & events */
@@ -24,32 +50,6 @@ if (cluster.isPrimary === true) {
 
     process.exit(1);
   });
-
-  /* Setup commands */
-  program
-    .description("========== tile-server startup options ==========")
-    .usage("tile-server [options]")
-    .option("-n, --num_processes <num>", "Number of processes", "1")
-    .option(
-      "-r, --restart_interval <num>",
-      "Interval time to restart server",
-      "1000"
-    )
-    .option("-k, --kill_interval <num>", "Interval time to kill server", "0")
-    .option("-d, --data_dir <dir>", "Data directory", "data")
-    .version("1.0.0", "-v, --version")
-    .showHelpAfterError()
-    .parse(process.argv);
-
-  /* Load args */
-  const argOpts = program.opts();
-
-  const opts = {
-    numProcesses: Number(argOpts.num_processes),
-    killInterval: Number(argOpts.kill_interval),
-    restartInterval: Number(argOpts.restart_interval),
-    dataDir: argOpts.data_dir,
-  };
 
   /* Fork servers */
   printLog(
