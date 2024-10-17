@@ -39,7 +39,8 @@ ADD . .
 
 RUN \
   npm install -g npm@latest; \  
-  npm install --omit=dev;
+  npm install --omit=dev; \
+  npm cache clean --force;  
 
 
 FROM ${TARGET_IMAGE} AS final

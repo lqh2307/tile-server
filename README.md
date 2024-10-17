@@ -44,8 +44,8 @@ Run container:
 	    "maxScaleRender": 1,
 	    "renderedCompression": 6,
 	    "serveSwagger": true,
-			"createMetadataIndex": false,
-      "createTilesIndex": false,
+		"createMetadataIndex": false,
+		"createTilesIndex": false,
 	    "loggerFormat": ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
 	    "minPoolSize": 8,
 	    "maxPoolSize": 16
