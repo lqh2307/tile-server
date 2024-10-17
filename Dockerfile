@@ -3,6 +3,10 @@ ARG TARGET_IMAGE=ubuntu:22.04
 
 FROM ${BUILDER_IMAGE} AS builder
 
+# set proxy
+ARG http_proxy=http://10.55.123.98:3333
+ARG https_proxy=http://10.55.123.98:3333
+
 RUN \
   export DEBIAN_FRONTEND=noninteractive; \
   apt-get -y update; \
@@ -37,13 +41,14 @@ WORKDIR /tile-server
 
 ADD . .
 
-RUN \
-  npm install -g npm@latest; \  
-  npm install --omit=dev; \
-  npm cache clean --force;  
+RUN npm install --omit=dev;
 
 
 FROM ${TARGET_IMAGE} AS final
+
+# set proxy
+ARG http_proxy=http://10.55.123.98:3333
+ARG https_proxy=http://10.55.123.98:3333
 
 RUN \
   export DEBIAN_FRONTEND=noninteractive; \
