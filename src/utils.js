@@ -762,7 +762,7 @@ async function isExistTilesIndex(mbtilesSource) {
           }
 
           if (
-            columns.length === 3 &&
+            columns?.length === 3 &&
             columns[0].name === "zoom_level" &&
             columns[1].name === "tile_column" &&
             columns[2].name === "tile_row"
@@ -808,7 +808,7 @@ async function isExistMetadataIndex(mbtilesSource) {
           }
 
           if (
-            columns.length === 1 &&
+            columns?.length === 1 &&
             columns[0].name === "name"
           ) {
             return resolve(true);
