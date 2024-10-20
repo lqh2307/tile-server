@@ -28,7 +28,7 @@ export function checkReadyMiddleware() {
 
       next();
     } catch (error) {
-      printLog("error", `Failed to check ready server": ${error}`);
+      printLog("error", `Failed to check ready server: ${error}`);
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -68,7 +68,10 @@ export function getLonLatCenterFromXYZ(x, y, z) {
  * @returns {Promise<string>}
  */
 export async function compileTemplate(template, data) {
-  const fileData = await fsPromise.readFile(`public/templates/${template}.tmpl`, "utf8");
+  const fileData = await fsPromise.readFile(
+    `public/templates/${template}.tmpl`,
+    "utf8"
+  );
   const compiler = handlebars.compile(fileData);
 
   return compiler(data);
@@ -234,14 +237,18 @@ export async function getFontsPBF(ids, fileName) {
           throw new Error("Font is not found");
         }
 
-        return await fsPromise.readFile(`${config.paths.fonts}/${font}/${fileName}`);
+        return await fsPromise.readFile(
+          `${config.paths.fonts}/${font}/${fileName}`
+        );
       } catch (error) {
         printLog(
           "warning",
           `Failed to get font "${font}": ${error}. Using fallback font "${config.fallbackFont}"...`
         );
 
-        return await fsPromise.readFile(`public/resources/fonts/${config.fallbackFont}/${fileName}`);
+        return await fsPromise.readFile(
+          `public/resources/fonts/${config.fallbackFont}/${fileName}`
+        );
       }
     })
   );
@@ -290,7 +297,7 @@ export async function validateFont(pbfDirPath) {
   const pbfFileNames = await findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
 
   if (pbfFileNames.length === 0) {
-    throw new Error(`Missing some PBF files`);
+    throw new Error("Missing some PBF files");
   }
 }
 
@@ -302,13 +309,13 @@ export async function validateFont(pbfDirPath) {
 export function validateDataInfo(info) {
   /* Validate name */
   if (info.name === undefined) {
-    throw new Error(`Data name info is invalid`);
+    throw new Error("Data name info is invalid");
   }
 
   /* Validate type */
   if (info.type !== undefined) {
     if (["baselayer", "overlay"].includes(info.type) === false) {
-      throw new Error(`Data type info is invalid`);
+      throw new Error("Data type info is invalid");
     }
   }
 
@@ -316,7 +323,7 @@ export function validateDataInfo(info) {
   if (
     ["jpeg", "jpg", "pbf", "png", "webp", "gif"].includes(info.format) === false
   ) {
-    throw new Error(`Data format info is invalid`);
+    throw new Error("Data format info is invalid");
   }
 
   /* Validate json */
@@ -328,17 +335,17 @@ export function validateDataInfo(info) {
 
   /* Validate minzoom */
   if (info.minzoom < 0 || info.minzoom > 22) {
-    throw new Error(`Data minzoom info is invalid`);
+    throw new Error("Data minzoom info is invalid");
   }
 
   /* Validate maxzoom */
   if (info.maxzoom < 0 || info.maxzoom > 22) {
-    throw new Error(`Data maxzoom info is invalid`);
+    throw new Error("Data maxzoom info is invalid");
   }
 
   /* Validate minzoom & maxzoom */
   if (info.minzoom > info.maxzoom) {
-    throw new Error(`Data zoom info is invalid`);
+    throw new Error("Data zoom info is invalid");
   }
 
   /* Validate bounds */
@@ -352,7 +359,7 @@ export function validateDataInfo(info) {
       info.bounds[0] >= info.bounds[2] ||
       info.bounds[1] >= info.bounds[3]
     ) {
-      throw new Error(`Data bounds info is invalid`);
+      throw new Error("Data bounds info is invalid");
     }
   }
 
@@ -365,7 +372,7 @@ export function validateDataInfo(info) {
       info.center[2] < 0 ||
       info.center[2] > 22
     ) {
-      throw new Error(`Data center info is invalid`);
+      throw new Error("Data center info is invalid");
     }
   }
 }
@@ -509,20 +516,22 @@ export async function validateSprite(spriteDirPath) {
   ]);
 
   if (jsonSpriteFileNames.length !== pngSpriteNames.length) {
-    throw new Error(`Missing some JSON or PNG files`);
+    throw new Error("Missing some JSON or PNG files");
   }
 
-  const spriteFileNames = jsonSpriteFileNames.map((jsonSpriteFileName) =>
+  const fileNameWoExts = jsonSpriteFileNames.map((jsonSpriteFileName) =>
     path.basename(jsonSpriteFileName, path.extname(jsonSpriteFileName))
   );
 
   await Promise.all(
-    spriteFileNames.map(async (spriteFileNames) => {
+    fileNameWoExts.map(async (spriteFileName) => {
       /* Validate JSON sprite */
-      const fileData = await fsPromise.readFile(`${spriteDirPath}/${spriteFileNames}.json`, "utf8");
-      const jsonData = JSON.parse(fileData);
+      const fileData = await fsPromise.readFile(
+        `${spriteDirPath}/${spriteFileName}.json`,
+        "utf8"
+      );
 
-      Object.values(jsonData).forEach((value) => {
+      Object.values(JSON.parse(fileData)).forEach((value) => {
         if (
           typeof value !== "object" ||
           "height" in value === false ||
@@ -531,12 +540,14 @@ export async function validateSprite(spriteDirPath) {
           "x" in value === false ||
           "y" in value === false
         ) {
-          throw new Error(`Invalid JSON file`);
+          throw new Error("Invalid JSON file");
         }
       });
 
       /* Validate PNG sprite */
-      const pngMetadata = await sharp(`${spriteDirPath}/${spriteFileNames}.png`).metadata();
+      const pngMetadata = await sharp(
+        `${spriteDirPath}/${fileNameWoExts}.png`
+      ).metadata();
 
       if (pngMetadata.format !== "png") {
         throw new Error("Invalid PNG file");
@@ -568,13 +579,13 @@ export async function downloadFile(url, outputPath) {
 
     response.data.pipe(writer);
 
-    writer.on("error", (error) => {
-      writer.close(() => reject(error));
-    });
-
-    writer.on("finish", () => {
-      writer.close(() => resolve(outputPath));
-    });
+    writer
+      .on("error", (error) => {
+        writer.close(() => reject(error));
+      })
+      .on("finish", () => {
+        writer.close(() => resolve(outputPath));
+      });
   });
 }
 
@@ -618,9 +629,7 @@ export function openPMTiles(filePath) {
   ) {
     source = new FetchSource(filePath);
   } else {
-    const fileData = fs.openSync(filePath, "r");
-
-    source = new PMTilesFileSource(fileData);
+    source = new PMTilesFileSource(fs.openSync(filePath, "r"));
   }
 
   return new PMTiles(source);
@@ -719,21 +728,18 @@ export async function getPMTilesTile(pmtilesSource, z, x, y) {
 /**
  * Open MBTiles
  * @param {string} filePath
+ * @param {"sqlite3.OPEN_READONLY"|"sqlite3.OPEN_READWRITE"} mode
  * @returns {Promise<object>}
  */
-export async function openMBTiles(filePath) {
+export async function openMBTiles(filePath, mode = sqlite3.OPEN_READONLY) {
   return new Promise((resolve, reject) => {
-    const mbtilesSource = new sqlite3.Database(
-      filePath,
-      sqlite3.OPEN_READONLY,
-      (error) => {
-        if (error) {
-          return reject(error);
-        }
-
-        resolve(mbtilesSource);
+    const mbtilesSource = new sqlite3.Database(filePath, mode, (error) => {
+      if (error) {
+        return reject(error);
       }
-    );
+
+      resolve(mbtilesSource);
+    });
   });
 }
 
@@ -754,9 +760,9 @@ async function isExistTilesIndex(mbtilesSource) {
   });
 
   if (indexes !== undefined) {
-    for (let i = 0; i < indexes.length; i++) {
+    for (const index of indexes) {
       const found = await new Promise((resolve, reject) => {
-        mbtilesSource.all(`PRAGMA index_info (${indexes[i].name})`, (error, columns) => {
+        mbtilesSource.all(`PRAGMA index_info (${index})`, (error, columns) => {
           if (error) {
             return reject(error);
           }
@@ -800,17 +806,14 @@ async function isExistMetadataIndex(mbtilesSource) {
   });
 
   if (indexes !== undefined) {
-    for (let i = 0; i < indexes.length; i++) {
+    for (const index of indexes) {
       const found = await new Promise((resolve, reject) => {
-        mbtilesSource.all(`PRAGMA index_info (${indexes[i].name})`, (error, columns) => {
+        mbtilesSource.all(`PRAGMA index_info (${index})`, (error, columns) => {
           if (error) {
             return reject(error);
           }
 
-          if (
-            columns?.length === 1 &&
-            columns[0].name === "name"
-          ) {
+          if (columns?.length === 1 && columns[0].name === "name") {
             return resolve(true);
           }
 
@@ -833,18 +836,13 @@ async function isExistMetadataIndex(mbtilesSource) {
  * @returns {Promise<void>}
  */
 export async function createMetadataIndex(mbtilesFilePath) {
-  const mbtilesSource = await new Promise((resolve, reject) => {
-    const mbtilesSource = new sqlite3.Database(mbtilesFilePath, sqlite3.OPEN_READWRITE, (error) => {
-      if (error) {
-        return reject(error);
-      }
+  const mbtilesSource = await openMBTiles(
+    mbtilesFilePath,
+    sqlite3.OPEN_READWRITE
+  );
 
-      resolve(mbtilesSource);
-    });
-  });
-
-  if (await isExistMetadataIndex(mbtilesSource) === true) {
-    return
+  if ((await isExistMetadataIndex(mbtilesSource)) === true) {
+    return;
   }
 
   return new Promise((resolve, reject) => {
@@ -869,18 +867,13 @@ export async function createMetadataIndex(mbtilesFilePath) {
  * @returns {Promise<void>}
  */
 export async function createTilesIndex(mbtilesFilePath) {
-  const mbtilesSource = await new Promise((resolve, reject) => {
-    const mbtilesSource = new sqlite3.Database(mbtilesFilePath, sqlite3.OPEN_READWRITE, (error) => {
-      if (error) {
-        return reject(error);
-      }
+  const mbtilesSource = await openMBTiles(
+    mbtilesFilePath,
+    sqlite3.OPEN_READWRITE
+  );
 
-      resolve(mbtilesSource);
-    });
-  });
-
-  if (await isExistTilesIndex(mbtilesSource) === true) {
-    return
+  if ((await isExistTilesIndex(mbtilesSource)) === true) {
+    return;
   }
 
   return new Promise((resolve, reject) => {
@@ -1040,6 +1033,75 @@ export function createNewXYZTileJSON(metadata) {
 }
 
 /**
+ * Get MBTiles min zoom from tiles
+ * @param {object} mbtilesSource
+ * @returns {Promise<number>}
+ */
+export async function getMBTilesMinZoomFromTiles(mbtilesSource) {
+  return await new Promise((resolve, reject) => {
+    mbtilesSource.get(
+      "SELECT MIN(zoom_level) AS minzoom FROM tiles",
+      (error, row) => {
+        if (error) {
+          return reject(error);
+        }
+
+        if (!row) {
+          return reject(new Error("No tile found"));
+        }
+
+        resolve(row.minzoom);
+      }
+    );
+  });
+}
+
+/**
+ * Get MBTiles max zoom from tiles
+ * @param {object} mbtilesSource
+ * @returns {Promise<number>}
+ */
+export async function getMBTilesMaxZoomFromTiles(mbtilesSource) {
+  return await new Promise((resolve, reject) => {
+    mbtilesSource.get(
+      "SELECT MAX(zoom_level) AS maxzoom FROM tiles",
+      (error, row) => {
+        if (error) {
+          return reject(error);
+        }
+
+        if (!row) {
+          return reject(new Error("No tile found"));
+        }
+
+        resolve(row.maxzoom);
+      }
+    );
+  });
+}
+
+/**
+ * Get MBTiles tile format from tiles
+ * @param {object} mbtilesSource
+ * @returns {Promise<number>}
+ */
+export async function getMBTilesFormatFromTiles(mbtilesSource) {
+  return await new Promise((resolve, reject) => {
+    mbtilesSource.get("SELECT tile_data FROM tiles LIMIT 1", (error, row) => {
+      if (error) {
+        return reject(error);
+      }
+
+      if (!row) {
+        return reject(new Error("No tile found"));
+      }
+
+      resolve(detectFormatAndHeaders(row.tile_data).format);
+    });
+  });
+}
+
+/**
  * Get MBTiles infos
  * @param {object} mbtilesSource
  * @param {boolean} includeJSON
@@ -1048,6 +1110,7 @@ export function createNewXYZTileJSON(metadata) {
 export async function getMBTilesInfos(mbtilesSource, includeJSON = false) {
   const metadata = {};
 
+  /* Get metadatas */
   await new Promise((resolve, reject) => {
     mbtilesSource.all("SELECT name, value FROM metadata", (error, rows) => {
       if (error) {
@@ -1091,62 +1154,24 @@ export async function getMBTilesInfos(mbtilesSource, includeJSON = false) {
     });
   });
 
+  /* Try get min zoom */
   if (metadata.minzoom === undefined) {
-    await new Promise((resolve, reject) => {
-      mbtilesSource.get(
-        "SELECT MIN(zoom_level) AS minzoom FROM tiles",
-        (error, row) => {
-          if (error) {
-            return reject(error);
-          }
-
-          if (row) {
-            metadata.minzoom = row.minzoom;
-          }
-
-          resolve();
-        }
-      );
-    });
+    metadata.minzoom = await getMBTilesMinZoomFromTiles(mbtilesSource);
   }
 
+  /* Try get max zoom */
   if (metadata.maxzoom === undefined) {
-    await new Promise((resolve, reject) => {
-      mbtilesSource.get(
-        "SELECT MAX(zoom_level) AS maxzoom FROM tiles",
-        (error, row) => {
-          if (error) {
-            return reject(error);
-          }
-
-          if (row) {
-            metadata.maxzoom = row.maxzoom;
-          }
-
-          resolve();
-        }
-      );
-    });
+    metadata.maxzoom = await getMBTilesMaxZoomFromTiles(mbtilesSource);
   }
 
+  /* Try get tile format */
   if (metadata.format === undefined) {
-    await new Promise((resolve, reject) => {
-      mbtilesSource.get("SELECT tile_data FROM tiles LIMIT 1", (error, row) => {
-        if (error) {
-          return reject(error);
-        }
-
-        if (row) {
-          metadata.format = detectFormatAndHeaders(row.tile_data).format;
-        }
-
-        resolve();
-      });
-    });
+    metadata.format = await getMBTilesFormatFromTiles(mbtilesSource);
   }
 
   const xyzTileJSON = createNewXYZTileJSON(metadata);
 
+  /* Add vector_layers and tilestats */
   if (includeJSON === true) {
     xyzTileJSON.vector_layers = metadata.vector_layers;
     xyzTileJSON.tilestats = metadata.tilestats;

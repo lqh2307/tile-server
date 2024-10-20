@@ -323,11 +323,11 @@ export const serve_data = {
             }
 
             if (config.options.createMetadataIndex === true) {
-              await createMetadataIndex(filePath)
+              await createMetadataIndex(filePath);
             }
 
             if (config.options.createTilesIndex === true) {
-              await createTilesIndex(filePath)
+              await createTilesIndex(filePath);
             }
 
             dataInfo.sourceType = "mbtiles";
