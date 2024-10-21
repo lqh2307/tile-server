@@ -859,7 +859,7 @@ export async function createMetadataIndex(mbtilesFilePath) {
 
   return new Promise((resolve, reject) => {
     mbtilesSource.run(
-      "CREATE INDEX IF NOT EXISTS idx_metadata ON metadata (name)",
+      "CREATE UNIQUE INDEX metadata_unique_index ON metadata (name)",
       (error) => {
         if (error) {
           return reject(error);
@@ -890,7 +890,7 @@ export async function createTilesIndex(mbtilesFilePath) {
 
   return new Promise((resolve, reject) => {
     mbtilesSource.run(
-      "CREATE INDEX IF NOT EXISTS idx_tiles ON tiles (zoom_level, tile_column, tile_row)",
+      "CREATE UNIQUE INDEX tiles_unique_index ON tiles (zoom_level, tile_column, tile_row)",
       (error) => {
         if (error) {
           return reject(error);
