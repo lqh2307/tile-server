@@ -56,7 +56,7 @@ function getStyleHandler() {
                   ? source.url.slice(10)
                   : source.url.slice(10, queryIndex);
               const query =
-                queryIndex === -1 ? "" : `${source.url.slice(queryIndex)}`;
+                queryIndex === -1 ? "" : source.url.slice(queryIndex);
 
               source.url = `${getRequestHost(
                 req
@@ -73,8 +73,7 @@ function getStyleHandler() {
                 const queryIndex = url.indexOf("?");
                 const sourceID =
                   queryIndex === -1 ? url.slice(10) : url.slice(10, queryIndex);
-                const query =
-                  queryIndex === -1 ? "" : `${url.slice(queryIndex)}`;
+                const query = queryIndex === -1 ? "" : url.slice(queryIndex);
 
                 url = `${getRequestHost(req)}data/${sourceID}.json${query}`;
               }
@@ -96,8 +95,7 @@ function getStyleHandler() {
                   queryIndex === -1
                     ? tile.slice(10)
                     : tile.slice(10, queryIndex);
-                const query =
-                  queryIndex === -1 ? "" : `${tile.slice(queryIndex)}`;
+                const query = queryIndex === -1 ? "" : tile.slice(queryIndex);
 
                 tile = `${getRequestHost(
                   req
