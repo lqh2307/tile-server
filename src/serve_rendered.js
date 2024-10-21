@@ -623,7 +623,7 @@ export const serve_rendered = {
                           ? tile.slice(10)
                           : tile.slice(10, queryIndex);
                       const query =
-                        queryIndex === -1 ? "" : `?${tile.slice(queryIndex)}`;
+                        queryIndex === -1 ? "" : `${tile.slice(queryIndex)}`;
                       const sourceData = config.repo.datas[sourceID];
 
                       tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}${query}`;
@@ -649,7 +649,7 @@ export const serve_rendered = {
                           ? url.slice(10)
                           : url.slice(10, queryIndex);
                       const query =
-                        queryIndex === -1 ? "" : `?${url.slice(queryIndex)}`;
+                        queryIndex === -1 ? "" : `${url.slice(queryIndex)}`;
                       const sourceData = config.repo.datas[sourceID];
 
                       const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}${query}`;
@@ -688,7 +688,7 @@ export const serve_rendered = {
                     const query =
                       queryIndex === -1
                         ? ""
-                        : `?${source.url.slice(queryIndex)}`;
+                        : `${source.url.slice(queryIndex)}`;
                     const sourceData = config.repo.datas[sourceID];
 
                     const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}${query}`;

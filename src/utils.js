@@ -44,7 +44,7 @@ export function checkReadyMiddleware() {
  * @returns {[number,number,number]}
  */
 export function getXYZCenterFromLonLatZ(lon, lat, z) {
-  const centerPx = new SphericalMercator().px([lon, lat], z);
+  const centerPx = sphericalMercator.px([lon, lat], z);
 
   return [Math.floor(centerPx[0] / 256), Math.floor(centerPx[1] / 256), z];
 }
@@ -57,7 +57,7 @@ export function getXYZCenterFromLonLatZ(lon, lat, z) {
  * @returns {[number,number]}
  */
 export function getLonLatCenterFromXYZ(x, y, z) {
-  return new SphericalMercator().ll([(x + 0.5) * 256, (y + 0.5) * 256], z);
+  return sphericalMercator.ll([(x + 0.5) * 256, (y + 0.5) * 256], z);
 }
 
 /**
@@ -100,7 +100,7 @@ export async function renderData(
     zoom: z,
     center: getLonLatCenterFromXYZ(
       x,
-      scheme === "tms" ? (1 << z) - 1 - y : y, // Default of @mapbox/sphericalmercator is xyz. . Flip Y to convert xyz scheme => tms scheme
+      scheme === "tms" ? (1 << z) - 1 - y : y, // Default of sphericalmercator is xyz. Flip Y to convert xyz scheme => tms scheme
       z
     ),
     width: tileSize,
@@ -1292,11 +1292,8 @@ export const unzipAsync = util.promisify(zlib.unzip);
  *
  */
 class SphericalMercator {
-  constructor(options = {}) {
-    this.size = options.size || 256;
-    this.expansion = options.antimeridian ? 2 : 1;
-
-    let size = this.size;
+  constructor() {
+    let size = 256;
     this.Bc = [];
     this.Cc = [];
     this.zc = [];
@@ -1312,7 +1309,7 @@ class SphericalMercator {
 
   px(ll, zoom) {
     if (Number(zoom) === zoom && zoom % 1 !== 0) {
-      const size = this.size * Math.pow(2, zoom);
+      const size = 256 * Math.pow(2, zoom);
       const d = size / 2;
       const bc = size / 360;
       const cc = size / (2 * Math.PI);
@@ -1323,7 +1320,7 @@ class SphericalMercator {
       );
       let x = d + ll[0] * bc;
       let y = d + 0.5 * Math.log((1 + f) / (1 - f)) * -cc;
-      x > ac * this.expansion && (x = ac * this.expansion);
+      x > ac && (x = ac);
       y > ac && (y = ac);
 
       return [x, y];
@@ -1337,8 +1334,7 @@ class SphericalMercator {
       let y = Math.round(
         d + 0.5 * Math.log((1 + f) / (1 - f)) * -this.Cc[zoom]
       );
-      x > this.Ac[zoom] * this.expansion &&
-        (x = this.Ac[zoom] * this.expansion);
+      x > this.Ac[zoom] && (x = this.Ac[zoom]);
       y > this.Ac[zoom] && (y = this.Ac[zoom]);
 
       return [x, y];
@@ -1347,7 +1343,7 @@ class SphericalMercator {
 
   ll(px, zoom) {
     if (Number(zoom) === zoom && zoom % 1 !== 0) {
-      const size = this.size * Math.pow(2, zoom);
+      const size = 256 * Math.pow(2, zoom);
       const bc = size / 360;
       const cc = size / (2 * Math.PI);
       const zc = size / 2;
@@ -1367,3 +1363,5 @@ class SphericalMercator {
     }
   }
 }
+
+const sphericalMercator = new SphericalMercator();
