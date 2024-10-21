@@ -9,7 +9,7 @@ import express from "express";
 import axios from "axios";
 import {
   detectFormatAndHeaders,
-  createNewXYZTileJSON,
+  createNewTileJSON,
   getRequestHost,
   getPMTilesTile,
   getMBTilesTile,
@@ -586,7 +586,7 @@ export const serve_rendered = {
           try {
             const item = config.repo.styles[id];
             const rendered = {
-              tileJSON: createNewXYZTileJSON({
+              tileJSON: createNewTileJSON({
                 name: item.styleJSON.name,
                 description: item.styleJSON.name,
               }),
