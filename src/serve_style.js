@@ -96,6 +96,7 @@ function getStyleHandler() {
                     ? tile.slice(10)
                     : tile.slice(10, queryIndex);
                 const query = queryIndex === -1 ? "" : tile.slice(queryIndex);
+                const format = config.repo.datas[sourceID].tileJSON.format;
 
                 tile = `${getRequestHost(
                   req
