@@ -202,6 +202,7 @@ export const serve_data = {
      *         schema:
      *           type: string
      *           enum: [true, false]
+     *         required: false
      *         description: Include vector_layers and tilestats fields in response
      *       - in: query
      *         name: scheme

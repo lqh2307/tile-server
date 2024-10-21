@@ -239,7 +239,7 @@ export const serve_rendered = {
        *         schema:
        *           type: integer
        *           enum: [256, 512]
-       *         required: true
+       *         required: false
        *         description: Tile size (256 or 512)
        *       - in: path
        *         name: id
@@ -304,7 +304,7 @@ export const serve_rendered = {
        *         schema:
        *           type: integer
        *           enum: [256, 512]
-       *         required: true
+       *         required: false
        *         description: Tile size (256 or 512)
        *       - in: path
        *         name: z
