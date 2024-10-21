@@ -513,18 +513,20 @@ export const serve_rendered = {
               const x = Number(parts[4]);
               const y = Number(parts[5].slice(0, parts[5].indexOf(".")));
               const sourceData = config.repo.datas[sourceID];
+              let scheme = "tms";
 
               try {
+                const queryIndex = url.indexOf("?");
+                if (queryIndex !== -1) {
+                  const query = new URLSearchParams(url.slice(queryIndex));
+
+                  scheme = query.get("scheme");
+                }
+
                 /* Get rendered tile */
                 const dataTile =
                   sourceData.sourceType === "mbtiles"
-                    ? await getMBTilesTile(
-                        sourceData.source,
-                        z,
-                        x,
-                        y,
-                        req.query.scheme
-                      )
+                    ? await getMBTilesTile(sourceData.source, z, x, y, scheme)
                     : await getPMTilesTile(sourceData.source, z, x, y);
 
                 /* Unzip pbf rendered tile */
@@ -713,11 +715,7 @@ export const serve_rendered = {
                       source.tiles[0].startsWith("pmtiles://") === true ||
                       source.tiles[0].startsWith("mbtiles://") === true
                     ) {
-                      const queryIndex = source.tiles[0].indexOf("?");
-                      const sourceID =
-                        queryIndex === -1
-                          ? source.tiles[0].slice(10)
-                          : source.tiles[0].slice(10, queryIndex);
+                      const sourceID = source.tiles[0].split("/")[2];
                       const sourceData = config.repo.datas[sourceID];
 
                       styleJSON.sources[id] = {
