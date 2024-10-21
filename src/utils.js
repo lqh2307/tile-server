@@ -1,7 +1,6 @@
 "use strict";
 
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
-import SphericalMercator from "@mapbox/sphericalmercator";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
 import { PMTiles, FetchSource } from "pmtiles";
 import fsPromise from "node:fs/promises";
@@ -1279,6 +1278,92 @@ export function detectFormatAndHeaders(buffer) {
   };
 }
 
+/**
+ *
+ */
 export const gzipAsync = util.promisify(zlib.gzip);
 
+/**
+ *
+ */
 export const unzipAsync = util.promisify(zlib.unzip);
+
+/**
+ *
+ */
+class SphericalMercator {
+  constructor(options = {}) {
+    this.size = options.size || 256;
+    this.expansion = options.antimeridian ? 2 : 1;
+
+    let size = this.size;
+    this.Bc = [];
+    this.Cc = [];
+    this.zc = [];
+    this.Ac = [];
+    for (let d = 0; d < 30; d++) {
+      this.Bc.push(size / 360);
+      this.Cc.push(size / (2 * Math.PI));
+      this.zc.push(size / 2);
+      this.Ac.push(size);
+      size *= 2;
+    }
+  }
+
+  px(ll, zoom) {
+    if (Number(zoom) === zoom && zoom % 1 !== 0) {
+      const size = this.size * Math.pow(2, zoom);
+      const d = size / 2;
+      const bc = size / 360;
+      const cc = size / (2 * Math.PI);
+      const ac = size;
+      const f = Math.min(
+        Math.max(Math.sin((Math.PI / 180) * ll[1]), -0.9999),
+        0.9999
+      );
+      let x = d + ll[0] * bc;
+      let y = d + 0.5 * Math.log((1 + f) / (1 - f)) * -cc;
+      x > ac * this.expansion && (x = ac * this.expansion);
+      y > ac && (y = ac);
+
+      return [x, y];
+    } else {
+      const d = this.zc[zoom];
+      const f = Math.min(
+        Math.max(Math.sin((Math.PI / 180) * ll[1]), -0.9999),
+        0.9999
+      );
+      let x = Math.round(d + ll[0] * this.Bc[zoom]);
+      let y = Math.round(
+        d + 0.5 * Math.log((1 + f) / (1 - f)) * -this.Cc[zoom]
+      );
+      x > this.Ac[zoom] * this.expansion &&
+        (x = this.Ac[zoom] * this.expansion);
+      y > this.Ac[zoom] && (y = this.Ac[zoom]);
+
+      return [x, y];
+    }
+  }
+
+  ll(px, zoom) {
+    if (Number(zoom) === zoom && zoom % 1 !== 0) {
+      const size = this.size * Math.pow(2, zoom);
+      const bc = size / 360;
+      const cc = size / (2 * Math.PI);
+      const zc = size / 2;
+      const g = (px[1] - zc) / -cc;
+
+      return [
+        (px[0] - zc) / bc,
+        (180 / Math.PI) * (2 * Math.atan(Math.exp(g)) - 0.5 * Math.PI),
+      ];
+    } else {
+      const g = (px[1] - this.zc[zoom]) / -this.Cc[zoom];
+
+      return [
+        (px[0] - this.zc[zoom]) / this.Bc[zoom],
+        (180 / Math.PI) * (2 * Math.atan(Math.exp(g)) - 0.5 * Math.PI),
+      ];
+    }
+  }
+}
