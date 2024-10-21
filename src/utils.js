@@ -101,7 +101,7 @@ export async function renderData(
     zoom: z,
     center: getLonLatCenterFromXYZ(
       x,
-      scheme === "tms" ? y : (1 << z) - 1 - y,
+      scheme === "tms" ? (1 << z) - 1 - y : y,
       z
     ),
     width: tileSize,
