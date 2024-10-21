@@ -49,7 +49,7 @@ function getDataTileHandler() {
             item.source,
             z,
             x,
-            req.query.scheme === "xyz" ? (1 << z) - 1 - y : y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+            req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
           )
           : await getPMTilesTile(item.source, z, x, y);
 

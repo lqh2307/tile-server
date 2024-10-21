@@ -1326,7 +1326,7 @@ class SphericalMercator {
         y = ac;
       }
 
-      if (scheme === "xyz") {
+      if (scheme === "tms") {
         y = size - y;
       }
 

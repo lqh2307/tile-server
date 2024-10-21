@@ -529,7 +529,7 @@ export const serve_rendered = {
                       sourceData.source,
                       z,
                       x,
-                      scheme === "xyz" ? (1 << z) - 1 - y : y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+                      scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
                     )
                     : await getPMTilesTile(sourceData.source, z, x, y);
 
