@@ -524,10 +524,10 @@ export async function validateSprite(spriteDirPath) {
   );
 
   await Promise.all(
-    fileNameWoExts.map(async (spriteFileName) => {
+    fileNameWoExts.map(async (fileNameWoExt) => {
       /* Validate JSON sprite */
       const fileData = await fsPromise.readFile(
-        `${spriteDirPath}/${spriteFileName}.json`,
+        `${spriteDirPath}/${fileNameWoExt}.json`,
         "utf8"
       );
 
@@ -546,7 +546,7 @@ export async function validateSprite(spriteDirPath) {
 
       /* Validate PNG sprite */
       const pngMetadata = await sharp(
-        `${spriteDirPath}/${fileNameWoExts}.png`
+        `${spriteDirPath}/${fileNameWoExt}.png`
       ).metadata();
 
       if (pngMetadata.format !== "png") {
