@@ -85,12 +85,25 @@ export async function compileTemplate(template, data) {
  * @param {number} x
  * @param {number} y
  * @param {number} z
+ * @param {"xyz"|"tms"} scheme
  * @returns {Promise<Buffer>}
  */
-export async function renderData(item, scale, tileSize, x, y, z) {
+export async function renderData(
+  item,
+  scale,
+  tileSize,
+  x,
+  y,
+  z,
+  scheme = "xyz"
+) {
   const params = {
     zoom: z,
-    center: getLonLatCenterFromXYZ(x, y, z),
+    center: getLonLatCenterFromXYZ(
+      x,
+      scheme === "tms" ? y : (1 << z) - 1 - y,
+      z
+    ),
     width: tileSize,
     height: tileSize,
   };
@@ -693,14 +706,14 @@ export async function getPMTilesInfos(pmtilesSource, includeJSON = false) {
     ];
   }
 
-  const xyzTileJSON = createNewXYZTileJSON(metadata);
+  const tileJSON = createNewTileJSON(metadata);
 
   if (includeJSON === true) {
-    xyzTileJSON.vector_layers = metadata.vector_layers;
-    xyzTileJSON.tilestats = metadata.tilestats;
+    tileJSON.vector_layers = metadata.vector_layers;
+    tileJSON.tilestats = metadata.tilestats;
   }
 
-  return xyzTileJSON;
+  return tileJSON;
 }
 
 /**
@@ -898,15 +911,16 @@ export async function createTilesIndex(mbtilesFilePath) {
  * @param {number} z
  * @param {number} x
  * @param {number} y
+ * @param {"xyz"|"tms"} scheme
  * @returns {Promise<object>}
  */
-export async function getMBTilesTile(mbtilesSource, z, x, y) {
+export async function getMBTilesTile(mbtilesSource, z, x, y, scheme = "xyz") {
   return new Promise((resolve, reject) => {
     mbtilesSource.get(
       "SELECT tile_data FROM tiles WHERE zoom_level = ? AND tile_column = ? AND tile_row = ?",
       z,
       x,
-      (1 << z) - 1 - y, // Flip Y to convert TMS scheme => XYZ scheme
+      scheme === "tms" ? y : (1 << z) - 1 - y, // Flip Y to convert TMS scheme => XYZ scheme
       (error, row) => {
         if (error) {
           return reject(error);
@@ -928,11 +942,11 @@ export async function getMBTilesTile(mbtilesSource, z, x, y) {
 }
 
 /**
- * Create new XYZ tileJSON
+ * Create new tileJSON
  * @param {object} metadata
  * @returns
  */
-export function createNewXYZTileJSON(metadata) {
+export function createNewTileJSON(metadata) {
   // Default
   const data = {
     tilejson: "2.2.0",
@@ -942,7 +956,6 @@ export function createNewXYZTileJSON(metadata) {
     version: "1.0.0",
     type: "overlay",
     format: "png",
-    scheme: "xyz", // Guarantee scheme always is XYZ
     bounds: [-180, -90, 180, 90],
     minzoom: 0,
     maxzoom: 22,
@@ -1169,15 +1182,15 @@ export async function getMBTilesInfos(mbtilesSource, includeJSON = false) {
     metadata.format = await getMBTilesFormatFromTiles(mbtilesSource);
   }
 
-  const xyzTileJSON = createNewXYZTileJSON(metadata);
+  const tileJSON = createNewTileJSON(metadata);
 
   /* Add vector_layers and tilestats */
   if (includeJSON === true) {
-    xyzTileJSON.vector_layers = metadata.vector_layers;
-    xyzTileJSON.tilestats = metadata.tilestats;
+    tileJSON.vector_layers = metadata.vector_layers;
+    tileJSON.tilestats = metadata.tilestats;
   }
 
-  return xyzTileJSON;
+  return tileJSON;
 }
 
 /**

@@ -45,7 +45,7 @@ function getDataTileHandler() {
       /* Get data tile */
       const dataTile =
         item.sourceType === "mbtiles"
-          ? await getMBTilesTile(item.source, z, x, y)
+          ? await getMBTilesTile(item.source, z, x, y, req.query.scheme)
           : await getPMTilesTile(item.source, z, x, y);
 
       /* Gzip pbf data tile */
@@ -267,6 +267,12 @@ export const serve_data = {
      *           type: string
      *           enum: [jpeg, jpg, pbf, png, webp, gif]
      *         description: Tile format
+     *       - in: query
+     *         name: scheme
+     *         schema:
+     *           type: string
+     *           enum: [xyz, tms]
+     *         description: Use xyz or tms scheme
      *     responses:
      *       200:
      *         description: Data tile

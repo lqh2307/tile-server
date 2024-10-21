@@ -75,7 +75,15 @@ function getRenderedTileHandler() {
     const tileSize = Number(req.params.tileSize) || 256; // Default tile size is 256px x 256px
 
     try {
-      const data = await renderData(item, scale, tileSize, x, y, z);
+      const data = await renderData(
+        item,
+        scale,
+        tileSize,
+        x,
+        y,
+        z,
+        req.query.scheme
+      );
 
       const image = await processImage(
         data,
@@ -315,6 +323,12 @@ export const serve_rendered = {
        *           type: string
        *         required: false
        *         description: Scale of the tile (e.g., @2x)
+       *       - in: query
+       *         name: scheme
+       *         schema:
+       *           type: string
+       *           enum: [xyz, tms]
+       *         description: Use xyz or tms scheme
        *     responses:
        *       200:
        *         description: Style tile
@@ -496,7 +510,13 @@ export const serve_rendered = {
                 /* Get rendered tile */
                 const dataTile =
                   sourceData.sourceType === "mbtiles"
-                    ? await getMBTilesTile(sourceData.source, z, x, y)
+                    ? await getMBTilesTile(
+                        sourceData.source,
+                        z,
+                        x,
+                        y,
+                        req.query.scheme
+                      )
                     : await getPMTilesTile(sourceData.source, z, x, y);
 
                 /* Unzip pbf rendered tile */
