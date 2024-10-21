@@ -2,6 +2,7 @@
 
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import glyphCompose from "@mapbox/glyph-pbf-composite";
+import { StatusCodes } from "http-status-codes";
 import { PMTiles, FetchSource } from "pmtiles";
 import fsPromise from "node:fs/promises";
 import { config } from "./config.js";
