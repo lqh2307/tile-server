@@ -328,6 +328,7 @@ export const serve_rendered = {
        *         schema:
        *           type: string
        *           enum: [xyz, tms]
+       *         required: false
        *         description: Use xyz or tms scheme
        *     responses:
        *       200:
