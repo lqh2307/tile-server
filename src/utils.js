@@ -43,8 +43,8 @@ export function checkReadyMiddleware() {
  * @param {number} z
  * @returns {[number,number,number]}
  */
-export function getXYZCenterFromLonLatZ(lon, lat, z) {
-  const centerPx = sphericalMercator.px([lon, lat], z);
+export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "tms") {
+  const centerPx = sphericalMercator.px([lon, lat], z, scheme);
 
   return [Math.floor(centerPx[0] / 256), Math.floor(centerPx[1] / 256), z];
 }
@@ -56,8 +56,8 @@ export function getXYZCenterFromLonLatZ(lon, lat, z) {
  * @param {number} z
  * @returns {[number,number]}
  */
-export function getLonLatCenterFromXYZ(x, y, z) {
-  return sphericalMercator.ll([(x + 0.5) * 256, (y + 0.5) * 256], z);
+export function getLonLatCenterFromXYZ(x, y, z, scheme = "tms") {
+  return sphericalMercator.ll([(x + 0.5) * 256, (y + 0.5) * 256], z, scheme);
 }
 
 /**
@@ -98,11 +98,7 @@ export async function renderData(
 ) {
   const params = {
     zoom: z,
-    center: getLonLatCenterFromXYZ(
-      x,
-      scheme === "tms" ? (1 << z) - 1 - y : y, // Default of sphericalmercator is xyz. Flip Y to convert xyz scheme => tms scheme
-      z
-    ),
+    center: getLonLatCenterFromXYZ(x, y, z, scheme),
     width: tileSize,
     height: tileSize,
   };
@@ -1289,7 +1285,7 @@ export const gzipAsync = util.promisify(zlib.gzip);
 export const unzipAsync = util.promisify(zlib.unzip);
 
 /**
- *
+ * Default of sphericalmercator is xyz. Flip Y to convert xyz scheme => tms scheme
  */
 class SphericalMercator {
   constructor() {
@@ -1307,7 +1303,7 @@ class SphericalMercator {
     }
   }
 
-  px(ll, zoom) {
+  px(ll, zoom, scheme = "tms") {
     if (Number(zoom) === zoom && zoom % 1 !== 0) {
       const size = 256 * Math.pow(2, zoom);
       const d = size / 2;
@@ -1323,6 +1319,10 @@ class SphericalMercator {
       x > ac && (x = ac);
       y > ac && (y = ac);
 
+      if (scheme === "tms") {
+        y = size - y;
+      }
+
       return [x, y];
     } else {
       const d = this.zc[zoom];
@@ -1337,16 +1337,25 @@ class SphericalMercator {
       x > this.Ac[zoom] && (x = this.Ac[zoom]);
       y > this.Ac[zoom] && (y = this.Ac[zoom]);
 
+      if (scheme === "tms") {
+        y = this.Ac[zoom] - y;
+      }
+
       return [x, y];
     }
   }
 
-  ll(px, zoom) {
+  ll(px, zoom, scheme = "tms") {
     if (Number(zoom) === zoom && zoom % 1 !== 0) {
       const size = 256 * Math.pow(2, zoom);
       const bc = size / 360;
       const cc = size / (2 * Math.PI);
       const zc = size / 2;
+
+      if (scheme === "tms") {
+        px[1] = size - px[1];
+      }
+
       const g = (px[1] - zc) / -cc;
 
       return [
@@ -1354,6 +1363,10 @@ class SphericalMercator {
         (180 / Math.PI) * (2 * Math.atan(Math.exp(g)) - 0.5 * Math.PI),
       ];
     } else {
+      if (scheme === "tms") {
+        px[1] = this.Ac[zoom] - px[1];
+      }
+
       const g = (px[1] - this.zc[zoom]) / -this.Cc[zoom];
 
       return [
