@@ -774,26 +774,22 @@ async function isExistTilesIndex(mbtilesSource) {
 
   if (indexes !== undefined) {
     for (const index of indexes) {
-      const found = await new Promise((resolve, reject) => {
+      const columns = await new Promise((resolve, reject) => {
         mbtilesSource.all(`PRAGMA index_info (${index})`, (error, columns) => {
           if (error) {
             return reject(error);
           }
 
-          if (
-            columns?.length === 3 &&
-            columns[0].name === "zoom_level" &&
-            columns[1].name === "tile_column" &&
-            columns[2].name === "tile_row"
-          ) {
-            return resolve(true);
-          }
-
-          resolve(false);
+          resolve(columns);
         });
       });
 
-      if (found === true) {
+      if (
+        columns?.length === 3 &&
+        columns[0].name === "zoom_level" &&
+        columns[1].name === "tile_column" &&
+        columns[2].name === "tile_row"
+      ) {
         return true;
       }
     }
@@ -820,21 +816,17 @@ async function isExistMetadataIndex(mbtilesSource) {
 
   if (indexes !== undefined) {
     for (const index of indexes) {
-      const found = await new Promise((resolve, reject) => {
+      const columns = await new Promise((resolve, reject) => {
         mbtilesSource.all(`PRAGMA index_info (${index})`, (error, columns) => {
           if (error) {
             return reject(error);
           }
 
-          if (columns?.length === 1 && columns[0].name === "name") {
-            return resolve(true);
-          }
-
-          resolve(false);
+          resolve(columns);
         });
       });
 
-      if (found === true) {
+      if (columns?.length === 1 && columns[0].name === "name") {
         return true;
       }
     }
