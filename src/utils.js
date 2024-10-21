@@ -42,12 +42,13 @@ export function checkReadyMiddleware() {
  * @param {number} lon
  * @param {number} lat
  * @param {number} z
+ * @param {"xyz"|"tms"} scheme
  * @returns {[number,number,number]}
  */
 export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "tms") {
   const centerPx = sphericalMercator.px([lon, lat], z, scheme);
 
-  return [Math.floor(centerPx[0] / 256), Math.floor(centerPx[1] / 256), z];
+  return [Math.round(centerPx[0] / 256), Math.round(centerPx[1] / 256), z];
 }
 
 /**
@@ -55,6 +56,7 @@ export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "tms") {
  * @param {number} x
  * @param {number} y
  * @param {number} z
+ * @param {"xyz"|"tms"} scheme
  * @returns {[number,number]}
  */
 export function getLonLatCenterFromXYZ(x, y, z, scheme = "tms") {
@@ -767,7 +769,7 @@ export async function openMBTiles(filePath, mode = sqlite3.OPEN_READONLY) {
  */
 async function isExistTilesIndex(mbtilesSource) {
   const indexes = await new Promise((resolve, reject) => {
-    mbtilesSource.all("PRAGMA index_list ('tiles')", (error, indexes) => {
+    mbtilesSource.all("PRAGMA index_list (tiles)", (error, indexes) => {
       if (error) {
         return reject(error);
       }
@@ -809,7 +811,7 @@ async function isExistTilesIndex(mbtilesSource) {
  */
 async function isExistMetadataIndex(mbtilesSource) {
   const indexes = await new Promise((resolve, reject) => {
-    mbtilesSource.all("PRAGMA index_list ('metadata')", (error, indexes) => {
+    mbtilesSource.all("PRAGMA index_list (metadata)", (error, indexes) => {
       if (error) {
         return reject(error);
       }
@@ -912,10 +914,7 @@ export async function createTilesIndex(mbtilesFilePath) {
 export async function getMBTilesTile(mbtilesSource, z, x, y) {
   return new Promise((resolve, reject) => {
     mbtilesSource.get(
-      "SELECT tile_data FROM tiles WHERE zoom_level = ? AND tile_column = ? AND tile_row = ?",
-      z,
-      x,
-      y,
+      `SELECT tile_data FROM tiles WHERE zoom_level = ${z} AND tile_column = ${x} AND tile_row = ${y}`,
       (error, row) => {
         if (error) {
           return reject(error);
@@ -1029,11 +1028,12 @@ export function createNewTileJSON(metadata) {
     }
   }
 
+  // Calculate center
   if (data.center === undefined) {
     data.center = [
       (data.bounds[0] + data.bounds[2]) / 2,
       (data.bounds[1] + data.bounds[3]) / 2,
-      Math.floor((data.minzoom + data.maxzoom) / 2),
+      Math.round((data.minzoom + data.maxzoom) / 2),
     ];
   }
 
@@ -1054,11 +1054,11 @@ export async function getMBTilesMinZoomFromTiles(mbtilesSource) {
           return reject(error);
         }
 
-        if (!row) {
-          return reject(new Error("No tile found"));
+        if (row) {
+          return resolve(row.minzoom);
         }
 
-        resolve(row.minzoom);
+        reject(new Error("No tile found"));
       }
     );
   });
@@ -1078,11 +1078,11 @@ export async function getMBTilesMaxZoomFromTiles(mbtilesSource) {
           return reject(error);
         }
 
-        if (!row) {
-          return reject(new Error("No tile found"));
+        if (row) {
+          return resolve(row.maxzoom);
         }
 
-        resolve(row.maxzoom);
+        reject(new Error("No tile found"));
       }
     );
   });
@@ -1100,11 +1100,11 @@ export async function getMBTilesFormatFromTiles(mbtilesSource) {
         return reject(error);
       }
 
-      if (!row) {
-        return reject(new Error("No tile found"));
+      if (row) {
+        return resolve(detectFormatAndHeaders(row.tile_data).format);
       }
 
-      resolve(detectFormatAndHeaders(row.tile_data).format);
+      reject(new Error("No tile found"));
     });
   });
 }
@@ -1289,35 +1289,42 @@ export const unzipAsync = util.promisify(zlib.unzip);
  */
 class SphericalMercator {
   constructor() {
-    let size = 256;
     this.Bc = [];
     this.Cc = [];
     this.zc = [];
     this.Ac = [];
-    for (let d = 0; d <= 22; d++) {
+
+    let size = 256;
+    for (let zoom = 0; zoom <= 22; zoom++) {
       this.Bc.push(size / 360);
-      this.Cc.push(size / (2 * Math.PI));
+      this.Cc.push((size / 2) * Math.PI);
       this.zc.push(size / 2);
       this.Ac.push(size);
+
       size *= 2;
     }
   }
 
   px(ll, zoom, scheme = "tms") {
-    if (Number(zoom) === zoom && zoom % 1 !== 0) {
-      const size = 256 * Math.pow(2, zoom);
+    if (zoom % 1 !== 0) {
+      const size = 256 * (1 << zoom);
       const d = size / 2;
       const bc = size / 360;
-      const cc = size / (2 * Math.PI);
+      const cc = (size / 2) * Math.PI;
       const ac = size;
       const f = Math.min(
         Math.max(Math.sin((Math.PI / 180) * ll[1]), -0.9999),
         0.9999
       );
       let x = d + ll[0] * bc;
+      if (x > ac) {
+        x = ac;
+      }
+
       let y = d + 0.5 * Math.log((1 + f) / (1 - f)) * -cc;
-      x > ac && (x = ac);
-      y > ac && (y = ac);
+      if (y > ac) {
+        y = ac;
+      }
 
       if (scheme === "tms") {
         y = size - y;
@@ -1331,11 +1338,16 @@ class SphericalMercator {
         0.9999
       );
       let x = Math.round(d + ll[0] * this.Bc[zoom]);
+      if (x > this.Ac[zoom]) {
+        x = this.Ac[zoom];
+      }
+
       let y = Math.round(
         d + 0.5 * Math.log((1 + f) / (1 - f)) * -this.Cc[zoom]
       );
-      x > this.Ac[zoom] && (x = this.Ac[zoom]);
-      y > this.Ac[zoom] && (y = this.Ac[zoom]);
+      if (y > this.Ac[zoom]) {
+        y = this.Ac[zoom];
+      }
 
       if (scheme === "tms") {
         y = this.Ac[zoom] - y;
@@ -1346,32 +1358,31 @@ class SphericalMercator {
   }
 
   ll(px, zoom, scheme = "tms") {
-    if (Number(zoom) === zoom && zoom % 1 !== 0) {
-      const size = 256 * Math.pow(2, zoom);
+    if (zoom % 1 !== 0) {
+      const size = 256 * (1 << zoom);
       const bc = size / 360;
-      const cc = size / (2 * Math.PI);
+      const cc = (size / 2) * Math.PI;
       const zc = size / 2;
 
       if (scheme === "tms") {
         px[1] = size - px[1];
       }
 
-      const g = (px[1] - zc) / -cc;
-
       return [
         (px[0] - zc) / bc,
-        (180 / Math.PI) * (2 * Math.atan(Math.exp(g)) - 0.5 * Math.PI),
+        (180 / Math.PI) *
+          (2 * Math.atan(Math.exp((px[1] - zc) / -cc)) - 0.5 * Math.PI),
       ];
     } else {
       if (scheme === "tms") {
         px[1] = this.Ac[zoom] - px[1];
       }
 
-      const g = (px[1] - this.zc[zoom]) / -this.Cc[zoom];
-
       return [
         (px[0] - this.zc[zoom]) / this.Bc[zoom],
-        (180 / Math.PI) * (2 * Math.atan(Math.exp(g)) - 0.5 * Math.PI),
+        (180 / Math.PI) *
+          (2 * Math.atan(Math.exp((px[1] - this.zc[zoom]) / -this.Cc[zoom])) -
+            0.5 * Math.PI),
       ];
     }
   }
