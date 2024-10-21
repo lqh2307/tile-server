@@ -159,7 +159,6 @@ function serveDataHandler() {
         id: id,
         name: item.tileJSON.name,
         is_vector: item.tileJSON.format === "pbf",
-        source_type: item.sourceType,
       });
 
       return res.status(StatusCodes.OK).send(compiled);
