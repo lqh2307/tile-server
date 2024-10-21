@@ -132,7 +132,7 @@ function getRenderedHandler() {
         tiles: [
           `${getRequestHost(req)}styles/${id}/${
             req.params.tileSize || 256
-          }/{z}/{x}/{y}.png`,
+          }/{z}/{x}/{y}.png${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
         ],
       };
 
@@ -247,6 +247,13 @@ export const serve_rendered = {
        *           type: string
        *         required: true
        *         description: ID of the style rendered
+       *       - in: query
+       *         name: scheme
+       *         schema:
+       *           type: string
+       *           enum: [xyz, tms]
+       *         required: false
+       *         description: Use xyz or tms scheme
        *     responses:
        *       200:
        *         description: Style rendered

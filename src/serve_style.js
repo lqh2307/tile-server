@@ -52,7 +52,9 @@ function getStyleHandler() {
             ) {
               const sourceID = source.url.slice(10);
 
-              source.url = `${getRequestHost(req)}data/${sourceID}.json`;
+              source.url = `${getRequestHost(req)}data/${sourceID}.json${
+                source.scheme === "tms" ? "?scheme=tms" : ""
+              }`;
             }
           }
 
@@ -64,7 +66,9 @@ function getStyleHandler() {
               ) {
                 const sourceID = url.slice(10);
 
-                url = `${getRequestHost(req)}data/${sourceID}.json`;
+                url = `${getRequestHost(req)}data/${sourceID}.json${
+                  source.scheme === "tms" ? "?scheme=tms" : ""
+                }`;
               }
 
               return url;
@@ -84,7 +88,9 @@ function getStyleHandler() {
 
                 tile = `${getRequestHost(
                   req
-                )}data/${sourceID}/{z}/{x}/{y}.${format}`;
+                )}data/${sourceID}/{z}/{x}/{y}.${format}${
+                  source.scheme === "tms" ? "?scheme=tms" : ""
+                }`;
               }
 
               return tile;

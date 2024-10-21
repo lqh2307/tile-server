@@ -96,7 +96,9 @@ function getDataHandler() {
           : await getPMTilesInfos(item.source, includeJSON);
 
       dataInfo.tiles = [
-        `${getRequestHost(req)}data/${id}/{z}/{x}/{y}.${item.tileJSON.format}`,
+        `${getRequestHost(req)}data/${id}/{z}/{x}/{y}.${item.tileJSON.format}${
+          req.query.scheme === "tms" ? "?scheme=tms" : ""
+        }`,
       ];
 
       res.header("Content-Type", "application/json");
@@ -201,6 +203,13 @@ export const serve_data = {
      *           type: string
      *           enum: [true, false]
      *         description: Include vector_layers and tilestats fields in response
+     *       - in: query
+     *         name: scheme
+     *         schema:
+     *           type: string
+     *           enum: [xyz, tms]
+     *         required: false
+     *         description: Use xyz or tms scheme
      *     responses:
      *       200:
      *         description: Data information
