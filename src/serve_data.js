@@ -97,7 +97,7 @@ function getDataHandler() {
 
       dataInfo.tiles = [
         `${getRequestHost(req)}data/${id}/{z}/{x}/{y}.${item.tileJSON.format}${
-          req.query.scheme === "tms" ? "?scheme=tms" : ""
+          req.query.scheme === "xyz" ? "?scheme=xyz" : ""
         }`,
       ];
 

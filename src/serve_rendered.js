@@ -132,7 +132,7 @@ function getRenderedHandler() {
         tiles: [
           `${getRequestHost(req)}styles/${id}/${
             req.params.tileSize || 256
-          }/{z}/{x}/{y}.png${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
+          }/{z}/{x}/{y}.png${req.query.scheme === "xyz" ? "?scheme=xyz" : ""}`,
         ],
       };
 

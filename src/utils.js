@@ -95,13 +95,13 @@ export async function renderData(
   x,
   y,
   z,
-  scheme = "xyz"
+  scheme = "tms"
 ) {
   const params = {
     zoom: z,
     center: getLonLatCenterFromXYZ(
       x,
-      scheme === "tms" ? (1 << z) - 1 - y : y,
+      scheme === "tms" ? (1 << z) - 1 - y : y, // Default of @mapbox/sphericalmercator is xyz. . Flip Y to convert xyz scheme => tms scheme
       z
     ),
     width: tileSize,
@@ -914,13 +914,13 @@ export async function createTilesIndex(mbtilesFilePath) {
  * @param {"xyz"|"tms"} scheme
  * @returns {Promise<object>}
  */
-export async function getMBTilesTile(mbtilesSource, z, x, y, scheme = "xyz") {
+export async function getMBTilesTile(mbtilesSource, z, x, y, scheme = "tms") {
   return new Promise((resolve, reject) => {
     mbtilesSource.get(
       "SELECT tile_data FROM tiles WHERE zoom_level = ? AND tile_column = ? AND tile_row = ?",
       z,
       x,
-      scheme === "tms" ? y : (1 << z) - 1 - y, // Flip Y to convert TMS scheme => XYZ scheme
+      scheme === "tms" ? y : (1 << z) - 1 - y, // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
       (error, row) => {
         if (error) {
           return reject(error);
