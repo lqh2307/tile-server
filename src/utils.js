@@ -906,16 +906,15 @@ export async function createTilesIndex(mbtilesFilePath) {
  * @param {number} z
  * @param {number} x
  * @param {number} y
- * @param {"xyz"|"tms"} scheme
  * @returns {Promise<object>}
  */
-export async function getMBTilesTile(mbtilesSource, z, x, y, scheme = "tms") {
+export async function getMBTilesTile(mbtilesSource, z, x, y) {
   return new Promise((resolve, reject) => {
     mbtilesSource.get(
       "SELECT tile_data FROM tiles WHERE zoom_level = ? AND tile_column = ? AND tile_row = ?",
       z,
       x,
-      scheme === "tms" ? y : (1 << z) - 1 - y, // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+      y,
       (error, row) => {
         if (error) {
           return reject(error);
@@ -1294,7 +1293,7 @@ class SphericalMercator {
     this.Cc = [];
     this.zc = [];
     this.Ac = [];
-    for (let d = 0; d < 30; d++) {
+    for (let d = 0; d <= 22; d++) {
       this.Bc.push(size / 360);
       this.Cc.push(size / (2 * Math.PI));
       this.zc.push(size / 2);

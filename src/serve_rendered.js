@@ -526,7 +526,12 @@ export const serve_rendered = {
                 /* Get rendered tile */
                 const dataTile =
                   sourceData.sourceType === "mbtiles"
-                    ? await getMBTilesTile(sourceData.source, z, x, y, scheme)
+                    ? await getMBTilesTile(
+                        sourceData.source,
+                        z,
+                        x,
+                        req.query.scheme === "xyz" ? (1 << z) - 1 - y : y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+                      )
                     : await getPMTilesTile(sourceData.source, z, x, y);
 
                 /* Unzip pbf rendered tile */
