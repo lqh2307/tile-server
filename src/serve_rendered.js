@@ -511,7 +511,7 @@ export const serve_rendered = {
               const sourceID = parts[2];
               const z = Number(parts[3]);
               const x = Number(parts[4]);
-              const y = Number(parts[5].split(".")[0]);
+              const y = Number(parts[5].slice(0, parts[5].indexOf(".")));
               const sourceData = config.repo.datas[sourceID];
 
               try {
@@ -617,10 +617,16 @@ export const serve_rendered = {
                       tile.startsWith("pmtiles://") === true ||
                       tile.startsWith("mbtiles://") === true
                     ) {
-                      const sourceID = tile.slice(10);
+                      const queryIndex = tile.indexOf("?");
+                      const sourceID =
+                        queryIndex === -1
+                          ? tile.slice(10)
+                          : tile.slice(10, queryIndex);
+                      const query =
+                        queryIndex === -1 ? "" : `?${tile.slice(queryIndex)}`;
                       const sourceData = config.repo.datas[sourceID];
 
-                      tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+                      tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}${query}`;
                     }
 
                     return tile;
@@ -637,9 +643,16 @@ export const serve_rendered = {
                       url.startsWith("pmtiles://") === true ||
                       url.startsWith("mbtiles://") === true
                     ) {
-                      const sourceID = url.slice(10);
+                      const queryIndex = url.indexOf("?");
+                      const sourceID =
+                        queryIndex === -1
+                          ? url.slice(10)
+                          : url.slice(10, queryIndex);
+                      const query =
+                        queryIndex === -1 ? "" : `?${url.slice(queryIndex)}`;
                       const sourceData = config.repo.datas[sourceID];
-                      const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+
+                      const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}${query}`;
 
                       if (source.tiles !== undefined) {
                         if (source.tiles.includes(tile) === false) {
@@ -667,9 +680,18 @@ export const serve_rendered = {
                     source.url.startsWith("pmtiles://") === true ||
                     source.url.startsWith("mbtiles://") === true
                   ) {
-                    const sourceID = source.url.slice(10);
+                    const queryIndex = source.url.indexOf("?");
+                    const sourceID =
+                      queryIndex === -1
+                        ? source.url.slice(10)
+                        : source.url.slice(10, queryIndex);
+                    const query =
+                      queryIndex === -1
+                        ? ""
+                        : `?${source.url.slice(queryIndex)}`;
                     const sourceData = config.repo.datas[sourceID];
-                    const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+
+                    const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}${query}`;
 
                     if (source.tiles !== undefined) {
                       if (source.tiles.includes(tile) === false) {
@@ -689,18 +711,21 @@ export const serve_rendered = {
                   source.tiles !== undefined
                 ) {
                   if (source.tiles.length === 1) {
-                    const tileURL = source.tiles[0];
                     if (
-                      tileURL.startsWith("pmtiles://") === true ||
-                      tileURL.startsWith("mbtiles://") === true
+                      source.tiles[0].startsWith("pmtiles://") === true ||
+                      source.tiles[0].startsWith("mbtiles://") === true
                     ) {
-                      const sourceID = tileURL.split("/")[2];
+                      const queryIndex = source.tiles[0].indexOf("?");
+                      const sourceID =
+                        queryIndex === -1
+                          ? source.tiles[0].slice(10)
+                          : source.tiles[0].slice(10, queryIndex);
                       const sourceData = config.repo.datas[sourceID];
 
                       styleJSON.sources[id] = {
                         ...sourceData.tileJSON,
                         ...source,
-                        tiles: [tileURL],
+                        tiles: [source.tiles[0]],
                       };
                     }
                   }

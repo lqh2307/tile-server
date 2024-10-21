@@ -50,11 +50,17 @@ function getStyleHandler() {
               source.url.startsWith("mbtiles://") === true ||
               source.url.startsWith("pmtiles://") === true
             ) {
-              const sourceID = source.url.slice(10);
+              const queryIndex = source.url.indexOf("?");
+              const sourceID =
+                queryIndex === -1
+                  ? source.url.slice(10)
+                  : source.url.slice(10, queryIndex);
+              const query =
+                queryIndex === -1 ? "" : `?${source.url.slice(queryIndex)}`;
 
-              source.url = `${getRequestHost(req)}data/${sourceID}.json${
-                source.scheme === "tms" ? "?scheme=tms" : ""
-              }`;
+              source.url = `${getRequestHost(
+                req
+              )}data/${sourceID}.json${query}`;
             }
           }
 
@@ -64,11 +70,13 @@ function getStyleHandler() {
                 url.startsWith("pmtiles://") === true ||
                 url.startsWith("mbtiles://") === true
               ) {
-                const sourceID = url.slice(10);
+                const queryIndex = url.indexOf("?");
+                const sourceID =
+                  queryIndex === -1 ? url.slice(10) : url.slice(10, queryIndex);
+                const query =
+                  queryIndex === -1 ? "" : `?${url.slice(queryIndex)}`;
 
-                url = `${getRequestHost(req)}data/${sourceID}.json${
-                  source.scheme === "tms" ? "?scheme=tms" : ""
-                }`;
+                url = `${getRequestHost(req)}data/${sourceID}.json${query}`;
               }
 
               return url;
@@ -83,14 +91,17 @@ function getStyleHandler() {
                 tile.startsWith("pmtiles://") === true ||
                 tile.startsWith("mbtiles://") === true
               ) {
-                const sourceID = tile.slice(10);
-                const format = config.repo.datas[sourceID].tileJSON.format;
+                const queryIndex = tile.indexOf("?");
+                const sourceID =
+                  queryIndex === -1
+                    ? tile.slice(10)
+                    : tile.slice(10, queryIndex);
+                const query =
+                  queryIndex === -1 ? "" : `?${tile.slice(queryIndex)}`;
 
                 tile = `${getRequestHost(
                   req
-                )}data/${sourceID}/{z}/{x}/{y}.${format}${
-                  source.scheme === "tms" ? "?scheme=tms" : ""
-                }`;
+                )}data/${sourceID}/{z}/{x}/{y}.${format}${query}`;
               }
 
               return tile;
