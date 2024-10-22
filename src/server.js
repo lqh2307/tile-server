@@ -33,7 +33,7 @@ export async function startServer(dataDir) {
       .use(morgan(`[PID = ${process.pid}] ${config.options.loggerFormat}`))
       .use("/", serve_common.init())
       .use("/", checkReadyMiddleware(), serve_template.init())
-      .use("/data", checkReadyMiddleware(), serve_data.init())
+      .use("/datas", checkReadyMiddleware(), serve_data.init())
       .use("/fonts", checkReadyMiddleware(), serve_font.init())
       .use("/sprites", checkReadyMiddleware(), serve_sprite.init())
       .use("/styles", checkReadyMiddleware(), serve_style.init())

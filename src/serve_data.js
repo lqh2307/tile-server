@@ -150,7 +150,7 @@ export const serve_data = {
      * tags:
      *   - name: Data
      *     description: Data related endpoints
-     * /data/datas.json:
+     * /datas/datas.json:
      *   get:
      *     tags:
      *       - Data
@@ -190,7 +190,7 @@ export const serve_data = {
      * tags:
      *   - name: Data
      *     description: Data related endpoints
-     * /data/{id}.json:
+     * /datas/{id}.json:
      *   get:
      *     tags:
      *       - Data
@@ -242,7 +242,7 @@ export const serve_data = {
      * tags:
      *   - name: Data
      *     description: Data related endpoints
-     * /data/{id}/{z}/{x}/{y}.{format}:
+     * /datas/{id}/{z}/{x}/{y}.{format}:
      *   get:
      *     tags:
      *       - Data
@@ -321,9 +321,9 @@ export const serve_data = {
 
   add: async () => {
     await Promise.all(
-      Object.keys(config.data).map(async (id) => {
+      Object.keys(config.datas).map(async (id) => {
         try {
-          const item = config.data[id];
+          const item = config.datas[id];
           const dataInfo = {};
           let filePath;
 

@@ -61,7 +61,7 @@ Run container:
 	      "style": "zurich_switzerland/style.json"
 	    }
 	  },
-	  "data": {
+	  "datas": {
 	    "asia_vietnam": {
 	      "mbtiles": "asia_vietnam/asia_vietnam.mbtiles"
 	    },

@@ -129,7 +129,7 @@ function serveInfoHandler() {
       // Datas info
       for (const data in config.repo.datas) {
         if (config.repo.datas[data].sourceType === "mbtiles") {
-          const filePath = `${config.paths.mbtiles}/${config.data[data].mbtiles}`;
+          const filePath = `${config.paths.mbtiles}/${config.datas[data].mbtiles}`;
           const stat = await fsPromise.stat(filePath);
 
           result.data.mbtiles.count += 1;
@@ -138,10 +138,10 @@ function serveInfoHandler() {
           result.data.pmtiles.count += 1;
 
           if (
-            config.data[data].pmtiles.startsWith("https://") !== true &&
-            config.data[data].pmtiles.startsWith("http://") !== true
+            config.datas[data].pmtiles.startsWith("https://") !== true &&
+            config.datas[data].pmtiles.startsWith("http://") !== true
           ) {
-            const filePath = `${config.paths.pmtiles}/${config.data[data].pmtiles}`;
+            const filePath = `${config.paths.pmtiles}/${config.datas[data].pmtiles}`;
             const stat = await fsPromise.stat(filePath);
 
             result.data.pmtiles.size += stat.size;
