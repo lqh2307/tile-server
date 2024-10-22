@@ -1,10 +1,10 @@
 "use strict";
 
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
-import glyphCompose from "@mapbox/glyph-pbf-composite";
 import { StatusCodes } from "http-status-codes";
 import { PMTiles, FetchSource } from "pmtiles";
 import fsPromise from "node:fs/promises";
+import protobuf from 'protocol-buffers';
 import { config } from "./config.js";
 import handlebars from "handlebars";
 import sqlite3 from "sqlite3";
@@ -14,6 +14,56 @@ import sharp from "sharp";
 import fs from "node:fs";
 import zlib from "zlib";
 import util from "util";
+
+
+const protoMessage = protobuf(fs.readFileSync("public/protos/glyphs.proto"));
+
+/**
+ * Combine any number of glyph (SDF) PBFs.
+ * Returns a re-encoded PBF with the combined
+ * font faces, composited using array order
+ * to determine glyph priority.
+ * @param {array} buffers An array of SDF PBFs.
+ */
+function combine(buffers, fontstack) {
+  let result;
+  const coverage = {};
+
+  if (buffers?.length === 0) {
+    return;
+  }
+
+  for (const buffer of buffers) {
+    const decoded = protoMessage.glyphs.decode(buffer);
+    const glyphs = decoded.stacks[0].glyphs;
+
+    if (!result) {
+      for (const glyph of glyphs) {
+        coverage[glyph.id] = true;
+      }
+
+      result = decoded;
+    } else {
+      for (const glyph of glyphs) {
+        if (!coverage[glyph.id]) {
+          result.stacks[0].glyphs.push(glyph);
+          coverage[glyph.id] = true;
+        }
+
+      }
+
+      result.stacks[0].name += ', ' + decoded.stacks[0].name;
+    }
+  }
+
+  if (fontstack) {
+    result.stacks[0].name = fontstack;
+  }
+
+  result.stacks[0].glyphs.sort((a, b) => a.id - b.id);
+
+  return protoMessage.glyphs.encode(result);
+};
 
 /**
  * Check ready middleware
@@ -302,7 +352,7 @@ export async function getFontsPBF(ids, fileName) {
     })
   );
 
-  return glyphCompose.combine(data);
+  return combine(data);
 }
 
 /**
