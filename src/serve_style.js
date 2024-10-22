@@ -60,7 +60,7 @@ function getStyleHandler() {
 
               source.url = `${getRequestHost(
                 req
-              )}data/${sourceID}.json${query}`;
+              )}datas/${sourceID}.json${query}`;
             }
           }
 
@@ -75,7 +75,7 @@ function getStyleHandler() {
                   queryIndex === -1 ? url.slice(10) : url.slice(10, queryIndex);
                 const query = queryIndex === -1 ? "" : url.slice(queryIndex);
 
-                url = `${getRequestHost(req)}data/${sourceID}.json${query}`;
+                url = `${getRequestHost(req)}datas/${sourceID}.json${query}`;
               }
 
               return url;
@@ -100,7 +100,7 @@ function getStyleHandler() {
 
                 tile = `${getRequestHost(
                   req
-                )}data/${sourceID}/{z}/{x}/{y}.${format}${query}`;
+                )}datas/${sourceID}/{z}/{x}/{y}.${format}${query}`;
               }
 
               return tile;

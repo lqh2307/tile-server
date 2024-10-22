@@ -802,7 +802,7 @@ export async function getPMTilesInfos(pmtilesSource, includeJSON = false) {
 
   const tileJSON = createNewTileJSON(metadata);
 
-  if (includeJSON === true) {
+  if (includeJSON === true && metadata.format === "pbf") {
     tileJSON.vector_layers = metadata.vector_layers;
     tileJSON.tilestats = metadata.tilestats;
   }
@@ -1268,7 +1268,7 @@ export async function getMBTilesInfos(mbtilesSource, includeJSON = false) {
   const tileJSON = createNewTileJSON(metadata);
 
   /* Add vector_layers and tilestats */
-  if (includeJSON === true) {
+  if (includeJSON === true && metadata.format === "pbf") {
     tileJSON.vector_layers = metadata.vector_layers;
     tileJSON.tilestats = metadata.tilestats;
   }

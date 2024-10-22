@@ -101,7 +101,7 @@ function getDataHandler() {
           : await getPMTilesInfos(item.source, includeJSON);
 
       dataInfo.tiles = [
-        `${getRequestHost(req)}data/${id}/{z}/{x}/{y}.${item.tileJSON.format}${req.query.scheme === "tms" ? "?scheme=tms" : ""
+        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${req.query.scheme === "tms" ? "?scheme=tms" : ""
         }`,
       ];
 
@@ -125,7 +125,7 @@ function getDatasListHandler() {
         return {
           id: id,
           name: config.repo.datas[id].tileJSON.name,
-          url: `${getRequestHost(req)}data/${id}.json`,
+          url: `${getRequestHost(req)}datas/${id}.json`,
         };
       });
 

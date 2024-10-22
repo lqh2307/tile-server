@@ -30,11 +30,12 @@ function serveFrontPageHandler() {
 
             styles[id] = {
               name: name,
-              xyz: `${getRequestHost(req)}styles/${id}/256/{z}/{x}/{y}.png`,
+              xyz: `${getRequestHost(req)}styles/${id}/{z}/{x}/{y}.png?scheme=xyz`,
+              tms: `${getRequestHost(req)}styles/${id}/{z}/{x}/{y}.png?scheme=tms`,
               viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
               thumbnail: `${getRequestHost(
                 req
-              )}styles/${id}/256/${z}/${x}/${y}.png`,
+              )}styles/${id}/${z}/${x}/${y}.png`,
               serve_wmts: config.options.serveWMTS === true,
               serve_rendered: true,
             };
@@ -69,12 +70,13 @@ function serveFrontPageHandler() {
 
           thumbnail = `${getRequestHost(
             req
-          )}data/${id}/${z}/${x}/${y}.${format}`;
+          )}datas/${id}/${z}/${x}/${y}.${format}`;
         }
 
         datas[id] = {
           name: name,
-          xyz: `${getRequestHost(req)}data/${id}/{z}/{x}/{y}.${format}`,
+          xyz: `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${format}?scheme=xyz`,
+          tms: `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${format}?scheme=tms`,
           viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
           thumbnail: thumbnail,
           source_type: data.sourceType,
@@ -293,7 +295,7 @@ export const serve_template = {
        * tags:
        *   - name: Template
        *     description: Template related endpoints
-       * /data/{id}/:
+       * /datas/{id}/:
        *   get:
        *     tags:
        *       - Template
@@ -324,7 +326,7 @@ export const serve_template = {
        *       500:
        *         description: Internal server error
        */
-      app.use("/data/:id/$", serveDataHandler());
+      app.use("/datas/:id/$", serveDataHandler());
 
       /* Serve front page */
       /**

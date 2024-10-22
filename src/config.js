@@ -45,7 +45,7 @@ async function loadConfigFile(dataDir) {
       maxPoolSize: configData.options?.maxPoolSize || os.cpus().length * 2,
     },
     styles: configData.styles || {},
-    data: configData.data || {},
+    datas: configData.datas || {},
     sprites: configData.sprites || {},
     fonts: configData.fonts || {},
     repo: {

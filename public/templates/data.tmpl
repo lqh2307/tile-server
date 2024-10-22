@@ -107,7 +107,7 @@
         sources: {
           'vector_layer_': {
             type: 'vector',
-            url: '/data/{{id}}.json?json=true'
+            url: '/datas/{{id}}.json?json=true'
           }
         },
         layers: []
@@ -156,7 +156,7 @@
 
     const req = new XMLHttpRequest();
     req.overrideMimeType("application/json");
-    req.open('GET', '/data/{{id}}.json', true);
+    req.open('GET', '/datas/{{id}}.json', true);
     req.onload = function () {
       const jsonResponse = JSON.parse(req.responseText);
       for (key in jsonResponse) {

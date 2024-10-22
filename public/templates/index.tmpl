@@ -83,6 +83,8 @@
                     {{#if xyz}}
                       | <a href="#" onclick="toggleURL('xyz_style_{{@key}}', event)">XYZ</a>
                       <input id="xyz_style_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz}}" onclick="copyToClipboard(this)" />
+                      | <a href="#" onclick="toggleURL('tms_style_{{@key}}', event)">TMS</a>
+                      <input id="tms_style_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{tms}}" onclick="copyToClipboard(this)" />
                     {{/if}}
                   </p>
                 </div>
@@ -108,18 +110,20 @@
                   <div class="identifier">type: {{#if is_vector}}vector{{else}}raster{{/if}}</div>
                   <div class="identifier">ext: {{source_type}}</div>
                   <p class="services">
-                    services: <a href="/data/{{@key}}.json">TileJSON</a>
+                    services: <a href="/datas/{{@key}}.json?json=true">TileJSON</a>
                     {{#if xyz}}
                       | <a href="#" onclick="toggleURL('xyz_data_{{@key}}', event)">XYZ</a>
                       <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz}}" onclick="copyToClipboard(this)" />
+                      | <a href="#" onclick="toggleURL('tms_data_{{@key}}', event)">TMS</a>
+                      <input id="tms_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{tms}}" onclick="copyToClipboard(this)" />
                     {{/if}}
                   </p>
                 </div>
                 <div class="viewers">
                   {{#if is_vector}}
-                      <a class="btn" href="/data/{{@key}}/{{viewer_hash}}">Inspect</a>
+                      <a class="btn" href="/datas/{{@key}}/{{viewer_hash}}">Inspect</a>
                   {{else}}
-                      <a class="btn" href="/data/{{@key}}/{{viewer_hash}}">View</a>
+                      <a class="btn" href="/datas/{{@key}}/{{viewer_hash}}">View</a>
                   {{/if}}
                 </div>
               </div>

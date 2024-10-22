@@ -75,7 +75,7 @@
 
       const req = new XMLHttpRequest();
       req.overrideMimeType("application/json");
-      req.open('GET', '/styles/256/{{id}}.json', true);
+      req.open('GET', '/styles/{{id}}.json', true);
       req.onload = function () {
         const jsonResponse = JSON.parse(req.responseText);
         for (key in jsonResponse) {
