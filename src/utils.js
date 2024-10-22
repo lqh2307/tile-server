@@ -46,9 +46,31 @@ export function checkReadyMiddleware() {
  * @returns {[number,number,number]}
  */
 export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "xyz") {
-  const centerPx = px(lon, lat, z, scheme);
+  const size = 256 * Math.pow(2, z);
+  const d = size / 2;
+  const bc = size / 360;
+  const cc = size / (2 * Math.PI);
+  const ac = size;
+  const f = Math.min(
+    Math.max(Math.sin((Math.PI / 180) * lat), -0.9999),
+    0.9999
+  );
 
-  return [Math.round(centerPx[0] / 256), Math.round(centerPx[1] / 256), z];
+  let x = d + lon * bc;
+  if (x > ac) {
+    x = ac;
+  }
+
+  let y = d + 0.5 * Math.log((1 + f) / (1 - f)) * -cc;
+  if (y > ac) {
+    y = ac;
+  }
+
+  if (scheme === "tms") {
+    y = size - y;
+  }
+
+  return [Math.round(x / 256), Math.round(y / 256), z];
 }
 
 /**
@@ -60,7 +82,23 @@ export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "xyz") {
  * @returns {[number,number]}
  */
 export function getLonLatCenterFromXYZ(x, y, z, scheme = "xyz") {
-  return ll((x + 0.5) * 256, (y + 0.5) * 256, z, scheme);
+  let px = (x + 0.5) * 256
+  let py = (y + 0.5) * 256
+
+  const size = 256 * Math.pow(2, z);
+  const bc = size / 360;
+  const cc = size / (2 * Math.PI);
+  const zc = size / 2;
+
+  if (scheme === "tms") {
+    py = size - py;
+  }
+
+  return [
+    (px - zc) / bc,
+    (180 / Math.PI) *
+    (2 * Math.atan(Math.exp((py - zc) / -cc)) - 0.5 * Math.PI),
+  ];
 }
 
 /**
@@ -83,7 +121,7 @@ export async function compileTemplate(template, data) {
  * Render data
  * @param {object} item
  * @param {number} scale
- * @param {number} tileSize
+ * @param {256|512} tileSize
  * @param {number} x
  * @param {number} y
  * @param {number} z
@@ -137,7 +175,7 @@ export async function renderData(
  * @param {object} data
  * @param {number} scale
  * @param {number} compression
- * @param {number} tileSize
+ * @param {256|512} tileSize
  * @param {number} z
  * @returns {Promise<Buffer>}
  */
@@ -1283,64 +1321,3 @@ export const gzipAsync = util.promisify(zlib.gzip);
  *
  */
 export const unzipAsync = util.promisify(zlib.unzip);
-
-/**
- *
- * @param {number} lon
- * @param {number} lat
- * @param {number} zoom
- * @param {"xyz"|"tms"} scheme
- * @returns
- */
-function px(lon, lat, zoom, scheme = "xyz") {
-  const size = 256 * Math.pow(2, zoom);
-  const d = size / 2;
-  const bc = size / 360;
-  const cc = size / (2 * Math.PI);
-  const ac = size;
-  const f = Math.min(
-    Math.max(Math.sin((Math.PI / 180) * lat), -0.9999),
-    0.9999
-  );
-
-  let x = d + lon * bc;
-  if (x > ac) {
-    x = ac;
-  }
-
-  let y = d + 0.5 * Math.log((1 + f) / (1 - f)) * -cc;
-  if (y > ac) {
-    y = ac;
-  }
-
-  if (scheme === "tms") {
-    y = size - y;
-  }
-
-  return [x, y];
-}
-
-/**
- *
- * @param {number} px
- * @param {number} py
- * @param {number} zoom
- * @param {"xyz"|"tms"} scheme
- * @returns
- */
-function ll(px, py, zoom, scheme = "xyz") {
-  const size = 256 * Math.pow(2, zoom);
-  const bc = size / 360;
-  const cc = size / (2 * Math.PI);
-  const zc = size / 2;
-
-  if (scheme === "tms") {
-    py = size - py;
-  }
-
-  return [
-    (px - zc) / bc,
-    (180 / Math.PI) *
-      (2 * Math.atan(Math.exp((py - zc) / -cc)) - 0.5 * Math.PI),
-  ];
-}
