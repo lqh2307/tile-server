@@ -6,15 +6,15 @@
 
 Clone source:
 
-	git clone --single-branch -b 1.0.0 https://github.com/lqh2307/tile-server.git
+	git clone --single-branch -b 0.0.1 https://github.com/lqh2307/tile-server.git
 
 Jump to folder:
 
 	cd tile-server
 
-Switch to 1.0.0:
+Switch to 0.0.1:
 
-	git checkout 1.0.0
+	git checkout 0.0.1
 
 ### Run with nodejs
 
@@ -24,11 +24,11 @@ Switch to 1.0.0:
 
 Build image:
 
-	docker build -t tile-server:1.0.0 .
+	docker build -t tile-server:0.0.1 .
 
 Run container:
 
-	docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile-server/data tile-server:1.0.0
+	docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile-server/data tile-server:0.0.1
 
 ## Example config.json
 
