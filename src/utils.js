@@ -46,7 +46,7 @@ export function checkReadyMiddleware() {
  * @returns {[number,number,number]}
  */
 export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "xyz") {
-  const centerPx = px([lon, lat], z, scheme);
+  const centerPx = px(lon, lat, z, scheme);
 
   return [Math.round(centerPx[0] / 256), Math.round(centerPx[1] / 256), z];
 }
@@ -60,7 +60,7 @@ export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "xyz") {
  * @returns {[number,number]}
  */
 export function getLonLatCenterFromXYZ(x, y, z, scheme = "xyz") {
-  return ll([(x + 0.5) * 256, (y + 0.5) * 256], z, scheme);
+  return ll((x + 0.5) * 256, (y + 0.5) * 256, z, scheme);
 }
 
 /**
@@ -1284,49 +1284,63 @@ export const gzipAsync = util.promisify(zlib.gzip);
  */
 export const unzipAsync = util.promisify(zlib.unzip);
 
-function px(ll, zoom, scheme = "xyz") {
+/**
+ *
+ * @param {number} lon
+ * @param {number} lat
+ * @param {number} zoom
+ * @param {"xyz"|"tms"} scheme
+ * @returns
+ */
+function px(lon, lat, zoom, scheme = "xyz") {
   const size = 256 * Math.pow(2, zoom);
   const d = size / 2;
   const bc = size / 360;
   const cc = size / (2 * Math.PI);
   const ac = size;
   const f = Math.min(
-    Math.max(Math.sin((Math.PI / 180) * ll[1]), -0.9999),
+    Math.max(Math.sin((Math.PI / 180) * lat), -0.9999),
     0.9999
   );
 
-  if (zoom % 1 !== 0) {
-    let x = d + ll[0] * bc;
-    if (x > ac) {
-      x = ac;
-    }
-
-    let y = d + 0.5 * Math.log((1 + f) / (1 - f)) * -cc;
-    if (y > ac) {
-      y = ac;
-    }
-
-    if (scheme === "tms") {
-      y = size - y;
-    }
-
-    return [x, y];
+  let x = d + lon * bc;
+  if (x > ac) {
+    x = ac;
   }
+
+  let y = d + 0.5 * Math.log((1 + f) / (1 - f)) * -cc;
+  if (y > ac) {
+    y = ac;
+  }
+
+  if (scheme === "tms") {
+    y = size - y;
+  }
+
+  return [x, y];
 }
 
-function ll(px, zoom, scheme = "xyz") {
+/**
+ *
+ * @param {number} px
+ * @param {number} py
+ * @param {number} zoom
+ * @param {"xyz"|"tms"} scheme
+ * @returns
+ */
+function ll(px, py, zoom, scheme = "xyz") {
   const size = 256 * Math.pow(2, zoom);
   const bc = size / 360;
   const cc = size / (2 * Math.PI);
   const zc = size / 2;
 
   if (scheme === "tms") {
-    px[1] = size - px[1];
+    py = size - py;
   }
 
   return [
-    (px[0] - zc) / bc,
+    (px - zc) / bc,
     (180 / Math.PI) *
-      (2 * Math.atan(Math.exp((px[1] - zc) / -cc)) - 0.5 * Math.PI),
+      (2 * Math.atan(Math.exp((py - zc) / -cc)) - 0.5 * Math.PI),
   ];
 }
