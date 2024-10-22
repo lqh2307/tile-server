@@ -1,191 +1,203 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{name}} - Tile Server</title>
   {{#if is_vector}}
-    <link rel="stylesheet" type="text/css" href="/maplibre-gl.css" />
-    <link rel="stylesheet" type="text/css" href="/maplibre-gl-inspect.css" />
-    <script src="/maplibre-gl.js"></script>
-    <script src="/maplibre-gl-inspect.js"></script>
-    <style>
-      body {
-        margin: 0;
-        padding: 0;
-        font-family: Arial, Helvetica, sans-serif;
-      }
-      #map {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 250px;
-        bottom: 0;
-      }
-      h1 {
-        position: absolute;
-        top: 5px;
-        right: 0;
-        width: 240px;
-        margin: 0;
-        line-height: 20px;
-        font-size: 20px;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-      }
-      #layerList {
-        position: absolute;
-        top: 35px;
-        right: 0;
-        bottom: 0;
-        width: 240px;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-      }
-      #layerList div div {
-        width: 15px;
-        height: 15px;
-        display: inline-block;
-      }
-    </style>
+  <link rel="stylesheet" type="text/css" href="/maplibre-gl.css" />
+  <link rel="stylesheet" type="text/css" href="/maplibre-gl-inspect.css" />
+  <script src="/maplibre-gl.js"></script>
+  <script src="/maplibre-gl-inspect.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 250px;
+      bottom: 0;
+    }
+
+    h1 {
+      position: absolute;
+      top: 5px;
+      right: 0;
+      width: 240px;
+      margin: 0;
+      line-height: 20px;
+      font-size: 20px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    #layerList {
+      position: absolute;
+      top: 35px;
+      right: 0;
+      bottom: 0;
+      width: 240px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    #layerList div div {
+      width: 15px;
+      height: 15px;
+      display: inline-block;
+    }
+  </style>
   {{else}}
-    <link rel="stylesheet" type="text/css" href="/leaflet.css" />
-    <script src="/leaflet.js"></script>
-    <script src="/leaflet-hash.js"></script>
-    <style>
-      body {
-        margin: 0;
-        padding: 0;
-      }
-      #map {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        width: 100%;
-      }
-      .leaflet-control-layers-toggle {
-        background-image: url(/images/layers.png);
-        width: 36px;
-        height: 36px;
-      }
-      .leaflet-retina .leaflet-control-layers-toggle {
-        background-image: url(/images/layers-2x.png);
-        background-size: 26px 26px;
-      }
-      .leaflet-default-icon-path { /* used only in path-guessing heuristic, see L.Icon.Default */
-        background-image: url(/images/marker-icon.png);
-      }
-    </style>
+  <link rel="stylesheet" type="text/css" href="/leaflet.css" />
+  <script src="/leaflet.js"></script>
+  <script src="/leaflet-hash.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+    }
+
+    .leaflet-control-layers-toggle {
+      background-image: url(/images/layers.png);
+      width: 36px;
+      height: 36px;
+    }
+
+    .leaflet-retina .leaflet-control-layers-toggle {
+      background-image: url(/images/layers-2x.png);
+      background-size: 26px 26px;
+    }
+
+    .leaflet-default-icon-path {
+      /* used only in path-guessing heuristic, see L.Icon.Default */
+      background-image: url(/images/marker-icon.png);
+    }
+  </style>
   {{/if}}
 </head>
+
 <body>
   {{#if is_vector}}
-    <h1>{{name}}</h1>
-    <div id="map"></div>
-    <div id="layerList"></div>
-    <pre id="propertyList"></pre>
-    <script>
-      const map = new maplibregl.Map({
-        container: 'map',
-        hash: true,
-        maxPitch: 85,
-        style: {
-          version: 8,
-          sources: {
-            'vector_layer_': {
-              type: 'vector',
-              url: '/data/{{id}}.json?json=true'
-            }
-          },
-          layers: []
-        }
-      });
+  <h1>{{name}}</h1>
+  <div id="map"></div>
+  <div id="layerList"></div>
+  <pre id="propertyList"></pre>
+  <script>
+    const map = new maplibregl.Map({
+      container: 'map',
+      hash: true,
+      maxPitch: 85,
+      style: {
+        version: 8,
+        sources: {
+          'vector_layer_': {
+            type: 'vector',
+            url: '/data/{{id}}.json?json=true'
+          }
+        },
+        layers: []
+      }
+    });
 
-      map.addControl(new maplibregl.NavigationControl());
+    map.addControl(new maplibregl.NavigationControl());
 
-      const inspect = new MaplibreInspect({
-        showInspectMap: true,
-        showInspectButton: false
-      });
+    const inspect = new MaplibreInspect({
+      showInspectMap: true,
+      showInspectButton: false
+    });
 
-      map.addControl(inspect);
+    map.addControl(inspect);
 
-      map.on('styledata', function() {
-        const layerList = document.getElementById('layerList');
+    map.on('styledata', function () {
+      const layerList = document.getElementById('layerList');
 
-        layerList.innerHTML = '';
+      layerList.innerHTML = '';
 
-        Object.keys(inspect.sources).forEach(function(sourceId) {
-          inspect.sources[sourceId].forEach(function(layerId) {
-            const item = document.createElement('div');
-            item.innerHTML = '<div style="' +
-              'background:' + inspect.assignLayerColor(layerId) + ';' +
+      Object.keys(inspect.sources).forEach(function (sourceId) {
+        inspect.sources[sourceId].forEach(function (layerId) {
+          const item = document.createElement('div');
+          item.innerHTML = '<div style="' +
+            'background:' + inspect.assignLayerColor(layerId) + ';' +
             '"></div> ' + layerId;
 
-            layerList.appendChild(item);
-          });
-        })
-      });
-    </script>
-  {{else}}
-    <h1 style="display:none;">{{tileJSON.name}}</h1>
-    <div id='map'></div>
-    <script> 
-      const map = L.map('map', {
-        zoomControl: false,
-      });
-
-      new L.Control.Zoom({
-        position: 'topright',
-      }).addTo(map);
-
-      let tile_urls = [], tile_attribution, tile_minzoom, tile_maxzoom;
-
-      const req = new XMLHttpRequest();
-      req.overrideMimeType("application/json");
-      req.open('GET', '/data/{{id}}.json', true);
-      req.onload = function() {
-        const jsonResponse = JSON.parse(req.responseText);
-        for (key in jsonResponse) {
-          switch(key.toLowerCase()) {
-            case "tiles":
-              tile_urls = jsonResponse[key];
-              break;
-            case "attribution":
-              tile_attribution = jsonResponse[key];
-              break;
-            case "minzoom":
-              tile_minzoom = jsonResponse[key];
-              break;
-            case "maxzoom":
-              tile_maxzoom = jsonResponse[key];
-              break;
-          }
-        }
-
-        for (tile_url in tile_urls) {
-          L.tileLayer(tile_urls[tile_url], {
-            tileSize: 256,
-            minZoom: tile_minzoom,
-            maxZoom: tile_maxzoom,
-            attribution: tile_attribution
-          }).addTo(map);
-        }
-
-        map.eachLayer(function(layer) {
-          // do not add scale prefix even if retina display is detected
-          layer.scalePrefix = '.';
+          layerList.appendChild(item);
         });
-      };
+      })
+    });
+  </script>
+  {{else}}
+  <h1 style="display:none;">{{tileJSON.name}}</h1>
+  <div id='map'></div>
+  <script>
+    const map = L.map('map', {
+      zoomControl: false,
+    });
 
-      req.send(null);
+    new L.Control.Zoom({
+      position: 'topright',
+    }).addTo(map);
 
-      setTimeout(function() {
-        new L.Hash(map);
-      }, 0);
-    </script>
+    let tile_urls = [], tile_attribution, tile_minzoom, tile_maxzoom;
+
+    const req = new XMLHttpRequest();
+    req.overrideMimeType("application/json");
+    req.open('GET', '/data/{{id}}.json', true);
+    req.onload = function () {
+      const jsonResponse = JSON.parse(req.responseText);
+      for (key in jsonResponse) {
+        switch (key.toLowerCase()) {
+          case "tiles":
+            tile_urls = jsonResponse[key];
+            break;
+          case "attribution":
+            tile_attribution = jsonResponse[key];
+            break;
+          case "minzoom":
+            tile_minzoom = jsonResponse[key];
+            break;
+          case "maxzoom":
+            tile_maxzoom = jsonResponse[key];
+            break;
+        }
+      }
+
+      for (tile_url in tile_urls) {
+        L.tileLayer(tile_urls[tile_url], {
+          tileSize: 256,
+          minZoom: tile_minzoom,
+          maxZoom: tile_maxzoom,
+          attribution: tile_attribution
+        }).addTo(map);
+      }
+
+      map.eachLayer(function (layer) {
+        // do not add scale prefix even if retina display is detected
+        layer.scalePrefix = '.';
+      });
+    };
+
+    req.send(null);
+
+    setTimeout(function () {
+      new L.Hash(map);
+    }, 0);
+  </script>
   {{/if}}
 </body>
+
 </html>

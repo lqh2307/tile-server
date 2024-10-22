@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -14,26 +15,32 @@
       margin: 0;
       padding: 0;
     }
+
     #map {
       position: absolute;
       top: 0;
       bottom: 0;
       width: 100%;
     }
+
     .leaflet-control-layers-toggle {
       background-image: url(/images/layers.png);
       width: 36px;
       height: 36px;
     }
+
     .leaflet-retina .leaflet-control-layers-toggle {
       background-image: url(/images/layers-2x.png);
       background-size: 26px 26px;
     }
-    .leaflet-default-icon-path { /* used only in path-guessing heuristic, see L.Icon.Default */
+
+    .leaflet-default-icon-path {
+      /* used only in path-guessing heuristic, see L.Icon.Default */
       background-image: url(/images/marker-icon.png);
     }
   </style>
 </head>
+
 <body>
   <h1 style="display:none;">{{name}}</h1>
   <div id='map'></div>
@@ -69,10 +76,10 @@
       const req = new XMLHttpRequest();
       req.overrideMimeType("application/json");
       req.open('GET', '/styles/256/{{id}}.json', true);
-      req.onload = function() {
+      req.onload = function () {
         const jsonResponse = JSON.parse(req.responseText);
         for (key in jsonResponse) {
-          switch(key.toLowerCase()) {
+          switch (key.toLowerCase()) {
             case "tiles":
               tile_urls = jsonResponse[key];
               break;
@@ -97,7 +104,7 @@
           }).addTo(map);
         }
 
-        map.eachLayer(function(layer) {
+        map.eachLayer(function (layer) {
           // do not add scale prefix even if retina display is detected
           layer.scalePrefix = '.';
         });
@@ -105,10 +112,11 @@
 
       req.send(null);
 
-      setTimeout(function() {
+      setTimeout(function () {
         new L.Hash(map);
       }, 0);
     }
   </script>
 </body>
+
 </html>

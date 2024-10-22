@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -31,7 +32,7 @@
     function scrollToTop(event) {
       event.preventDefault();
 
-      window.scrollTo({ 
+      window.scrollTo({
         top: 0,
         behavior: 'smooth',
       });
@@ -165,7 +166,7 @@
       }
     }
 
-    window.onload = function() {
+    window.onload = function () {
       renderDatas('styles-tab');
     };
 
@@ -180,6 +181,7 @@
     });
   </script>
 </head>
+
 <body>
   <section>
     <h1 class="title">Tile server preview</h1>
@@ -196,4 +198,5 @@
   </section>
   <a href="#" class="back-to-top" onclick="scrollToTop(event)">Back to top</a>
 </body>
+
 </html>
