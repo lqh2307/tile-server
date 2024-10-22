@@ -46,7 +46,7 @@ export function checkReadyMiddleware() {
  * @returns {[number,number,number]}
  */
 export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "xyz") {
-  const centerPx = new SphericalMercator().px([lon, lat], z, scheme);
+  const centerPx = px([lon, lat], z, scheme);
 
   return [Math.round(centerPx[0] / 256), Math.round(centerPx[1] / 256), z];
 }
@@ -60,11 +60,7 @@ export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "xyz") {
  * @returns {[number,number]}
  */
 export function getLonLatCenterFromXYZ(x, y, z, scheme = "xyz") {
-  return new SphericalMercator().ll(
-    [(x + 0.5) * 256, (y + 0.5) * 256],
-    z,
-    scheme
-  );
+  return ll([(x + 0.5) * 256, (y + 0.5) * 256], z, scheme);
 }
 
 /**
@@ -1288,106 +1284,49 @@ export const gzipAsync = util.promisify(zlib.gzip);
  */
 export const unzipAsync = util.promisify(zlib.unzip);
 
-/**
- * Default of sphericalmercator is xyz. Flip Y to convert xyz scheme => tms scheme
- */
-class SphericalMercator {
-  constructor() {
-    this.Bc = [];
-    this.Cc = [];
-    this.zc = [];
-    this.Ac = [];
+function px(ll, zoom, scheme = "xyz") {
+  const size = 256 * Math.pow(2, zoom);
+  const d = size / 2;
+  const bc = size / 360;
+  const cc = size / (2 * Math.PI);
+  const ac = size;
+  const f = Math.min(
+    Math.max(Math.sin((Math.PI / 180) * ll[1]), -0.9999),
+    0.9999
+  );
 
-    let size = 256;
-    for (let zoom = 0; zoom <= 22; zoom++) {
-      this.Bc.push(size / 360);
-      this.Cc.push((size / 2) * Math.PI);
-      this.zc.push(size / 2);
-      this.Ac.push(size);
-
-      size *= 2;
+  if (zoom % 1 !== 0) {
+    let x = d + ll[0] * bc;
+    if (x > ac) {
+      x = ac;
     }
+
+    let y = d + 0.5 * Math.log((1 + f) / (1 - f)) * -cc;
+    if (y > ac) {
+      y = ac;
+    }
+
+    if (scheme === "tms") {
+      y = size - y;
+    }
+
+    return [x, y];
+  }
+}
+
+function ll(px, zoom, scheme = "xyz") {
+  const size = 256 * Math.pow(2, zoom);
+  const bc = size / 360;
+  const cc = size / (2 * Math.PI);
+  const zc = size / 2;
+
+  if (scheme === "tms") {
+    px[1] = size - px[1];
   }
 
-  px(ll, zoom, scheme = "xyz") {
-    if (zoom % 1 !== 0) {
-      const size = 256 * (1 << zoom);
-      const d = size / 2;
-      const bc = size / 360;
-      const cc = (size / 2) * Math.PI;
-      const ac = size;
-      const f = Math.min(
-        Math.max(Math.sin((Math.PI / 180) * ll[1]), -0.9999),
-        0.9999
-      );
-      let x = d + ll[0] * bc;
-      if (x > ac) {
-        x = ac;
-      }
-
-      let y = d + 0.5 * Math.log((1 + f) / (1 - f)) * -cc;
-      if (y > ac) {
-        y = ac;
-      }
-
-      if (scheme === "tms") {
-        y = size - y;
-      }
-
-      return [x, y];
-    } else {
-      const d = this.zc[zoom];
-      const f = Math.min(
-        Math.max(Math.sin((Math.PI / 180) * ll[1]), -0.9999),
-        0.9999
-      );
-      let x = Math.round(d + ll[0] * this.Bc[zoom]);
-      if (x > this.Ac[zoom]) {
-        x = this.Ac[zoom];
-      }
-
-      let y = Math.round(
-        d + 0.5 * Math.log((1 + f) / (1 - f)) * -this.Cc[zoom]
-      );
-      if (y > this.Ac[zoom]) {
-        y = this.Ac[zoom];
-      }
-
-      if (scheme === "tms") {
-        y = this.Ac[zoom] - y;
-      }
-
-      return [x, y];
-    }
-  }
-
-  ll(px, zoom, scheme = "xyz") {
-    if (zoom % 1 !== 0) {
-      const size = 256 * (1 << zoom);
-      const bc = size / 360;
-      const cc = (size / 2) * Math.PI;
-      const zc = size / 2;
-
-      if (scheme === "tms") {
-        px[1] = size - px[1];
-      }
-
-      return [
-        (px[0] - zc) / bc,
-        (180 / Math.PI) *
-          (2 * Math.atan(Math.exp((px[1] - zc) / -cc)) - 0.5 * Math.PI),
-      ];
-    } else {
-      if (scheme === "tms") {
-        px[1] = this.Ac[zoom] - px[1];
-      }
-
-      return [
-        (px[0] - this.zc[zoom]) / this.Bc[zoom],
-        (180 / Math.PI) *
-          (2 * Math.atan(Math.exp((px[1] - this.zc[zoom]) / -this.Cc[zoom])) -
-            0.5 * Math.PI),
-      ];
-    }
-  }
+  return [
+    (px[0] - zc) / bc,
+    (180 / Math.PI) *
+      (2 * Math.atan(Math.exp((px[1] - zc) / -cc)) - 0.5 * Math.PI),
+  ];
 }
