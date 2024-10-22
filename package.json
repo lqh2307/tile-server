@@ -9,7 +9,7 @@
     "start": "./entrypoint.sh"
   },
   "dependencies": {
-    "@maplibre/maplibre-gl-style-spec": "20.4.0",
+    "@maplibre/maplibre-gl-style-spec": "21.0.0",
     "@maplibre/maplibre-gl-native": "6.0.0",
     "swagger-ui-express": "5.0.1",
     "http-status-codes": "2.3.0",
