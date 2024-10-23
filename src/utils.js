@@ -4,16 +4,17 @@ import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { StatusCodes } from "http-status-codes";
 import { PMTiles, FetchSource } from "pmtiles";
 import fsPromise from "node:fs/promises";
-import protobuf from 'protocol-buffers';
+import protobuf from "protocol-buffers";
 import { config } from "./config.js";
 import handlebars from "handlebars";
 import sqlite3 from "sqlite3";
 import path from "node:path";
-import axios from "axios";
 import sharp from "sharp";
 import fs from "node:fs";
 import zlib from "zlib";
 import util from "util";
+import https from "node:https"
+import http from "node:http"
 
 
 const protoMessage = protobuf(fs.readFileSync("public/protos/glyphs.proto"));
@@ -52,7 +53,7 @@ function combine(buffers, fontstack) {
 
       }
 
-      result.stacks[0].name += ', ' + decoded.stacks[0].name;
+      result.stacks[0].name += ", " + decoded.stacks[0].name;
     }
   }
 
@@ -64,6 +65,39 @@ function combine(buffers, fontstack) {
 
   return protoMessage.glyphs.encode(result);
 };
+
+/**
+ * Get data
+ * @param {string} url 
+ * @returns 
+ */
+export async function getData(url) {
+  return new Promise((resolve, reject) => {
+    const protocol = url.startsWith("https://") === true ? https : http;
+
+    const req = protocol.get(url, (res) => {
+      let data = "";
+
+      res.on("data", (chunk) => {
+        data += chunk;
+      });
+
+      res.on("end", () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(data);
+        } else {
+          reject(new Error(`Received error with code ${res.statusCode}`));
+        }
+      });
+    });
+
+    req.on("error", (err) => {
+      reject(err);
+    });
+
+    req.end();
+  });
+}
 
 /**
  * Check ready middleware
@@ -664,35 +698,40 @@ export async function validateSprite(spriteDirPath) {
 }
 
 /**
- * Download file
- * @param {string} url
- * @param {string} outputPath
- * @param {boolean} overwrite
- * @returns {Promise<string>}
+ * Download file using HTTP or HTTPS
+ * @param {string} url - The URL to download the file from
+ * @param {string} outputPath - The path where the file will be saved
+ * @returns {Promise<string>} - Returns the output path if successful
  */
 export async function downloadFile(url, outputPath) {
   await fsPromise.mkdir(path.dirname(outputPath), {
     recursive: true,
   });
 
-  const response = await axios({
-    url,
-    method: "GET",
-    responseType: "stream",
-  });
+  const protocol = url.startsWith("https://") === true ? https : http;
 
   return new Promise((resolve, reject) => {
-    const writer = fs.createWriteStream(outputPath);
+    const request = protocol.get(url, (response) => {
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        const writer = fs.createWriteStream(outputPath);
 
-    response.data.pipe(writer);
+        response.pipe(writer);
 
-    writer
-      .on("error", (error) => {
-        writer.close(() => reject(error));
-      })
-      .on("finish", () => {
-        writer.close(() => resolve(outputPath));
-      });
+        writer.on("error", (error) => {
+          writer.close(() => reject(error));
+        }).on("finish", () => {
+          writer.close(() => resolve(outputPath));
+        });
+      } else {
+        reject(new Error(`Received error with code ${response.statusCode}`));
+      }
+    });
+
+    request.on("error", (error) => {
+      reject(error);
+    });
+
+    request.end();
   });
 }
 

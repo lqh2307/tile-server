@@ -128,7 +128,7 @@ export const serve_font = {
      *         required: true
      *         schema:
      *           type: string
-     *           pattern: '\\d{1,5}-\\d{1,5}'
+     *           pattern: "\\d{1,5}-\\d{1,5}"
      *         description: Font range
      *     responses:
      *       200:

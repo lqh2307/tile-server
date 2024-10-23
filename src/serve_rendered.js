@@ -6,7 +6,6 @@ import { Worker } from "node:worker_threads";
 import { createPool } from "generic-pool";
 import { config } from "./config.js";
 import express from "express";
-import axios from "axios";
 import {
   detectFormatAndHeaders,
   createNewTileJSON,
@@ -19,6 +18,7 @@ import {
   renderData,
   getSprite,
   printLog,
+  getData,
 } from "./utils.js";
 
 async function processImageInWorker(data, scale, compression, tileSize, z) {
@@ -558,12 +558,10 @@ export const serve_rendered = {
               }
             } else if (protocol === "http:" || protocol === "https:") {
               try {
-                const { data } = await axios.get(url, {
-                  responseType: "arraybuffer",
-                });
+                const data = await getData(url);
 
                 callback(null, {
-                  data: data,
+                  data: Buffer.from(data),
                 });
               } catch (error) {
                 printLog(
