@@ -30,8 +30,12 @@ function serveFrontPageHandler() {
 
             styles[id] = {
               name: name,
-              xyz: `${getRequestHost(req)}styles/${id}/{z}/{x}/{y}.png?scheme=xyz`,
-              tms: `${getRequestHost(req)}styles/${id}/{z}/{x}/{y}.png?scheme=tms`,
+              xyz: `${getRequestHost(
+                req
+              )}styles/${id}/{z}/{x}/{y}.png?scheme=xyz`,
+              tms: `${getRequestHost(
+                req
+              )}styles/${id}/{z}/{x}/{y}.png?scheme=tms`,
               viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
               thumbnail: `${getRequestHost(
                 req
@@ -75,8 +79,12 @@ function serveFrontPageHandler() {
 
         datas[id] = {
           name: name,
-          xyz: `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${format}?scheme=xyz`,
-          tms: `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${format}?scheme=tms`,
+          xyz: `${getRequestHost(
+            req
+          )}datas/${id}/{z}/{x}/{y}.${format}?scheme=xyz`,
+          tms: `${getRequestHost(
+            req
+          )}datas/${id}/{z}/{x}/{y}.${format}?scheme=tms`,
           viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
           thumbnail: thumbnail,
           source_type: data.sourceType,

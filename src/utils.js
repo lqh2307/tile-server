@@ -7,15 +7,14 @@ import fsPromise from "node:fs/promises";
 import protobuf from "protocol-buffers";
 import { config } from "./config.js";
 import handlebars from "handlebars";
+import https from "node:https";
 import sqlite3 from "sqlite3";
 import path from "node:path";
+import http from "node:http";
 import sharp from "sharp";
 import fs from "node:fs";
 import zlib from "zlib";
 import util from "util";
-import https from "node:https"
-import http from "node:http"
-
 
 const protoMessage = protobuf(fs.readFileSync("public/protos/glyphs.proto"));
 
@@ -50,7 +49,6 @@ function combine(buffers, fontstack) {
           result.stacks[0].glyphs.push(glyph);
           coverage[glyph.id] = true;
         }
-
       }
 
       result.stacks[0].name += ", " + decoded.stacks[0].name;
@@ -64,12 +62,12 @@ function combine(buffers, fontstack) {
   result.stacks[0].glyphs.sort((a, b) => a.id - b.id);
 
   return protoMessage.glyphs.encode(result);
-};
+}
 
 /**
  * Get data
- * @param {string} url 
- * @returns 
+ * @param {string} url
+ * @returns
  */
 export async function getData(url) {
   return new Promise((resolve, reject) => {
@@ -166,8 +164,8 @@ export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "xyz") {
  * @returns {[number,number]}
  */
 export function getLonLatCenterFromXYZ(x, y, z, scheme = "xyz") {
-  let px = (x + 0.5) * 256
-  let py = (y + 0.5) * 256
+  let px = (x + 0.5) * 256;
+  let py = (y + 0.5) * 256;
 
   const size = 256 * Math.pow(2, z);
   const bc = size / 360;
@@ -181,7 +179,7 @@ export function getLonLatCenterFromXYZ(x, y, z, scheme = "xyz") {
   return [
     (px - zc) / bc,
     (180 / Math.PI) *
-    (2 * Math.atan(Math.exp((py - zc) / -cc)) - 0.5 * Math.PI),
+      (2 * Math.atan(Math.exp((py - zc) / -cc)) - 0.5 * Math.PI),
   ];
 }
 
@@ -717,11 +715,13 @@ export async function downloadFile(url, outputPath) {
 
         response.pipe(writer);
 
-        writer.on("error", (error) => {
-          writer.close(() => reject(error));
-        }).on("finish", () => {
-          writer.close(() => resolve(outputPath));
-        });
+        writer
+          .on("error", (error) => {
+            writer.close(() => reject(error));
+          })
+          .on("finish", () => {
+            writer.close(() => resolve(outputPath));
+          });
       } else {
         reject(new Error(`Received error with code ${response.statusCode}`));
       }

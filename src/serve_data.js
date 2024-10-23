@@ -46,11 +46,11 @@ function getDataTileHandler() {
       const dataTile =
         item.sourceType === "mbtiles"
           ? await getMBTilesTile(
-            item.source,
-            z,
-            x,
-            req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
-          )
+              item.source,
+              z,
+              x,
+              req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+            )
           : await getPMTilesTile(item.source, z, x, y);
 
       /* Gzip pbf data tile */
@@ -101,7 +101,8 @@ function getDataHandler() {
           : await getPMTilesInfos(item.source, includeJSON);
 
       dataInfo.tiles = [
-        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${req.query.scheme === "tms" ? "?scheme=tms" : ""
+        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${
+          req.query.scheme === "tms" ? "?scheme=tms" : ""
         }`,
       ];
 

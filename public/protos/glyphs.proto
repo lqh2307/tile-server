@@ -11,7 +11,7 @@ message glyph {
   // A signed distance field of the glyph with a border of 3 pixels
   optional bytes bitmap = 2;
 
-  // Glyph metrics.
+  // Glyph metrics
   required uint32 width = 3;
   required uint32 height = 4;
   required sint32 left = 5;
