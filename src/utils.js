@@ -67,24 +67,28 @@ function combine(buffers, fontstack) {
 /**
  * Get data
  * @param {string} url
- * @returns
+ * @returns {Promise<Buffer>}
  */
 export async function getData(url) {
   return new Promise((resolve, reject) => {
     const protocol = url.startsWith("https://") === true ? https : http;
 
     const req = protocol.get(url, (res) => {
-      let data = "";
+      const chunks = [];
+
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location !== undefined) {
+        return getData(res.headers.location).then(resolve).catch(reject);
+      }
 
       res.on("data", (chunk) => {
-        data += chunk;
+        chunks.push(chunk);
       });
 
       res.on("end", () => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve(data);
+          resolve(Buffer.concat(chunks));
         } else {
-          reject(new Error(`Received error with code ${res.statusCode}`));
+          reject(new Error(`Failed with status code ${res.statusCode}`));
         }
       });
     });
@@ -179,7 +183,7 @@ export function getLonLatCenterFromXYZ(x, y, z, scheme = "xyz") {
   return [
     (px - zc) / bc,
     (180 / Math.PI) *
-      (2 * Math.atan(Math.exp((py - zc) / -cc)) - 0.5 * Math.PI),
+    (2 * Math.atan(Math.exp((py - zc) / -cc)) - 0.5 * Math.PI),
   ];
 }
 
@@ -715,15 +719,17 @@ export async function downloadFile(url, outputPath) {
 
         response.pipe(writer);
 
-        writer
-          .on("error", (error) => {
-            writer.close(() => reject(error));
-          })
-          .on("finish", () => {
-            writer.close(() => resolve(outputPath));
-          });
+        writer.on("finish", () => {
+          resolve(outputPath);
+        }).on("error", (error) => {
+          reject(error);
+        });
+      } else if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location !== undefined) {
+        return downloadFile(response.headers.location, outputPath)
+          .then(resolve)
+          .catch(reject);
       } else {
-        reject(new Error(`Received error with code ${response.statusCode}`));
+        reject(new Error(`Failed with status code ${response.statusCode}`));
       }
     });
 
