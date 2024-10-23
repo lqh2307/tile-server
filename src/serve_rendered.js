@@ -566,7 +566,10 @@ export const serve_rendered = {
                   data: data,
                 });
               } catch (error) {
-                printLog("warning", error);
+                printLog(
+                  "warning",
+                  `Failed to get data from url "${url}": ${error}. Serving empty tile...`
+                );
 
                 callback(null, {
                   data:
