@@ -76,7 +76,11 @@ export async function getData(url) {
     const req = protocol.get(url, (res) => {
       const chunks = [];
 
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location !== undefined) {
+      if (
+        res.statusCode >= 300 &&
+        res.statusCode < 400 &&
+        res.headers.location !== undefined
+      ) {
         return getData(res.headers.location).then(resolve).catch(reject);
       }
 
@@ -183,7 +187,7 @@ export function getLonLatCenterFromXYZ(x, y, z, scheme = "xyz") {
   return [
     (px - zc) / bc,
     (180 / Math.PI) *
-    (2 * Math.atan(Math.exp((py - zc) / -cc)) - 0.5 * Math.PI),
+      (2 * Math.atan(Math.exp((py - zc) / -cc)) - 0.5 * Math.PI),
   ];
 }
 
@@ -719,12 +723,18 @@ export async function downloadFile(url, outputPath) {
 
         response.pipe(writer);
 
-        writer.on("finish", () => {
-          resolve(outputPath);
-        }).on("error", (error) => {
-          reject(error);
-        });
-      } else if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location !== undefined) {
+        writer
+          .on("finish", () => {
+            resolve(outputPath);
+          })
+          .on("error", (error) => {
+            reject(error);
+          });
+      } else if (
+        response.statusCode >= 300 &&
+        response.statusCode < 400 &&
+        response.headers.location !== undefined
+      ) {
         return downloadFile(response.headers.location, outputPath)
           .then(resolve)
           .catch(reject);
