@@ -24,20 +24,21 @@ const protoMessage = protobuf(fs.readFileSync("public/protos/glyphs.proto"));
  * font faces, composited using array order
  * to determine glyph priority.
  * @param {array} buffers An array of SDF PBFs.
+ * @param {string} fontstack
  */
 function combine(buffers, fontstack) {
-  let result;
-  const coverage = {};
-
   if (buffers?.length === 0) {
     return;
   }
+
+  let result;
+  const coverage = {};
 
   for (const buffer of buffers) {
     const decoded = protoMessage.glyphs.decode(buffer);
     const glyphs = decoded.stacks[0].glyphs;
 
-    if (!result) {
+    if (result === undefined) {
       for (const glyph of glyphs) {
         coverage[glyph.id] = true;
       }
@@ -55,7 +56,7 @@ function combine(buffers, fontstack) {
     }
   }
 
-  if (fontstack) {
+  if (fontstack !== undefined) {
     result.stacks[0].name = fontstack;
   }
 
@@ -73,29 +74,35 @@ export async function getData(url) {
   return new Promise((resolve, reject) => {
     const protocol = url.startsWith("https://") === true ? https : http;
 
-    const req = protocol.get(url, (res) => {
-      const chunks = [];
-
-      if (
-        res.statusCode >= 300 &&
-        res.statusCode < 400 &&
-        res.headers.location !== undefined
-      ) {
-        return getData(res.headers.location).then(resolve).catch(reject);
-      }
-
-      res.on("data", (chunk) => {
-        chunks.push(chunk);
-      });
-
-      res.on("end", () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve(Buffer.concat(chunks));
-        } else {
-          reject(new Error(`Failed with status code ${res.statusCode}`));
+    const req = protocol.get(
+      url,
+      {
+        agent: false,
+      },
+      (res) => {
+        if (
+          res.statusCode >= 300 &&
+          res.statusCode < 400 &&
+          res.headers.location !== undefined
+        ) {
+          return getData(res.headers.location).then(resolve).catch(reject);
         }
-      });
-    });
+
+        const chunks = [];
+
+        res.on("data", (chunk) => {
+          chunks.push(chunk);
+        });
+
+        res.on("end", () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(Buffer.concat(chunks));
+          } else {
+            reject(new Error(`Failed with status code ${res.statusCode}`));
+          }
+        });
+      }
+    );
 
     req.on("error", (err) => {
       reject(err);
@@ -717,31 +724,37 @@ export async function downloadFile(url, outputPath) {
   const protocol = url.startsWith("https://") === true ? https : http;
 
   return new Promise((resolve, reject) => {
-    const request = protocol.get(url, (response) => {
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        const writer = fs.createWriteStream(outputPath);
+    const request = protocol.get(
+      url,
+      {
+        agent: false,
+      },
+      (response) => {
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          const writer = fs.createWriteStream(outputPath);
 
-        response.pipe(writer);
+          response.pipe(writer);
 
-        writer
-          .on("finish", () => {
-            resolve(outputPath);
-          })
-          .on("error", (error) => {
-            reject(error);
-          });
-      } else if (
-        response.statusCode >= 300 &&
-        response.statusCode < 400 &&
-        response.headers.location !== undefined
-      ) {
-        return downloadFile(response.headers.location, outputPath)
-          .then(resolve)
-          .catch(reject);
-      } else {
-        reject(new Error(`Failed with status code ${response.statusCode}`));
+          writer
+            .on("finish", () => {
+              resolve(outputPath);
+            })
+            .on("error", (error) => {
+              reject(error);
+            });
+        } else if (
+          response.statusCode >= 300 &&
+          response.statusCode < 400 &&
+          response.headers.location !== undefined
+        ) {
+          return downloadFile(response.headers.location, outputPath)
+            .then(resolve)
+            .catch(reject);
+        } else {
+          reject(new Error(`Failed with status code ${response.statusCode}`));
+        }
       }
-    });
+    );
 
     request.on("error", (error) => {
       reject(error);
