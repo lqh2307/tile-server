@@ -146,6 +146,7 @@ export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "xyz") {
   const size = 256 * Math.pow(2, z);
   const bc = size / 360;
   const cc = size / (2 * Math.PI);
+  const zc = size / 2;
 
   if (lon > 180) {
     lon = 180;
@@ -153,7 +154,7 @@ export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "xyz") {
     lon = -180;
   }
 
-  let x = size / 2 + lon * bc;
+  let x = zc + lon * bc;
   if (x > size) {
     x = size;
   }
@@ -164,7 +165,7 @@ export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "xyz") {
     lat = -85.051129;
   }
 
-  let y = size / 2 - cc * Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360));
+  let y = zc - cc * Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360));
   if (y > size) {
     y = size;
   }
