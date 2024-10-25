@@ -153,6 +153,8 @@ function getDataTileJSONsListHandler() {
             ? await getMBTilesInfos(item.source, includeJSON)
             : await getPMTilesInfos(item.source, includeJSON);
 
+        dataInfo.id = id;
+
         dataInfo.tiles = [
           `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${req.query.scheme === "tms" ? "?scheme=tms" : ""
           }`,
