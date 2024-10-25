@@ -144,23 +144,29 @@ export function checkReadyMiddleware() {
  */
 export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "xyz") {
   const size = 256 * Math.pow(2, z);
-  const d = size / 2;
   const bc = size / 360;
   const cc = size / (2 * Math.PI);
-  const ac = size;
-  const f = Math.min(
-    Math.max(Math.sin((Math.PI / 180) * lat), -0.9999),
-    0.9999
-  );
 
-  let x = d + lon * bc;
-  if (x > ac) {
-    x = ac;
+  if (lon > 180) {
+    lon = 180;
+  } else if (lon < -180) {
+    lon = -180;
   }
 
-  let y = d + 0.5 * Math.log((1 + f) / (1 - f)) * -cc;
-  if (y > ac) {
-    y = ac;
+  let x = size / 2 + lon * bc;
+  if (x > size) {
+    x = size;
+  }
+
+  if (lat > 85.051129) {
+    lat = 85.051129;
+  } else if (lat < -85.051129) {
+    lat = -85.051129;
+  }
+
+  let y = size / 2 - cc * Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360));
+  if (y > size) {
+    y = size;
   }
 
   if (scheme === "tms") {
@@ -194,7 +200,7 @@ export function getLonLatCenterFromXYZ(x, y, z, scheme = "xyz") {
   return [
     (px - zc) / bc,
     (180 / Math.PI) *
-      (2 * Math.atan(Math.exp((py - zc) / -cc)) - 0.5 * Math.PI),
+    (2 * Math.atan(Math.exp((py - zc) / -cc)) - 0.5 * Math.PI),
   ];
 }
 
@@ -1106,7 +1112,7 @@ export function createNewTileJSON(metadata) {
     version: "1.0.0",
     type: "overlay",
     format: "png",
-    bounds: [-180, -90, 180, 90],
+    bounds: [-180, -85.051129, 180, 85.051129],
     minzoom: 0,
     maxzoom: 22,
   };

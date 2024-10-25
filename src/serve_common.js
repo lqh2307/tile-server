@@ -242,7 +242,7 @@ export const serve_common = {
      * tags:
      *   - name: Common
      *     description: Common related endpoints
-     * /health:
+     * /info:
      *   get:
      *     tags:
      *       - Common
