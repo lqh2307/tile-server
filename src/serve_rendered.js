@@ -130,7 +130,8 @@ function getRenderedHandler() {
       const renderedInfo = {
         ...item.tileJSON,
         tiles: [
-          `${getRequestHost(req)}styles/${id}/${req.params.tileSize || 256
+          `${getRequestHost(req)}styles/${id}/${
+            req.params.tileSize || 256
           }/{z}/{x}/{y}.png${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
         ],
       };
@@ -151,16 +152,18 @@ function getRenderedHandler() {
 function getRenderedsListHandler() {
   return async (req, res, next) => {
     try {
-      const result = await Promise.all(Object.keys(config.repo.rendereds).map(async (id) => {
-        return {
-          id: id,
-          name: config.repo.rendereds[id].tileJSON.name,
-          url: [
-            `${getRequestHost(req)}styles/256/${id}.json`,
-            `${getRequestHost(req)}styles/512/${id}.json`,
-          ],
-        };
-      }));
+      const result = await Promise.all(
+        Object.keys(config.repo.rendereds).map(async (id) => {
+          return {
+            id: id,
+            name: config.repo.rendereds[id].tileJSON.name,
+            url: [
+              `${getRequestHost(req)}styles/256/${id}.json`,
+              `${getRequestHost(req)}styles/512/${id}.json`,
+            ],
+          };
+        })
+      );
 
       return res.status(StatusCodes.OK).send(result);
     } catch (error) {
@@ -526,17 +529,17 @@ export const serve_rendered = {
                 const dataTile =
                   sourceData.sourceType === "mbtiles"
                     ? await getMBTilesTile(
-                      sourceData.source,
-                      z,
-                      x,
-                      scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
-                    )
+                        sourceData.source,
+                        z,
+                        x,
+                        scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+                      )
                     : await getPMTilesTile(sourceData.source, z, x, y);
 
                 /* Unzip pbf rendered tile */
                 if (
                   dataTile.headers["Content-Type"] ===
-                  "application/x-protobuf" &&
+                    "application/x-protobuf" &&
                   dataTile.headers["Content-Encoding"] !== undefined
                 ) {
                   dataTile.data = await unzipAsync(dataTile.data);
@@ -742,7 +745,7 @@ export const serve_rendered = {
                 if (
                   source.attribution &&
                   rendered.tileJSON.attribution.includes(source.attribution) ===
-                  false
+                    false
                 ) {
                   rendered.tileJSON.attribution += ` | ${source.attribution}`;
                 }

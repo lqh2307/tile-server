@@ -45,15 +45,17 @@ function getSpriteHandler() {
 function getSpritesListHandler() {
   return async (req, res, next) => {
     try {
-      const result = await Promise.all(Object.keys(config.repo.sprites).map(async (id) => {
-        return {
-          name: id,
-          urls: [
-            `${getRequestHost(req)}sprites/${id}/sprite.json`,
-            `${getRequestHost(req)}sprites/${id}/sprite.png`,
-          ],
-        };
-      }));
+      const result = await Promise.all(
+        Object.keys(config.repo.sprites).map(async (id) => {
+          return {
+            name: id,
+            urls: [
+              `${getRequestHost(req)}sprites/${id}/sprite.json`,
+              `${getRequestHost(req)}sprites/${id}/sprite.png`,
+            ],
+          };
+        })
+      );
 
       return res.status(StatusCodes.OK).send(result);
     } catch (error) {

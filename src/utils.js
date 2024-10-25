@@ -135,7 +135,7 @@ export function checkReadyMiddleware() {
 }
 
 /**
- * Get xyz tile center from lon lat z
+ * Get xyz tile center from lon lat z (with tile size = 256)
  * @param {number} lon
  * @param {number} lat
  * @param {number} z
@@ -165,7 +165,7 @@ export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "xyz") {
     lat = -85.051129;
   }
 
-  let y = zc - cc * Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360));
+  let y = zc - cc * Math.log(Math.tan(Math.PI / 4 + lat * (Math.PI / 360)));
   if (y > size) {
     y = size;
   }
@@ -178,7 +178,7 @@ export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "xyz") {
 }
 
 /**
- * Get lon lat tile center from x, y, z
+ * Get lon lat tile center from x, y, z (with tile size = 256)
  * @param {number} x
  * @param {number} y
  * @param {number} z
@@ -186,13 +186,14 @@ export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "xyz") {
  * @returns {[number,number]}
  */
 export function getLonLatCenterFromXYZ(x, y, z, scheme = "xyz") {
-  let px = (x + 0.5) * 256;
-  let py = (y + 0.5) * 256;
-
   const size = 256 * Math.pow(2, z);
   const bc = size / 360;
   const cc = size / (2 * Math.PI);
   const zc = size / 2;
+
+  // Get pixel at center of tile
+  let px = (x + 0.5) * 256;
+  let py = (y + 0.5) * 256;
 
   if (scheme === "tms") {
     py = size - py;
@@ -200,8 +201,7 @@ export function getLonLatCenterFromXYZ(x, y, z, scheme = "xyz") {
 
   return [
     (px - zc) / bc,
-    (180 / Math.PI) *
-    (2 * Math.atan(Math.exp((py - zc) / -cc)) - 0.5 * Math.PI),
+    (360 / Math.PI) * (Math.atan(Math.exp((zc - py) / cc)) - Math.PI / 4),
   ];
 }
 
@@ -216,9 +216,8 @@ export async function compileTemplate(template, data) {
     `public/templates/${template}.tmpl`,
     "utf8"
   );
-  const compiler = handlebars.compile(fileData);
 
-  return compiler(data);
+  return handlebars.compile(fileData)(data);
 }
 
 /**
