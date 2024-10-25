@@ -4,7 +4,7 @@ import { StatusCodes } from "http-status-codes";
 import { config } from "./config.js";
 import express from "express";
 import {
-  getXYZCenterFromLonLatZ,
+  getXYZFromLonLatZ,
   compileTemplate,
   getRequestHost,
 } from "./utils.js";
@@ -22,7 +22,7 @@ function serveFrontPageHandler() {
           return Object.keys(config.repo.rendereds).map(async (id) => {
             const { name, center } = config.repo.rendereds[id].tileJSON;
 
-            const [x, y, z] = getXYZCenterFromLonLatZ(
+            const [x, y, z] = getXYZFromLonLatZ(
               center[0],
               center[1],
               center[2]
@@ -66,7 +66,7 @@ function serveFrontPageHandler() {
 
         let thumbnail = "/images/placeholder.png";
         if (format !== "pbf") {
-          const [x, y, z] = getXYZCenterFromLonLatZ(
+          const [x, y, z] = getXYZFromLonLatZ(
             center[0],
             center[1],
             center[2]

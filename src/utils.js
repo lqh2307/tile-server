@@ -135,14 +135,14 @@ export function checkReadyMiddleware() {
 }
 
 /**
- * Get xyz tile center from lon lat z (with tile size = 256)
- * @param {number} lon
- * @param {number} lat
- * @param {number} z
- * @param {"xyz"|"tms"} scheme
- * @returns {[number,number,number]}
+ * Get xyz tile indices from longitude, latitude, and zoom level (tile size = 256)
+ * @param {number} lon - Longitude in EPSG:4326
+ * @param {number} lat - Latitude in EPSG:4326
+ * @param {number} z - Zoom level
+ * @param {"xyz"|"tms"} scheme - Tile scheme, either "xyz" or "tms"
+ * @returns {[number, number, number]} - Tile indices [x, y, z]
  */
-export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "xyz") {
+export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
   const size = 256 * Math.pow(2, z);
   const bc = size / 360;
   const cc = size / (2 * Math.PI);
@@ -174,26 +174,40 @@ export function getXYZCenterFromLonLatZ(lon, lat, z, scheme = "xyz") {
     y = size - y;
   }
 
-  return [Math.round(x / 256), Math.round(y / 256), z];
+  return [Math.floor(x / 256), Math.floor(y / 256), z];
 }
 
 /**
- * Get lon lat tile center from x, y, z (with tile size = 256)
- * @param {number} x
- * @param {number} y
- * @param {number} z
- * @param {"xyz"|"tms"} scheme
- * @returns {[number,number]}
+ * Get longitude, latitude from tile indices x, y, and zoom level (tile size = 256)
+ * @param {number} x - X tile index
+ * @param {number} y - Y tile index
+ * @param {number} z - Zoom level
+ * @param {"center"|"topLeft"|"bottomRight"} position - Tile position: "center", "topLeft", or "bottomRight"
+ * @param {"xyz"|"tms"} scheme - Tile scheme, either "xyz" or "tms"
+ * @returns {[number, number]} - Longitude, latitude in EPSG:4326
  */
-export function getLonLatCenterFromXYZ(x, y, z, scheme = "xyz") {
+export function getLonLatFromXYZ(
+  x,
+  y,
+  z,
+  position = "topLeft",
+  scheme = "xyz"
+) {
   const size = 256 * Math.pow(2, z);
   const bc = size / 360;
   const cc = size / (2 * Math.PI);
   const zc = size / 2;
 
-  // Get pixel at center of tile
-  let px = (x + 0.5) * 256;
-  let py = (y + 0.5) * 256;
+  let px = x * 256;
+  let py = y * 256;
+
+  if (position === "center") {
+    px = (x + 0.5) * 256;
+    py = (y + 0.5) * 256;
+  } else if (position === "bottomRight") {
+    px = (x + 1) * 256;
+    py = (y + 1) * 256;
+  }
 
   if (scheme === "tms") {
     py = size - py;
@@ -203,6 +217,63 @@ export function getLonLatCenterFromXYZ(x, y, z, scheme = "xyz") {
     (px - zc) / bc,
     (360 / Math.PI) * (Math.atan(Math.exp((zc - py) / cc)) - Math.PI / 4),
   ];
+}
+
+/**
+ * Get all tiles intersecting a bounding box across multiple zoom levels
+ * @param {number[]} bbox - [west, south, east, north] in EPSG:4326
+ * @param {number} minZoom - Minimum zoom level
+ * @param {number} maxZoom - Maximum zoom level
+ * @param {"xyz"|"tms"} [scheme="xyz"] - Tile scheme, either "xyz" or "tms"
+ * @returns {Array<[number, number, number]>} - List of tiles [x, y, z] intersecting the bbox at each zoom level
+ */
+export function getTilesFromBBox(
+  lonMin = -180,
+  latMin = -85.051129,
+  lonMax = 180,
+  latMax = 85.051129,
+  minZoom = 0,
+  maxZoom = 22,
+  scheme = "xyz"
+) {
+  const tiles = [];
+
+  for (let z = minZoom; z <= maxZoom; z++) {
+    const [xMin, yMin] = getXYZFromLonLatZ(lonMin, latMax, z, scheme);
+    const [xMax, yMax] = getXYZFromLonLatZ(lonMax, latMin, z, scheme);
+
+    for (let x = xMin; x <= xMax; x++) {
+      for (let y = yMin; y <= yMax; y++) {
+        tiles.push([x, y, z]);
+      }
+    }
+  }
+
+  return tiles;
+}
+
+/**
+ * Convert tile indices to a bounding box that intersects the outer tiles
+ * @param {number} xMin - Minimum x tile index
+ * @param {number} yMin - Minimum y tile index
+ * @param {number} xMax - Maximum x tile index
+ * @param {number} yMax - Maximum y tile index
+ * @param {number} z - Zoom level
+ * @param {"xyz"|"tms"} scheme - Tile scheme, either "xyz" or "tms"
+ * @returns {number[]} - Bounding box [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ */
+export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
+  const [lonMin, latMax] = getLonLatFromXYZ(xMin, yMin, z, "topLeft", scheme);
+  const [lonMax, latMin] = getLonLatFromXYZ(
+    xMax + 1,
+    yMax + 1,
+    z,
+    "bottomRight",
+    z,
+    scheme
+  );
+
+  return [lonMin, latMin, lonMax, latMax];
 }
 
 /**
@@ -242,7 +313,7 @@ export async function renderData(
 ) {
   const params = {
     zoom: z,
-    center: getLonLatCenterFromXYZ(x, y, z, scheme),
+    center: getLonLatFromXYZ(x, y, z, "center", scheme),
     width: tileSize,
     height: tileSize,
   };
@@ -1195,7 +1266,7 @@ export function createNewTileJSON(metadata) {
     data.center = [
       (data.bounds[0] + data.bounds[2]) / 2,
       (data.bounds[1] + data.bounds[3]) / 2,
-      Math.round((data.minzoom + data.maxzoom) / 2),
+      Math.floor((data.minzoom + data.maxzoom) / 2),
     ];
   }
 
