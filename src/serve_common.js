@@ -315,7 +315,6 @@ export const serve_common = {
        *       200:
        *         description: Config
        *         content:
-       *         content:
        *           application/json:
        *             schema:
        *               type: object

@@ -46,12 +46,12 @@ function getFontHandler() {
 function getFontsListHandler() {
   return async (req, res, next) => {
     try {
-      const result = Object.keys(config.repo.fonts).map((id) => {
+      const result = await Promise.all(Object.keys(config.repo.fonts).map(async (id) => {
         return {
           name: id,
           url: `${getRequestHost(req)}fonts/${id}/{range}.pbf`,
         };
-      });
+      }));
 
       return res.status(StatusCodes.OK).send(result);
     } catch (error) {

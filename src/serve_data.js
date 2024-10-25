@@ -46,11 +46,11 @@ function getDataTileHandler() {
       const dataTile =
         item.sourceType === "mbtiles"
           ? await getMBTilesTile(
-              item.source,
-              z,
-              x,
-              req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
-            )
+            item.source,
+            z,
+            x,
+            req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+          )
           : await getPMTilesTile(item.source, z, x, y);
 
       /* Gzip pbf data tile */
@@ -101,8 +101,7 @@ function getDataHandler() {
           : await getPMTilesInfos(item.source, includeJSON);
 
       dataInfo.tiles = [
-        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${
-          req.query.scheme === "tms" ? "?scheme=tms" : ""
+        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${req.query.scheme === "tms" ? "?scheme=tms" : ""
         }`,
       ];
 
@@ -122,17 +121,49 @@ function getDataHandler() {
 function getDatasListHandler() {
   return async (req, res, next) => {
     try {
-      const result = Object.keys(config.repo.datas).map((id) => {
+      const result = await Promise.all(Object.keys(config.repo.datas).map(async (id) => {
         return {
           id: id,
           name: config.repo.datas[id].tileJSON.name,
           url: `${getRequestHost(req)}datas/${id}.json`,
         };
-      });
+      }));
 
       return res.status(StatusCodes.OK).send(result);
     } catch (error) {
       printLog("error", `Failed to get datas": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
+function getDataTileJSONsListHandler() {
+  return async (req, res, next) => {
+    const includeJSON = req.query.json === "true" ? true : false;
+
+    try {
+      const result = await Promise.all(Object.keys(config.repo.datas).map(async (id) => {
+        const item = config.repo.datas[id];
+
+        const dataInfo =
+          item.sourceType === "mbtiles"
+            ? await getMBTilesInfos(item.source, includeJSON)
+            : await getPMTilesInfos(item.source, includeJSON);
+
+        dataInfo.tiles = [
+          `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${req.query.scheme === "tms" ? "?scheme=tms" : ""
+          }`,
+        ];
+
+        return dataInfo;
+      }));
+
+      return res.status(StatusCodes.OK).send(result);
+    } catch (error) {
+      printLog("error", `Failed to get data tileJSONs": ${error}`);
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -190,6 +221,37 @@ export const serve_data = {
      * tags:
      *   - name: Data
      *     description: Data related endpoints
+     * /datas/tilejsons.json:
+     *   get:
+     *     tags:
+     *       - Data
+     *     summary: Get all data tileJSONs
+     *     responses:
+     *       200:
+     *         description: List of all data tileJSONs
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/tilejsons.json", getDataTileJSONsListHandler());
+
+    /**
+     * @swagger
+     * tags:
+     *   - name: Data
+     *     description: Data related endpoints
      * /datas/{id}.json:
      *   get:
      *     tags:
@@ -209,13 +271,6 @@ export const serve_data = {
      *           enum: [true, false]
      *         required: false
      *         description: Include vector_layers and tilestats fields in response
-     *       - in: query
-     *         name: scheme
-     *         schema:
-     *           type: string
-     *           enum: [xyz, tms]
-     *         required: false
-     *         description: Use xyz or tms scheme
      *     responses:
      *       200:
      *         description: Data information

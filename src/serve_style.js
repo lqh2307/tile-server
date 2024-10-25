@@ -127,13 +127,13 @@ function getStyleHandler() {
 function getStylesListHandler() {
   return async (req, res, next) => {
     try {
-      const result = Object.keys(config.repo.styles).map((id) => {
+      const result = await Promise.all(Object.keys(config.repo.styles).map(async (id) => {
         return {
           id: id,
           name: config.repo.styles[id].styleJSON.name || "Unknown",
           url: `${getRequestHost(req)}styles/${id}/style.json`,
         };
-      });
+      }));
 
       return res.status(StatusCodes.OK).send(result);
     } catch (error) {

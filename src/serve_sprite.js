@@ -45,7 +45,7 @@ function getSpriteHandler() {
 function getSpritesListHandler() {
   return async (req, res, next) => {
     try {
-      const result = Object.keys(config.repo.sprites).map((id) => {
+      const result = await Promise.all(Object.keys(config.repo.sprites).map(async (id) => {
         return {
           name: id,
           urls: [
@@ -53,7 +53,7 @@ function getSpritesListHandler() {
             `${getRequestHost(req)}sprites/${id}/sprite.png`,
           ],
         };
-      });
+      }));
 
       return res.status(StatusCodes.OK).send(result);
     } catch (error) {
