@@ -78,7 +78,7 @@ if (cluster.isPrimary === true) {
 =========='-.____'.___ \_____/___.-'____.-'==========
                        '=---='
             Buddha bless, server immortal
-========== Starting server with ${opts.numProcesses} processes ==========
+          Starting server with ${opts.numProcesses} processes
 `
   );
 
