@@ -52,7 +52,7 @@ function serveInfoHandler() {
       // Read package.json file
       const packageJSON = JSON.parse(
         await fsPromise.readFile("package.json", "utf8")
-      ).version;
+      );
 
       // Init info
       const result = {
