@@ -55,6 +55,12 @@ if (cluster.isPrimary === true) {
     process.exit(1);
   });
 
+  /* Fork servers */
+  printLog(
+    "info",
+    `========== Starting server with ${opts.numProcesses} processes... ==========`
+  );
+
   /* Buddha bless */
   printLog(
     "info",
@@ -80,12 +86,6 @@ if (cluster.isPrimary === true) {
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
        Buddha bless, server immortal
 `
-  );
-
-  /* Fork servers */
-  printLog(
-    "info",
-    `========== Starting server with ${opts.numProcesses} processes... ==========`
   );
 
   if (opts.numProcesses > 1) {
