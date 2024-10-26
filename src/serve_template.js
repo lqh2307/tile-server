@@ -1,13 +1,9 @@
 "use strict";
 
+import { getXYZFromLonLatZ, compileTemplate, getRequestHost } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import { config } from "./config.js";
 import express from "express";
-import {
-  getXYZFromLonLatZ,
-  compileTemplate,
-  getRequestHost,
-} from "./utils.js";
 
 function serveFrontPageHandler() {
   return async (req, res, next) => {
@@ -66,11 +62,7 @@ function serveFrontPageHandler() {
 
         let thumbnail = "/images/placeholder.png";
         if (format !== "pbf") {
-          const [x, y, z] = getXYZFromLonLatZ(
-            center[0],
-            center[1],
-            center[2]
-          );
+          const [x, y, z] = getXYZFromLonLatZ(center[0], center[1], center[2]);
 
           thumbnail = `${getRequestHost(
             req

@@ -49,9 +49,16 @@ function serveConfigHandler() {
 function serveInfoHandler() {
   return async (req, res, next) => {
     try {
+      // Read package.json file
+      const packageJSON = JSON.parse(
+        await fsPromise.readFile("package.json", "utf8")
+      ).version;
+
       // Init info
       const result = {
-        version: "1.0.0",
+        name: packageJSON.name,
+        version: packageJSON.version,
+        description: packageJSON.description,
         font: {
           count: 0,
           size: 0,
@@ -80,11 +87,6 @@ function serveInfoHandler() {
           count: 0,
         },
       };
-
-      // Version info
-      result.version = JSON.parse(
-        await fsPromise.readFile("package.json", "utf8")
-      ).version;
 
       // Fonts info
       for (const font in config.repo.fonts) {

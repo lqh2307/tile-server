@@ -5,6 +5,7 @@ import { printLog } from "./utils.js";
 import { program } from "commander";
 import chokidar from "chokidar";
 import cluster from "cluster";
+import fs from "node:fs";
 import os from "os";
 
 /* Setup commands */
@@ -19,7 +20,10 @@ program
   )
   .option("-k, --kill_interval <num>", "Interval time to kill server", "0")
   .option("-d, --data_dir <dir>", "Data directory", "data")
-  .version("1.0.0", "-v, --version")
+  .version(
+    JSON.parse(fs.readFileSync("package.json", "utf8")).version,
+    "-v, --version"
+  )
   .showHelpAfterError()
   .parse(process.argv);
 
@@ -50,6 +54,33 @@ if (cluster.isPrimary === true) {
 
     process.exit(1);
   });
+
+  /* Buddha bless */
+  printLog(
+    "info",
+    `
+                  _oo0oo_
+                 o8888888o
+                 88' . '88
+                 (| -_- |)
+                 0\  =  /0
+               ___/'---'\___
+             .' \\|     |// '.
+            / \\|||  :  |||// \
+           / _||||| -:- |||||_ \
+          |   | \\\  -  /// |   |
+          | \_|  ''\---/''  |_/ |
+          \  .-\___ '-' ___/-.  /
+        ___'. .'  /--.--\  '. .'___
+      .'' '< '.___\_<|>_/___.' >' ''.
+    | | :  '- \'.;'\ _ /';.'/ -'  : | |
+    \  \ '_.   \_ __\ /__ _/   ._' /  /
+====='-.____'.___ \_____/___.-'____.-'=====
+                  '=---='
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+       Buddha bless, server immortal
+`
+  );
 
   /* Fork servers */
   printLog(
