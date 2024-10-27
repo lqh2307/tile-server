@@ -1,6 +1,5 @@
 "use strict";
 
-import { printLog, checkReadyMiddleware } from "./utils.js";
 import { config, loadConfigFile } from "./config.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
@@ -12,6 +11,11 @@ import { serve_data } from "./serve_data.js";
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
+import {
+  checkReadyMiddleware,
+  // downloadTileDataFilesFromBBox,
+  printLog,
+} from "./utils.js";
 
 /**
  * Start server
@@ -49,6 +53,16 @@ export async function startServer(dataDir) {
       });
 
     printLog("info", `Loading data...`);
+
+    // await downloadTileDataFilesFromBBox(
+    //   "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    //   "datatest/xyzs/osm",
+    //   [96, 4, 120, 28],
+    //   0,
+    //   10,
+    //   "xyz",
+    //   "png",
+    // )
 
     Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()])
       .then(() => serve_style.add())

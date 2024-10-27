@@ -1,10 +1,14 @@
 "use strict";
 
-import { getRequestHost, validateStyle, printLog } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { config } from "./config.js";
 import express from "express";
+import {
+  getRequestHost,
+  validateStyle,
+  printLog,
+} from "./utils.js";
 
 function getStyleHandler() {
   return async (req, res, next) => {
@@ -48,7 +52,8 @@ function getStyleHandler() {
           if (source.url !== undefined) {
             if (
               source.url.startsWith("mbtiles://") === true ||
-              source.url.startsWith("pmtiles://") === true
+              source.url.startsWith("pmtiles://") === true ||
+              source.url.startsWith("xyz://") === true
             ) {
               const queryIndex = source.url.indexOf("?");
               const sourceID =
@@ -68,7 +73,8 @@ function getStyleHandler() {
             const urls = source.urls.map((url) => {
               if (
                 url.startsWith("pmtiles://") === true ||
-                url.startsWith("mbtiles://") === true
+                url.startsWith("mbtiles://") === true ||
+                url.startsWith("xyz://") === true
               ) {
                 const queryIndex = url.indexOf("?");
                 const sourceID =
@@ -88,7 +94,8 @@ function getStyleHandler() {
             const tiles = source.tiles.map((tile) => {
               if (
                 tile.startsWith("pmtiles://") === true ||
-                tile.startsWith("mbtiles://") === true
+                tile.startsWith("mbtiles://") === true ||
+                tile.startsWith("xyz://") === true
               ) {
                 const queryIndex = tile.indexOf("?");
                 const sourceID =

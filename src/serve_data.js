@@ -4,7 +4,6 @@ import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { config } from "./config.js";
 import express from "express";
-import { getPMTilesInfos, getPMTilesTile, openPMTiles } from "./pmtiles.js";
 import {
   createMBTilesMetadataIndex,
   createMBTilesTilesIndex,
@@ -13,12 +12,21 @@ import {
   openMBTiles,
 } from "./mbtiles.js";
 import {
+  getPMTilesInfos,
+  getPMTilesTile,
+  openPMTiles,
+} from "./pmtiles.js";
+import {
   validateDataInfo,
   getRequestHost,
   downloadFile,
   gzipAsync,
   printLog,
 } from "./utils.js";
+import {
+  getXYZInfos,
+  getXYZTile,
+} from "./xyz.js";
 
 function getDataTileHandler() {
   return async (req, res, next) => {
@@ -37,21 +45,32 @@ function getDataTileHandler() {
         .send("Data tile format is invalid");
     }
 
+    /* Get tile */
     const z = Number(req.params.z);
     const x = Number(req.params.x);
     const y = Number(req.params.y);
 
     try {
-      /* Get data tile */
-      const dataTile =
-        item.sourceType === "mbtiles"
-          ? await getMBTilesTile(
-              item.source,
-              z,
-              x,
-              req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
-            )
-          : await getPMTilesTile(item.source, z, x, y);
+      let dataTile;
+
+      if (item.sourceType === "mbtiles") {
+        dataTile = await getMBTilesTile(
+          item.source,
+          z,
+          x,
+          req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+        )
+      } else if (item.sourceType === "pmtiles") {
+        dataTile = await getPMTilesTile(item.source, z, x, y);
+      } else if (item.sourceType === "xyz") {
+        dataTile = await getXYZTile(
+          item.source,
+          z,
+          x,
+          req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+          req.params.format,
+        )
+      }
 
       /* Gzip pbf data tile */
       if (
@@ -92,17 +111,20 @@ function getDataHandler() {
       return res.status(StatusCodes.NOT_FOUND).send("Data is not found");
     }
 
-    const includeJSON = req.query.json === "true" ? true : false;
-
     try {
-      const dataInfo =
-        item.sourceType === "mbtiles"
-          ? await getMBTilesInfos(item.source, includeJSON)
-          : await getPMTilesInfos(item.source, includeJSON);
+      const includeJSON = req.query.json === "true" ? true : false;
+      let dataInfo;
+
+      if (item.sourceType === "mbtiles") {
+        dataInfo = await getMBTilesInfos(item.source, includeJSON);
+      } else if (item.sourceType === "pmtiles") {
+        dataInfo = await getPMTilesInfos(item.source, includeJSON);
+      } else if (item.sourceType === "xyz") {
+        dataInfo = await getXYZInfos(item.source, req.query.scheme, includeJSON);
+      }
 
       dataInfo.tiles = [
-        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${
-          req.query.scheme === "tms" ? "?scheme=tms" : ""
+        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${req.query.scheme === "tms" ? "?scheme=tms" : ""
         }`,
       ];
 
@@ -145,23 +167,26 @@ function getDatasListHandler() {
 
 function getDataTileJSONsListHandler() {
   return async (req, res, next) => {
-    const includeJSON = req.query.json === "true" ? true : false;
-
     try {
+      const includeJSON = req.query.json === "true" ? true : false;
+
       const result = await Promise.all(
         Object.keys(config.repo.datas).map(async (id) => {
           const item = config.repo.datas[id];
+          let dataInfo;
 
-          const dataInfo =
-            item.sourceType === "mbtiles"
-              ? await getMBTilesInfos(item.source, includeJSON)
-              : await getPMTilesInfos(item.source, includeJSON);
+          if (item.sourceType === "mbtiles") {
+            dataInfo = await getMBTilesInfos(item.source, includeJSON);
+          } else if (item.sourceType === "pmtiles") {
+            dataInfo = await getPMTilesInfos(item.source, includeJSON);
+          } else if (item.sourceType === "xyz") {
+            dataInfo = await getXYZInfos(item.source, req.query.scheme, includeJSON);
+          }
 
           dataInfo.id = id;
 
           dataInfo.tiles = [
-            `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
-              item.tileJSON.format
+            `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format
             }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
           ];
 
@@ -396,9 +421,10 @@ export const serve_data = {
         try {
           const item = config.datas[id];
           const dataInfo = {};
-          let filePath;
 
           if (item.mbtiles) {
+            let filePath = `${config.paths.mbtiles}/${item.mbtiles}`;
+
             if (
               item.mbtiles.startsWith("https://") === true ||
               item.mbtiles.startsWith("http://") === true
@@ -426,8 +452,6 @@ export const serve_data = {
               }
 
               item.mbtiles = `${id}/${id}.mbtiles`;
-            } else {
-              filePath = `${config.paths.mbtiles}/${item.mbtiles}`;
             }
 
             if (config.options.createMetadataIndex === true) {
@@ -442,20 +466,26 @@ export const serve_data = {
             dataInfo.source = await openMBTiles(filePath);
             dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
           } else if (item.pmtiles) {
+            let filePath = `${config.paths.pmtiles}/${item.pmtiles}`;
+
             if (
               item.pmtiles.startsWith("https://") === true ||
               item.pmtiles.startsWith("http://") === true
             ) {
               filePath = item.pmtiles;
-            } else {
-              filePath = `${config.paths.pmtiles}/${item.pmtiles}`;
             }
 
             dataInfo.sourceType = "pmtiles";
             dataInfo.source = openPMTiles(filePath);
             dataInfo.tileJSON = await getPMTilesInfos(dataInfo.source);
+          } else if (item.xyz) {
+            const dirPath = `${config.paths.xyzs}/${item.xyz}`
+
+            dataInfo.sourceType = "xyz";
+            dataInfo.source = dirPath;
+            dataInfo.tileJSON = await getXYZInfos(dataInfo.source);
           } else {
-            throw new Error(`"pmtiles" or "mbtiles" property is empty`);
+            throw new Error(`Missing "pmtiles" or "mbtiles" or "xyz" property of data`);
           }
 
           /* Validate info */

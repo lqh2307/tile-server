@@ -24,6 +24,7 @@ async function loadConfigFile(dataDir) {
       sprites: `${dataDir}/sprites`,
       mbtiles: `${dataDir}/mbtiles`,
       pmtiles: `${dataDir}/pmtiles`,
+      xyzs: `${dataDir}/xyzs`,
     },
     options: {
       listenPort: configData.options?.listenPort || 8080,

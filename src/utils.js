@@ -76,6 +76,9 @@ export async function getData(url) {
       url,
       {
         agent: false,
+        headers: {
+          "User-Agent": "Tile Server",
+        },
       },
       (res) => {
         if (
@@ -137,7 +140,7 @@ export function checkReadyMiddleware() {
  * @param {number} lon - Longitude in EPSG:4326
  * @param {number} lat - Latitude in EPSG:4326
  * @param {number} z - Zoom level
- * @param {"xyz"|"tms"} scheme - Tile scheme, either "xyz" or "tms"
+ * @param {"xyz"|"tms"} scheme - Tile scheme
  * @returns {[number, number, number]} - Tile indices [x, y, z]
  */
 export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
@@ -181,7 +184,7 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
  * @param {number} y - Y tile index
  * @param {number} z - Zoom level
  * @param {"center"|"topLeft"|"bottomRight"} position - Tile position: "center", "topLeft", or "bottomRight"
- * @param {"xyz"|"tms"} scheme - Tile scheme, either "xyz" or "tms"
+ * @param {"xyz"|"tms"} scheme - Tile scheme
  * @returns {[number, number]} - Longitude, latitude in EPSG:4326
  */
 export function getLonLatFromXYZ(
@@ -222,14 +225,11 @@ export function getLonLatFromXYZ(
  * @param {number[]} bbox - [west, south, east, north] in EPSG:4326
  * @param {number} minZoom - Minimum zoom level
  * @param {number} maxZoom - Maximum zoom level
- * @param {"xyz"|"tms"} [scheme="xyz"] - Tile scheme, either "xyz" or "tms"
- * @returns {Array<[number, number, number]>} - List of tiles [x, y, z] intersecting the bbox at each zoom level
+ * @param {"xyz"|"tms"} [scheme="xyz"] - Tile scheme
+ * @returns {Array<[number, number, number]>} - List of tiles [z, x, y] intersecting the bbox at each zoom level
  */
 export function getTilesFromBBox(
-  lonMin = -180,
-  latMin = -85.051129,
-  lonMax = 180,
-  latMax = 85.051129,
+  bbox = [-180, -85.051129, 180, 85.051129],
   minZoom = 0,
   maxZoom = 22,
   scheme = "xyz"
@@ -237,12 +237,12 @@ export function getTilesFromBBox(
   const tiles = [];
 
   for (let z = minZoom; z <= maxZoom; z++) {
-    const [xMin, yMin] = getXYZFromLonLatZ(lonMin, latMax, z, scheme);
-    const [xMax, yMax] = getXYZFromLonLatZ(lonMax, latMin, z, scheme);
+    const [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], z, scheme);
+    const [xMax, yMax] = getXYZFromLonLatZ(bbox[2], bbox[1], z, scheme);
 
     for (let x = xMin; x <= xMax; x++) {
       for (let y = yMin; y <= yMax; y++) {
-        tiles.push([x, y, z]);
+        tiles.push([z, x, y]);
       }
     }
   }
@@ -257,7 +257,7 @@ export function getTilesFromBBox(
  * @param {number} xMax - Maximum x tile index
  * @param {number} yMax - Maximum y tile index
  * @param {number} z - Zoom level
- * @param {"xyz"|"tms"} scheme - Tile scheme, either "xyz" or "tms"
+ * @param {"xyz"|"tms"} scheme - Tile scheme
  * @returns {number[]} - Bounding box [lonMin, latMin, lonMax, latMax] in EPSG:4326
  */
 export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
@@ -272,6 +272,33 @@ export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
   );
 
   return [lonMin, latMin, lonMax, latMax];
+}
+
+/**
+ * Download all tiles in a specified bounding box and zoom levels
+ * @param {string} tileURL - Tile URL to download
+ * @param {string} outputFolder - Folder to store downloaded tiles
+ * @param {Array<number>} bbox - Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {number} minZoom - Minimum zoom level
+ * @param {number} maxZoom - Maximum zoom level
+ * @param {"xyz"|"tms"} scheme - Tile scheme
+ * @param { "gif"|"png"|"jpg"|"jpeg"|"webp"|"pbf"} format
+ */
+export async function downloadTileDataFilesFromBBox(tileURL, outputFolder, bbox, minZoom, maxZoom, scheme = "xyz", format = "png") {
+  const tiles = getTilesFromBBox(bbox, minZoom, maxZoom, scheme);
+
+  for (const tile of tiles) {
+    try {
+      const url = tileURL.replaceAll("/{z}/{x}/{y}", `/${tile[0]}/${tile[1]}/${tile[2]}`)
+      const outputFilePath = `${outputFolder}/${tile[0]}/${tile[1]}/${tile[2]}.${format}`
+
+      printLog("info", `Downloading tile data file from ${url}...`);
+
+      await downloadFile(url, outputFilePath);
+    } catch (error) {
+      printLog("error", `Failed to download tile data file from ${url}: ${error}`);
+    }
+  }
 }
 
 /**
@@ -426,7 +453,7 @@ export async function findFolders(dirPath, regex) {
     const folderPath = `${dirPath}/${folderName}`;
     const stat = await fsPromise.stat(folderPath);
 
-    if (regex.test(dirPath) === true && stat.isDirectory() === true) {
+    if (regex.test(folderName) === true && stat.isDirectory() === true) {
       results.push(folderName);
     }
   }
@@ -653,7 +680,8 @@ export async function validateStyle(config, styleJSON) {
       if (source.url !== undefined) {
         if (
           source.url.startsWith("pmtiles://") === true ||
-          source.url.startsWith("mbtiles://") === true
+          source.url.startsWith("mbtiles://") === true ||
+          source.url.startsWith("xyz://") === true
         ) {
           const queryIndex = source.url.indexOf("?");
           const sourceID =
@@ -682,7 +710,8 @@ export async function validateStyle(config, styleJSON) {
         source.urls.forEach((url) => {
           if (
             url.startsWith("pmtiles://") === true ||
-            url.startsWith("mbtiles://") === true
+            url.startsWith("mbtiles://") === true ||
+            url.startsWith("xyz://") === true
           ) {
             const queryIndex = url.indexOf("?");
             const sourceID =
@@ -710,7 +739,8 @@ export async function validateStyle(config, styleJSON) {
         source.tiles.forEach((tile) => {
           if (
             tile.startsWith("pmtiles://") === true ||
-            tile.startsWith("mbtiles://") === true
+            tile.startsWith("mbtiles://") === true ||
+            tile.startsWith("xyz://") === true
           ) {
             const queryIndex = tile.indexOf("?");
             const sourceID =
@@ -803,6 +833,9 @@ export async function downloadFile(url, outputPath) {
       url,
       {
         agent: false,
+        headers: {
+          "User-Agent": "Tile Server",
+        },
       },
       (response) => {
         if (response.statusCode >= 200 && response.statusCode < 300) {
