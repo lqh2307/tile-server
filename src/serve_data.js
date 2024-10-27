@@ -4,11 +4,7 @@ import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { config } from "./config.js";
 import express from "express";
-import {
-  getPMTilesInfos,
-  getPMTilesTile,
-  openPMTiles,
-} from "./pmtiles.js";
+import { getPMTilesInfos, getPMTilesTile, openPMTiles } from "./pmtiles.js";
 import {
   createMBTilesMetadataIndex,
   createMBTilesTilesIndex,
@@ -50,11 +46,11 @@ function getDataTileHandler() {
       const dataTile =
         item.sourceType === "mbtiles"
           ? await getMBTilesTile(
-            item.source,
-            z,
-            x,
-            req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
-          )
+              item.source,
+              z,
+              x,
+              req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+            )
           : await getPMTilesTile(item.source, z, x, y);
 
       /* Gzip pbf data tile */
@@ -105,7 +101,8 @@ function getDataHandler() {
           : await getPMTilesInfos(item.source, includeJSON);
 
       dataInfo.tiles = [
-        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${req.query.scheme === "tms" ? "?scheme=tms" : ""
+        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${
+          req.query.scheme === "tms" ? "?scheme=tms" : ""
         }`,
       ];
 
@@ -163,7 +160,8 @@ function getDataTileJSONsListHandler() {
           dataInfo.id = id;
 
           dataInfo.tiles = [
-            `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format
+            `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
+              item.tileJSON.format
             }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
           ];
 
@@ -236,6 +234,14 @@ export const serve_data = {
      *     tags:
      *       - Data
      *     summary: Get all data tileJSONs
+     *     parameters:
+     *       - in: query
+     *         name: json
+     *         schema:
+     *           type: string
+     *           enum: [true, false]
+     *         required: false
+     *         description: Include vector_layers and tilestats fields in response
      *     responses:
      *       200:
      *         description: List of all data tileJSONs
