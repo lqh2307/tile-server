@@ -284,19 +284,33 @@ export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
  * @param {"xyz"|"tms"} scheme - Tile scheme
  * @param { "gif"|"png"|"jpg"|"jpeg"|"webp"|"pbf"} format
  */
-export async function downloadTileDataFilesFromBBox(tileURL, outputFolder, bbox, minZoom, maxZoom, scheme = "xyz", format = "png") {
+export async function downloadTileDataFilesFromBBox(
+  tileURL,
+  outputFolder,
+  bbox,
+  minZoom,
+  maxZoom,
+  scheme = "xyz",
+  format = "png"
+) {
   const tiles = getTilesFromBBox(bbox, minZoom, maxZoom, scheme);
 
   for (const tile of tiles) {
     try {
-      const url = tileURL.replaceAll("/{z}/{x}/{y}", `/${tile[0]}/${tile[1]}/${tile[2]}`)
-      const outputFilePath = `${outputFolder}/${tile[0]}/${tile[1]}/${tile[2]}.${format}`
+      const url = tileURL.replaceAll(
+        "/{z}/{x}/{y}",
+        `/${tile[0]}/${tile[1]}/${tile[2]}`
+      );
+      const outputFilePath = `${outputFolder}/${tile[0]}/${tile[1]}/${tile[2]}.${format}`;
 
       printLog("info", `Downloading tile data file from ${url}...`);
 
       await downloadFile(url, outputFilePath);
     } catch (error) {
-      printLog("error", `Failed to download tile data file from ${url}: ${error}`);
+      printLog(
+        "error",
+        `Failed to download tile data file from ${url}: ${error}`
+      );
     }
   }
 }

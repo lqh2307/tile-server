@@ -1,13 +1,9 @@
 "use strict";
 
+import { getXYZFromLonLatZ, compileTemplate, getRequestHost } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import { config } from "./config.js";
 import express from "express";
-import {
-  getXYZFromLonLatZ,
-  compileTemplate,
-  getRequestHost,
-} from "./utils.js";
 
 function serveFrontPageHandler() {
   return async (req, res, next) => {

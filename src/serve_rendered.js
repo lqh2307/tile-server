@@ -132,7 +132,8 @@ function getRenderedHandler() {
       const renderedInfo = {
         ...item.tileJSON,
         tiles: [
-          `${getRequestHost(req)}styles/${id}/${req.params.tileSize || 256
+          `${getRequestHost(req)}styles/${id}/${
+            req.params.tileSize || 256
           }/{z}/{x}/{y}.png${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
         ],
       };
@@ -188,7 +189,8 @@ function getRenderedTileJSONsListHandler() {
             ...item.tileJSON,
             id: id,
             tiles: [
-              `${getRequestHost(req)}styles/${id}/{z}/{x}/{y}.png${req.query.scheme === "tms" ? "?scheme=tms" : ""
+              `${getRequestHost(req)}styles/${id}/{z}/{x}/{y}.png${
+                req.query.scheme === "tms" ? "?scheme=tms" : ""
               }`,
             ],
           };
@@ -592,17 +594,17 @@ export const serve_rendered = {
                 const dataTile =
                   sourceData.sourceType === "mbtiles"
                     ? await getMBTilesTile(
-                      sourceData.source,
-                      z,
-                      x,
-                      scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
-                    )
+                        sourceData.source,
+                        z,
+                        x,
+                        scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+                      )
                     : await getPMTilesTile(sourceData.source, z, x, y);
 
                 /* Unzip pbf rendered tile */
                 if (
                   dataTile.headers["Content-Type"] ===
-                  "application/x-protobuf" &&
+                    "application/x-protobuf" &&
                   dataTile.headers["Content-Encoding"] !== undefined
                 ) {
                   dataTile.data = await unzipAsync(dataTile.data);
@@ -644,13 +646,13 @@ export const serve_rendered = {
                   z,
                   x,
                   scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
-                  sourceData.tileJSON.format,
-                )
+                  sourceData.tileJSON.format
+                );
 
                 /* Unzip pbf rendered tile */
                 if (
                   dataTile.headers["Content-Type"] ===
-                  "application/x-protobuf" &&
+                    "application/x-protobuf" &&
                   dataTile.headers["Content-Encoding"] !== undefined
                 ) {
                   dataTile.data = await unzipAsync(dataTile.data);
@@ -856,7 +858,7 @@ export const serve_rendered = {
                 if (
                   source.attribution &&
                   rendered.tileJSON.attribution.includes(source.attribution) ===
-                  false
+                    false
                 ) {
                   rendered.tileJSON.attribution += ` | ${source.attribution}`;
                 }

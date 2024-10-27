@@ -1,10 +1,7 @@
 "use strict";
 
+import { parentPort, workerData } from "node:worker_threads";
 import { processImage } from "./utils.js";
-import {
-  parentPort,
-  workerData,
-} from "node:worker_threads";
 
 (async () => {
   try {

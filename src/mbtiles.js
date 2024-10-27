@@ -1,10 +1,7 @@
 "use strict";
 
+import { detectFormatAndHeaders, createNewTileJSON } from "./utils.js";
 import sqlite3 from "sqlite3";
-import {
-  detectFormatAndHeaders,
-  createNewTileJSON,
-} from "./utils.js";
 
 /**
  * Open MBTiles

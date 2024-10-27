@@ -1,11 +1,8 @@
 "use strict";
 
+import { detectFormatAndHeaders, createNewTileJSON } from "./utils.js";
 import { PMTiles, FetchSource } from "pmtiles";
 import fs from "node:fs";
-import {
-  detectFormatAndHeaders,
-  createNewTileJSON,
-} from "./utils.js";
 
 /**
  * Private class for PMTiles

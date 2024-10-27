@@ -12,8 +12,8 @@ import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 import {
-  checkReadyMiddleware,
   // downloadTileDataFilesFromBBox,
+  checkReadyMiddleware,
   printLog,
 } from "./utils.js";
 

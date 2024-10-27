@@ -19,12 +19,14 @@ import {
  * @returns {Promise<object>}
  */
 export async function getXYZTile(sourcePath, z, x, y, format = "png") {
-  const data = await fsPromise.readFile(`${sourcePath}/${z}/${x}/${y}.${format}`)
+  const data = await fsPromise.readFile(
+    `${sourcePath}/${z}/${x}/${y}.${format}`
+  );
 
   return {
     data: data,
     headers: detectFormatAndHeaders(data).headers,
-  }
+  };
 }
 
 /**
@@ -34,7 +36,11 @@ export async function getXYZTile(sourcePath, z, x, y, format = "png") {
  * @param {"xyz"|"tms"} scheme - Tile scheme
  * @returns {Promise<object>}
  */
-export async function getXYZInfos(sourcePath, scheme = "xyz", includeJSON = false) {
+export async function getXYZInfos(
+  sourcePath,
+  scheme = "xyz",
+  includeJSON = false
+) {
   let metadata;
 
   /* Get metadatas */
@@ -49,10 +55,8 @@ export async function getXYZInfos(sourcePath, scheme = "xyz", includeJSON = fals
     try {
       const folders = await findFolders(sourcePath, /^\d+$/);
 
-      metadata.minzoom = Math.min(...folders.map(folder => Number(folder)));
-    } catch (error) {
-
-    }
+      metadata.minzoom = Math.min(...folders.map((folder) => Number(folder)));
+    } catch (error) {}
   }
 
   /* Try get max zoom */
@@ -60,10 +64,8 @@ export async function getXYZInfos(sourcePath, scheme = "xyz", includeJSON = fals
     try {
       const folders = await findFolders(sourcePath, /^\d+$/);
 
-      metadata.maxzoom = Math.max(...folders.map(folder => Number(folder)));
-    } catch (error) {
-
-    }
+      metadata.maxzoom = Math.max(...folders.map((folder) => Number(folder)));
+    } catch (error) {}
   }
 
   /* Try get tile format */
@@ -71,15 +73,19 @@ export async function getXYZInfos(sourcePath, scheme = "xyz", includeJSON = fals
     try {
       const zFolders = await findFolders(sourcePath, /^\d+$/);
 
-      loop:
-      for (const zFolder of zFolders) {
+      loop: for (const zFolder of zFolders) {
         const xFolders = await findFolders(`${sourcePath}/${zFolder}`, /^\d+$/);
 
         for (const xFolder of xFolders) {
-          const yFiles = await findFiles(`${sourcePath}/${zFolder}/${xFolder}`, /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/);
+          const yFiles = await findFiles(
+            `${sourcePath}/${zFolder}/${xFolder}`,
+            /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/
+          );
 
           if (yFiles.length > 0) {
-            const data = await fsPromise.readFile(`${sourcePath}/${zFolder}/${xFolder}/${yFiles[0]}`)
+            const data = await fsPromise.readFile(
+              `${sourcePath}/${zFolder}/${xFolder}/${yFiles[0]}`
+            );
 
             metadata.format = await detectFormatAndHeaders(data).format;
 
@@ -87,9 +93,7 @@ export async function getXYZInfos(sourcePath, scheme = "xyz", includeJSON = fals
           }
         }
       }
-    } catch (error) {
-
-    }
+    } catch (error) {}
   }
 
   /* Try get bounds */
@@ -98,38 +102,41 @@ export async function getXYZInfos(sourcePath, scheme = "xyz", includeJSON = fals
       const boundsArr = [];
 
       const zFolders = await findFolders(sourcePath, /^\d+$/);
-      const zFolder = Math.max(...zFolders.map(zFolder => Number(zFolder)));
+      const zFolder = Math.max(...zFolders.map((zFolder) => Number(zFolder)));
 
       const xFolders = await findFolders(`${sourcePath}/${zFolder}`, /^\d+$/);
 
       if (xFolders.length > 0) {
-        const xMin = Math.min(...xFolders.map(folder => Number(folder)));
-        const xMax = Math.max(...xFolders.map(folder => Number(folder)));
+        const xMin = Math.min(...xFolders.map((folder) => Number(folder)));
+        const xMax = Math.max(...xFolders.map((folder) => Number(folder)));
 
         for (const xFolder of xFolders) {
-          let yFiles = await findFiles(`${sourcePath}/${zFolder}/${xFolder}`, /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/);
-          yFiles = yFiles.map(yFile => yFile.split(".")[0])
+          let yFiles = await findFiles(
+            `${sourcePath}/${zFolder}/${xFolder}`,
+            /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/
+          );
+          yFiles = yFiles.map((yFile) => yFile.split(".")[0]);
 
           if (yFiles.length > 0) {
-            const yMin = Math.min(...yFiles.map(file => Number(file)));
-            const yMax = Math.max(...yFiles.map(file => Number(file)));
+            const yMin = Math.min(...yFiles.map((file) => Number(file)));
+            const yMax = Math.max(...yFiles.map((file) => Number(file)));
 
-            boundsArr.push(getBBoxFromTiles(xMin, yMin, xMax, yMax, zFolder, scheme));
+            boundsArr.push(
+              getBBoxFromTiles(xMin, yMin, xMax, yMax, zFolder, scheme)
+            );
           }
         }
       }
 
       if (boundsArr.length > 0) {
         metadata.bounds = [
-          Math.min(...boundsArr.map(bbox => bbox[0])),
-          Math.min(...boundsArr.map(bbox => bbox[1])),
-          Math.max(...boundsArr.map(bbox => bbox[2])),
-          Math.max(...boundsArr.map(bbox => bbox[3])),
-        ]
+          Math.min(...boundsArr.map((bbox) => bbox[0])),
+          Math.min(...boundsArr.map((bbox) => bbox[1])),
+          Math.max(...boundsArr.map((bbox) => bbox[2])),
+          Math.max(...boundsArr.map((bbox) => bbox[3])),
+        ];
       }
-    } catch (error) {
-
-    }
+    } catch (error) {}
   }
 
   const tileJSON = createNewTileJSON(metadata);

@@ -1,5 +1,7 @@
 "use strict";
 
+import { getPMTilesInfos, getPMTilesTile, openPMTiles } from "./pmtiles.js";
+import { getXYZInfos, getXYZTile } from "./xyz.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { config } from "./config.js";
@@ -12,21 +14,12 @@ import {
   openMBTiles,
 } from "./mbtiles.js";
 import {
-  getPMTilesInfos,
-  getPMTilesTile,
-  openPMTiles,
-} from "./pmtiles.js";
-import {
   validateDataInfo,
   getRequestHost,
   downloadFile,
   gzipAsync,
   printLog,
 } from "./utils.js";
-import {
-  getXYZInfos,
-  getXYZTile,
-} from "./xyz.js";
 
 function getDataTileHandler() {
   return async (req, res, next) => {
@@ -59,7 +52,7 @@ function getDataTileHandler() {
           z,
           x,
           req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
-        )
+        );
       } else if (item.sourceType === "pmtiles") {
         dataTile = await getPMTilesTile(item.source, z, x, y);
       } else if (item.sourceType === "xyz") {
@@ -68,8 +61,8 @@ function getDataTileHandler() {
           z,
           x,
           req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
-          req.params.format,
-        )
+          req.params.format
+        );
       }
 
       /* Gzip pbf data tile */
@@ -120,11 +113,16 @@ function getDataHandler() {
       } else if (item.sourceType === "pmtiles") {
         dataInfo = await getPMTilesInfos(item.source, includeJSON);
       } else if (item.sourceType === "xyz") {
-        dataInfo = await getXYZInfos(item.source, req.query.scheme, includeJSON);
+        dataInfo = await getXYZInfos(
+          item.source,
+          req.query.scheme,
+          includeJSON
+        );
       }
 
       dataInfo.tiles = [
-        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${req.query.scheme === "tms" ? "?scheme=tms" : ""
+        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${
+          req.query.scheme === "tms" ? "?scheme=tms" : ""
         }`,
       ];
 
@@ -180,13 +178,18 @@ function getDataTileJSONsListHandler() {
           } else if (item.sourceType === "pmtiles") {
             dataInfo = await getPMTilesInfos(item.source, includeJSON);
           } else if (item.sourceType === "xyz") {
-            dataInfo = await getXYZInfos(item.source, req.query.scheme, includeJSON);
+            dataInfo = await getXYZInfos(
+              item.source,
+              req.query.scheme,
+              includeJSON
+            );
           }
 
           dataInfo.id = id;
 
           dataInfo.tiles = [
-            `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format
+            `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
+              item.tileJSON.format
             }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
           ];
 
@@ -479,13 +482,15 @@ export const serve_data = {
             dataInfo.source = openPMTiles(filePath);
             dataInfo.tileJSON = await getPMTilesInfos(dataInfo.source);
           } else if (item.xyz) {
-            const dirPath = `${config.paths.xyzs}/${item.xyz}`
+            const dirPath = `${config.paths.xyzs}/${item.xyz}`;
 
             dataInfo.sourceType = "xyz";
             dataInfo.source = dirPath;
             dataInfo.tileJSON = await getXYZInfos(dataInfo.source);
           } else {
-            throw new Error(`Missing "pmtiles" or "mbtiles" or "xyz" property of data`);
+            throw new Error(
+              `Missing "pmtiles" or "mbtiles" or "xyz" property of data`
+            );
           }
 
           /* Validate info */

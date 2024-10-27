@@ -1,14 +1,10 @@
 "use strict";
 
+import { getRequestHost, validateStyle, printLog } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { config } from "./config.js";
 import express from "express";
-import {
-  getRequestHost,
-  validateStyle,
-  printLog,
-} from "./utils.js";
 
 function getStyleHandler() {
   return async (req, res, next) => {
