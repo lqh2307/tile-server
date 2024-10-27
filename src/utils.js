@@ -9,10 +9,12 @@ import handlebars from "handlebars";
 import https from "node:https";
 import path from "node:path";
 import http from "node:http";
+import pLimit from "p-limit";
 import sharp from "sharp";
 import fs from "node:fs";
 import zlib from "zlib";
 import util from "util";
+import os from "os";
 
 const protoMessage = protobuf(fs.readFileSync("public/protos/glyphs.proto"));
 
@@ -294,25 +296,37 @@ export async function downloadTileDataFilesFromBBox(
   format = "png"
 ) {
   const tiles = getTilesFromBBox(bbox, minZoom, maxZoom, scheme);
+  const limitConcurrencyDownload = pLimit(os.cpus().length);
 
-  for (const tile of tiles) {
-    try {
-      const url = tileURL.replaceAll(
-        "/{z}/{x}/{y}",
-        `/${tile[0]}/${tile[1]}/${tile[2]}`
-      );
-      const outputFilePath = `${outputFolder}/${tile[0]}/${tile[1]}/${tile[2]}.${format}`;
+  printLog(
+    "info",
+    `Downloading ${
+      tiles.length
+    } tile data files with bbox ${bbox.toString()} from zoom level ${minZoom} to ${maxZoom}...`
+  );
 
-      printLog("info", `Downloading tile data file from ${url}...`);
+  await Promise.all(
+    tiles.map((tile) =>
+      limitConcurrencyDownload(async () => {
+        const url = tileURL.replace(
+          "/{z}/{x}/{y}",
+          `/${tile[0]}/${tile[1]}/${tile[2]}`
+        );
+        const outputFilePath = `${outputFolder}/${tile[0]}/${tile[1]}/${tile[2]}.${format}`;
 
-      await downloadFile(url, outputFilePath);
-    } catch (error) {
-      printLog(
-        "error",
-        `Failed to download tile data file from ${url}: ${error}`
-      );
-    }
-  }
+        printLog("info", `Downloading tile data file from ${url}...`);
+
+        try {
+          await downloadFile(url, outputFilePath);
+        } catch (error) {
+          printLog(
+            "error",
+            `Failed to download tile data file from ${url}: ${error}`
+          );
+        }
+      })
+    )
+  );
 }
 
 /**
