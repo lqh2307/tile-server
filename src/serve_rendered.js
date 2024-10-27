@@ -131,7 +131,7 @@ function getRenderedHandler() {
         ...item.tileJSON,
         tiles: [
           `${getRequestHost(req)}styles/${id}/${
-            req.params.tileSize === "512" ? "512" : ""
+            req.params.tileSize || 256
           }/{z}/{x}/{y}.png${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
         ],
       };
