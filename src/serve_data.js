@@ -5,17 +5,21 @@ import fsPromise from "node:fs/promises";
 import { config } from "./config.js";
 import express from "express";
 import {
-  createMetadataIndex,
-  createTilesIndex,
-  validateDataInfo,
   getPMTilesInfos,
-  getMBTilesInfos,
-  getRequestHost,
   getPMTilesTile,
-  getMBTilesTile,
-  downloadFile,
-  openMBTiles,
   openPMTiles,
+} from "./pmtiles.js";
+import {
+  createMBTilesMetadataIndex,
+  createMBTilesTilesIndex,
+  getMBTilesInfos,
+  getMBTilesTile,
+  openMBTiles,
+} from "./mbtiles.js";
+import {
+  validateDataInfo,
+  getRequestHost,
+  downloadFile,
   gzipAsync,
   printLog,
 } from "./utils.js";
@@ -46,11 +50,11 @@ function getDataTileHandler() {
       const dataTile =
         item.sourceType === "mbtiles"
           ? await getMBTilesTile(
-              item.source,
-              z,
-              x,
-              req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
-            )
+            item.source,
+            z,
+            x,
+            req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+          )
           : await getPMTilesTile(item.source, z, x, y);
 
       /* Gzip pbf data tile */
@@ -101,8 +105,7 @@ function getDataHandler() {
           : await getPMTilesInfos(item.source, includeJSON);
 
       dataInfo.tiles = [
-        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${
-          req.query.scheme === "tms" ? "?scheme=tms" : ""
+        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${req.query.scheme === "tms" ? "?scheme=tms" : ""
         }`,
       ];
 
@@ -160,8 +163,7 @@ function getDataTileJSONsListHandler() {
           dataInfo.id = id;
 
           dataInfo.tiles = [
-            `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
-              item.tileJSON.format
+            `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format
             }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
           ];
 
@@ -423,11 +425,11 @@ export const serve_data = {
             }
 
             if (config.options.createMetadataIndex === true) {
-              await createMetadataIndex(filePath);
+              await createMBTilesMetadataIndex(filePath);
             }
 
             if (config.options.createTilesIndex === true) {
-              await createTilesIndex(filePath);
+              await createMBTilesTilesIndex(filePath);
             }
 
             dataInfo.sourceType = "mbtiles";

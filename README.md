@@ -6,18 +6,25 @@
 
 Clone source:
 
+  ```bash
   git clone --single-branch -b 0.0.1 https://github.com/lqh2307/tile-server.git
+  ```
 
 Jump to folder:
 
+  ```bash
   cd tile-server
+  ```
 
 Switch to 0.0.1:
 
+  ```bash
   git checkout 0.0.1
+  ```
 
 If run on ubuntu:
 
+  ```bash
   apt-get -y update; \
   apt-get -y upgrade; \
   apt-get -y install \
@@ -38,29 +45,39 @@ If run on ubuntu:
   apt-get -y --purge autoremove; \
   apt-get clean; \
   rm -rf /var/lib/apt/lists/*;
+  ```
 
+  ```bash
   wget -q https://nodejs.org/download/release/v22.9.0/node-v22.9.0-linux-x64.tar.xz; \
   mkdir -p /usr/local/lib/nodejs && tar -xJf node-v22.9.0-linux-x64.tar.xz --strip-components=1 -C /usr/local/lib/nodejs; \
   rm -rf node-v22.9.0-linux-x64.tar.xz; \
   echo 'export PATH=/usr/local/lib/nodejs/bin:$PATH' >> ~/.bashrc; \
   source ~/.bashrc;
+  ```
 
 ### Run with nodejs
 
+  ```bash
   npm run start -- -d path_to_data_folder
+  ```
 
 ### Run with docker
 
 Build image:
 
+  ```bash
   docker build -t tile-server:0.0.1 .
+  ```
 
 Run container:
 
+  ```bash
   docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile-server/data tile-server:0.0.1
+  ```
 
 ## Example config.json
 
+  ```json
   {
     "options": {
       "listenPort": 8080,
@@ -119,3 +136,4 @@ Run container:
       "Times New Roman": true
     }
   }
+  ```
