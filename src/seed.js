@@ -37,7 +37,11 @@ export async function startRunSeedData() {
       5,
       60000 // 1 min
     );
+
+    printLog("info", `Completed seeding data!`);
   } catch (error) {
     printLog("error", `Failed seed data: ${error}. Exited!`);
   }
 }
+
+startRunSeedData();
