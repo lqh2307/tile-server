@@ -274,7 +274,7 @@ async function retry(fn, retries) {
     } catch (error) {
       const remainingAttempts = retries - attempt;
       if (remainingAttempts > 0) {
-        printLog("info", `${error}. ${remainingAttempts} retries remaining...`);
+        printLog("warning", `${error}. ${remainingAttempts} retries remaining...`);
       } else {
         throw error;
       }
@@ -970,7 +970,7 @@ export async function downloadFile(url, outputPath, timeout = 60000) {
   } catch (error) {
     if (error.response) {
       throw new Error(
-        `Failed to request to ${url} with status code ${error.response.status}`
+        `Failed to request to ${url} with status code: ${error.response.status}`
       );
     } else {
       throw new Error(`Failed to request to ${url}: ${error.message}`);
