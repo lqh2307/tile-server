@@ -1,5 +1,6 @@
 "use strict";
 
+import { checkReadyMiddleware, printLog } from "./utils.js";
 import { config, loadConfigFile } from "./config.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
@@ -11,10 +12,6 @@ import { serve_data } from "./serve_data.js";
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
-import {
-  checkReadyMiddleware,
-  printLog,
-} from "./utils.js";
 
 /**
  * Start server
