@@ -5,6 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import protobuf from "protocol-buffers";
 import { config } from "./config.js";
+import { exec } from "child_process";
 import handlebars from "handlebars";
 import https from "node:https";
 import path from "node:path";
@@ -14,7 +15,6 @@ import axios from "axios";
 import sharp from "sharp";
 import fs from "node:fs";
 import zlib from "zlib";
-import { exec } from "child_process";
 import util from "util";
 import os from "os";
 
