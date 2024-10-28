@@ -76,6 +76,7 @@ export async function getData(url, timeout = 60000) {
   try {
     const response = await axios.get(url, {
       timeout: timeout,
+      responseType: "arraybuffer",
       headers: {
         "User-Agent": "Tile Server",
       },
