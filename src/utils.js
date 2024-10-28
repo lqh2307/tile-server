@@ -284,7 +284,7 @@ export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
  * @param {number} minZoom - Minimum zoom level
  * @param {number} maxZoom - Maximum zoom level
  * @param {"xyz"|"tms"} scheme - Tile scheme
- * @param { "gif"|"png"|"jpg"|"jpeg"|"webp"|"pbf"} format
+ * @param {number} concurrency - Concurrency download
  */
 export async function downloadTileDataFilesFromBBox(
   tileURL,
@@ -293,10 +293,11 @@ export async function downloadTileDataFilesFromBBox(
   minZoom,
   maxZoom,
   scheme = "xyz",
-  format = "png"
+  concurrency = os.cpus().length
 ) {
   const tiles = getTilesFromBBox(bbox, minZoom, maxZoom, scheme);
-  const limitConcurrencyDownload = pLimit(os.cpus().length);
+  const limitConcurrencyDownload = pLimit(concurrency);
+  let format;
 
   printLog(
     "info",
@@ -306,18 +307,25 @@ export async function downloadTileDataFilesFromBBox(
   );
 
   await Promise.all(
-    tiles.map((tile) =>
+    tiles.map((tile, idx) =>
       limitConcurrencyDownload(async () => {
         const url = tileURL.replace(
           "/{z}/{x}/{y}",
           `/${tile[0]}/${tile[1]}/${tile[2]}`
         );
-        const outputFilePath = `${outputFolder}/${tile[0]}/${tile[1]}/${tile[2]}.${format}`;
-
-        printLog("info", `Downloading tile data file from ${url}...`);
 
         try {
-          await downloadFile(url, outputFilePath);
+          // Get format from data
+          if (idx === 0) {
+            format = await detectFormatAndHeaders(await getData(url)).format;
+          }
+
+          printLog("info", `Downloading tile data file from ${url}...`);
+
+          await downloadFile(
+            url,
+            `${outputFolder}/${tile[0]}/${tile[1]}/${tile[2]}.${format}`
+          );
         } catch (error) {
           printLog(
             "error",

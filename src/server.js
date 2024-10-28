@@ -61,8 +61,8 @@ export async function startServer(dataDir) {
     //   0,
     //   10,
     //   "xyz",
-    //   "png",
-    // )
+    //   32
+    // );
 
     Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()])
       .then(() => serve_style.add())
