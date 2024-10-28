@@ -19,14 +19,22 @@ import {
  * @returns {Promise<object>}
  */
 export async function getXYZTile(sourcePath, z, x, y, format = "png") {
-  const data = await fsPromise.readFile(
-    `${sourcePath}/${z}/${x}/${y}.${format}`
-  );
+  try {
+    const data = await fsPromise.readFile(
+      `${sourcePath}/${z}/${x}/${y}.${format}`
+    );
 
-  return {
-    data: data,
-    headers: detectFormatAndHeaders(data).headers,
-  };
+    return {
+      data: data,
+      headers: detectFormatAndHeaders(data).headers,
+    };
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      throw new Error("Tile does not exist");
+    }
+
+    throw error;
+  }
 }
 
 /**
