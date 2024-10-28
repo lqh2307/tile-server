@@ -10,6 +10,7 @@ import https from "node:https";
 import path from "node:path";
 import http from "node:http";
 import pLimit from "p-limit";
+import axios from "axios";
 import sharp from "sharp";
 import fs from "node:fs";
 import zlib from "zlib";
