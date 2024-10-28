@@ -913,11 +913,6 @@ export async function downloadFile(url, outputPath, timeout = 60000) {
         .on("error", (error) => reject(error));
     });
   } catch (error) {
-    fsPromise.rm(path.dirname(outputPath), {
-      recursive: true,
-      force: true,
-    });
-
     if (error.response) {
       throw new Error(`Failed with status code ${error.response.status}`);
     } else {
