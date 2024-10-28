@@ -34,12 +34,7 @@ RUN \
 
 ENV PATH=/usr/local/lib/nodejs/bin:$PATH
 
-WORKDIR /tile-server
-
-ADD . .
-
 RUN \
-  npm install -g yarn; \
-  yarn install;
+  npm install -g yarn;
 
 CMD ["sleep", "infinity"]
