@@ -40,6 +40,6 @@ ADD . .
 
 RUN \
   npm install -g yarn; \
-  yarn;
+  yarn install;
 
 CMD ["sleep", "infinity"]

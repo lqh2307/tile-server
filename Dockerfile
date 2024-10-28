@@ -42,7 +42,8 @@ WORKDIR /tile-server
 ADD . .
 
 RUN \
-  npm install --omit=dev;
+  npm install -g yarn; \
+  NODE_ENV=production yarn install;
 
 
 FROM ${TARGET_IMAGE} AS final
