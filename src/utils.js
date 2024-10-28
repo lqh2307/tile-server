@@ -283,7 +283,7 @@ export async function downloadTileDataFilesFromBBox(
 ) {
   const tiles = getTilesFromBBox(bbox, minZoom, maxZoom, scheme);
   const limitConcurrencyDownload = pLimit(concurrency);
-  let format;
+  let format = "png";
 
   printLog(
     "info",
@@ -309,8 +309,6 @@ export async function downloadTileDataFilesFromBBox(
           }
 
           // Download file
-          const filePath = `${outputFolder}/${tile[0]}/${tile[1]}/${tile[2]}.${format}`;
-
           if (overwrite === true && (await isExistFile()) === true) {
             printLog(
               "info",
@@ -318,6 +316,8 @@ export async function downloadTileDataFilesFromBBox(
             );
           } else {
             printLog("info", `Downloading tile data file from ${url}...`);
+
+            const filePath = `${outputFolder}/${tile[0]}/${tile[1]}/${tile[2]}.${format}`;
 
             await downloadFile(url, filePath, timeout);
           }
