@@ -55,9 +55,14 @@ echo 'export PATH=/usr/local/lib/nodejs/bin:$PATH' >> ~/.bashrc; \
 source ~/.bashrc;
 ```
 
+```bash
+npm install -g yarn
+```
+
 ### Run with nodejs
 
 ```bash
+NODE_ENV=production yarn install; \
 npm run start -- -d path_to_data_folder
 ```
 
