@@ -286,8 +286,8 @@ export async function downloadTileDataFilesFromBBox(
   const queryIndex = url.indexOf("?");
   const format =
     (queryIndex === -1
-      ? url.slice(url.lastIndexOf(".") + 1)
-      : url.slice(url.lastIndexOf(".") + 1, queryIndex)) || "png";
+      ? tileURL.slice(tileURL.lastIndexOf(".") + 1)
+      : tileURL.slice(tileURL.lastIndexOf(".") + 1, queryIndex)) || "png";
 
   printLog(
     "info",
