@@ -91,9 +91,11 @@ export async function getData(url, timeout = 60000) {
     return Buffer.from(response.data);
   } catch (error) {
     if (error.response) {
-      throw new Error(`Failed with status code ${error.response.status}`);
+      throw new Error(
+        `Failed to request to ${url} with status code: ${error.response.status}`
+      );
     } else {
-      throw new Error(`Error during request: ${error.message}`);
+      throw new Error(`Failed to request to ${url}: ${error.message}`);
     }
   }
 }
@@ -260,7 +262,28 @@ export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
 }
 
 /**
- * Download all tiles in a specified bounding box and zoom levels
+ * Retry function to attempt downloading the file multiple times
+ * @param {function} fn - The function to attempt
+ * @param {number} retries - The number of retries allowed
+ * @returns {Promise<void>}
+ */
+async function retry(fn, retries) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      const remainingAttempts = retries - attempt;
+      if (remainingAttempts > 0) {
+        console.log(`${error}. ${remainingAttempts} retries remaining...`);
+      } else {
+        throw error;
+      }
+    }
+  }
+}
+
+/**
+ * Download all tile data files in a specified bounding box and zoom levels
  * @param {string} tileURL - Tile URL to download
  * @param {string} outputFolder - Folder to store downloaded tiles
  * @param {Array<number>} bbox - Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
@@ -269,7 +292,9 @@ export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
  * @param {"xyz"|"tms"} scheme - Tile scheme
  * @param {number} concurrency - Concurrency download
  * @param {boolean} overwrite - Overwrite exist file
+ * @param {number} retries - Number of retry attempts on failure
  * @param {number} timeout - Timeout in milliseconds
+ * @returns {Promise<void>}
  */
 export async function downloadTileDataFilesFromBBox(
   tileURL,
@@ -280,6 +305,7 @@ export async function downloadTileDataFilesFromBBox(
   scheme = "xyz",
   concurrency = os.cpus().length,
   overwrite = true,
+  retries = 5,
   timeout = 60000
 ) {
   const tiles = getTilesFromBBox(bbox, minZoom, maxZoom, scheme);
@@ -317,17 +343,46 @@ export async function downloadTileDataFilesFromBBox(
 
             const filePath = `${outputFolder}/${tile[0]}/${tile[1]}/${tile[2]}.${format}`;
 
-            await downloadFile(url, filePath, timeout);
+            await retry(() => downloadFile(url, filePath, timeout), retries);
           }
         } catch (error) {
-          printLog(
-            "error",
-            `Failed to download tile data file from ${url}: ${error}`
-          );
+          printLog("error", `Failed to download tile data file: ${error}`);
         }
       })
     )
   );
+}
+
+/**
+ * Download MBTiles file
+ * @param {string} url - The URL to download the file from
+ * @param {string} outputPath - The path where the file will be saved
+ * @param {boolean} overwrite - Overwrite exist file
+ * @param {number} retries - Number of retry attempts on failure
+ * @param {number} timeout - Timeout in milliseconds
+ * @returns {Promise<string>} - Returns the output path if successful
+ */
+export async function downloadMBTilesFile(
+  url,
+  outputPath,
+  overwrite = false,
+  retries = 5,
+  timeout = 60000
+) {
+  try {
+    if (overwrite === true && (await isExistFile()) === true) {
+      printLog(
+        "info",
+        `MBTiles file is exist. Skipping download MBTiles data from ${url}...`
+      );
+    } else {
+      printLog("info", `Downloading MBTiles file from ${url}...`);
+
+      await retry(() => downloadFile(url, outputPath, timeout), retries);
+    }
+  } catch (error) {
+    printLog("error", `Failed to download MBTiles file: ${error}`);
+  }
 }
 
 /**
@@ -914,9 +969,11 @@ export async function downloadFile(url, outputPath, timeout = 60000) {
     });
   } catch (error) {
     if (error.response) {
-      throw new Error(`Failed with status code ${error.response.status}`);
+      throw new Error(
+        `Failed to request to ${url} with status code ${error.response.status}`
+      );
     } else {
-      throw new Error(`Error during request: ${error.message}`);
+      throw new Error(`Failed to request to ${url}: ${error.message}`);
     }
   }
 }

@@ -13,10 +13,9 @@ import {
   openMBTiles,
 } from "./mbtiles.js";
 import {
+  downloadMBTilesFile,
   validateDataInfo,
   getRequestHost,
-  downloadFile,
-  isExistFile,
   gzipAsync,
   printLog,
 } from "./utils.js";
@@ -434,14 +433,13 @@ export const serve_data = {
             ) {
               filePath = `${config.paths.mbtiles}/${id}/${id}.mbtiles`;
 
-              if ((await isExistFile(filePath)) === false) {
-                printLog(
-                  "info",
-                  `MBTiles data "${id}" does not exist. Downloading from ${item.mbtiles}...`
-                );
-
-                await downloadFile(item.mbtiles, filePath);
-              }
+              await downloadMBTilesFile(
+                item.mbtiles,
+                filePath,
+                false,
+                5,
+                3600000 // 1 hour
+              );
 
               item.mbtiles = `${id}/${id}.mbtiles`;
             }

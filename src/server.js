@@ -52,18 +52,20 @@ export async function startServer(dataDir) {
         printLog("error", `HTTP server is stopped by: ${error}`);
       });
 
-    printLog("info", `Loading data...`);
-
     // await downloadTileDataFilesFromBBox(
     //   "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
     //   "datatest/xyzs/osm",
     //   [96, 4, 120, 28],
     //   0,
-    //   10,
+    //   2,
     //   "xyz",
     //   32,
-    //   false
+    //   false,
+    //   5,
+    //   60000 // 1 min
     // );
+
+    printLog("info", `Loading data...`);
 
     Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()])
       .then(() => serve_style.add())
