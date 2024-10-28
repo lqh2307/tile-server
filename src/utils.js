@@ -304,6 +304,7 @@ async function retry(fn, retries, after = 0) {
  * Download all tile data files in a specified bounding box and zoom levels
  * @param {string} tileURL - Tile URL to download
  * @param {string} outputFolder - Folder to store downloaded tiles
+ * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format - Tile format
  * @param {Array<number>} bbox - Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {number} minZoom - Minimum zoom level
  * @param {number} maxZoom - Maximum zoom level
@@ -317,6 +318,7 @@ async function retry(fn, retries, after = 0) {
 export async function downloadTileDataFilesFromBBox(
   tileURL,
   outputFolder,
+  format,
   bbox = [-180, -85.051129, 180, 85.051129],
   minZoom = 0,
   maxZoom = 22,
@@ -328,11 +330,6 @@ export async function downloadTileDataFilesFromBBox(
 ) {
   const tiles = getTilesFromBBox(bbox, minZoom, maxZoom, scheme);
   const limitConcurrencyDownload = pLimit(concurrency);
-  const queryIndex = tileURL.indexOf("?");
-  const format =
-    (queryIndex === -1
-      ? tileURL.slice(tileURL.lastIndexOf(".") + 1)
-      : tileURL.slice(tileURL.lastIndexOf(".") + 1, queryIndex)) || "png";
 
   printLog(
     "info",
@@ -360,7 +357,10 @@ export async function downloadTileDataFilesFromBBox(
           } else {
             printLog("info", `Downloading tile data file from ${url}...`);
 
-            await retry(() => downloadFile(url, filePath, false, timeout), retries);
+            await retry(
+              () => downloadFile(url, filePath, false, timeout),
+              retries
+            );
           }
         } catch (error) {
           printLog("error", `Failed to download tile data file: ${error}`);

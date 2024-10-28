@@ -11,7 +11,7 @@ import os from "os";
 /* Setup commands */
 program
   .description("========== tile-server startup options ==========")
-  .usage("tile-server [options]")
+  .usage("tile-server server [options]")
   .option("-n, --num_processes <num>", "Number of processes", "1")
   .option(
     "-r, --restart_interval <num>",
@@ -27,38 +27,39 @@ program
   .showHelpAfterError()
   .parse(process.argv);
 
-/* Load args */
-const argOpts = program.opts();
+async function startClusterServer() {
+  /* Load args */
+  const argOpts = program.opts();
 
-const opts = {
-  numProcesses: Number(argOpts.num_processes),
-  killInterval: Number(argOpts.kill_interval),
-  restartInterval: Number(argOpts.restart_interval),
-  dataDir: argOpts.data_dir,
-};
+  const opts = {
+    numProcesses: Number(argOpts.num_processes),
+    killInterval: Number(argOpts.kill_interval),
+    restartInterval: Number(argOpts.restart_interval),
+    dataDir: argOpts.data_dir,
+  };
 
-/* Start server */
-if (cluster.isPrimary === true) {
-  /* Setup envs & events */
-  process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length); // For libuv
-  process.env.MAIN_PID = process.pid; // Store main PID in other processes
+  /* Start server */
+  if (cluster.isPrimary === true) {
+    /* Setup envs & events */
+    process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length); // For libuv
+    process.env.MAIN_PID = process.pid; // Store main PID in other processes
 
-  process.on("SIGINT", () => {
-    printLog("info", `Received "SIGINT" signal. Killing server...`);
+    process.on("SIGINT", () => {
+      printLog("info", `Received "SIGINT" signal. Killing server...`);
 
-    process.exit(0);
-  });
+      process.exit(0);
+    });
 
-  process.on("SIGTERM", () => {
-    printLog("info", `Received "SIGTERM" signal. Restaring server...`);
+    process.on("SIGTERM", () => {
+      printLog("info", `Received "SIGTERM" signal. Restaring server...`);
 
-    process.exit(1);
-  });
+      process.exit(1);
+    });
 
-  /* Fork servers */
-  printLog(
-    "info",
-    `
+    /* Fork servers */
+    printLog(
+      "info",
+      `
 
                        _oo0oo_
                       o8888888o
@@ -81,61 +82,64 @@ if (cluster.isPrimary === true) {
             Buddha bless, server immortal
           Starting server with ${opts.numProcesses} processes
 `
-  );
+    );
 
-  if (opts.numProcesses > 1) {
-    for (let i = 0; i < opts.numProcesses; i++) {
-      cluster.fork();
+    if (opts.numProcesses > 1) {
+      for (let i = 0; i < opts.numProcesses; i++) {
+        cluster.fork();
+      }
+
+      cluster.on("exit", (worker, code, signal) => {
+        printLog(
+          "info",
+          `Process with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
+        );
+
+        cluster.fork();
+      });
+    } else {
+      startServer(opts.dataDir);
     }
 
-    cluster.on("exit", (worker, code, signal) => {
+    /* Setup watch config file change */
+    if (opts.killInterval > 0) {
       printLog(
         "info",
-        `Process with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
+        `Watch config file changes interval ${opts.killInterval}ms to kill server`
       );
 
-      cluster.fork();
-    });
+      chokidar
+        .watch(`${opts.dataDir}/config.json`, {
+          usePolling: true,
+          awaitWriteFinish: true,
+          interval: opts.killInterval,
+        })
+        .on("change", () => {
+          printLog("info", `Config file has changed. Killing server...`);
+
+          process.exit(0);
+        });
+    } else if (opts.restartInterval > 0) {
+      printLog(
+        "info",
+        `Watch config file changes interval ${opts.restartInterval}ms to restart server`
+      );
+
+      chokidar
+        .watch(`${opts.dataDir}/config.json`, {
+          usePolling: true,
+          awaitWriteFinish: true,
+          interval: opts.restartInterval,
+        })
+        .on("change", () => {
+          printLog("info", `Config file has changed. Restaring server...`);
+
+          process.exit(1);
+        });
+    }
   } else {
     startServer(opts.dataDir);
   }
-
-  /* Setup watch config file change */
-  if (opts.killInterval > 0) {
-    printLog(
-      "info",
-      `Watch config file changes interval ${opts.killInterval}ms to kill server`
-    );
-
-    chokidar
-      .watch(`${opts.dataDir}/config.json`, {
-        usePolling: true,
-        awaitWriteFinish: true,
-        interval: opts.killInterval,
-      })
-      .on("change", () => {
-        printLog("info", `Config file has changed. Killing server...`);
-
-        process.exit(0);
-      });
-  } else if (opts.restartInterval > 0) {
-    printLog(
-      "info",
-      `Watch config file changes interval ${opts.restartInterval}ms to restart server`
-    );
-
-    chokidar
-      .watch(`${opts.dataDir}/config.json`, {
-        usePolling: true,
-        awaitWriteFinish: true,
-        interval: opts.restartInterval,
-      })
-      .on("change", () => {
-        printLog("info", `Config file has changed. Restaring server...`);
-
-        process.exit(1);
-      });
-  }
-} else {
-  startServer(opts.dataDir);
 }
+
+startClusterServer();

@@ -148,3 +148,62 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
   }
 }
 ```
+
+## Example seed.json
+
+```json
+{
+  "styles": {
+    "vietnam": {
+      "url": "http://localhost:8080/styles/vietnam/style.json",
+      "directory": "vietnam"
+    },
+    "cambodia": {
+      "url": "http://localhost:8080/styles/cambodia/style.json",
+      "directory": "cambodia"
+    },
+    "zurich_switzerland": {
+      "url": "http://localhost:8080/styles/zurich_switzerland/style.json",
+      "directory": "zurich_switzerland"
+    }
+  },
+  "datas": {
+    "asia_vietnam": {
+      "url": "http://localhost:8080/datas/asia_vietnam/{z}/{x}/{y}.png",
+      "format": "png",
+      "bbox": [96, 4, 120, 28],
+      "min_zoom": 0,
+      "max_zoom": 10,
+      "xyz": {
+        "directory": "asia_vietnam"
+      }
+    },
+    "asia_cambodia": {
+      "mbtiles": "http://localhost:8080/datas/asia_cambodia/{z}/{x}/{y}.pbf",
+      "format": "pbf",
+      "bbox": [96, 4, 120, 28],
+      "min_zoom": 0,
+      "max_zoom": 10,
+      "xyz": {
+        "directory":"asia_cambodia"
+      }
+    },
+  },
+  "sprites": {
+    "liberty": {
+      "url": "http://localhost:8080/sprites/liberty/sprite"
+    },
+    "basic": {
+      "url": "http://localhost:8080/sprites/basic/sprite"
+    }
+  },
+  "fonts": {
+    "Open Sans Regular": {
+      "url": "http://localhost:8080/fonts/Open Sans Regular/{range}.pbf"
+    },
+    "Times New Roman": {
+      "url": "http://localhost:8080/fonts/Times New Roman/{range}.pbf"
+    }
+  }
+}
+```

@@ -424,7 +424,7 @@ export const serve_data = {
           const item = config.datas[id];
           const dataInfo = {};
 
-          if (item.mbtiles) {
+          if (item.mbtiles !== undefined) {
             let filePath = `${config.paths.mbtiles}/${item.mbtiles}`;
 
             if (
@@ -455,7 +455,7 @@ export const serve_data = {
             dataInfo.sourceType = "mbtiles";
             dataInfo.source = await openMBTiles(filePath);
             dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
-          } else if (item.pmtiles) {
+          } else if (item.pmtiles !== undefined) {
             let filePath = `${config.paths.pmtiles}/${item.pmtiles}`;
 
             if (
@@ -468,7 +468,7 @@ export const serve_data = {
             dataInfo.sourceType = "pmtiles";
             dataInfo.source = openPMTiles(filePath);
             dataInfo.tileJSON = await getPMTilesInfos(dataInfo.source);
-          } else if (item.xyz) {
+          } else if (item.xyz !== undefined) {
             const dirPath = `${config.paths.xyzs}/${item.xyz}`;
 
             dataInfo.sourceType = "xyz";
