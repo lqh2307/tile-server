@@ -1,7 +1,6 @@
 "use strict";
 
 import { downloadTileDataFilesFromBBox, printLog } from "./utils.js";
-import { printLog } from "./utils.js";
 import { program } from "commander";
 import fs from "node:fs";
 
@@ -61,7 +60,7 @@ export async function startSeedData() {
 
     /* Read seed.json file */
     const seedData = JSON.parse(
-      await fsPromise.readFile(`${dataDir}/config.json`, "utf8")
+      fs.readFileSync(`${opts.dataDir}/seed.json`, "utf8")
     );
 
     for (const id in seedData.datas) {
@@ -88,7 +87,7 @@ export async function startSeedData() {
           10,
           false,
           5,
-          60000 // 1 min
+          seedData.datas[id].timeout // 1 min
         );
       } catch (error) {
         printLog("error", `Failed seed data id ${id}: ${error}. Skipping...`);
