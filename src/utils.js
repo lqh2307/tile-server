@@ -334,16 +334,16 @@ export async function downloadTileDataFilesFromBBox(
           `/${tile[0]}/${tile[1]}/${tile[2]}`
         );
 
+        const filePath = `${outputFolder}/${tile[0]}/${tile[1]}/${tile[2]}.${format}`;
+
         try {
-          if (overwrite === false && (await isExistFile()) === true) {
+          if (overwrite === false && (await isExistFile(filePath)) === true) {
             printLog(
               "info",
               `Tile data file is exist. Skipping download tile data file from ${url}...`
             );
           } else {
             printLog("info", `Downloading tile data file from ${url}...`);
-
-            const filePath = `${outputFolder}/${tile[0]}/${tile[1]}/${tile[2]}.${format}`;
 
             await retry(() => downloadFile(url, filePath, timeout), retries);
           }
@@ -372,7 +372,7 @@ export async function downloadMBTilesFile(
   timeout = 60000
 ) {
   try {
-    if (overwrite === false && (await isExistFile()) === true) {
+    if (overwrite === false && (await isExistFile(outputPath)) === true) {
       printLog(
         "info",
         `MBTiles file is exist. Skipping download MBTiles data from ${url}...`
