@@ -131,8 +131,11 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
     "zurich_switzerland": {
       "mbtiles": "https://github.com/acalcutt/tileserver-gl/releases/download/test_data/zurich_switzerland.mbtiles"
     },
-    "osm": {
-      "xyz": "osm"
+    "osm-raster": {
+      "xyz": "osm-raster"
+    },
+    "osm-vector": {
+      "xyz": "osm-vector"
     }
   },
   "sprites": {

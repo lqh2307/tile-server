@@ -262,12 +262,24 @@ export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
 }
 
 /**
+ * Delay function to wait for a specified time
+ * @param {number} ms - Time to wait in milliseconds
+ * @returns {Promise<void>}
+ */
+function delay(ms) {
+  if (ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+}
+
+/**
  * Retry function to attempt downloading the file multiple times
  * @param {function} fn - The function to attempt
  * @param {number} retries - The number of retries allowed
+ * @param {number} after - Delay in milliseconds between each retry
  * @returns {Promise<void>}
  */
-async function retry(fn, retries) {
+async function retry(fn, retries, after = 0) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       return await fn();
@@ -276,8 +288,10 @@ async function retry(fn, retries) {
       if (remainingAttempts > 0) {
         printLog(
           "warning",
-          `${error}. ${remainingAttempts} retries remaining...`
+          `${error}. ${remainingAttempts} retries remaining - After ${after} ms...`
         );
+
+        await delay(after);
       } else {
         throw error;
       }
