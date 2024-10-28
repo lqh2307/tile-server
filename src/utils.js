@@ -14,6 +14,7 @@ import axios from "axios";
 import sharp from "sharp";
 import fs from "node:fs";
 import zlib from "zlib";
+import { exec } from "child_process";
 import util from "util";
 import os from "os";
 
@@ -363,6 +364,8 @@ export async function downloadTileDataFilesFromBBox(
           }
         } catch (error) {
           printLog("error", `Failed to download tile data file: ${error}`);
+
+          exec(`rm -rf ${path.dirname(filePath)}`);
         }
       })
     )
@@ -946,24 +949,28 @@ export async function validateSprite(spriteDirPath) {
 }
 
 /**
- * Download file using stream
+ * Download file
  * @param {string} url - The URL to download the file from
  * @param {string} outputPath - The path where the file will be saved
+ * @param {boolean} useStream - Whether to use stream for downloading
  * @param {number} timeout - Timeout in milliseconds
- * @returns {Promise<string>} - Returns the output path if successful
+ * @returns {Promise<void>}
  */
-export async function downloadFile(url, outputPath, timeout = 60000) {
+export async function downloadFile(
+  url,
+  outputPath,
+  useStream = false,
+  timeout = 60000
+) {
   try {
     await fsPromise.mkdir(path.dirname(outputPath), {
       recursive: true,
     });
 
-    const writer = fs.createWriteStream(outputPath);
-
     const response = await axios({
       url,
+      responseType: useStream === true ? "stream" : "arraybuffer",
       method: "GET",
-      responseType: "stream",
       timeout: timeout,
       headers: {
         "User-Agent": "Tile Server",
@@ -976,13 +983,20 @@ export async function downloadFile(url, outputPath, timeout = 60000) {
       }),
     });
 
-    response.data.pipe(writer);
+    if (response.status === 204) {
+      throw new Error("No content");
+    }
 
-    return new Promise((resolve, reject) => {
-      writer
-        .on("finish", () => resolve(outputPath))
-        .on("error", (error) => reject(error));
-    });
+    if (useStream === true) {
+      const writer = fs.createWriteStream(outputPath);
+      response.data.pipe(writer);
+
+      return new Promise((resolve, reject) => {
+        writer.on("finish", resolve).on("error", reject);
+      });
+    } else {
+      await fsPromise.writeFile(outputPath, response.data);
+    }
   } catch (error) {
     if (error.response) {
       throw new Error(
