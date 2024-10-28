@@ -283,7 +283,7 @@ export async function downloadTileDataFilesFromBBox(
 ) {
   const tiles = getTilesFromBBox(bbox, minZoom, maxZoom, scheme);
   const limitConcurrencyDownload = pLimit(concurrency);
-  const queryIndex = url.indexOf("?");
+  const queryIndex = tileURL.indexOf("?");
   const format =
     (queryIndex === -1
       ? tileURL.slice(tileURL.lastIndexOf(".") + 1)
