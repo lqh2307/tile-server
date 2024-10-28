@@ -63,7 +63,7 @@ npm install -g yarn
 
 ```bash
 NODE_ENV=production yarn install; \
-npm run start -- -d path_to_data_folder
+yarn run start -- -d path_to_data_folder
 ```
 
 ### Run with docker
