@@ -285,15 +285,17 @@ export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
  * @param {number} maxZoom - Maximum zoom level
  * @param {"xyz"|"tms"} scheme - Tile scheme
  * @param {number} concurrency - Concurrency download
+ * @param {boolean} overwrite - Overwrite exist file
  */
 export async function downloadTileDataFilesFromBBox(
   tileURL,
   outputFolder,
-  bbox,
-  minZoom,
-  maxZoom,
+  bbox = [-180, -85.051129, 180, 85.051129],
+  minZoom = 0,
+  maxZoom = 22,
   scheme = "xyz",
-  concurrency = os.cpus().length
+  concurrency = os.cpus().length,
+  overwrite = true
 ) {
   const tiles = getTilesFromBBox(bbox, minZoom, maxZoom, scheme);
   const limitConcurrencyDownload = pLimit(concurrency);
@@ -320,12 +322,19 @@ export async function downloadTileDataFilesFromBBox(
             format = await detectFormatAndHeaders(await getData(url)).format;
           }
 
-          printLog("info", `Downloading tile data file from ${url}...`);
+          // Download file
+          const filePath = `${outputFolder}/${tile[0]}/${tile[1]}/${tile[2]}.${format}`;
 
-          await downloadFile(
-            url,
-            `${outputFolder}/${tile[0]}/${tile[1]}/${tile[2]}.${format}`
-          );
+          if (overwrite === true && (await isExistFile()) === true) {
+            printLog(
+              "info",
+              `Tile data file is exist. Skipping download tile data file from ${url}...`
+            );
+          } else {
+            printLog("info", `Downloading tile data file from ${url}...`);
+
+            await downloadFile(url, filePath);
+          }
         } catch (error) {
           printLog(
             "error",
@@ -447,6 +456,36 @@ export async function processImage(data, scale, compression, tileSize, z) {
         compressionLevel: compression,
       })
       .toBuffer();
+  }
+}
+
+/**
+ * Check folder is exist?
+ * @param {string} dirPath
+ * @returns {Promise<boolean>}
+ */
+export async function isExistFolder(dirPath) {
+  try {
+    const stat = await fsPromise.stat(dirPath);
+
+    return stat.isDirectory();
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Check file is exist?
+ * @param {string} filePath
+ * @returns {Promise<boolean>}
+ */
+export async function isExistFile(filePath) {
+  try {
+    const stat = await fsPromise.stat(filePath);
+
+    return stat.isFile() === true && stat.size > 0;
+  } catch (error) {
+    return false;
   }
 }
 

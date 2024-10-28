@@ -3,7 +3,6 @@
 import { getPMTilesInfos, getPMTilesTile, openPMTiles } from "./pmtiles.js";
 import { getXYZInfos, getXYZTile } from "./xyz.js";
 import { StatusCodes } from "http-status-codes";
-import fsPromise from "node:fs/promises";
 import { config } from "./config.js";
 import express from "express";
 import {
@@ -17,6 +16,7 @@ import {
   validateDataInfo,
   getRequestHost,
   downloadFile,
+  isExistFile,
   gzipAsync,
   printLog,
 } from "./utils.js";
@@ -434,21 +434,10 @@ export const serve_data = {
             ) {
               filePath = `${config.paths.mbtiles}/${id}/${id}.mbtiles`;
 
-              try {
-                const stat = await fsPromise.stat(filePath);
-
-                if (stat.isFile() === false) {
-                  printLog(
-                    "info",
-                    `MBTiles data "${id}" does not exist. Downloading...`
-                  );
-
-                  await downloadFile(item.mbtiles, filePath);
-                }
-              } catch {
+              if ((await isExistFile(filePath)) === false) {
                 printLog(
                   "info",
-                  `MBTiles data "${id}" does not exist. Downloading...`
+                  `MBTiles data "${id}" does not exist. Downloading from ${item.mbtiles}...`
                 );
 
                 await downloadFile(item.mbtiles, filePath);

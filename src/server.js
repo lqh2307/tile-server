@@ -61,7 +61,8 @@ export async function startServer(dataDir) {
     //   0,
     //   10,
     //   "xyz",
-    //   32
+    //   32,
+    //   false
     // );
 
     Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()])
