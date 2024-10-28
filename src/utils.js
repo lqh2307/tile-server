@@ -283,7 +283,11 @@ export async function downloadTileDataFilesFromBBox(
 ) {
   const tiles = getTilesFromBBox(bbox, minZoom, maxZoom, scheme);
   const limitConcurrencyDownload = pLimit(concurrency);
-  let format = "png";
+  const queryIndex = url.indexOf("?");
+  const format =
+    (queryIndex === -1
+      ? url.slice(url.lastIndexOf(".") + 1)
+      : url.slice(url.lastIndexOf(".") + 1, queryIndex)) || "png";
 
   printLog(
     "info",
@@ -301,13 +305,6 @@ export async function downloadTileDataFilesFromBBox(
         );
 
         try {
-          // Get format from data
-          if (idx === 0) {
-            const data = await getData(url, timeout);
-
-            format = await detectFormatAndHeaders(data).format;
-          }
-
           // Download file
           if (overwrite === true && (await isExistFile()) === true) {
             printLog(

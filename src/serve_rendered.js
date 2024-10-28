@@ -691,10 +691,14 @@ export const serve_rendered = {
                   `Failed to get data from "${url}": ${error}. Serving empty tile...`
                 );
 
+                const queryIndex = url.indexOf("?");
+                const format =
+                  queryIndex === -1
+                    ? url.slice(url.lastIndexOf(".") + 1)
+                    : url.slice(url.lastIndexOf(".") + 1, queryIndex);
+
                 callback(null, {
-                  data:
-                    emptyDatas[url.slice(url.lastIndexOf(".") + 1)] ||
-                    emptyDatas.other,
+                  data: emptyDatas[format] || emptyDatas.other,
                 });
               }
             }
