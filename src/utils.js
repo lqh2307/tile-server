@@ -887,6 +887,8 @@ export async function downloadFile(url, outputPath, timeout = 60000) {
       recursive: true,
     });
 
+    const writer = fs.createWriteStream(outputPath);
+
     const response = await axios({
       url,
       method: "GET",
@@ -903,7 +905,6 @@ export async function downloadFile(url, outputPath, timeout = 60000) {
       }),
     });
 
-    const writer = fs.createWriteStream(outputPath);
     response.data.pipe(writer);
 
     return new Promise((resolve, reject) => {
@@ -912,6 +913,11 @@ export async function downloadFile(url, outputPath, timeout = 60000) {
         .on("error", (error) => reject(error));
     });
   } catch (error) {
+    fsPromise.rm(path.dirname(outputPath), {
+      recursive: true,
+      force: true,
+    });
+
     if (error.response) {
       throw new Error(`Failed with status code ${error.response.status}`);
     } else {
