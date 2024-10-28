@@ -297,7 +297,7 @@ export async function downloadTileDataFilesFromBBox(
   );
 
   await Promise.all(
-    tiles.map((tile, idx) =>
+    tiles.map((tile) =>
       limitConcurrencyDownload(async () => {
         const url = tileURL.replace(
           "/{z}/{x}/{y}",
