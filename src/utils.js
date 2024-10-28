@@ -274,7 +274,10 @@ async function retry(fn, retries) {
     } catch (error) {
       const remainingAttempts = retries - attempt;
       if (remainingAttempts > 0) {
-        printLog("warning", `${error}. ${remainingAttempts} retries remaining...`);
+        printLog(
+          "warning",
+          `${error}. ${remainingAttempts} retries remaining...`
+        );
       } else {
         throw error;
       }
@@ -332,8 +335,7 @@ export async function downloadTileDataFilesFromBBox(
         );
 
         try {
-          // Download file
-          if (overwrite === true && (await isExistFile()) === true) {
+          if (overwrite === false && (await isExistFile()) === true) {
             printLog(
               "info",
               `Tile data file is exist. Skipping download tile data file from ${url}...`
@@ -370,7 +372,7 @@ export async function downloadMBTilesFile(
   timeout = 60000
 ) {
   try {
-    if (overwrite === true && (await isExistFile()) === true) {
+    if (overwrite === false && (await isExistFile()) === true) {
       printLog(
         "info",
         `MBTiles file is exist. Skipping download MBTiles data from ${url}...`
@@ -382,6 +384,8 @@ export async function downloadMBTilesFile(
     }
   } catch (error) {
     printLog("error", `Failed to download MBTiles file: ${error}`);
+
+    throw error;
   }
 }
 
