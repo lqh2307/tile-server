@@ -383,8 +383,6 @@ export async function downloadMBTilesFile(
       await retry(() => downloadFile(url, outputPath, timeout), retries);
     }
   } catch (error) {
-    printLog("error", `Failed to download MBTiles file: ${error}`);
-
     throw error;
   }
 }
