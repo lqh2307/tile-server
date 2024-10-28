@@ -274,7 +274,7 @@ async function retry(fn, retries) {
     } catch (error) {
       const remainingAttempts = retries - attempt;
       if (remainingAttempts > 0) {
-        console.log(`${error}. ${remainingAttempts} retries remaining...`);
+        printLog("info", `${error}. ${remainingAttempts} retries remaining...`);
       } else {
         throw error;
       }
