@@ -12,7 +12,6 @@ import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 import {
-  // downloadTileDataFilesFromBBox,
   checkReadyMiddleware,
   printLog,
 } from "./utils.js";
@@ -51,19 +50,6 @@ export async function startServer(dataDir) {
       .on("error", (error) => {
         printLog("error", `HTTP server is stopped by: ${error}`);
       });
-
-    // await downloadTileDataFilesFromBBox(
-    //   "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-    //   "datatest/xyzs/osm",
-    //   [96, 4, 120, 28],
-    //   0,
-    //   2,
-    //   "xyz",
-    //   32,
-    //   false,
-    //   5,
-    //   60000 // 1 min
-    // );
 
     printLog("info", `Loading data...`);
 

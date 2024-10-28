@@ -6,7 +6,8 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "start": "./entrypoint.sh"
+    "server": "./server-entrypoint.sh",
+    "seed": "./seed-entrypoint.sh"
   },
   "dependencies": {
     "@maplibre/maplibre-gl-style-spec": "21.0.0",

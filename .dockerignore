@@ -3,4 +3,5 @@
 !data
 !public
 !package.json
-!entrypoint.sh
+!server-entrypoint.sh
+!seed-entrypoint.sh
