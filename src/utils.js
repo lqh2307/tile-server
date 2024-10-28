@@ -360,7 +360,7 @@ export async function downloadTileDataFilesFromBBox(
           } else {
             printLog("info", `Downloading tile data file from ${url}...`);
 
-            await retry(() => downloadFile(url, filePath, timeout), retries);
+            await retry(() => downloadFile(url, filePath, false, timeout), retries);
           }
         } catch (error) {
           printLog("error", `Failed to download tile data file: ${error}`);
@@ -397,7 +397,7 @@ export async function downloadMBTilesFile(
     } else {
       printLog("info", `Downloading MBTiles file from ${url}...`);
 
-      await retry(() => downloadFile(url, outputPath, timeout), retries);
+      await retry(() => downloadFile(url, outputPath, true, timeout), retries);
     }
   } catch (error) {
     throw error;
