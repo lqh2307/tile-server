@@ -23,7 +23,7 @@ const protoMessage = protobuf(fs.readFileSync("public/protos/glyphs.proto"));
  * Returns a re-encoded PBF with the combined
  * font faces, composited using array order
  * to determine glyph priority.
- * @param {array} buffers An array of SDF PBFs.
+ * @param {array} buffers An array of SDF PBFs
  * @param {string} fontstack
  */
 function combine(buffers, fontstack) {
@@ -66,53 +66,34 @@ function combine(buffers, fontstack) {
 }
 
 /**
- * Get data
- * @param {string} url
+ * Get data from a URL
+ * @param {string} url - The URL to fetch data from
+ * @param {number} timeout - Timeout in milliseconds
  * @returns {Promise<Buffer>}
  */
-export async function getData(url) {
-  return new Promise((resolve, reject) => {
-    const protocol = url.startsWith("https://") === true ? https : http;
-
-    const req = protocol.get(
-      url,
-      {
-        agent: false,
-        headers: {
-          "User-Agent": "Tile Server",
-        },
+export async function getData(url, timeout = 60000) {
+  try {
+    const response = await axios.get(url, {
+      timeout: timeout,
+      headers: {
+        "User-Agent": "Tile Server",
       },
-      (res) => {
-        if (
-          res.statusCode >= 300 &&
-          res.statusCode < 400 &&
-          res.headers.location !== undefined
-        ) {
-          return getData(res.headers.location).then(resolve).catch(reject);
-        }
-
-        const chunks = [];
-
-        res.on("data", (chunk) => {
-          chunks.push(chunk);
-        });
-
-        res.on("end", () => {
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            resolve(Buffer.concat(chunks));
-          } else {
-            reject(new Error(`Failed with status code ${res.statusCode}`));
-          }
-        });
-      }
-    );
-
-    req.on("error", (err) => {
-      reject(err);
+      httpAgent: new http.Agent({
+        keepAlive: false,
+      }),
+      httpsAgent: new https.Agent({
+        keepAlive: false,
+      }),
     });
 
-    req.end();
-  });
+    return Buffer.from(response.data);
+  } catch (error) {
+    if (error.response) {
+      throw new Error(`Failed with status code ${error.response.status}`);
+    } else {
+      throw new Error(`Error during request: ${error.message}`);
+    }
+  }
 }
 
 /**
@@ -286,6 +267,7 @@ export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
  * @param {"xyz"|"tms"} scheme - Tile scheme
  * @param {number} concurrency - Concurrency download
  * @param {boolean} overwrite - Overwrite exist file
+ * @param {number} timeout - Timeout in milliseconds
  */
 export async function downloadTileDataFilesFromBBox(
   tileURL,
@@ -295,7 +277,8 @@ export async function downloadTileDataFilesFromBBox(
   maxZoom = 22,
   scheme = "xyz",
   concurrency = os.cpus().length,
-  overwrite = true
+  overwrite = true,
+  timeout = 60000
 ) {
   const tiles = getTilesFromBBox(bbox, minZoom, maxZoom, scheme);
   const limitConcurrencyDownload = pLimit(concurrency);
@@ -319,7 +302,9 @@ export async function downloadTileDataFilesFromBBox(
         try {
           // Get format from data
           if (idx === 0) {
-            format = await detectFormatAndHeaders(await getData(url)).format;
+            const data = await getData(url, timeout);
+
+            format = await detectFormatAndHeaders(data).format;
           }
 
           // Download file
@@ -333,7 +318,7 @@ export async function downloadTileDataFilesFromBBox(
           } else {
             printLog("info", `Downloading tile data file from ${url}...`);
 
-            await downloadFile(url, filePath);
+            await downloadFile(url, filePath, timeout);
           }
         } catch (error) {
           printLog(
@@ -891,60 +876,49 @@ export async function validateSprite(spriteDirPath) {
 }
 
 /**
- * Download file using HTTP or HTTPS
+ * Download file using stream
  * @param {string} url - The URL to download the file from
  * @param {string} outputPath - The path where the file will be saved
+ * @param {number} timeout - Timeout in milliseconds
  * @returns {Promise<string>} - Returns the output path if successful
  */
-export async function downloadFile(url, outputPath) {
-  await fsPromise.mkdir(path.dirname(outputPath), {
-    recursive: true,
-  });
-
-  const protocol = url.startsWith("https://") === true ? https : http;
-
-  return new Promise((resolve, reject) => {
-    const request = protocol.get(
-      url,
-      {
-        agent: false,
-        headers: {
-          "User-Agent": "Tile Server",
-        },
-      },
-      (response) => {
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          const writer = fs.createWriteStream(outputPath);
-
-          response.pipe(writer);
-
-          writer
-            .on("finish", () => {
-              resolve(outputPath);
-            })
-            .on("error", (error) => {
-              reject(error);
-            });
-        } else if (
-          response.statusCode >= 300 &&
-          response.statusCode < 400 &&
-          response.headers.location !== undefined
-        ) {
-          return downloadFile(response.headers.location, outputPath)
-            .then(resolve)
-            .catch(reject);
-        } else {
-          reject(new Error(`Failed with status code ${response.statusCode}`));
-        }
-      }
-    );
-
-    request.on("error", (error) => {
-      reject(error);
+export async function downloadFile(url, outputPath, timeout = 60000) {
+  try {
+    await fsPromise.mkdir(path.dirname(outputPath), {
+      recursive: true,
     });
 
-    request.end();
-  });
+    const response = await axios({
+      url,
+      method: "GET",
+      responseType: "stream",
+      timeout: timeout,
+      headers: {
+        "User-Agent": "Tile Server",
+      },
+      httpAgent: new http.Agent({
+        keepAlive: false,
+      }),
+      httpsAgent: new https.Agent({
+        keepAlive: false,
+      }),
+    });
+
+    const writer = fs.createWriteStream(outputPath);
+    response.data.pipe(writer);
+
+    return new Promise((resolve, reject) => {
+      writer
+        .on("finish", () => resolve(outputPath))
+        .on("error", (error) => reject(error));
+    });
+  } catch (error) {
+    if (error.response) {
+      throw new Error(`Failed with status code ${error.response.status}`);
+    } else {
+      throw new Error(`Error during request: ${error.message}`);
+    }
+  }
 }
 
 /**
