@@ -173,9 +173,9 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "url": "http://localhost:8080/datas/asia_vietnam/{z}/{x}/{y}.png",
       "format": "png",
       "bbox": [96, 4, 120, 28],
-      "min_zoom": 0,
-      "max_zoom": 10,
-      "refresh_before": {
+      "minZoom": 0,
+      "maxZoom": 10,
+      "refreshBefore": {
         "time": "2024-10-10T00:00:00"
       },
       "timeout": 60000,
@@ -189,9 +189,9 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "mbtiles": "http://localhost:8080/datas/asia_cambodia/{z}/{x}/{y}.pbf",
       "format": "pbf",
       "bbox": [96, 4, 120, 28],
-      "min_zoom": 0,
-      "max_zoom": 10,
-      "refresh_before": {
+      "minZoom": 0,
+      "maxZoom": 10,
+      "refreshBefore": {
         "time": "2024-10-10T00:00:00"
       },
       "timeout": 60000,
