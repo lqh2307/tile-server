@@ -69,8 +69,8 @@ function combine(buffers, fontstack) {
 
 /**
  * Get data from a URL
- * @param {string} url - The URL to fetch data from
- * @param {number} timeout - Timeout in milliseconds
+ * @param {string} url The URL to fetch data from
+ * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<object>}
  */
 export async function getData(url, timeout = 60000) {
@@ -129,11 +129,11 @@ export function checkReadyMiddleware() {
 
 /**
  * Get xyz tile indices from longitude, latitude, and zoom level (tile size = 256)
- * @param {number} lon - Longitude in EPSG:4326
- * @param {number} lat - Latitude in EPSG:4326
- * @param {number} z - Zoom level
- * @param {"xyz"|"tms"} scheme - Tile scheme
- * @returns {[number, number, number]} - Tile indices [x, y, z]
+ * @param {number} lon Longitude in EPSG:4326
+ * @param {number} lat Latitude in EPSG:4326
+ * @param {number} z Zoom level
+ * @param {"xyz"|"tms"} scheme Tile scheme
+ * @returns {Array<number>} Tile indices [x, y, z]
  */
 export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
   const size = 256 * Math.pow(2, z);
@@ -172,12 +172,12 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
 
 /**
  * Get longitude, latitude from tile indices x, y, and zoom level (tile size = 256)
- * @param {number} x - X tile index
- * @param {number} y - Y tile index
- * @param {number} z - Zoom level
- * @param {"center"|"topLeft"|"bottomRight"} position - Tile position: "center", "topLeft", or "bottomRight"
- * @param {"xyz"|"tms"} scheme - Tile scheme
- * @returns {[number, number]} - Longitude, latitude in EPSG:4326
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @param {number} z Zoom level
+ * @param {"center"|"topLeft"|"bottomRight"} position Tile position: "center", "topLeft", or "bottomRight"
+ * @param {"xyz"|"tms"} scheme Tile scheme
+ * @returns {Array<number>} [longitude, latitude] in EPSG:4326
  */
 export function getLonLatFromXYZ(
   x,
@@ -214,11 +214,11 @@ export function getLonLatFromXYZ(
 
 /**
  * Get all tiles intersecting a bounding box across multiple zoom levels
- * @param {number[]} bbox - [west, south, east, north] in EPSG:4326
- * @param {number} minZoom - Minimum zoom level
- * @param {number} maxZoom - Maximum zoom level
- * @param {"xyz"|"tms"} [scheme="xyz"] - Tile scheme
- * @returns {Array<[number, number, number]>} - List of tiles [z, x, y] intersecting the bbox at each zoom level
+ * @param {number[]} bbox [west, south, east, north] in EPSG:4326
+ * @param {number} minZoom Minimum zoom level
+ * @param {number} maxZoom Maximum zoom level
+ * @param {"xyz"|"tms"} [scheme="xyz"] Tile scheme
+ * @returns {Array<Array<number>} List of tiles [z, x, y] intersecting the bbox at each zoom level
  */
 export function getTilesFromBBox(
   bbox = [-180, -85.051129, 180, 85.051129],
@@ -244,13 +244,13 @@ export function getTilesFromBBox(
 
 /**
  * Convert tile indices to a bounding box that intersects the outer tiles
- * @param {number} xMin - Minimum x tile index
- * @param {number} yMin - Minimum y tile index
- * @param {number} xMax - Maximum x tile index
- * @param {number} yMax - Maximum y tile index
- * @param {number} z - Zoom level
- * @param {"xyz"|"tms"} scheme - Tile scheme
- * @returns {number[]} - Bounding box [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {number} xMin Minimum x tile index
+ * @param {number} yMin Minimum y tile index
+ * @param {number} xMax Maximum x tile index
+ * @param {number} yMax Maximum y tile index
+ * @param {number} z Zoom level
+ * @param {"xyz"|"tms"} scheme Tile scheme
+ * @returns {Array<number>} Bounding box [lonMin, latMin, lonMax, latMax] in EPSG:4326
  */
 export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
   const [lonMin, latMax] = getLonLatFromXYZ(xMin, yMin, z, "topLeft", scheme);
@@ -268,7 +268,7 @@ export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
 
 /**
  * Delay function to wait for a specified time
- * @param {number} ms - Time to wait in milliseconds
+ * @param {number} ms Time to wait in milliseconds
  * @returns {Promise<void>}
  */
 function delay(ms) {
@@ -279,9 +279,9 @@ function delay(ms) {
 
 /**
  * Retry function to attempt downloading the file multiple times
- * @param {function} fn - The function to attempt
- * @param {number} maxTry - The number of maxTry allowed
- * @param {number} after - Delay in milliseconds between each retry
+ * @param {function} fn The function to attempt
+ * @param {number} maxTry The number of maxTry allowed
+ * @param {number} after Delay in milliseconds between each retry
  * @returns {Promise<void>}
  */
 async function retry(fn, maxTry, after = 0) {
@@ -306,17 +306,17 @@ async function retry(fn, maxTry, after = 0) {
 
 /**
  * Download all tile data files in a specified bounding box and zoom levels
- * @param {string} tileURL - Tile URL to download
- * @param {string} outputFolder - Folder to store downloaded tiles
- * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format - Tile format
- * @param {Array<number>} bbox - Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
- * @param {number} minZoom - Minimum zoom level
- * @param {number} maxZoom - Maximum zoom level
- * @param {"xyz"|"tms"} scheme - Tile scheme
- * @param {number} concurrency - Concurrency download
- * @param {boolean} overwrite - Overwrite exist file
- * @param {number} maxTry - Number of retry attempts on failure
- * @param {number} timeout - Timeout in milliseconds
+ * @param {string} tileURL Tile URL to download
+ * @param {string} outputFolder Folder to store downloaded tiles
+ * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
+ * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {number} minZoom Minimum zoom level
+ * @param {number} maxZoom Maximum zoom level
+ * @param {"xyz"|"tms"} scheme Tile scheme
+ * @param {number} concurrency Concurrency download
+ * @param {boolean} overwrite Overwrite exist file
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
 export async function downloadTileDataFilesFromBBox(
@@ -337,8 +337,8 @@ export async function downloadTileDataFilesFromBBox(
   let hashs = {};
 
   try {
-    hashs = await fsPromise.readFile(`${outputFolder}/md5.json`);
-  } catch (error) { }
+    hashs = JSON.parse(await fsPromise.readFile(`${outputFolder}/md5.json`));
+  } catch (error) {}
 
   printLog(
     "info",
@@ -366,27 +366,27 @@ export async function downloadTileDataFilesFromBBox(
           } else {
             printLog("info", `Downloading tile data file from ${url}...`);
 
-            await retry(
-              async () => {
-                // Get data
-                const response = await getData(url, timeout);
+            await retry(async () => {
+              // Get data
+              const response = await getData(url, timeout);
 
-                // Store data to file
-                await fsPromise.mkdir(path.dirname(filePath), {
-                  recursive: true,
-                });
+              // Store data to file
+              await fsPromise.mkdir(path.dirname(filePath), {
+                recursive: true,
+              });
 
-                await fsPromise.writeFile(filePath, response.data);
+              await fsPromise.writeFile(filePath, response.data);
 
-                // Store data md5 hash
-                if (response.headers["Etag"]) {
-                  hashs[`${tile[0]}/${tile[1]}/${tile[2]}`] = response.headers["Etag"];
-                } else {
-                  hashs[`${tile[0]}/${tile[1]}/${tile[2]}`] = calculateMD5(response.data);
-                }
-              },
-              maxTry
-            );
+              // Store data md5 hash
+              if (response.headers["Etag"]) {
+                hashs[`${tile[0]}/${tile[1]}/${tile[2]}`] =
+                  response.headers["Etag"];
+              } else {
+                hashs[`${tile[0]}/${tile[1]}/${tile[2]}`] = calculateMD5(
+                  response.data
+                );
+              }
+            }, maxTry);
           }
         } catch (error) {
           printLog("error", `Failed to download tile data file: ${error}`);
@@ -400,19 +400,22 @@ export async function downloadTileDataFilesFromBBox(
     )
   );
 
-  await fsPromise.writeFile(`${directory}/md5.json`, hashs);
+  await fsPromise.writeFile(
+    `${outputFolder}/md5.json`,
+    JSON.stringify(hashs, null, 2)
+  );
 
-  await removeEmptyFolders(directory);
+  await removeEmptyFolders(outputFolder);
 }
 
 /**
  * Download MBTiles file
- * @param {string} url - The URL to download the file from
- * @param {string} outputPath - The path where the file will be saved
- * @param {boolean} overwrite - Overwrite exist file
- * @param {number} maxTry - Number of retry attempts on failure
- * @param {number} timeout - Timeout in milliseconds
- * @returns {Promise<string>} - Returns the output path if successful
+ * @param {string} url The URL to download the file from
+ * @param {string} outputPath The path where the file will be saved
+ * @param {boolean} overwrite Overwrite exist file
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<string>} Returns the output path if successful
  */
 export async function downloadMBTilesFile(
   url,
@@ -439,7 +442,7 @@ export async function downloadMBTilesFile(
 
 /**
  * Recursively removes empty folders in a directory
- * @param {string} folderPath - The root directory to check for empty folders
+ * @param {string} folderPath The root directory to check for empty folders
  * @returns {Promise<void>}
  */
 export async function removeEmptyFolders(folderPath) {
@@ -1013,10 +1016,10 @@ export async function validateSprite(spriteDirPath) {
 
 /**
  * Download file
- * @param {string} url - The URL to download the file from
- * @param {string} outputPath - The path where the file will be saved
- * @param {boolean} useStream - Whether to use stream for downloading
- * @param {number} timeout - Timeout in milliseconds
+ * @param {string} url The URL to download the file from
+ * @param {string} outputPath The path where the file will be saved
+ * @param {boolean} useStream Whether to use stream for downloading
+ * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<object>}
  */
 export async function downloadFile(
@@ -1253,7 +1256,7 @@ export function detectFormatAndHeaders(buffer) {
  * @returns {string} The MD5 hash
  */
 export function calculateMD5(buffer) {
-  return crypto.createHash('md5').update(buffer).digest('hex');
+  return crypto.createHash("md5").update(buffer).digest("hex");
 }
 
 /**

@@ -28,7 +28,11 @@ export async function openMBTiles(filePath, mode = sqlite3.OPEN_READONLY) {
  * @param {Array<string>} columnNames The expected column names in the index
  * @returns {Promise<boolean>} Returns true if the index exists with specified columns, otherwise false
  */
-export async function isMBTilesExistIndex(mbtilesSource, tableName, columnNames) {
+export async function isMBTilesExistIndex(
+  mbtilesSource,
+  tableName,
+  columnNames
+) {
   const indexes = await new Promise((resolve, reject) => {
     mbtilesSource.all(`PRAGMA index_list (${tableName})`, (error, indexes) => {
       if (error) {
@@ -42,13 +46,16 @@ export async function isMBTilesExistIndex(mbtilesSource, tableName, columnNames)
   if (indexes !== undefined) {
     for (const index of indexes) {
       const columns = await new Promise((resolve, reject) => {
-        mbtilesSource.all(`PRAGMA index_info (${index.name})`, (error, columns) => {
-          if (error) {
-            return reject(error);
-          }
+        mbtilesSource.all(
+          `PRAGMA index_info (${index.name})`,
+          (error, columns) => {
+            if (error) {
+              return reject(error);
+            }
 
-          resolve(columns);
-        });
+            resolve(columns);
+          }
+        );
       });
 
       if (
@@ -74,7 +81,9 @@ export async function createMBTilesMetadataIndex(mbtilesFilePath) {
     sqlite3.OPEN_READWRITE
   );
 
-  if ((await isMBTilesExistIndex(mbtilesSource, "metadata", ["name"])) === true) {
+  if (
+    (await isMBTilesExistIndex(mbtilesSource, "metadata", ["name"])) === true
+  ) {
     return;
   }
 
@@ -105,7 +114,13 @@ export async function createMBTilesTilesIndex(mbtilesFilePath) {
     sqlite3.OPEN_READWRITE
   );
 
-  if ((await isMBTilesExistIndex(mbtilesSource, "tiles", ["zoom_level", "tile_column", "tile_row"])) === true) {
+  if (
+    (await isMBTilesExistIndex(mbtilesSource, "tiles", [
+      "zoom_level",
+      "tile_column",
+      "tile_row",
+    ])) === true
+  ) {
     return;
   }
 
