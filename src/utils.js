@@ -407,6 +407,36 @@ export async function downloadMBTilesFile(
 }
 
 /**
+ * Recursively removes empty folders in a directory
+ * @param {string} folderPath - The root directory to check for empty folders
+ * @returns {Promise<void>}
+ */
+export async function removeEmptyFolders(folderPath) {
+  const folders = await fsPromise.readdir(folderPath);
+
+  if (folders.length === 0) {
+    await fsPromise.rm(folderPath, {
+      force: true,
+      recursive: true,
+    });
+
+    return;
+  }
+
+  await Promise.all(
+    folders.map(async (folder) => {
+      const fullFolderPath = path.join(folderPath, folder);
+
+      const stat = await fsPromise.stat(fullFolderPath);
+
+      if (stat.isDirectory() === true) {
+        await removeEmptyFolders(fullFolderPath);
+      }
+    })
+  );
+}
+
+/**
  * Compile template
  * @param {string} template
  * @param {object} data

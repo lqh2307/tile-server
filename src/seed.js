@@ -1,6 +1,10 @@
 "use strict";
 
-import { downloadTileDataFilesFromBBox, printLog } from "./utils.js";
+import {
+  downloadTileDataFilesFromBBox,
+  removeEmptyFolders,
+  printLog,
+} from "./utils.js";
 import { program } from "commander";
 import fs from "node:fs";
 
@@ -88,6 +92,8 @@ export async function startSeedData() {
           seedData.datas[id].maxTry,
           seedData.datas[id].timeout
         );
+
+        await removeEmptyFolders(directory);
       } catch (error) {
         printLog(
           "error",
