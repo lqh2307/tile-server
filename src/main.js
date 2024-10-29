@@ -27,10 +27,13 @@ program
   .showHelpAfterError()
   .parse(process.argv);
 
+/**
+ * Start cluster server
+ * @returns {Promise<void>}
+ */
 async function startClusterServer() {
   /* Load args */
   const argOpts = program.opts();
-
   const opts = {
     numProcesses: Number(argOpts.num_processes),
     killInterval: Number(argOpts.kill_interval),
@@ -42,7 +45,7 @@ async function startClusterServer() {
   if (cluster.isPrimary === true) {
     /* Setup envs & events */
     process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length); // For libuv
-    process.env.MAIN_PID = process.pid; // Store main PID in other processes
+    process.env.MAIN_PID = process.pid; // Store main PID in other child processes
 
     process.on("SIGINT", () => {
       printLog("info", `Received "SIGINT" signal. Killing server...`);
@@ -55,6 +58,55 @@ async function startClusterServer() {
 
       process.exit(1);
     });
+
+    /* Store main pid */
+    fs.writeFileSync(
+      "server-info.json",
+      JSON.stringify(
+        {
+          main_pid: Number(process.pid),
+        },
+        null,
+        2
+      )
+    );
+
+    /* Setup watch config file change */
+    if (opts.killInterval > 0) {
+      printLog(
+        "info",
+        `Watch config file changes interval ${opts.killInterval}ms to kill server`
+      );
+
+      chokidar
+        .watch(`${opts.dataDir}/config.json`, {
+          usePolling: true,
+          awaitWriteFinish: true,
+          interval: opts.killInterval,
+        })
+        .on("change", () => {
+          printLog("info", "Config file has changed. Killing server...");
+
+          process.exit(0);
+        });
+    } else if (opts.restartInterval > 0) {
+      printLog(
+        "info",
+        `Watch config file changes interval ${opts.restartInterval}ms to restart server`
+      );
+
+      chokidar
+        .watch(`${opts.dataDir}/config.json`, {
+          usePolling: true,
+          awaitWriteFinish: true,
+          interval: opts.restartInterval,
+        })
+        .on("change", () => {
+          printLog("info", "Config file has changed. Restaring server...");
+
+          process.exit(1);
+        });
+    }
 
     /* Fork servers */
     printLog(
@@ -99,43 +151,6 @@ async function startClusterServer() {
       });
     } else {
       startServer(opts.dataDir);
-    }
-
-    /* Setup watch config file change */
-    if (opts.killInterval > 0) {
-      printLog(
-        "info",
-        `Watch config file changes interval ${opts.killInterval}ms to kill server`
-      );
-
-      chokidar
-        .watch(`${opts.dataDir}/config.json`, {
-          usePolling: true,
-          awaitWriteFinish: true,
-          interval: opts.killInterval,
-        })
-        .on("change", () => {
-          printLog("info", `Config file has changed. Killing server...`);
-
-          process.exit(0);
-        });
-    } else if (opts.restartInterval > 0) {
-      printLog(
-        "info",
-        `Watch config file changes interval ${opts.restartInterval}ms to restart server`
-      );
-
-      chokidar
-        .watch(`${opts.dataDir}/config.json`, {
-          usePolling: true,
-          awaitWriteFinish: true,
-          interval: opts.restartInterval,
-        })
-        .on("change", () => {
-          printLog("info", `Config file has changed. Restaring server...`);
-
-          process.exit(1);
-        });
     }
   } else {
     startServer(opts.dataDir);

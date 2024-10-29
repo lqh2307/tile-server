@@ -25,7 +25,6 @@ export async function startSeedData() {
   try {
     /* Load args */
     const argOpts = program.opts();
-
     const opts = {
       numProcesses: Number(argOpts.num_processes),
       dataDir: argOpts.data_dir,
@@ -90,11 +89,23 @@ export async function startSeedData() {
           seedData.datas[id].timeout // 1 min
         );
       } catch (error) {
-        printLog("error", `Failed seed data id ${id}: ${error}. Skipping...`);
+        printLog(
+          "error",
+          `Failed to seed data id ${id}: ${error}. Skipping...`
+        );
       }
     }
 
-    printLog("info", `Completed seeding data!`);
+    if (seedData.restartServerAfterSeed === true) {
+      printLog("info", "Completed seeding data!");
+    } else {
+      printLog("info", "Completed seeding data. Restaring server...");
+
+      process.kill(
+        JSON.parse(fs.readFileSync("server-info.json", "utf8")).version,
+        "SIGTERM"
+      );
+    }
   } catch (error) {
     printLog("error", `Failed seed data: ${error}. Exited!`);
   }

@@ -93,10 +93,10 @@ export async function getData(url, timeout = 60000) {
   } catch (error) {
     if (error.response) {
       throw new Error(
-        `Failed to request to ${url} with status code: ${error.response.status}`
+        `Failed to request ${url} with status code: ${error.response.status}`
       );
     } else {
-      throw new Error(`Failed to request to ${url}: ${error.message}`);
+      throw new Error(`Failed to request ${url}: ${error.message}`);
     }
   }
 }
@@ -333,9 +333,9 @@ export async function downloadTileDataFilesFromBBox(
 
   printLog(
     "info",
-    `Downloading ${
-      tiles.length
-    } tile data files with bbox ${bbox.toString()} from zoom level ${minZoom} to ${maxZoom}...`
+    `Downloading ${tiles.length} tile data files - BBox [${bbox.join(
+      ", "
+    )}] - Zoom level ${minZoom} -> ${maxZoom}...`
   );
 
   await Promise.all(
@@ -365,7 +365,10 @@ export async function downloadTileDataFilesFromBBox(
         } catch (error) {
           printLog("error", `Failed to download tile data file: ${error}`);
 
-          exec(`rm -rf ${path.dirname(filePath)}`);
+          /* Remove error tile data file */
+          await fsPromise.rm(filePath, {
+            force: true,
+          });
         }
       })
     )
@@ -1000,10 +1003,10 @@ export async function downloadFile(
   } catch (error) {
     if (error.response) {
       throw new Error(
-        `Failed to request to ${url} with status code: ${error.response.status}`
+        `Failed to request ${url} with status code: ${error.response.status}`
       );
     } else {
-      throw new Error(`Failed to request to ${url}: ${error.message}`);
+      throw new Error(`Failed to request ${url}: ${error.message}`);
     }
   }
 }

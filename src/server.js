@@ -20,11 +20,11 @@ import cors from "cors";
  */
 export async function startServer(dataDir) {
   try {
-    printLog("info", `Loading config file...`);
+    printLog("info", "Loading config file...");
 
     await loadConfigFile(dataDir);
 
-    printLog("info", `Starting HTTP server...`);
+    printLog("info", "Starting HTTP server...");
 
     express()
       .disable("x-powered-by")
@@ -48,13 +48,13 @@ export async function startServer(dataDir) {
         printLog("error", `HTTP server is stopped by: ${error}`);
       });
 
-    printLog("info", `Loading data...`);
+    printLog("info", "Loading data...");
 
     Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()])
       .then(() => serve_style.add())
       .then(() => serve_rendered.add())
       .then(() => {
-        printLog("info", `Completed startup!`);
+        printLog("info", "Completed startup!");
 
         config.startupComplete = true;
       })
