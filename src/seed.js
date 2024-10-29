@@ -69,10 +69,10 @@ export async function startSeedData() {
 
         if (seedData.datas[id].xyz !== undefined) {
           scheme = "xyz";
-          directory = `${dataDir}/xyzs/${seedData.datas[id].xyz.directory}`;
+          directory = `${opts.dataDir}/xyzs/${seedData.datas[id].xyz.directory}`;
         } else if (seedData.datas[id].tms !== undefined) {
           scheme = "tms";
-          directory = `${dataDir}/xyzs/${seedData.datas[id].tms.directory}`;
+          directory = `${opts.dataDir}/xyzs/${seedData.datas[id].tms.directory}`;
         }
 
         await downloadTileDataFilesFromBBox(
@@ -97,14 +97,14 @@ export async function startSeedData() {
     }
 
     if (seedData.restartServerAfterSeed === true) {
-      printLog("info", "Completed seeding data!");
-    } else {
       printLog("info", "Completed seeding data. Restaring server...");
 
       process.kill(
         JSON.parse(fs.readFileSync("server-info.json", "utf8")).version,
         "SIGTERM"
       );
+    } else {
+      printLog("info", "Completed seeding data!");
     }
   } catch (error) {
     printLog("error", `Failed seed data: ${error}. Exited!`);
