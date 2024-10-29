@@ -275,20 +275,20 @@ function delay(ms) {
 /**
  * Retry function to attempt downloading the file multiple times
  * @param {function} fn - The function to attempt
- * @param {number} retries - The number of retries allowed
+ * @param {number} maxTry - The number of maxTry allowed
  * @param {number} after - Delay in milliseconds between each retry
  * @returns {Promise<void>}
  */
-async function retry(fn, retries, after = 0) {
-  for (let attempt = 1; attempt <= retries; attempt++) {
+async function retry(fn, maxTry, after = 0) {
+  for (let attempt = 1; attempt <= maxTry; attempt++) {
     try {
       return await fn();
     } catch (error) {
-      const remainingAttempts = retries - attempt;
+      const remainingAttempts = maxTry - attempt;
       if (remainingAttempts > 0) {
         printLog(
           "warning",
-          `${error}. ${remainingAttempts} retries remaining - After ${after} ms...`
+          `${error}. ${remainingAttempts} maxTry remaining - After ${after} ms...`
         );
 
         await delay(after);
@@ -310,7 +310,7 @@ async function retry(fn, retries, after = 0) {
  * @param {"xyz"|"tms"} scheme - Tile scheme
  * @param {number} concurrency - Concurrency download
  * @param {boolean} overwrite - Overwrite exist file
- * @param {number} retries - Number of retry attempts on failure
+ * @param {number} maxTry - Number of retry attempts on failure
  * @param {number} timeout - Timeout in milliseconds
  * @returns {Promise<void>}
  */
@@ -324,7 +324,7 @@ export async function downloadTileDataFilesFromBBox(
   scheme = "xyz",
   concurrency = os.cpus().length,
   overwrite = true,
-  retries = 5,
+  maxTry = 5,
   timeout = 60000
 ) {
   const tiles = getTilesFromBBox(bbox, minZoom, maxZoom, scheme);
@@ -358,7 +358,7 @@ export async function downloadTileDataFilesFromBBox(
 
             await retry(
               () => downloadFile(url, filePath, false, timeout),
-              retries
+              maxTry
             );
           }
         } catch (error) {
@@ -379,7 +379,7 @@ export async function downloadTileDataFilesFromBBox(
  * @param {string} url - The URL to download the file from
  * @param {string} outputPath - The path where the file will be saved
  * @param {boolean} overwrite - Overwrite exist file
- * @param {number} retries - Number of retry attempts on failure
+ * @param {number} maxTry - Number of retry attempts on failure
  * @param {number} timeout - Timeout in milliseconds
  * @returns {Promise<string>} - Returns the output path if successful
  */
@@ -387,7 +387,7 @@ export async function downloadMBTilesFile(
   url,
   outputPath,
   overwrite = false,
-  retries = 5,
+  maxTry = 5,
   timeout = 60000
 ) {
   try {
@@ -399,7 +399,7 @@ export async function downloadMBTilesFile(
     } else {
       printLog("info", `Downloading MBTiles file from ${url}...`);
 
-      await retry(() => downloadFile(url, outputPath, true, timeout), retries);
+      await retry(() => downloadFile(url, outputPath, true, timeout), maxTry);
     }
   } catch (error) {
     throw error;

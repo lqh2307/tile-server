@@ -153,8 +153,8 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
 
 ```json
 {
+  "restartServerAfterSeed": true,
   "styles": {
-    "restartServerAfterSeed": true,
     "vietnam": {
       "url": "http://localhost:8080/styles/vietnam/style.json",
       "directory": "vietnam"
@@ -179,6 +179,8 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
         "time": "2024-10-10T00:00:00"
       },
       "timeout": 60000,
+      "concurrency": 100,
+      "maxTry": 5,
       "xyz": {
         "directory": "asia_vietnam"
       }
@@ -193,6 +195,8 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
         "time": "2024-10-10T00:00:00"
       },
       "timeout": 60000,
+      "concurrency": 100,
+      "maxTry": 5,
       "xyz": {
         "directory":"asia_cambodia"
       }

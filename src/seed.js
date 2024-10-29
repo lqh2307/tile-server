@@ -83,10 +83,10 @@ export async function startSeedData() {
           seedData.datas[id].min_zoom,
           seedData.datas[id].max_zoom,
           scheme,
-          10,
+          seedData.datas[id].concurrency,
           false,
-          5,
-          seedData.datas[id].timeout // 1 min
+          seedData.datas[id].maxTry,
+          seedData.datas[id].timeout
         );
       } catch (error) {
         printLog(
