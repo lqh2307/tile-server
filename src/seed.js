@@ -106,7 +106,7 @@ export async function startSeedData() {
       printLog("info", "Completed seeding data. Restaring server...");
 
       process.kill(
-        JSON.parse(fs.readFileSync("server-info.json", "utf8")).mainPid,
+        JSON.parse(fs.readFileSync("server-info.json", "utf8")).mainPID,
         "SIGTERM"
       );
     } else {

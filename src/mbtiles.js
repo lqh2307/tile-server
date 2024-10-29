@@ -22,13 +22,15 @@ export async function openMBTiles(filePath, mode = sqlite3.OPEN_READONLY) {
 }
 
 /**
- * Check unique index is exist on the tiles table?
- * @param {object} mbtilesSource
- * @returns {Promise<boolean>}
+ * Check if a unique index exists on a specified table with given columns
+ * @param {object} mbtilesSource The MBTiles source object
+ * @param {string} tableName The name of the table to check
+ * @param {Array<string>} columnNames The expected column names in the index
+ * @returns {Promise<boolean>} Returns true if the index exists with specified columns, otherwise false
  */
-export async function isMBTilesExistTilesIndex(mbtilesSource) {
+export async function isMBTilesExistIndex(mbtilesSource, tableName, columnNames) {
   const indexes = await new Promise((resolve, reject) => {
-    mbtilesSource.all("PRAGMA index_list (tiles)", (error, indexes) => {
+    mbtilesSource.all(`PRAGMA index_list (${tableName})`, (error, indexes) => {
       if (error) {
         return reject(error);
       }
@@ -40,7 +42,7 @@ export async function isMBTilesExistTilesIndex(mbtilesSource) {
   if (indexes !== undefined) {
     for (const index of indexes) {
       const columns = await new Promise((resolve, reject) => {
-        mbtilesSource.all(`PRAGMA index_info (${index})`, (error, columns) => {
+        mbtilesSource.all(`PRAGMA index_info (${index.name})`, (error, columns) => {
           if (error) {
             return reject(error);
           }
@@ -50,48 +52,9 @@ export async function isMBTilesExistTilesIndex(mbtilesSource) {
       });
 
       if (
-        columns?.length === 3 &&
-        columns[0].name === "zoom_level" &&
-        columns[1].name === "tile_column" &&
-        columns[2].name === "tile_row"
+        columns?.length === columnNames.length &&
+        columns.every((col, i) => col.name === columnNames[i])
       ) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-/**
- * Check unique index is exist on the metadata table?
- * @param {object} mbtilesSource
- * @returns {Promise<boolean>}
- */
-export async function isMBTilesExistMetadataIndex(mbtilesSource) {
-  const indexes = await new Promise((resolve, reject) => {
-    mbtilesSource.all("PRAGMA index_list (metadata)", (error, indexes) => {
-      if (error) {
-        return reject(error);
-      }
-
-      resolve(indexes);
-    });
-  });
-
-  if (indexes !== undefined) {
-    for (const index of indexes) {
-      const columns = await new Promise((resolve, reject) => {
-        mbtilesSource.all(`PRAGMA index_info (${index})`, (error, columns) => {
-          if (error) {
-            return reject(error);
-          }
-
-          resolve(columns);
-        });
-      });
-
-      if (columns?.length === 1 && columns[0].name === "name") {
         return true;
       }
     }
@@ -111,7 +74,7 @@ export async function createMBTilesMetadataIndex(mbtilesFilePath) {
     sqlite3.OPEN_READWRITE
   );
 
-  if ((await isMBTilesExistMetadataIndex(mbtilesSource)) === true) {
+  if ((await isMBTilesExistIndex(mbtilesSource, "metadata", ["name"])) === true) {
     return;
   }
 
@@ -142,7 +105,7 @@ export async function createMBTilesTilesIndex(mbtilesFilePath) {
     sqlite3.OPEN_READWRITE
   );
 
-  if ((await isMBTilesExistTilesIndex(mbtilesSource)) === true) {
+  if ((await isMBTilesExistIndex(mbtilesSource, "tiles", ["zoom_level", "tile_column", "tile_row"])) === true) {
     return;
   }
 

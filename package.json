@@ -17,6 +17,7 @@
     "protocol-buffers": "5.0.0",
     "swagger-jsdoc": "6.2.8",
     "generic-pool": "3.9.0",
+    "async-mutex": "0.5.0",
     "commander": "12.1.0",
     "handlebars": "4.7.8",
     "chokidar": "4.0.1",

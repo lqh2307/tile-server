@@ -10,6 +10,7 @@ import https from "node:https";
 import path from "node:path";
 import http from "node:http";
 import pLimit from "p-limit";
+import crypto from "crypto";
 import axios from "axios";
 import sharp from "sharp";
 import fs from "node:fs";
@@ -70,7 +71,7 @@ function combine(buffers, fontstack) {
  * Get data from a URL
  * @param {string} url - The URL to fetch data from
  * @param {number} timeout - Timeout in milliseconds
- * @returns {Promise<Buffer>}
+ * @returns {Promise<object>}
  */
 export async function getData(url, timeout = 60000) {
   try {
@@ -88,7 +89,11 @@ export async function getData(url, timeout = 60000) {
       }),
     });
 
-    return Buffer.from(response.data);
+    if (response.status === 204) {
+      throw new Error("No content");
+    }
+
+    return response;
   } catch (error) {
     if (error.response) {
       throw new Error(
@@ -329,6 +334,11 @@ export async function downloadTileDataFilesFromBBox(
 ) {
   const tiles = getTilesFromBBox(bbox, minZoom, maxZoom, scheme);
   const limitConcurrencyDownload = pLimit(concurrency);
+  let hashs = {};
+
+  try {
+    hashs = await fsPromise.readFile(`${outputFolder}/md5.json`);
+  } catch (error) { }
 
   printLog(
     "info",
@@ -357,14 +367,31 @@ export async function downloadTileDataFilesFromBBox(
             printLog("info", `Downloading tile data file from ${url}...`);
 
             await retry(
-              () => downloadFile(url, filePath, false, timeout),
+              async () => {
+                // Get data
+                const response = await getData(url, timeout);
+
+                // Store data to file
+                await fsPromise.mkdir(path.dirname(filePath), {
+                  recursive: true,
+                });
+
+                await fsPromise.writeFile(filePath, response.data);
+
+                // Store data md5 hash
+                if (response.headers["Etag"]) {
+                  hashs[`${tile[0]}/${tile[1]}/${tile[2]}`] = response.headers["Etag"];
+                } else {
+                  hashs[`${tile[0]}/${tile[1]}/${tile[2]}`] = calculateMD5(response.data);
+                }
+              },
               maxTry
             );
           }
         } catch (error) {
           printLog("error", `Failed to download tile data file: ${error}`);
 
-          /* Remove error tile data file */
+          // Remove error tile data file
           await fsPromise.rm(filePath, {
             force: true,
           });
@@ -372,6 +399,10 @@ export async function downloadTileDataFilesFromBBox(
       })
     )
   );
+
+  await fsPromise.writeFile(`${directory}/md5.json`, hashs);
+
+  await removeEmptyFolders(directory);
 }
 
 /**
@@ -986,7 +1017,7 @@ export async function validateSprite(spriteDirPath) {
  * @param {string} outputPath - The path where the file will be saved
  * @param {boolean} useStream - Whether to use stream for downloading
  * @param {number} timeout - Timeout in milliseconds
- * @returns {Promise<void>}
+ * @returns {Promise<object>}
  */
 export async function downloadFile(
   url,
@@ -1024,10 +1055,12 @@ export async function downloadFile(
       response.data.pipe(writer);
 
       return new Promise((resolve, reject) => {
-        writer.on("finish", resolve).on("error", reject);
+        writer.on("finish", resolve(response)).on("error", reject);
       });
     } else {
       await fsPromise.writeFile(outputPath, response.data);
+
+      return response;
     }
   } catch (error) {
     if (error.response) {
@@ -1212,6 +1245,15 @@ export function detectFormatAndHeaders(buffer) {
     format,
     headers,
   };
+}
+
+/**
+ * Calculate MD5 hash of a buffer
+ * @param {Buffer} buffer The buffer data of the file
+ * @returns {string} The MD5 hash
+ */
+export function calculateMD5(buffer) {
+  return crypto.createHash('md5').update(buffer).digest('hex');
 }
 
 /**
