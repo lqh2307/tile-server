@@ -64,7 +64,7 @@ async function startClusterServer() {
       "server-info.json",
       JSON.stringify(
         {
-          main_pid: Number(process.pid),
+          mainPid: Number(process.pid),
         },
         null,
         2
