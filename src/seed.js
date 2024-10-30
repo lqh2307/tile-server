@@ -1,6 +1,6 @@
 "use strict";
 
-import { downloadTileDataFilesFromBBox, printLog } from "./utils.js";
+import { seedXYZTileDataFiles, printLog } from "./utils.js";
 import { program } from "commander";
 import fs from "node:fs";
 
@@ -75,7 +75,7 @@ export async function startSeedData() {
           directory = `${opts.dataDir}/xyzs/${seedData.datas[id].tms.directory}`;
         }
 
-        await downloadTileDataFilesFromBBox(
+        await seedXYZTileDataFiles(
           seedData.datas[id].url,
           directory,
           seedData.datas[id].format,

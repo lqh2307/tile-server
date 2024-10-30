@@ -305,7 +305,7 @@ async function retry(fn, maxTry, after = 0) {
 }
 
 /**
- * Download all tile data files in a specified bounding box and zoom levels
+ * Download all xyz tile data files in a specified bounding box and zoom levels
  * @param {string} tileURL Tile URL to download
  * @param {string} outputFolder Folder to store downloaded tiles
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
@@ -319,7 +319,7 @@ async function retry(fn, maxTry, after = 0) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function downloadTileDataFilesFromBBox(
+export async function seedXYZTileDataFiles(
   tileURL,
   outputFolder,
   format,
@@ -338,7 +338,111 @@ export async function downloadTileDataFilesFromBBox(
 
   try {
     hashs = JSON.parse(await fsPromise.readFile(`${outputFolder}/md5.json`));
-  } catch (error) {}
+  } catch (error) { }
+
+  printLog(
+    "info",
+    `Downloading ${tiles.length} tile data files - BBox [${bbox.join(
+      ", "
+    )}] - Zoom level ${minZoom} -> ${maxZoom}...`
+  );
+
+  await Promise.all(
+    tiles.map((tile) =>
+      limitConcurrencyDownload(async () => {
+        const url = tileURL.replace(
+          "/{z}/{x}/{y}",
+          `/${tile[0]}/${tile[1]}/${tile[2]}`
+        );
+
+        const filePath = `${outputFolder}/${tile[0]}/${tile[1]}/${tile[2]}.${format}`;
+
+        try {
+          if (overwrite === false && (await isExistFile(filePath)) === true) {
+            printLog(
+              "info",
+              `Tile data file is exist. Skipping download tile data file from ${url}...`
+            );
+          } else {
+            printLog("info", `Downloading tile data file from ${url}...`);
+
+            await retry(async () => {
+              // Get data
+              const response = await getData(url, timeout);
+
+              // Store data to file
+              await fsPromise.mkdir(path.dirname(filePath), {
+                recursive: true,
+              });
+
+              await fsPromise.writeFile(filePath, response.data);
+
+              // Store data md5 hash
+              if (response.headers["Etag"]) {
+                hashs[`${tile[0]}/${tile[1]}/${tile[2]}`] =
+                  response.headers["Etag"];
+              } else {
+                hashs[`${tile[0]}/${tile[1]}/${tile[2]}`] = calculateMD5(
+                  response.data
+                );
+              }
+            }, maxTry);
+          }
+        } catch (error) {
+          printLog("error", `Failed to download tile data file: ${error}`);
+
+          // Remove error tile data file
+          await fsPromise.rm(filePath, {
+            force: true,
+          });
+        }
+      })
+    )
+  );
+
+  await fsPromise.writeFile(
+    `${outputFolder}/md5.json`,
+    JSON.stringify(hashs, null, 2)
+  );
+
+  await removeEmptyFolders(outputFolder);
+}
+
+/**
+ * Download all xyz tile data files in a specified bounding box and zoom levels
+ * @param {string} tileURL Tile URL to download
+ * @param {string} outputFolder Folder to store downloaded tiles
+ * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
+ * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {number} minZoom Minimum zoom level
+ * @param {number} maxZoom Maximum zoom level
+ * @param {"xyz"|"tms"} scheme Tile scheme
+ * @param {number} concurrency Concurrency download
+ * @param {boolean} overwrite Overwrite exist file
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<void>}
+ */
+export async function seedXYZTileDataFiles(
+  tileURL,
+  outputFolder,
+  format,
+  bbox = [-180, -85.051129, 180, 85.051129],
+  minZoom = 0,
+  maxZoom = 22,
+  scheme = "xyz",
+  concurrency = os.cpus().length,
+  overwrite = true,
+  maxTry = 5,
+  timeout = 60000
+) {
+  const tiles = getTilesFromBBox(bbox, minZoom, maxZoom, scheme);
+  const limitConcurrencyDownload = pLimit(concurrency);
+  let hashs = {};
+
+  try {
+    hashs = JSON.parse(await fsPromise.readFile(`${outputFolder}/md5.json`));
+  } catch (error) { }
 
   printLog(
     "info",
@@ -446,9 +550,11 @@ export async function downloadMBTilesFile(
  * @returns {Promise<void>}
  */
 export async function removeEmptyFolders(folderPath) {
-  const folders = await fsPromise.readdir(folderPath);
+  const entries = await fsPromise.readdir(folderPath, {
+    withFileTypes: true,
+  });
 
-  if (folders.length === 0) {
+  if (entries.length === 0) {
     await fsPromise.rm(folderPath, {
       force: true,
       recursive: true,
@@ -458,13 +564,11 @@ export async function removeEmptyFolders(folderPath) {
   }
 
   await Promise.all(
-    folders.map(async (folder) => {
-      const fullFolderPath = path.join(folderPath, folder);
+    entries.map(async (entry) => {
+      const fullPath = `${folderPath}/${entry.name}`;
 
-      const stat = await fsPromise.stat(fullFolderPath);
-
-      if (stat.isDirectory() === true) {
-        await removeEmptyFolders(fullFolderPath);
+      if (entry.isDirectory() === true) {
+        await removeEmptyFolders(fullPath);
       }
     })
   );
@@ -614,24 +718,26 @@ export async function isExistFile(filePath) {
 }
 
 /**
- * Find matching files in directory
- * @param {string} dirPath
- * @param {RegExp} regex
- * @returns {Promise<string[]>}
+ * Find matching files in a directory
+ * @param {string} dirPath The directory path to search
+ * @param {RegExp} regex The regex to match files
+ * @param {boolean} recurse Whether to search recursively in subdirectories
+ * @returns {Promise<string>} Array of file paths matching the regex
  */
-export async function findFiles(dirPath, regex) {
-  const fileNames = await fsPromise.readdir(dirPath);
+export async function findFiles(dirPath, regex, recurse = false) {
+  const entries = await fsPromise.readdir(dirPath, {
+    withFileTypes: true,
+  });
 
   const results = [];
-  for (const fileName of fileNames) {
-    const stat = await fsPromise.stat(`${dirPath}/${fileName}`);
 
-    if (
-      regex.test(fileName) === true &&
-      stat.isFile() === true &&
-      stat.size > 0
-    ) {
-      results.push(fileName);
+  for (const entry of entries) {
+    const fullPath = `${dirPath}/${entry.name}`;
+
+    if (entry.isFile() === true && regex.test(entry.name) === true) {
+      results.push(fullPath);
+    } else if (entry.isDirectory() === true && recurse === true) {
+      results.push(...(await findFiles(fullPath, regex, recurse)));
     }
   }
 
@@ -639,21 +745,30 @@ export async function findFiles(dirPath, regex) {
 }
 
 /**
- * Find matching folders in directory
- * @param {string} dirPath
- * @param {RegExp} regex
- * @returns {Promise<string[]>}
+ * Find matching folders in a directory
+ * @param {string} dirPath The directory path to search
+ * @param {RegExp} regex The regex to match folders
+ * @param {boolean} recurse Whether to search recursively in subdirectories
+ * @returns {Promise<string>} Array of folder paths matching the regex
  */
-export async function findFolders(dirPath, regex) {
-  const folderNames = await fsPromise.readdir(dirPath);
+export async function findFolders(dirPath, regex, recurse = false) {
+  const entries = await fsPromise.readdir(dirPath, {
+    withFileTypes: true,
+  });
 
   const results = [];
-  for (const folderName of folderNames) {
-    const folderPath = `${dirPath}/${folderName}`;
-    const stat = await fsPromise.stat(folderPath);
 
-    if (regex.test(folderName) === true && stat.isDirectory() === true) {
-      results.push(folderName);
+  for (const entry of entries) {
+    const fullPath = `${dirPath}/${entry.name}`;
+
+    if (entry.isDirectory() === true) {
+      if (regex.test(entry.name) === true) {
+        results.push(fullPath);
+      }
+
+      if (recurse === true) {
+        results.push(...(await findFolders(fullPath, regex, recurse)));
+      }
     }
   }
 
