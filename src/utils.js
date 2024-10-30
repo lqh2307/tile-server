@@ -313,6 +313,8 @@ async function retry(fn, maxTry, after = 0) {
 
 /**
  * Download all xyz tile data files in a specified bounding box and zoom levels
+ * @param {string} name Source data
+ * @param {string} description Source description
  * @param {string} tileURL Tile URL to download
  * @param {string} outputFolder Folder to store downloaded tiles
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
@@ -327,6 +329,8 @@ async function retry(fn, maxTry, after = 0) {
  * @returns {Promise<void>}
  */
 export async function seedXYZTileDataFiles(
+  name,
+  description,
   tileURL,
   outputFolder,
   format,
@@ -404,6 +408,25 @@ export async function seedXYZTileDataFiles(
           });
         }
       })
+    )
+  );
+
+  await fsPromise.writeFile(
+    `${outputFolder}/metadata.json`,
+    JSON.stringify(
+      {
+        name: name,
+        description: description,
+        version: "1.0.0",
+        format: format,
+        bounds: bbox,
+        center: [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2],
+        minzoom: minZoom,
+        maxzoom: maxZoom,
+        type: "overlay",
+      },
+      null,
+      2
     )
   );
 

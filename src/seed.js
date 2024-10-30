@@ -76,6 +76,8 @@ export async function startSeedData() {
         }
 
         await seedXYZTileDataFiles(
+          seedData.datas[id].name,
+          seedData.datas[id].description,
           seedData.datas[id].url,
           directory,
           seedData.datas[id].format,
