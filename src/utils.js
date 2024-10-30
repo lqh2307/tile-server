@@ -338,7 +338,7 @@ export async function seedXYZTileDataFiles(
 
   try {
     hashs = JSON.parse(await fsPromise.readFile(`${outputFolder}/md5.json`));
-  } catch (error) { }
+  } catch (error) {}
 
   printLog(
     "info",
@@ -442,7 +442,7 @@ export async function seedXYZTileDataFiles(
 
   try {
     hashs = JSON.parse(await fsPromise.readFile(`${outputFolder}/md5.json`));
-  } catch (error) { }
+  } catch (error) {}
 
   printLog(
     "info",
