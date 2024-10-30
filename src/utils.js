@@ -149,7 +149,7 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
   }
 
   const px = zc + lon * bc;
-  let x = Math.floor(px / 256)
+  let x = Math.floor(px / 256);
   if (x < 0) {
     x = 0;
   } else if (x > maxTileIndex) {
@@ -163,7 +163,7 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
   }
 
   const py = zc - cc * Math.log(Math.tan(Math.PI / 4 + lat * (Math.PI / 360)));
-  let y = Math.floor(py / 256)
+  let y = Math.floor(py / 256);
   if (scheme === "tms") {
     y = size - y;
   }
