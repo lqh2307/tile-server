@@ -178,10 +178,15 @@ export async function getMBTilesTile(mbtilesSource, z, x, y) {
  * @param {"minzoom"|"maxzoom"} zoomType
  * @returns {Promise<number>}
  */
-export async function getMBTilesZoomLevelFromTiles(mbtilesSource, zoomType = "maxzoom") {
+export async function getMBTilesZoomLevelFromTiles(
+  mbtilesSource,
+  zoomType = "maxzoom"
+) {
   return await new Promise((resolve, reject) => {
     mbtilesSource.get(
-      zoomType === "minzoom" ? "SELECT MIN(zoom_level) AS zoom FROM tiles" : "SELECT MAX(zoom_level) AS zoom FROM tiles",
+      zoomType === "minzoom"
+        ? "SELECT MIN(zoom_level) AS zoom FROM tiles"
+        : "SELECT MAX(zoom_level) AS zoom FROM tiles",
       (error, row) => {
         if (error) {
           return reject(error);
@@ -273,12 +278,18 @@ export async function getMBTilesInfos(mbtilesSource, includeJSON = false) {
 
   /* Try get min zoom */
   if (metadata.minzoom === undefined) {
-    metadata.minzoom = await getMBTilesZoomLevelFromTiles(mbtilesSource, "minzoom");
+    metadata.minzoom = await getMBTilesZoomLevelFromTiles(
+      mbtilesSource,
+      "minzoom"
+    );
   }
 
   /* Try get max zoom */
   if (metadata.maxzoom === undefined) {
-    metadata.maxzoom = await getMBTilesZoomLevelFromTiles(mbtilesSource, "maxzoom");
+    metadata.maxzoom = await getMBTilesZoomLevelFromTiles(
+      mbtilesSource,
+      "maxzoom"
+    );
   }
 
   /* Try get tile format */

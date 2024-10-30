@@ -20,9 +20,9 @@ import {
  */
 export async function getXYZTile(sourcePath, z, x, y, format = "png") {
   try {
-    const data = Buffer.from(await fsPromise.readFile(
-      `${sourcePath}/${z}/${x}/${y}.${format}`
-    ));
+    const data = Buffer.from(
+      await fsPromise.readFile(`${sourcePath}/${z}/${x}/${y}.${format}`)
+    );
 
     return {
       data: data,
@@ -117,10 +117,15 @@ export async function getXYZBBoxFromTiles(sourcePath, scheme) {
  * @param {"minzoom"|"maxzoom"} zoomType
  * @returns {Promise<number>}
  */
-export async function getXYZZoomLevelFromTiles(sourcePath, zoomType = "maxzoom") {
+export async function getXYZZoomLevelFromTiles(
+  sourcePath,
+  zoomType = "maxzoom"
+) {
   const folders = await findFolders(sourcePath, /^\d+$/);
 
-  return zoomType === "minzoom" ? Math.min(...folders.map((folder) => Number(folder))) : Math.max(...folders.map((folder) => Number(folder)));
+  return zoomType === "minzoom"
+    ? Math.min(...folders.map((folder) => Number(folder)))
+    : Math.max(...folders.map((folder) => Number(folder)));
 }
 
 /**
@@ -140,26 +145,26 @@ export async function getXYZInfos(
   /* Get metadatas */
   try {
     metadata = await fsPromise.readFile(`${sourcePath}/metadata.json`, "utf8");
-  } catch (error) { }
+  } catch (error) {}
 
   /* Try get min zoom */
   if (metadata.minzoom === undefined) {
-    metadata.minzoom = await getXYZZoomLevelFromTiles(sourcePath, "minzoom")
+    metadata.minzoom = await getXYZZoomLevelFromTiles(sourcePath, "minzoom");
   }
 
   /* Try get max zoom */
   if (metadata.maxzoom === undefined) {
-    metadata.maxzoom = await getXYZZoomLevelFromTiles(sourcePath, "maxzoom")
+    metadata.maxzoom = await getXYZZoomLevelFromTiles(sourcePath, "maxzoom");
   }
 
   /* Try get tile format */
   if (metadata.format === undefined) {
-    metadata.format = await getXYZFormatFromTiles(sourcePath)
+    metadata.format = await getXYZFormatFromTiles(sourcePath);
   }
 
   /* Try get bounds */
   if (metadata.bounds === undefined) {
-    metadata.bounds = await getXYZBBoxFromTiles(sourcePath, scheme)
+    metadata.bounds = await getXYZBBoxFromTiles(sourcePath, scheme);
   }
 
   const tileJSON = createNewTileJSON(metadata);

@@ -424,6 +424,7 @@ export async function seedXYZTileDataFiles(
         minzoom: minZoom,
         maxzoom: maxZoom,
         type: "overlay",
+        time: new Date().toISOString().split(".")[0],
       },
       null,
       2
