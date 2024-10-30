@@ -173,45 +173,22 @@ export async function getMBTilesTile(mbtilesSource, z, x, y) {
 }
 
 /**
- * Get MBTiles min zoom from tiles
+ * Get MBTiles zoom level from tiles
  * @param {object} mbtilesSource
+ * @param {"minzoom"|"maxzoom"} zoomType
  * @returns {Promise<number>}
  */
-export async function getMBTilesMinZoomFromTiles(mbtilesSource) {
+export async function getMBTilesZoomLevelFromTiles(mbtilesSource, zoomType = "maxzoom") {
   return await new Promise((resolve, reject) => {
     mbtilesSource.get(
-      "SELECT MIN(zoom_level) AS minzoom FROM tiles",
+      zoomType === "minzoom" ? "SELECT MIN(zoom_level) AS zoom FROM tiles" : "SELECT MAX(zoom_level) AS zoom FROM tiles",
       (error, row) => {
         if (error) {
           return reject(error);
         }
 
         if (row) {
-          return resolve(row.minzoom);
-        }
-
-        reject(new Error("No tile found"));
-      }
-    );
-  });
-}
-
-/**
- * Get MBTiles max zoom from tiles
- * @param {object} mbtilesSource
- * @returns {Promise<number>}
- */
-export async function getMBTilesMaxZoomFromTiles(mbtilesSource) {
-  return await new Promise((resolve, reject) => {
-    mbtilesSource.get(
-      "SELECT MAX(zoom_level) AS maxzoom FROM tiles",
-      (error, row) => {
-        if (error) {
-          return reject(error);
-        }
-
-        if (row) {
-          return resolve(row.maxzoom);
+          return resolve(row.zoom);
         }
 
         reject(new Error("No tile found"));
@@ -296,12 +273,12 @@ export async function getMBTilesInfos(mbtilesSource, includeJSON = false) {
 
   /* Try get min zoom */
   if (metadata.minzoom === undefined) {
-    metadata.minzoom = await getMBTilesMinZoomFromTiles(mbtilesSource);
+    metadata.minzoom = await getMBTilesZoomLevelFromTiles(mbtilesSource, "minzoom");
   }
 
   /* Try get max zoom */
   if (metadata.maxzoom === undefined) {
-    metadata.maxzoom = await getMBTilesMaxZoomFromTiles(mbtilesSource);
+    metadata.maxzoom = await getMBTilesZoomLevelFromTiles(mbtilesSource, "maxzoom");
   }
 
   /* Try get tile format */
