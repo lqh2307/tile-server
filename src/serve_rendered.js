@@ -583,7 +583,7 @@ export const serve_rendered = {
               let scheme = "xyz";
 
               try {
-                const queryIndex = url.indexOf("?");
+                const queryIndex = url.lastIndexOf("?");
                 if (queryIndex !== -1) {
                   const query = new URLSearchParams(url.slice(queryIndex));
 
@@ -633,7 +633,7 @@ export const serve_rendered = {
               let scheme = "xyz";
 
               try {
-                const queryIndex = url.indexOf("?");
+                const queryIndex = url.lastIndexOf("?");
                 if (queryIndex !== -1) {
                   const query = new URLSearchParams(url.slice(queryIndex));
 
@@ -691,7 +691,7 @@ export const serve_rendered = {
                   `Failed to get data from "${url}": ${error}. Serving empty tile...`
                 );
 
-                const queryIndex = url.indexOf("?");
+                const queryIndex = url.lastIndexOf("?");
                 const format =
                   queryIndex === -1
                     ? url.slice(url.lastIndexOf(".") + 1)
@@ -748,13 +748,14 @@ export const serve_rendered = {
                   const tiles = source.tiles.map((tile) => {
                     if (
                       tile.startsWith("pmtiles://") === true ||
-                      tile.startsWith("mbtiles://") === true
+                      tile.startsWith("mbtiles://") === true ||
+                      tile.startsWith("xyz://") === true
                     ) {
-                      const queryIndex = tile.indexOf("?");
+                      const queryIndex = tile.lastIndexOf("?");
                       const sourceID =
                         queryIndex === -1
-                          ? tile.slice(10)
-                          : tile.slice(10, queryIndex);
+                          ? tile.split("/")[2]
+                          : tile.split("/")[2](0, queryIndex);
                       const query =
                         queryIndex === -1 ? "" : tile.slice(queryIndex);
                       const sourceData = config.repo.datas[sourceID];
@@ -774,13 +775,14 @@ export const serve_rendered = {
                   source.urls.forEach((url) => {
                     if (
                       url.startsWith("pmtiles://") === true ||
-                      url.startsWith("mbtiles://") === true
+                      url.startsWith("mbtiles://") === true ||
+                      url.startsWith("xyz://") === true
                     ) {
-                      const queryIndex = url.indexOf("?");
+                      const queryIndex = url.lastIndexOf("?");
                       const sourceID =
                         queryIndex === -1
-                          ? url.slice(10)
-                          : url.slice(10, queryIndex);
+                          ? url.split("/")[2]
+                          : url.split("/")[2](0, queryIndex);
                       const query =
                         queryIndex === -1 ? "" : url.slice(queryIndex);
                       const sourceData = config.repo.datas[sourceID];
@@ -811,13 +813,14 @@ export const serve_rendered = {
                 if (source.url !== undefined) {
                   if (
                     source.url.startsWith("pmtiles://") === true ||
-                    source.url.startsWith("mbtiles://") === true
+                    source.url.startsWith("mbtiles://") === true ||
+                    source.url.startsWith("xyz://") === true
                   ) {
-                    const queryIndex = source.url.indexOf("?");
+                    const queryIndex = source.url.lastIndexOf("?");
                     const sourceID =
                       queryIndex === -1
-                        ? source.url.slice(10)
-                        : source.url.slice(10, queryIndex);
+                        ? source.url.split("/")[2]
+                        : source.url.split("/")[2](0, queryIndex);
                     const query =
                       queryIndex === -1 ? "" : source.url.slice(queryIndex);
                     const sourceData = config.repo.datas[sourceID];
@@ -844,7 +847,8 @@ export const serve_rendered = {
                   if (source.tiles.length === 1) {
                     if (
                       source.tiles[0].startsWith("pmtiles://") === true ||
-                      source.tiles[0].startsWith("mbtiles://") === true
+                      source.tiles[0].startsWith("mbtiles://") === true ||
+                      source.tiles[0].startsWith("xyz://") === true
                     ) {
                       const sourceID = source.tiles[0].split("/")[2];
                       const sourceData = config.repo.datas[sourceID];
