@@ -140,6 +140,7 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
   const bc = size / 360;
   const cc = size / (2 * Math.PI);
   const zc = size / 2;
+  const maxTileIndex = Math.pow(2, z) - 1;
 
   if (lon > 180) {
     lon = 180;
@@ -147,11 +148,12 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
     lon = -180;
   }
 
-  let x = zc + lon * bc;
-  if (x > size) {
-    x = size;
-  } else if (x < 0) {
+  const px = zc + lon * bc;
+  let x = Math.floor(px / 256);
+  if (x < 0) {
     x = 0;
+  } else if (x > maxTileIndex) {
+    x = maxTileIndex;
   }
 
   if (lat > 85.051129) {
@@ -160,18 +162,19 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
     lat = -85.051129;
   }
 
-  let y = zc - cc * Math.log(Math.tan(Math.PI / 4 + lat * (Math.PI / 360)));
-  if (y > size) {
-    y = size;
-  } else if (y < 0) {
-    y = 0;
-  }
-
+  const py = zc - cc * Math.log(Math.tan(Math.PI / 4 + lat * (Math.PI / 360)));
+  let y = Math.floor(py / 256);
   if (scheme === "tms") {
     y = size - y;
   }
 
-  return [Math.floor(x / 256), Math.floor(y / 256), z];
+  if (y < 0) {
+    y = 0;
+  } else if (y > maxTileIndex) {
+    y = maxTileIndex;
+  }
+
+  return [x, y, z];
 }
 
 /**
@@ -233,25 +236,8 @@ export function getTilesFromBBox(
   const tiles = [];
 
   for (let z = minZoom; z <= maxZoom; z++) {
-    const maxTileIndex = Math.pow(2, z) - 1;
     let [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], z, scheme);
     let [xMax, yMax] = getXYZFromLonLatZ(bbox[2], bbox[1], z, scheme);
-
-    if (xMin > maxTileIndex) {
-      xMin = maxTileIndex;
-    }
-
-    if (yMin > maxTileIndex) {
-      yMin = maxTileIndex;
-    }
-
-    if (xMax > maxTileIndex) {
-      xMax = maxTileIndex;
-    }
-
-    if (yMax > maxTileIndex) {
-      yMax = maxTileIndex;
-    }
 
     for (let x = xMin; x <= xMax; x++) {
       for (let y = yMin; y <= yMax; y++) {
