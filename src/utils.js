@@ -438,7 +438,7 @@ export async function removeXYZTileDataFiles(
       );
 
       files.forEach((file) => {
-        delete hashs[path.basename(file, `.${format}`)]
+        delete hashs[path.basename(file, `.${format}`)];
       });
 
       await fsPromise.writeFile(
