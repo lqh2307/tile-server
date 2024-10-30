@@ -150,6 +150,8 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
   let x = zc + lon * bc;
   if (x > size) {
     x = size;
+  } else if (x < 0) {
+    x = 0;
   }
 
   if (lat > 85.051129) {
@@ -161,6 +163,8 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
   let y = zc - cc * Math.log(Math.tan(Math.PI / 4 + lat * (Math.PI / 360)));
   if (y > size) {
     y = size;
+  } else if (y < 0) {
+    y = 0;
   }
 
   if (scheme === "tms") {
