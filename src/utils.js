@@ -653,7 +653,7 @@ export async function isExistFile(filePath) {
   try {
     const stat = await fsPromise.stat(filePath);
 
-    return stat.isFile() === true && stat.size > 0;
+    return stat.isFile();
   } catch (error) {
     return false;
   }
@@ -674,12 +674,16 @@ export async function findFiles(dirPath, regex, recurse = false) {
   const results = [];
 
   for (const entry of entries) {
-    const fullPath = `${dirPath}/${entry.name}`;
-
     if (entry.isFile() === true && regex.test(entry.name) === true) {
-      results.push(fullPath);
+      results.push(entry.name);
     } else if (entry.isDirectory() === true && recurse === true) {
-      results.push(...(await findFiles(fullPath, regex, recurse)));
+      const fileNames = await findFiles(
+        `${dirPath}/${entry.name}`,
+        regex,
+        recurse
+      );
+
+      results.push(...fileNames.map((fileName) => `${entry.name}/${fileName}`));
     }
   }
 
@@ -701,15 +705,23 @@ export async function findFolders(dirPath, regex, recurse = false) {
   const results = [];
 
   for (const entry of entries) {
-    const fullPath = `${dirPath}/${entry.name}`;
-
     if (entry.isDirectory() === true) {
       if (regex.test(entry.name) === true) {
-        results.push(fullPath);
+        results.push(entry.name);
       }
 
       if (recurse === true) {
-        results.push(...(await findFolders(fullPath, regex, recurse)));
+        const directoryNames = await findFolders(
+          `${dirPath}/${entry.name}`,
+          regex,
+          recurse
+        );
+
+        results.push(
+          ...directoryNames.map(
+            (directoryName) => `${entry.name}/${directoryName}`
+          )
+        );
       }
     }
   }
