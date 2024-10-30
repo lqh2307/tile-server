@@ -51,11 +51,11 @@ function getStyleHandler() {
               source.url.startsWith("pmtiles://") === true ||
               source.url.startsWith("xyz://") === true
             ) {
-              const queryIndex = source.url.indexOf("?");
+              const queryIndex = source.url.lastIndexOf("?");
               const sourceID =
                 queryIndex === -1
-                  ? source.url.slice(10)
-                  : source.url.slice(10, queryIndex);
+                  ? source.url.split("/")[2]
+                  : source.url.split("/")[2](0, queryIndex);
               const query =
                 queryIndex === -1 ? "" : source.url.slice(queryIndex);
 
@@ -72,9 +72,11 @@ function getStyleHandler() {
                 url.startsWith("mbtiles://") === true ||
                 url.startsWith("xyz://") === true
               ) {
-                const queryIndex = url.indexOf("?");
+                const queryIndex = url.lastIndexOf("?");
                 const sourceID =
-                  queryIndex === -1 ? url.slice(10) : url.slice(10, queryIndex);
+                  queryIndex === -1
+                    ? url.split("/")[2]
+                    : url.split("/")[2](0, queryIndex);
                 const query = queryIndex === -1 ? "" : url.slice(queryIndex);
 
                 url = `${getRequestHost(req)}datas/${sourceID}.json${query}`;
@@ -93,11 +95,11 @@ function getStyleHandler() {
                 tile.startsWith("mbtiles://") === true ||
                 tile.startsWith("xyz://") === true
               ) {
-                const queryIndex = tile.indexOf("?");
+                const queryIndex = tile.lastIndexOf("?");
                 const sourceID =
                   queryIndex === -1
-                    ? tile.slice(10)
-                    : tile.slice(10, queryIndex);
+                    ? tile.split("/")[2]
+                    : tile.split("/")[2](0, queryIndex);
                 const query = queryIndex === -1 ? "" : tile.slice(queryIndex);
                 const format = config.repo.datas[sourceID].tileJSON.format;
 

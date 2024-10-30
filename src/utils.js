@@ -140,6 +140,7 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
   const bc = size / 360;
   const cc = size / (2 * Math.PI);
   const zc = size / 2;
+  const maxTileIndex = Math.pow(2, z) - 1;
 
   if (lon > 180) {
     lon = 180;
@@ -147,9 +148,12 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
     lon = -180;
   }
 
-  let x = zc + lon * bc;
-  if (x > size) {
-    x = size;
+  const px = zc + lon * bc;
+  let x = Math.floor(px / 256);
+  if (x < 0) {
+    x = 0;
+  } else if (x > maxTileIndex) {
+    x = maxTileIndex;
   }
 
   if (lat > 85.051129) {
@@ -158,16 +162,19 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
     lat = -85.051129;
   }
 
-  let y = zc - cc * Math.log(Math.tan(Math.PI / 4 + lat * (Math.PI / 360)));
-  if (y > size) {
-    y = size;
-  }
-
+  const py = zc - cc * Math.log(Math.tan(Math.PI / 4 + lat * (Math.PI / 360)));
+  let y = Math.floor(py / 256);
   if (scheme === "tms") {
     y = size - y;
   }
 
-  return [Math.floor(x / 256), Math.floor(y / 256), z];
+  if (y < 0) {
+    y = 0;
+  } else if (y > maxTileIndex) {
+    y = maxTileIndex;
+  }
+
+  return [x, y, z];
 }
 
 /**
@@ -229,8 +236,8 @@ export function getTilesFromBBox(
   const tiles = [];
 
   for (let z = minZoom; z <= maxZoom; z++) {
-    const [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], z, scheme);
-    const [xMax, yMax] = getXYZFromLonLatZ(bbox[2], bbox[1], z, scheme);
+    let [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], z, scheme);
+    let [xMax, yMax] = getXYZFromLonLatZ(bbox[2], bbox[1], z, scheme);
 
     for (let x = xMin; x <= xMax; x++) {
       for (let y = yMin; y <= yMax; y++) {
@@ -255,8 +262,8 @@ export function getTilesFromBBox(
 export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
   const [lonMin, latMax] = getLonLatFromXYZ(xMin, yMin, z, "topLeft", scheme);
   const [lonMax, latMin] = getLonLatFromXYZ(
-    xMax + 1,
-    yMax + 1,
+    xMax,
+    yMax,
     z,
     "bottomRight",
     z,
@@ -305,7 +312,9 @@ async function retry(fn, maxTry, after = 0) {
 }
 
 /**
- * Download all tile data files in a specified bounding box and zoom levels
+ * Download all xyz tile data files in a specified bounding box and zoom levels
+ * @param {string} name Source data
+ * @param {string} description Source description
  * @param {string} tileURL Tile URL to download
  * @param {string} outputFolder Folder to store downloaded tiles
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
@@ -319,7 +328,9 @@ async function retry(fn, maxTry, after = 0) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function downloadTileDataFilesFromBBox(
+export async function seedXYZTileDataFiles(
+  name,
+  description,
   tileURL,
   outputFolder,
   format,
@@ -401,11 +412,76 @@ export async function downloadTileDataFilesFromBBox(
   );
 
   await fsPromise.writeFile(
+    `${outputFolder}/metadata.json`,
+    JSON.stringify(
+      {
+        name: name,
+        description: description,
+        version: "1.0.0",
+        format: format,
+        bounds: bbox,
+        center: [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2],
+        minzoom: minZoom,
+        maxzoom: maxZoom,
+        type: "overlay",
+      },
+      null,
+      2
+    )
+  );
+
+  await fsPromise.writeFile(
     `${outputFolder}/md5.json`,
     JSON.stringify(hashs, null, 2)
   );
 
   await removeEmptyFolders(outputFolder);
+}
+
+/**
+ * Remove all xyz tile data files in a specified zoom levels
+ * @param {string} outputFolder Folder to store downloaded tiles
+ * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
+ * @param {Array<number>} zoomLevels Zoom levels
+ * @returns {Promise<void>}
+ */
+export async function removeXYZTileDataFiles(
+  outputFolder,
+  format,
+  zoomLevels = [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22,
+  ]
+) {
+  let hashs = {};
+
+  try {
+    hashs = JSON.parse(await fsPromise.readFile(`${outputFolder}/md5.json`));
+  } catch (error) {}
+
+  await Promise.all(
+    zoomLevels.map(async (zoomLevel) => {
+      const files = await findFiles(
+        `${outputFolder}/${zoomLevel}`,
+        new RegExp(`^\\d+/\\d+\\.${format}$`),
+        true
+      );
+
+      files.forEach((file) => {
+        delete hashs[file.split(".")[0]];
+      });
+
+      await fsPromise.writeFile(
+        `${outputFolder}/md5.json`,
+        JSON.stringify(hashs, null, 2)
+      );
+
+      await fsPromise.rm(`${outputFolder}/${zoomLevel}`, {
+        force: true,
+        recursive: true,
+      });
+    })
+  );
 }
 
 /**
@@ -446,9 +522,11 @@ export async function downloadMBTilesFile(
  * @returns {Promise<void>}
  */
 export async function removeEmptyFolders(folderPath) {
-  const folders = await fsPromise.readdir(folderPath);
+  const entries = await fsPromise.readdir(folderPath, {
+    withFileTypes: true,
+  });
 
-  if (folders.length === 0) {
+  if (entries.length === 0) {
     await fsPromise.rm(folderPath, {
       force: true,
       recursive: true,
@@ -458,13 +536,11 @@ export async function removeEmptyFolders(folderPath) {
   }
 
   await Promise.all(
-    folders.map(async (folder) => {
-      const fullFolderPath = path.join(folderPath, folder);
+    entries.map(async (entry) => {
+      const fullPath = `${folderPath}/${entry.name}`;
 
-      const stat = await fsPromise.stat(fullFolderPath);
-
-      if (stat.isDirectory() === true) {
-        await removeEmptyFolders(fullFolderPath);
+      if (entry.isDirectory() === true) {
+        await removeEmptyFolders(fullPath);
       }
     })
   );
@@ -607,31 +683,37 @@ export async function isExistFile(filePath) {
   try {
     const stat = await fsPromise.stat(filePath);
 
-    return stat.isFile() === true && stat.size > 0;
+    return stat.isFile();
   } catch (error) {
     return false;
   }
 }
 
 /**
- * Find matching files in directory
- * @param {string} dirPath
- * @param {RegExp} regex
- * @returns {Promise<string[]>}
+ * Find matching files in a directory
+ * @param {string} dirPath The directory path to search
+ * @param {RegExp} regex The regex to match files
+ * @param {boolean} recurse Whether to search recursively in subdirectories
+ * @returns {Promise<string>} Array of file paths matching the regex
  */
-export async function findFiles(dirPath, regex) {
-  const fileNames = await fsPromise.readdir(dirPath);
+export async function findFiles(dirPath, regex, recurse = false) {
+  const entries = await fsPromise.readdir(dirPath, {
+    withFileTypes: true,
+  });
 
   const results = [];
-  for (const fileName of fileNames) {
-    const stat = await fsPromise.stat(`${dirPath}/${fileName}`);
 
-    if (
-      regex.test(fileName) === true &&
-      stat.isFile() === true &&
-      stat.size > 0
-    ) {
-      results.push(fileName);
+  for (const entry of entries) {
+    if (entry.isFile() === true && regex.test(entry.name) === true) {
+      results.push(entry.name);
+    } else if (entry.isDirectory() === true && recurse === true) {
+      const fileNames = await findFiles(
+        `${dirPath}/${entry.name}`,
+        regex,
+        recurse
+      );
+
+      results.push(...fileNames.map((fileName) => `${entry.name}/${fileName}`));
     }
   }
 
@@ -639,21 +721,38 @@ export async function findFiles(dirPath, regex) {
 }
 
 /**
- * Find matching folders in directory
- * @param {string} dirPath
- * @param {RegExp} regex
- * @returns {Promise<string[]>}
+ * Find matching folders in a directory
+ * @param {string} dirPath The directory path to search
+ * @param {RegExp} regex The regex to match folders
+ * @param {boolean} recurse Whether to search recursively in subdirectories
+ * @returns {Promise<string>} Array of folder paths matching the regex
  */
-export async function findFolders(dirPath, regex) {
-  const folderNames = await fsPromise.readdir(dirPath);
+export async function findFolders(dirPath, regex, recurse = false) {
+  const entries = await fsPromise.readdir(dirPath, {
+    withFileTypes: true,
+  });
 
   const results = [];
-  for (const folderName of folderNames) {
-    const folderPath = `${dirPath}/${folderName}`;
-    const stat = await fsPromise.stat(folderPath);
 
-    if (regex.test(folderName) === true && stat.isDirectory() === true) {
-      results.push(folderName);
+  for (const entry of entries) {
+    if (entry.isDirectory() === true) {
+      if (regex.test(entry.name) === true) {
+        results.push(entry.name);
+      }
+
+      if (recurse === true) {
+        const directoryNames = await findFolders(
+          `${dirPath}/${entry.name}`,
+          regex,
+          recurse
+        );
+
+        results.push(
+          ...directoryNames.map(
+            (directoryName) => `${entry.name}/${directoryName}`
+          )
+        );
+      }
     }
   }
 
@@ -882,11 +981,11 @@ export async function validateStyle(config, styleJSON) {
           source.url.startsWith("mbtiles://") === true ||
           source.url.startsWith("xyz://") === true
         ) {
-          const queryIndex = source.url.indexOf("?");
+          const queryIndex = source.url.lastIndexOf("?");
           const sourceID =
             queryIndex === -1
-              ? source.url.slice(10)
-              : source.url.slice(10, queryIndex);
+              ? source.url.split("/")[2]
+              : source.url.split("/")[2](0, queryIndex);
 
           if (config.repo.datas[sourceID] === undefined) {
             throw new Error(
@@ -912,9 +1011,11 @@ export async function validateStyle(config, styleJSON) {
             url.startsWith("mbtiles://") === true ||
             url.startsWith("xyz://") === true
           ) {
-            const queryIndex = url.indexOf("?");
+            const queryIndex = url.lastIndexOf("?");
             const sourceID =
-              queryIndex === -1 ? url.slice(10) : url.slice(10, queryIndex);
+              queryIndex === -1
+                ? url.split("/")[2]
+                : url.split("/")[2](0, queryIndex);
 
             if (config.repo.datas[sourceID] === undefined) {
               throw new Error(
@@ -941,9 +1042,11 @@ export async function validateStyle(config, styleJSON) {
             tile.startsWith("mbtiles://") === true ||
             tile.startsWith("xyz://") === true
           ) {
-            const queryIndex = tile.indexOf("?");
+            const queryIndex = tile.lastIndexOf("?");
             const sourceID =
-              queryIndex === -1 ? tile.slice(10) : tile.slice(10, queryIndex);
+              queryIndex === -1
+                ? tile.split("/")[2]
+                : tile.split("/")[2](0, queryIndex);
 
             if (config.repo.datas[sourceID] === undefined) {
               throw new Error(

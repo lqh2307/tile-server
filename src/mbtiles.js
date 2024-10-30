@@ -43,27 +43,25 @@ export async function isMBTilesExistIndex(
     });
   });
 
-  if (indexes !== undefined) {
-    for (const index of indexes) {
-      const columns = await new Promise((resolve, reject) => {
-        mbtilesSource.all(
-          `PRAGMA index_info (${index.name})`,
-          (error, columns) => {
-            if (error) {
-              return reject(error);
-            }
-
-            resolve(columns);
+  for (const index of indexes || {}) {
+    const columns = await new Promise((resolve, reject) => {
+      mbtilesSource.all(
+        `PRAGMA index_info (${index.name})`,
+        (error, columns) => {
+          if (error) {
+            return reject(error);
           }
-        );
-      });
 
-      if (
-        columns?.length === columnNames.length &&
-        columns.every((col, i) => col.name === columnNames[i])
-      ) {
-        return true;
-      }
+          resolve(columns);
+        }
+      );
+    });
+
+    if (
+      columns?.length === columnNames.length &&
+      columns.every((col, i) => col.name === columnNames[i])
+    ) {
+      return true;
     }
   }
 
@@ -71,62 +69,64 @@ export async function isMBTilesExistIndex(
 }
 
 /**
- * Create unique index on the metadata table
- * @param {string} mbtilesFilePath
- * @returns {Promise<void>}
+ * Check if a columns exists on a specified table
+ * @param {object} mbtilesSource The MBTiles source object
+ * @param {string} tableName The name of the table to check
+ * @param {Array<string>} columnNames The expected column names
+ * @returns {Promise<boolean>} Returns true if there columns exist on a specified table, otherwise false
  */
-export async function createMBTilesMetadataIndex(mbtilesFilePath) {
-  const mbtilesSource = await openMBTiles(
-    mbtilesFilePath,
-    sqlite3.OPEN_READWRITE
-  );
-
-  if (
-    (await isMBTilesExistIndex(mbtilesSource, "metadata", ["name"])) === true
-  ) {
-    return;
-  }
-
-  return new Promise((resolve, reject) => {
-    mbtilesSource.run(
-      "CREATE UNIQUE INDEX metadata_unique_index ON metadata (name)",
-      (error) => {
-        if (error) {
-          return reject(error);
-        }
-
-        resolve();
+export async function isMBTilesExistColumns(
+  mbtilesSource,
+  tableName,
+  columnNames
+) {
+  const columns = await new Promise((resolve, reject) => {
+    mbtilesSource.all(`PRAGMA table_info (${tableName})`, (error, columns) => {
+      if (error) {
+        return reject(error);
       }
-    );
-  }).finally(() => {
-    mbtilesSource.close();
+
+      resolve(columns);
+    });
   });
+
+  const tableColumnNames = (columns || []).map((column) => column.name);
+
+  return columnNames.every((columnName) =>
+    tableColumnNames.includes(columnName)
+  );
 }
 
 /**
- * Create unique index on the tiles table
+ * Create unique index on the metadata table
  * @param {string} mbtilesFilePath
+ * @param {string} indexName The name of the index
+ * @param {string} tableName The name of the table to check
+ * @param {Array<string>} columnNames The expected column names in the index
  * @returns {Promise<void>}
  */
-export async function createMBTilesTilesIndex(mbtilesFilePath) {
+export async function createMBTilesIndex(
+  mbtilesFilePath,
+  indexName,
+  tableName,
+  columnNames
+) {
   const mbtilesSource = await openMBTiles(
     mbtilesFilePath,
     sqlite3.OPEN_READWRITE
   );
 
   if (
-    (await isMBTilesExistIndex(mbtilesSource, "tiles", [
-      "zoom_level",
-      "tile_column",
-      "tile_row",
-    ])) === true
+    (await isMBTilesExistIndex(mbtilesSource, tableName, columnNames)) === true
   ) {
     return;
   }
 
   return new Promise((resolve, reject) => {
     mbtilesSource.run(
-      "CREATE UNIQUE INDEX tiles_unique_index ON tiles (zoom_level, tile_column, tile_row)",
+      `CREATE UNIQUE INDEX ${indexName} ON ${tableName} (${columnNames.join(
+        ", "
+      )})`,
       (error) => {
         if (error) {
           return reject(error);

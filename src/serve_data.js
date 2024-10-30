@@ -6,8 +6,7 @@ import { StatusCodes } from "http-status-codes";
 import { config } from "./config.js";
 import express from "express";
 import {
-  createMBTilesMetadataIndex,
-  createMBTilesTilesIndex,
+  createMBTilesIndex,
   getMBTilesInfos,
   getMBTilesTile,
   openMBTiles,
@@ -445,11 +444,21 @@ export const serve_data = {
             }
 
             if (config.options.createMetadataIndex === true) {
-              await createMBTilesMetadataIndex(filePath);
+              await createMBTilesIndex(
+                filePath,
+                "metadata_unique_index",
+                "metadata",
+                ["name"]
+              );
             }
 
             if (config.options.createTilesIndex === true) {
-              await createMBTilesTilesIndex(filePath);
+              await createMBTilesIndex(
+                filePath,
+                "tiles_unique_index",
+                "tiles",
+                ["zoom_level", "tile_column", "tile_row"]
+              );
             }
 
             dataInfo.sourceType = "mbtiles";
