@@ -233,8 +233,25 @@ export function getTilesFromBBox(
   const tiles = [];
 
   for (let z = minZoom; z <= maxZoom; z++) {
-    const [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], z, scheme);
-    const [xMax, yMax] = getXYZFromLonLatZ(bbox[2], bbox[1], z, scheme);
+    const maxTileIndex = Math.pow(2, z) - 1;
+    let [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], z, scheme);
+    let [xMax, yMax] = getXYZFromLonLatZ(bbox[2], bbox[1], z, scheme);
+
+    if (xMin > maxTileIndex) {
+      xMin = maxTileIndex;
+    }
+
+    if (yMin > maxTileIndex) {
+      yMin = maxTileIndex;
+    }
+
+    if (xMax > maxTileIndex) {
+      xMax = maxTileIndex;
+    }
+
+    if (yMax > maxTileIndex) {
+      yMax = maxTileIndex;
+    }
 
     for (let x = xMin; x <= xMax; x++) {
       for (let y = yMin; y <= yMax; y++) {
