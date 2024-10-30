@@ -89,7 +89,7 @@ export async function getXYZInfos(
           );
 
           if (yFiles.length > 0) {
-            metadata.format = yFiles[0].slice(yFiles[0].lastIndexOf("."));
+            metadata.format = yFiles[0].split(".")[1];
 
             break loop;
           }
