@@ -169,7 +169,9 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
     }
   },
   "datas": {
-    "asia_vietnam": {
+    "asia_vietnam_cache": {
+      "name": "asia_vietnam",
+      "description": "asia_vietnam",
       "url": "http://localhost:8080/datas/asia_vietnam/{z}/{x}/{y}.png",
       "format": "png",
       "bbox": [96, 4, 120, 28],
@@ -180,12 +182,11 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       },
       "timeout": 60000,
       "concurrency": 100,
-      "maxTry": 5,
-      "xyz": {
-        "directory": "asia_vietnam"
-      }
+      "maxTry": 5
     },
-    "asia_cambodia": {
+    "asia_cambodia_cache": {
+      "name": "asia_cambodia",
+      "description": "asia_cambodia",
       "mbtiles": "http://localhost:8080/datas/asia_cambodia/{z}/{x}/{y}.pbf",
       "format": "pbf",
       "bbox": [96, 4, 120, 28],
@@ -196,10 +197,7 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       },
       "timeout": 60000,
       "concurrency": 100,
-      "maxTry": 5,
-      "xyz": {
-        "directory":"asia_cambodia"
-      }
+      "maxTry": 5
     },
   },
   "sprites": {

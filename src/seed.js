@@ -64,27 +64,16 @@ export async function startSeedData() {
 
     for (const id in seedData.datas) {
       try {
-        let scheme;
-        let directory;
-
-        if (seedData.datas[id].xyz !== undefined) {
-          scheme = "xyz";
-          directory = `${opts.dataDir}/xyzs/${seedData.datas[id].xyz.directory}`;
-        } else if (seedData.datas[id].tms !== undefined) {
-          scheme = "tms";
-          directory = `${opts.dataDir}/xyzs/${seedData.datas[id].tms.directory}`;
-        }
-
         await seedXYZTileDataFiles(
           seedData.datas[id].name,
           seedData.datas[id].description,
           seedData.datas[id].url,
-          directory,
+          `${opts.dataDir}/xyzs/${id}`,
           seedData.datas[id].format,
           seedData.datas[id].bbox,
           seedData.datas[id].minZoom,
           seedData.datas[id].maxZoom,
-          scheme,
+          seedData.datas[id].scheme,
           seedData.datas[id].concurrency,
           false,
           seedData.datas[id].maxTry,
