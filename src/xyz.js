@@ -144,7 +144,9 @@ export async function getXYZInfos(
 
   /* Get metadatas */
   try {
-    metadata = await fsPromise.readFile(`${sourcePath}/metadata.json`, "utf8");
+    metadata = JSON.parse(
+      await fsPromise.readFile(`${sourcePath}/metadata.json`, "utf8")
+    );
   } catch (error) {}
 
   /* Try get min zoom */
