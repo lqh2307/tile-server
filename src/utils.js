@@ -318,7 +318,8 @@ async function retry(fn, maxTry, after = 0) {
  * @param {string} tileURL Tile URL to download
  * @param {string} outputFolder Folder to store downloaded tiles
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
- * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {Array<number>} bounds Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {Array<number>} center Center in format [lon, lat, zoom] in EPSG:4326
  * @param {number} minZoom Minimum zoom level
  * @param {number} maxZoom Maximum zoom level
  * @param {"xyz"|"tms"} scheme Tile scheme
@@ -334,7 +335,8 @@ export async function seedXYZTileDataFiles(
   tileURL,
   outputFolder,
   format,
-  bbox = [-180, -85.051129, 180, 85.051129],
+  bounds = [-180, -85.051129, 180, 85.051129],
+  center = [0, 0, 11],
   minZoom = 0,
   maxZoom = 22,
   scheme = "xyz",
@@ -343,7 +345,7 @@ export async function seedXYZTileDataFiles(
   maxTry = 5,
   timeout = 60000
 ) {
-  const tiles = getTilesFromBBox(bbox, minZoom, maxZoom, scheme);
+  const tiles = getTilesFromBBox(bounds, minZoom, maxZoom, scheme);
   const limitConcurrencyDownload = pLimit(concurrency);
   let hashs = {};
 
@@ -353,7 +355,7 @@ export async function seedXYZTileDataFiles(
 
   printLog(
     "info",
-    `Downloading ${tiles.length} tile data files - BBox [${bbox.join(
+    `Downloading ${tiles.length} tile data files - BBox [${bounds.join(
       ", "
     )}] - Zoom level ${minZoom} -> ${maxZoom}...`
   );
@@ -419,8 +421,8 @@ export async function seedXYZTileDataFiles(
         description: description,
         version: "1.0.0",
         format: format,
-        bounds: bbox,
-        center: [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2],
+        bounds: bounds,
+        center: center,
         minzoom: minZoom,
         maxzoom: maxZoom,
         type: "overlay",
