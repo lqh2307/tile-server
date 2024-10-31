@@ -162,12 +162,12 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
     lat = -85.051129;
   }
 
-  const py = zc - cc * Math.log(Math.tan(Math.PI / 4 + lat * (Math.PI / 360)));
-  let y = Math.floor(py / 256);
+  let py = zc - cc * Math.log(Math.tan(Math.PI / 4 + lat * (Math.PI / 360)));
   if (scheme === "tms") {
-    y = size - y;
+    py = size - py;
   }
 
+  let y = Math.floor(py / 256);
   if (y < 0) {
     y = 0;
   } else if (y > maxTileIndex) {
@@ -236,8 +236,8 @@ export function getTilesFromBBox(
   const tiles = [];
 
   for (let z = minZoom; z <= maxZoom; z++) {
-    let [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], z, scheme);
-    let [xMax, yMax] = getXYZFromLonLatZ(bbox[2], bbox[1], z, scheme);
+    const [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], z, scheme);
+    const [xMax, yMax] = getXYZFromLonLatZ(bbox[2], bbox[1], z, scheme);
 
     for (let x = xMin; x <= xMax; x++) {
       for (let y = yMin; y <= yMax; y++) {
