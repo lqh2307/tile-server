@@ -16,6 +16,7 @@ import {
   printLog,
   getData,
   retry,
+  findFolders,
 } from "./utils.js";
 
 /* Setup commands */
@@ -210,7 +211,12 @@ export async function cleanXYZTileDataFiles(
     })
   );
 
-  await removeEmptyFolders(outputFolder);
+  if ((await findFolders(outputFolder, /^\d+$/)).length === 0) {
+    await fsPromise.rm(outputFolder, {
+      force: true,
+      recursive: true,
+    });
+  }
 }
 
 /**
