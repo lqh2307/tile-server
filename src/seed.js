@@ -12,7 +12,6 @@ import {
   getTilesFromBBox,
   calculateMD5,
   isExistFile,
-  findFolders,
   findFiles,
   printLog,
   getData,
@@ -211,12 +210,7 @@ export async function cleanXYZTileDataFiles(
     })
   );
 
-  if ((await findFolders(outputFolder)).length === 0) {
-    await fsPromise.rm(outputFolder, {
-      force: true,
-      recursive: true,
-    });
-  }
+  await removeEmptyFolders(outputFolder);
 }
 
 /**
@@ -277,7 +271,7 @@ async function startTask() {
         } catch (error) {
           printLog(
             "error",
-            `Failed to clean up data id ${id}: ${error}. Skipping...`
+            `Failed to clean up data id "${id}": ${error}. Skipping...`
           );
         }
       }
@@ -325,7 +319,7 @@ async function startTask() {
         } catch (error) {
           printLog(
             "error",
-            `Failed to seed data id ${id}: ${error}. Skipping...`
+            `Failed to seed data id "${id}": ${error}. Skipping...`
           );
         }
       }
