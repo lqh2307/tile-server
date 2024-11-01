@@ -167,7 +167,7 @@ export async function seedXYZTileDataFiles(
  * @param {Array<number>} zooms Array of specific zoom levels
  * @returns {Promise<void>}
  */
-export async function removeXYZTileDataFiles(
+export async function cleanXYZTileDataFiles(
   outputFolder,
   format,
   zooms = [
@@ -180,6 +180,11 @@ export async function removeXYZTileDataFiles(
   try {
     hashs = JSON.parse(await fsPromise.readFile(`${outputFolder}/md5.json`));
   } catch (error) {}
+
+  printLog(
+    "info",
+    `Cleaning up tile data files with Zoom levels [${zooms.join(", ")}]...`
+  );
 
   await Promise.all(
     zooms.map(async (zoom) => {
@@ -256,7 +261,7 @@ async function startTask() {
 
       for (const id in cleanUpData.datas) {
         try {
-          await removeXYZTileDataFiles(
+          await cleanXYZTileDataFiles(
             `${opts.dataDir}/xyzs/${id}`,
             cleanUpData.datas[id].format,
             cleanUpData.datas[id].zooms
