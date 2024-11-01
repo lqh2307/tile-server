@@ -12,11 +12,11 @@ import {
   getTilesFromBBox,
   calculateMD5,
   isExistFile,
+  findFolders,
   findFiles,
   printLog,
   getData,
   retry,
-  findFolders,
 } from "./utils.js";
 
 /* Setup commands */
