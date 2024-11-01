@@ -12,6 +12,7 @@ import {
   getTilesFromBBox,
   calculateMD5,
   isExistFile,
+  findFolders,
   findFiles,
   printLog,
   getData,
@@ -190,7 +191,7 @@ export async function cleanXYZTileDataFiles(
     zooms.map(async (zoom) => {
       const files = await findFiles(
         `${outputFolder}/${zoom}`,
-        new RegExp(`^\\d+/\\d+\\.${format}$`),
+        new RegExp(`^\\d+\\.${format}$`),
         true
       );
 
@@ -209,6 +210,13 @@ export async function cleanXYZTileDataFiles(
       });
     })
   );
+
+  if ((await findFolders(outputFolder)).length === 0) {
+    await fsPromise.rm(outputFolder, {
+      force: true,
+      recursive: true,
+    });
+  }
 }
 
 /**
