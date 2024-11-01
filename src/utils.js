@@ -276,13 +276,13 @@ function delay(ms) {
 }
 
 /**
- * Retry function to attempt downloading the file multiple times
+ * Attempt do function multiple times
  * @param {function} fn The function to attempt
  * @param {number} maxTry The number of maxTry allowed
  * @param {number} after Delay in milliseconds between each retry
  * @returns {Promise<void>}
  */
-async function retry(fn, maxTry, after = 0) {
+export async function retry(fn, maxTry, after = 0) {
   for (let attempt = 1; attempt <= maxTry; attempt++) {
     try {
       return await fn();
