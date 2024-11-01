@@ -78,7 +78,7 @@ export async function seedXYZTileDataFiles(
 
   printLog(
     "info",
-    `Downloading ${tilesSummary.length} tile data files - BBox [${bounds.join(
+    `Downloading tile data files with BBox [${bounds.join(
       ", "
     )}] - Zoom levels [${zooms.join(", ")}]...`
   );
@@ -136,6 +136,8 @@ export async function seedXYZTileDataFiles(
       }
     }
   }
+
+  await Promise.all(tilePromises);
 
   await createXYZMetadataFile(
     outputFolder,
@@ -249,7 +251,7 @@ async function startTask() {
     try {
       /* Read cleanup.json file */
       const cleanUpData = JSON.parse(
-        fs.readFileSync(`${opts.dataDir}/cleanup.json`, "utf8")
+        await fsPromise.readFile(`${opts.dataDir}/cleanup.json`, "utf8")
       );
 
       for (const id in cleanUpData.datas) {
@@ -271,7 +273,8 @@ async function startTask() {
         printLog("info", "Completed cleaning up data. Restaring server...");
 
         process.kill(
-          JSON.parse(fs.readFileSync("server-info.json", "utf8")).mainPID,
+          JSON.parse(await fsPromise.readFile("server-info.json", "utf8"))
+            .mainPID,
           "SIGTERM"
         );
       } else {
@@ -286,7 +289,7 @@ async function startTask() {
     try {
       /* Read seed.json file */
       const seedData = JSON.parse(
-        fs.readFileSync(`${opts.dataDir}/seed.json`, "utf8")
+        await fsPromise.readFile(`${opts.dataDir}/seed.json`, "utf8")
       );
 
       for (const id in seedData.datas) {
@@ -318,7 +321,8 @@ async function startTask() {
         printLog("info", "Completed seeding data. Restaring server...");
 
         process.kill(
-          JSON.parse(fs.readFileSync("server-info.json", "utf8")).mainPID,
+          JSON.parse(await fsPromise.readFile("server-info.json", "utf8"))
+            .mainPID,
           "SIGTERM"
         );
       } else {
