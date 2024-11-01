@@ -9,14 +9,12 @@ import handlebars from "handlebars";
 import https from "node:https";
 import path from "node:path";
 import http from "node:http";
-import pLimit from "p-limit";
 import crypto from "crypto";
 import axios from "axios";
 import sharp from "sharp";
 import fs from "node:fs";
 import zlib from "zlib";
 import util from "util";
-import os from "os";
 
 const protoMessage = protobuf(fs.readFileSync("public/protos/glyphs.proto"));
 
@@ -97,7 +95,7 @@ export async function getData(url, timeout = 60000) {
   } catch (error) {
     if (error.response) {
       throw new Error(
-        `Failed to request ${url} with status code: ${error.response.status}`
+        `Failed to request ${url} with status code: ${error.response.status} - ${error.response.statusText}`
       );
     } else {
       throw new Error(`Failed to request ${url}: ${error.message}`);
@@ -220,33 +218,26 @@ export function getLonLatFromXYZ(
 }
 
 /**
- * Get all tiles intersecting a bounding box across multiple zoom levels
- * @param {number[]} bbox [west, south, east, north] in EPSG:4326
- * @param {number} minZoom Minimum zoom level
- * @param {number} maxZoom Maximum zoom level
- * @param {"xyz"|"tms"} [scheme="xyz"] Tile scheme
- * @returns {Array<Array<number>} List of tiles [z, x, y] intersecting the bbox at each zoom level
+ * Get tile bounds for specific zoom levels intersecting a bounding box
+ * @param {Array<number>} bbox [west, south, east, north] in EPSG:4326
+ * @param {Array<number>} zooms Array of specific zoom levels
+ * @param {"xyz"|"tms"} scheme Tile scheme
+ * @returns {Object} Object with keys as zoom levels and values as {x: [min, max], y: [min, max]}
  */
-export function getTilesFromBBox(
-  bbox = [-180, -85.051129, 180, 85.051129],
-  minZoom = 0,
-  maxZoom = 22,
-  scheme = "xyz"
-) {
-  const tiles = [];
+export function getTilesFromBBox(bbox, zooms, scheme) {
+  const tilesSummary = {};
 
-  for (let z = minZoom; z <= maxZoom; z++) {
-    const [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], z, scheme);
-    const [xMax, yMax] = getXYZFromLonLatZ(bbox[2], bbox[1], z, scheme);
+  for (const zoom of zooms) {
+    const [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], zoom, scheme);
+    const [xMax, yMax] = getXYZFromLonLatZ(bbox[2], bbox[1], zoom, scheme);
 
-    for (let x = xMin; x <= xMax; x++) {
-      for (let y = yMin; y <= yMax; y++) {
-        tiles.push([z, x, y]);
-      }
-    }
+    tilesSummary[`${zoom}`] = {
+      x: [xMin, xMax],
+      y: [yMin, yMax],
+    };
   }
 
-  return tiles;
+  return tilesSummary;
 }
 
 /**
@@ -309,182 +300,6 @@ async function retry(fn, maxTry, after = 0) {
       }
     }
   }
-}
-
-/**
- * Download all xyz tile data files in a specified bounding box and zoom levels
- * @param {string} name Source data
- * @param {string} description Source description
- * @param {string} tileURL Tile URL to download
- * @param {string} outputFolder Folder to store downloaded tiles
- * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
- * @param {Array<number>} bounds Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
- * @param {Array<number>} center Center in format [lon, lat, zoom] in EPSG:4326
- * @param {number} minZoom Minimum zoom level
- * @param {number} maxZoom Maximum zoom level
- * @param {"xyz"|"tms"} scheme Tile scheme
- * @param {number} concurrency Concurrency download
- * @param {boolean} overwrite Overwrite exist file
- * @param {number} maxTry Number of retry attempts on failure
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-export async function seedXYZTileDataFiles(
-  name,
-  description,
-  tileURL,
-  outputFolder,
-  format,
-  bounds = [-180, -85.051129, 180, 85.051129],
-  center = [0, 0, 11],
-  minZoom = 0,
-  maxZoom = 22,
-  scheme = "xyz",
-  concurrency = os.cpus().length,
-  overwrite = true,
-  maxTry = 5,
-  timeout = 60000
-) {
-  const tiles = getTilesFromBBox(bounds, minZoom, maxZoom, scheme);
-  const limitConcurrencyDownload = pLimit(concurrency);
-  let hashs = {};
-
-  try {
-    hashs = JSON.parse(await fsPromise.readFile(`${outputFolder}/md5.json`));
-  } catch (error) {}
-
-  printLog(
-    "info",
-    `Downloading ${tiles.length} tile data files - BBox [${bounds.join(
-      ", "
-    )}] - Zoom level ${minZoom} -> ${maxZoom}...`
-  );
-
-  await Promise.all(
-    tiles.map((tile) =>
-      limitConcurrencyDownload(async () => {
-        const url = tileURL.replace(
-          "/{z}/{x}/{y}",
-          `/${tile[0]}/${tile[1]}/${tile[2]}`
-        );
-
-        const filePath = `${outputFolder}/${tile[0]}/${tile[1]}/${tile[2]}.${format}`;
-
-        try {
-          if (overwrite === false && (await isExistFile(filePath)) === true) {
-            printLog(
-              "info",
-              `Tile data file is exist. Skipping download tile data file from ${url}...`
-            );
-          } else {
-            printLog("info", `Downloading tile data file from ${url}...`);
-
-            await retry(async () => {
-              // Get data
-              const response = await getData(url, timeout);
-
-              // Store data to file
-              await fsPromise.mkdir(path.dirname(filePath), {
-                recursive: true,
-              });
-
-              await fsPromise.writeFile(filePath, response.data);
-
-              // Store data md5 hash
-              if (response.headers["Etag"]) {
-                hashs[`${tile[0]}/${tile[1]}/${tile[2]}`] =
-                  response.headers["Etag"];
-              } else {
-                hashs[`${tile[0]}/${tile[1]}/${tile[2]}`] = calculateMD5(
-                  response.data
-                );
-              }
-            }, maxTry);
-          }
-        } catch (error) {
-          printLog("error", `Failed to download tile data file: ${error}`);
-
-          // Remove error tile data file
-          await fsPromise.rm(filePath, {
-            force: true,
-          });
-        }
-      })
-    )
-  );
-
-  await fsPromise.writeFile(
-    `${outputFolder}/metadata.json`,
-    JSON.stringify(
-      {
-        name: name,
-        description: description,
-        version: "1.0.0",
-        format: format,
-        bounds: bounds,
-        center: center,
-        minzoom: minZoom,
-        maxzoom: maxZoom,
-        type: "overlay",
-        time: new Date().toISOString().split(".")[0],
-      },
-      null,
-      2
-    )
-  );
-
-  await fsPromise.writeFile(
-    `${outputFolder}/md5.json`,
-    JSON.stringify(hashs, null, 2)
-  );
-
-  await removeEmptyFolders(outputFolder);
-}
-
-/**
- * Remove all xyz tile data files in a specified zoom levels
- * @param {string} outputFolder Folder to store downloaded tiles
- * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
- * @param {Array<number>} zoomLevels Zoom levels
- * @returns {Promise<void>}
- */
-export async function removeXYZTileDataFiles(
-  outputFolder,
-  format,
-  zoomLevels = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22,
-  ]
-) {
-  let hashs = {};
-
-  try {
-    hashs = JSON.parse(await fsPromise.readFile(`${outputFolder}/md5.json`));
-  } catch (error) {}
-
-  await Promise.all(
-    zoomLevels.map(async (zoomLevel) => {
-      const files = await findFiles(
-        `${outputFolder}/${zoomLevel}`,
-        new RegExp(`^\\d+/\\d+\\.${format}$`),
-        true
-      );
-
-      files.forEach((file) => {
-        delete hashs[file.split(".")[0]];
-      });
-
-      await fsPromise.writeFile(
-        `${outputFolder}/md5.json`,
-        JSON.stringify(hashs, null, 2)
-      );
-
-      await fsPromise.rm(`${outputFolder}/${zoomLevel}`, {
-        force: true,
-        recursive: true,
-      });
-    })
-  );
 }
 
 /**
@@ -1174,7 +989,7 @@ export async function downloadFile(
   } catch (error) {
     if (error.response) {
       throw new Error(
-        `Failed to request ${url} with status code: ${error.response.status}`
+        `Failed to request ${url} with status code: ${error.response.status} - ${error.response.statusText}`
       );
     } else {
       throw new Error(`Failed to request ${url}: ${error.message}`);

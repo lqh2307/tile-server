@@ -176,8 +176,9 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "format": "png",
       "bounds": [96, 4, 120, 28],
       "center": [108, 16],
-      "minzoom": 0,
-      "maxzoom": 10,
+      "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      "scheme": "xyz",
+      "type": "overlay",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
       },
@@ -188,12 +189,13 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
     "asia_cambodia_cache": {
       "name": "asia_cambodia",
       "description": "asia_cambodia",
-      "mbtiles": "http://localhost:8080/datas/asia_cambodia/{z}/{x}/{y}.pbf",
+      "url": "http://localhost:8080/datas/asia_cambodia/{z}/{x}/{y}.pbf",
       "format": "pbf",
       "bounds": [96, 4, 120, 28],
       "center": [108, 16],
-      "minzoom": 0,
-      "maxzoom": 10,
+      "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      "scheme": "xyz",
+      "type": "overlay",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
       },

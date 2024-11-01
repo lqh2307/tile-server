@@ -179,3 +179,49 @@ export async function getXYZInfos(
 
   return tileJSON;
 }
+
+/**
+ * Create XYZ metadata file
+ * @param {string} outputFolder Folder to store metadata file path
+ * @param {string} name Source data name
+ * @param {string} description Source description
+ * @param {"gif"|"png"|"jpg"|"jpeg"|"webp"|"pbf"} format Tile format
+ * @param {Array<number>} bounds Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {Array<number>} center Center in format [lon, lat, zoom] in EPSG:4326
+ * @param {number} minZoom Minimum zoom level
+ * @param {number} maxZoom Maximum zoom level
+ * @param {"baselayer"|"overlay"} type Layer type
+ * @param {"xyz"|"tms"} scheme Tile scheme
+ * @returns {Promise<void>}
+ */
+export async function createXYZMetadataFile(
+  outputFolder,
+  name,
+  description,
+  format,
+  bounds,
+  center,
+  minZoom,
+  maxZoom,
+  type,
+  scheme
+) {
+  const metadata = {
+    name: name || "Unknown",
+    description: description || "Unknown",
+    version: "1.0.0",
+    format: format || "png",
+    bounds: bounds || [-180, -85.051129, 180, 85.051129],
+    center: center || [0, 0, 11],
+    minzoom: minZoom || 0,
+    maxzoom: maxZoom || 22,
+    type: type || "overlay",
+    scheme: scheme || "xyz",
+    time: new Date().toISOString().split(".")[0],
+  };
+
+  await fsPromise.writeFile(
+    `${outputFolder}/metadata.json`,
+    JSON.stringify(metadata, null, 2)
+  );
+}
