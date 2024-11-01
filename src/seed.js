@@ -245,10 +245,10 @@ export async function seedXYZTileDataFiles(
  * Remove all xyz tile data files in a specified zoom levels
  * @param {string} outputFolder Folder to store downloaded tiles
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
- * @param {Array<number>} zoomLevels Zoom levels
+ * @param {Array<number>} zooms Array of specific zoom levels
  * @returns {Promise<void>}
  */
-export async function removeXYZTileDataFiles(outputFolder, format, zoomLevels) {
+export async function removeXYZTileDataFiles(outputFolder, format, zooms) {
   let hashs = {};
 
   try {
@@ -256,7 +256,7 @@ export async function removeXYZTileDataFiles(outputFolder, format, zoomLevels) {
   } catch (error) {}
 
   await Promise.all(
-    zoomLevels.map(async (zoomLevel) => {
+    zooms.map(async (zoomLevel) => {
       const files = await findFiles(
         `${outputFolder}/${zoomLevel}`,
         new RegExp(`^\\d+/\\d+\\.${format}$`),
