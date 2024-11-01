@@ -248,7 +248,14 @@ export async function seedXYZTileDataFiles(
  * @param {Array<number>} zooms Array of specific zoom levels
  * @returns {Promise<void>}
  */
-export async function removeXYZTileDataFiles(outputFolder, format, zooms) {
+export async function removeXYZTileDataFiles(
+  outputFolder, 
+  format, 
+  zooms = [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22,
+  ],
+) {
   let hashs = {};
 
   try {
@@ -256,9 +263,9 @@ export async function removeXYZTileDataFiles(outputFolder, format, zooms) {
   } catch (error) {}
 
   await Promise.all(
-    zooms.map(async (zoomLevel) => {
+    zooms.map(async (zoom) => {
       const files = await findFiles(
-        `${outputFolder}/${zoomLevel}`,
+        `${outputFolder}/${zoom}`,
         new RegExp(`^\\d+/\\d+\\.${format}$`),
         true
       );
@@ -272,7 +279,7 @@ export async function removeXYZTileDataFiles(outputFolder, format, zooms) {
         JSON.stringify(hashs, null, 2)
       );
 
-      await fsPromise.rm(`${outputFolder}/${zoomLevel}`, {
+      await fsPromise.rm(`${outputFolder}/${zoom}`, {
         force: true,
         recursive: true,
       });
