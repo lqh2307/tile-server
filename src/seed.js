@@ -274,7 +274,7 @@ async function startTask() {
         }
       }
 
-      if (cleanUpData.restartServerAfterSeed === true) {
+      if (cleanUpData.restartServerAfterCleanUp === true) {
         printLog("info", "Completed cleaning up data. Restaring server...");
 
         process.kill(

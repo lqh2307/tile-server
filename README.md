@@ -222,3 +222,51 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
   }
 }
 ```
+
+## Example cleanup.json
+
+```json
+{
+  "restartServerAfterCleanUp": true,
+  "styles": {
+    "vietnam": {
+      "url": "http://localhost:8080/styles/vietnam/style.json",
+      "directory": "vietnam"
+    },
+    "cambodia": {
+      "url": "http://localhost:8080/styles/cambodia/style.json",
+      "directory": "cambodia"
+    },
+    "zurich_switzerland": {
+      "url": "http://localhost:8080/styles/zurich_switzerland/style.json",
+      "directory": "zurich_switzerland"
+    }
+  },
+  "datas": {
+    "asia_vietnam_cache": {
+      "format": "png",
+      "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    },
+    "asia_cambodia_cache": {
+      "format": "pbf",
+      "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    },
+  },
+  "sprites": {
+    "liberty": {
+      "url": "http://localhost:8080/sprites/liberty/sprite"
+    },
+    "basic": {
+      "url": "http://localhost:8080/sprites/basic/sprite"
+    }
+  },
+  "fonts": {
+    "Open Sans Regular": {
+      "url": "http://localhost:8080/fonts/Open Sans Regular/{range}.pbf"
+    },
+    "Times New Roman": {
+      "url": "http://localhost:8080/fonts/Times New Roman/{range}.pbf"
+    }
+  }
+}
+```
