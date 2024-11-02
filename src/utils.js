@@ -220,7 +220,7 @@ export function getLonLatFromXYZ(
  * @param {"xyz"|"tms"} scheme Tile scheme
  * @returns {Object} Object with keys as zoom levels and values as {x: [min, max], y: [min, max]}
  */
-export function getTilesFromBBox(bbox, zooms, scheme) {
+export function getTileBoundsFromBBox(bbox, zooms, scheme) {
   const tilesSummary = {};
 
   for (const zoom of zooms) {

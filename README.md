@@ -247,13 +247,15 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
       },
-      "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      "bounds": [96, 4, 120, 28]
     },
     "asia_cambodia_cache": {
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
       },
-      "zooms": [0, 1, 2, 3, 4, 5, 9, 10]
+      "zooms": [0, 1, 2, 3, 4, 5, 9, 10],
+      "bounds": [96, 4, 120, 28]
     },
   },
   "sprites": {

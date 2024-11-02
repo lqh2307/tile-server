@@ -3,6 +3,7 @@
 import fsPromise from "node:fs/promises";
 import {
   detectFormatAndHeaders,
+  getTileBoundsFromBBox,
   createNewTileJSON,
   getBBoxFromTiles,
   findFolders,
@@ -212,4 +213,26 @@ export async function createXYZMD5File(outputFolder, hashs) {
     `${outputFolder}/md5.json`,
     JSON.stringify(hashs, null, 2)
   );
+}
+
+/**
+ * Get XYZ tile from bounding box for specific zoom levels intersecting a bounding box
+ * @param {Array<number>} bbox [west, south, east, north] in EPSG:4326
+ * @param {Array<number>} zooms Array of specific zoom levels
+ * @param {"xyz"|"tms"} scheme Tile scheme
+ * @returns {Array<string>} Array values as z/x/y
+ */
+export function getXYZTileFromBBox(bbox, zooms, scheme) {
+  const tilesSummary = getTileBoundsFromBBox(bbox, zooms, scheme);
+  const tiles = [];
+
+  for (const z in tilesSummary) {
+    for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+      for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+        tiles.push(`/${z}/${x}/${y}`);
+      }
+    }
+  }
+
+  return tiles;
 }
