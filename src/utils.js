@@ -71,7 +71,7 @@ function combine(buffers, fontstack) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<object>}
  */
-export async function getData(url, timeout = 60000) {
+export async function getData(url, timeout) {
   try {
     const response = await axios.get(url, {
       timeout: timeout,
@@ -86,10 +86,6 @@ export async function getData(url, timeout = 60000) {
         keepAlive: false,
       }),
     });
-
-    if (response.status === 204) {
-      throw new Error("No content");
-    }
 
     return response;
   } catch (error) {
@@ -291,7 +287,7 @@ export async function retry(fn, maxTry, after = 0) {
       if (remainingAttempts > 0) {
         printLog(
           "warning",
-          `${error}. ${remainingAttempts} maxTry remaining - After ${after} ms...`
+          `${error}. ${remainingAttempts} tries remaining - After ${after} ms...`
         );
 
         await delay(after);
@@ -575,6 +571,22 @@ export async function findFolders(dirPath, regex, recurse = false) {
   }
 
   return results;
+}
+
+/**
+ * Delete files or folders
+ * @param {Array<string>} fileOrFolders File or folder paths
+ * @returns {Promise<void>}
+ */
+export async function deleteFilesOrFolders(fileOrFolders) {
+  await Promise.all(
+    fileOrFolders.map((fileOrFolder) =>
+      fsPromise.rm(fileOrFolder, {
+        force: true,
+        recursive: true,
+      })
+    )
+  );
 }
 
 /**

@@ -1,6 +1,6 @@
 "use strict";
 
-import { createXYZMetadataFile } from "./xyz.js";
+import { createXYZMD5File, createXYZMetadataFile } from "./xyz.js";
 import fsPromise from "node:fs/promises";
 import { program } from "commander";
 import pLimit from "p-limit";
@@ -21,8 +21,8 @@ import {
 
 /* Setup commands */
 program
-  .description("========== tile-server seed options ==========")
-  .usage("tile-server seed [options]")
+  .description("========== tile-server seed and clean up options ==========")
+  .usage("tile-server seed and clean up [options]")
   .option("-n, --num_processes <num>", "Number of processes", "1")
   .option("-d, --data_dir <dir>", "Data directory", "data")
   .option("-c, --cleanup", "Run cleanup task to remove specified tiles")
@@ -36,7 +36,7 @@ program
 
 /**
  * Download all xyz tile data files in a specified bounding box and zoom levels
- * @param {string} name Source data
+ * @param {string} name Source data name
  * @param {string} description Source description
  * @param {string} tileURL Tile URL to download
  * @param {string} outputFolder Folder to store downloaded tiles
@@ -69,22 +69,21 @@ export async function seedXYZTileDataFiles(
   maxTry = 5,
   timeout = 60000
 ) {
+  printLog(
+    "info",
+    `Downloading tile data files with Zoom levels [${zooms.join(
+      ", "
+    )}] - BBox [${bounds.join(", ")}]...`
+  );
+
   const tilesSummary = getTilesFromBBox(bounds, zooms, scheme);
   const limitConcurrencyDownload = pLimit(concurrency);
+  const tilePromises = [];
   let hashs = {};
 
   try {
     hashs = JSON.parse(await fsPromise.readFile(`${outputFolder}/md5.json`));
   } catch (error) {}
-
-  printLog(
-    "info",
-    `Downloading tile data files with BBox [${bounds.join(
-      ", "
-    )}] - Zoom levels [${zooms.join(", ")}]...`
-  );
-
-  const tilePromises = [];
 
   for (const z in tilesSummary) {
     for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
@@ -110,10 +109,21 @@ export async function seedXYZTileDataFiles(
                   // Get data
                   const response = await getData(url, timeout);
 
+                  // Skip with 204 error code
+                  if (response.status === 204) {
+                    printLog(
+                      "warning",
+                      `Failed to download tile data file: Failed to request ${url} with status code: ${response.status} - ${response.statusText}. Skipping`
+                    );
+
+                    return;
+                  }
+
                   // Store data to file
                   await fsPromise.mkdir(path.dirname(filePath), {
                     recursive: true,
                   });
+
                   await fsPromise.writeFile(filePath, response.data);
 
                   // Store data md5 hash
@@ -140,23 +150,20 @@ export async function seedXYZTileDataFiles(
 
   await Promise.all(tilePromises);
 
-  await createXYZMetadataFile(
-    outputFolder,
-    name,
-    description,
-    format,
-    bounds,
-    center,
-    Math.min(...zooms),
-    Math.max(...zooms),
-    "overlay",
-    scheme
-  );
+  await createXYZMetadataFile(outputFolder, {
+    name: name || "Unknown",
+    description: description || "Unknown",
+    version: "1.0.0",
+    format: format || "png",
+    bounds: bounds || [-180, -85.051129, 180, 85.051129],
+    center: center || [0, 0, 11],
+    minzoom: Math.min(...zooms),
+    maxzoom: Math.max(...zooms),
+    scheme: scheme || "xyz",
+    time: new Date().toISOString().split(".")[0],
+  });
 
-  await fsPromise.writeFile(
-    `${outputFolder}/md5.json`,
-    JSON.stringify(hashs, null, 2)
-  );
+  await createXYZMD5File(outputFolder, hashs);
 
   await removeEmptyFolders(outputFolder);
 }
@@ -164,58 +171,88 @@ export async function seedXYZTileDataFiles(
 /**
  * Remove all xyz tile data files in a specified zoom levels
  * @param {string} outputFolder Folder to store downloaded tiles
- * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {Array<number>} zooms Array of specific zoom levels
+ * @param {string} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" before which files should be deleted
  * @returns {Promise<void>}
  */
 export async function cleanXYZTileDataFiles(
   outputFolder,
-  format,
   zooms = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
     21, 22,
-  ]
+  ],
+  cleanUpBefore = "2024-10-10T00:00:00"
 ) {
-  let hashs = {};
+  if (cleanUpBefore) {
+    printLog(
+      "info",
+      `Cleaning up tile data files with Zoom levels [${zooms.join(
+        ", "
+      )}] - Before ${cleanUpBefore}...`
+    );
+  } else {
+    printLog(
+      "info",
+      `Cleaning up tile data files with Zoom levels [${zooms.join(", ")}]...`
+    );
+  }
 
-  try {
-    hashs = JSON.parse(await fsPromise.readFile(`${outputFolder}/md5.json`));
-  } catch (error) {}
-
-  printLog(
-    "info",
-    `Cleaning up tile data files with Zoom levels [${zooms.join(", ")}]...`
+  // Get files to detete
+  const fileToDeletes = await findFiles(
+    `${outputFolder}`,
+    /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/,
+    true
   );
 
-  await Promise.all(
-    zooms.map(async (zoom) => {
-      const files = await findFiles(
-        `${outputFolder}/${zoom}`,
-        new RegExp(`^\\d+\\.${format}$`),
-        true
-      );
+  // Delete files
+  if (cleanUpBefore) {
+    cleanUpBefore = new Date(cleanUpBefore);
 
-      files.forEach((file) => {
-        delete hashs[file.split(".")[0]];
-      });
+    await Promise.all(
+      fileToDeletes.map(async (fileToDelete) => {
+        try {
+          const stats = await fsPromise.stat(fileToDelete);
 
-      await fsPromise.writeFile(
-        `${outputFolder}/md5.json`,
-        JSON.stringify(hashs, null, 2)
-      );
+          if (!stats.birthtime || stats.birthtime < cleanUpBefore) {
+            await fsPromise.rm(fileToDelete, {
+              force: true,
+            });
+          }
+        } catch (error) {}
+      })
+    );
+  } else {
+    await Promise.all(
+      zooms.map((zoom) =>
+        fsPromise.rm(`${outputFolder}/${zoom}`, {
+          force: true,
+          recursive: true,
+        })
+      )
+    );
+  }
 
-      await fsPromise.rm(`${outputFolder}/${zoom}`, {
-        force: true,
-        recursive: true,
-      });
-    })
-  );
-
-  if ((await findFolders(outputFolder, /^\d+$/)).length === 0) {
+  if ((await findFolders(outputFolder, /^\d+$/, false)).length === 0) {
+    // Delete parent folder if empty
     await fsPromise.rm(outputFolder, {
       force: true,
       recursive: true,
     });
+  } else {
+    // Delete md5 in md5.json
+    try {
+      const hashs = JSON.parse(
+        await fsPromise.readFile(`${outputFolder}/md5.json`)
+      );
+
+      await Promise.all(
+        fileToDeletes.map(async (fileToDelete) => {
+          delete hashs[`${fileToDelete.split(".")[0]}`];
+        })
+      );
+
+      await createXYZMD5File(outputFolder, hashs);
+    } catch (error) {}
   }
 }
 
@@ -271,8 +308,8 @@ async function startTask() {
         try {
           await cleanXYZTileDataFiles(
             `${opts.dataDir}/xyzs/${id}`,
-            cleanUpData.datas[id].format,
-            cleanUpData.datas[id].zooms
+            cleanUpData.datas[id].zooms,
+            cleanUpData.datas[id].cleanUpBefore.time
           );
         } catch (error) {
           printLog(

@@ -244,12 +244,16 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
   },
   "datas": {
     "asia_vietnam_cache": {
-      "format": "png",
+      "cleanUpBefore": {
+        "time": "2024-10-10T00:00:00"
+      },
       "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     },
     "asia_cambodia_cache": {
-      "format": "pbf",
-      "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      "cleanUpBefore": {
+        "time": "2024-10-10T00:00:00"
+      },
+      "zooms": [0, 1, 2, 3, 4, 5, 9, 10]
     },
   },
   "sprites": {

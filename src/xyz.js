@@ -43,10 +43,14 @@ export async function getXYZTile(sourcePath, z, x, y, format = "png") {
  * @returns {Promise<number>}
  */
 export async function getXYZFormatFromTiles(sourcePath) {
-  const zFolders = await findFolders(sourcePath, /^\d+$/);
+  const zFolders = await findFolders(sourcePath, /^\d+$/, false);
 
   loop: for (const zFolder of zFolders) {
-    const xFolders = await findFolders(`${sourcePath}/${zFolder}`, /^\d+$/);
+    const xFolders = await findFolders(
+      `${sourcePath}/${zFolder}`,
+      /^\d+$/,
+      false
+    );
 
     for (const xFolder of xFolders) {
       const yFiles = await findFiles(
@@ -72,10 +76,14 @@ export async function getXYZFormatFromTiles(sourcePath) {
 export async function getXYZBBoxFromTiles(sourcePath, scheme) {
   const boundsArr = [];
 
-  const zFolders = await findFolders(sourcePath, /^\d+$/);
+  const zFolders = await findFolders(sourcePath, /^\d+$/, false);
 
   for (const zFolder of zFolders) {
-    const xFolders = await findFolders(`${sourcePath}/${zFolder}`, /^\d+$/);
+    const xFolders = await findFolders(
+      `${sourcePath}/${zFolder}`,
+      /^\d+$/,
+      false
+    );
 
     if (xFolders.length > 0) {
       const xMin = Math.min(...xFolders.map((folder) => Number(folder)));
@@ -121,7 +129,7 @@ export async function getXYZZoomLevelFromTiles(
   sourcePath,
   zoomType = "maxzoom"
 ) {
-  const folders = await findFolders(sourcePath, /^\d+$/);
+  const folders = await findFolders(sourcePath, /^\d+$/, false);
 
   return zoomType === "minzoom"
     ? Math.min(...folders.map((folder) => Number(folder)))
@@ -181,47 +189,27 @@ export async function getXYZInfos(
 }
 
 /**
- * Create XYZ metadata file
- * @param {string} outputFolder Folder to store metadata file path
- * @param {string} name Source data name
- * @param {string} description Source description
- * @param {"gif"|"png"|"jpg"|"jpeg"|"webp"|"pbf"} format Tile format
- * @param {Array<number>} bounds Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
- * @param {Array<number>} center Center in format [lon, lat, zoom] in EPSG:4326
- * @param {number} minZoom Minimum zoom level
- * @param {number} maxZoom Maximum zoom level
- * @param {"baselayer"|"overlay"} type Layer type
- * @param {"xyz"|"tms"} scheme Tile scheme
+ * Create XYZ metadata.json file
+ * @param {string} outputFolder Folder path to store metadata.json file
+ * @param {Object<string,string>} metadatas Metadata object
  * @returns {Promise<void>}
  */
-export async function createXYZMetadataFile(
-  outputFolder,
-  name,
-  description,
-  format,
-  bounds,
-  center,
-  minZoom,
-  maxZoom,
-  type,
-  scheme
-) {
-  const metadata = {
-    name: name || "Unknown",
-    description: description || "Unknown",
-    version: "1.0.0",
-    format: format || "png",
-    bounds: bounds || [-180, -85.051129, 180, 85.051129],
-    center: center || [0, 0, 11],
-    minzoom: minZoom || 0,
-    maxzoom: maxZoom || 22,
-    type: type || "overlay",
-    scheme: scheme || "xyz",
-    time: new Date().toISOString().split(".")[0],
-  };
-
+export async function createXYZMetadataFile(outputFolder, metadatas) {
   await fsPromise.writeFile(
     `${outputFolder}/metadata.json`,
-    JSON.stringify(metadata, null, 2)
+    JSON.stringify(metadatas, null, 2)
+  );
+}
+
+/**
+ * Create XYZ md5.json file
+ * @param {string} outputFolder Folder path to store md5.json file
+ * @param {Object<string,string>} hashs Hash data object
+ * @returns {Promise<void>}
+ */
+export async function createXYZMD5File(outputFolder, hashs) {
+  await fsPromise.writeFile(
+    `${outputFolder}/md5.json`,
+    JSON.stringify(hashs, null, 2)
   );
 }

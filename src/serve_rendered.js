@@ -674,7 +674,13 @@ export const serve_rendered = {
               }
             } else if (protocol === "http:" || protocol === "https:") {
               try {
-                const response = await getData(url);
+                const response = await getData(url, 60000);
+
+                if (response.status === 204) {
+                  throw new Error(
+                    `Status code: ${response.status} - ${response.statusText}`
+                  );
+                }
 
                 /* Unzip pbf data */
                 const headers = detectFormatAndHeaders(response.data).headers;
