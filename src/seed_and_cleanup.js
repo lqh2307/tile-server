@@ -206,14 +206,14 @@ export async function cleanXYZTileDataFiles(
 
   // Delete files
   if (cleanUpBefore) {
-    cleanUpBefore = new Date(cleanUpBefore);
+    cleanUpBefore = new Date(cleanUpBefore).getTime();
 
     await Promise.all(
       fileToDeletes.map(async (fileToDelete) => {
         try {
           const stats = await fsPromise.stat(fileToDelete);
 
-          if (!stats.birthtime || stats.birthtime < cleanUpBefore) {
+          if (!stats.ctimeMs || stats.ctimeMs < cleanUpBefore) {
             await fsPromise.rm(fileToDelete, {
               force: true,
             });
