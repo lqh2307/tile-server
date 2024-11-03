@@ -676,7 +676,7 @@ export const serve_rendered = {
               try {
                 const response = await getData(url, 60000);
 
-                if (response.status === 204) {
+                if (response.status === StatusCodes.NO_CONTENT) {
                   throw new Error(
                     `Status code: ${response.status} - ${response.statusText}`
                   );

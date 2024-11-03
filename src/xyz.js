@@ -1,7 +1,11 @@
 "use strict";
 
+import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
+import https from "node:https";
 import path from "node:path";
+import http from "node:http";
+import axios from "axios";
 import {
   getLayerNamesFromPBFTile,
   detectFormatAndHeaders,
@@ -37,6 +41,53 @@ export async function getXYZTile(sourcePath, z, x, y) {
     }
 
     throw error;
+  }
+}
+
+/**
+ * Get XYZ tile from a URL
+ * @param {string} url The URL to fetch data from
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<object>}
+ */
+export async function getXYZTileFromURL(url, timeout) {
+  try {
+    const response = await axios.get(url, {
+      timeout: timeout,
+      responseType: "arraybuffer",
+      headers: {
+        "User-Agent": "Tile Server",
+      },
+      httpAgent: new http.Agent({
+        keepAlive: false,
+      }),
+      httpsAgent: new https.Agent({
+        keepAlive: false,
+      }),
+    });
+
+    if (response.status === StatusCodes.NO_CONTENT) {
+      throw new Error("Tile does not exist");
+    }
+
+    return {
+      data: response.data,
+      headers: detectFormatAndHeaders(response.data).headers,
+    };
+  } catch (error) {
+    if (error.message === "Tile does not exist") {
+      throw error;
+    } else if (error.response) {
+      if (error.response.status === StatusCodes.NOT_FOUND) {
+        throw new Error("Tile does not exist");
+      } else {
+        throw new Error(
+          `Failed to request ${url} with status code: ${error.response.status} - ${error.response.statusText}`
+        );
+      }
+    } else {
+      throw new Error(`Failed to request ${url}: ${error.message}`);
+    }
   }
 }
 

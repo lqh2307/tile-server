@@ -1,7 +1,6 @@
 "use strict";
 
 import { checkReadyMiddleware, printLog } from "./utils.js";
-import { config, loadConfigFile } from "./config.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
 import { serve_common } from "./serve_common.js";
@@ -12,6 +11,12 @@ import { serve_data } from "./serve_data.js";
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
+import {
+  loadCleanUpFile,
+  loadConfigFile,
+  loadSeedFile,
+  config,
+} from "./config.js";
 
 /**
  * Start server
@@ -23,6 +28,8 @@ export async function startServer(dataDir) {
     printLog("info", "Loading config file...");
 
     await loadConfigFile(dataDir);
+    await loadSeedFile(dataDir);
+    await loadCleanUpFile(dataDir);
 
     printLog("info", "Starting HTTP server...");
 

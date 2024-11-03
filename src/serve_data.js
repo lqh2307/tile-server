@@ -1,9 +1,9 @@
 "use strict";
 
 import { getPMTilesInfos, getPMTilesTile, openPMTiles } from "./pmtiles.js";
-import { getXYZInfos, getXYZTile } from "./xyz.js";
+import { getXYZInfos, getXYZTile, getXYZTileFromURL } from "./xyz.js";
 import { StatusCodes } from "http-status-codes";
-import { config } from "./config.js";
+import { config, seed } from "./config.js";
 import express from "express";
 import {
   createMBTilesIndex,
@@ -54,13 +54,27 @@ function getDataTileHandler() {
       } else if (item.sourceType === "pmtiles") {
         dataTile = await getPMTilesTile(item.source, z, x, y);
       } else if (item.sourceType === "xyz") {
-        dataTile = await getXYZTile(
-          item.source,
-          z,
-          x,
-          req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
-          req.params.format
-        );
+        try {
+          dataTile = await getXYZTile(
+            item.source,
+            z,
+            x,
+            req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+            req.params.format
+          );
+        } catch (error) {
+          if (error.code === "ENOENT") {
+            if (seed.datas[id].url !== undefined) {
+              try {
+                dataTile = await getXYZTileFromURL(seed.datas[id].url);
+              } catch (error) {
+                throw error;
+              }
+            }
+          } else {
+            throw error;
+          }
+        }
       }
 
       /* Gzip pbf data tile */
@@ -478,7 +492,11 @@ export const serve_data = {
             dataInfo.source = openPMTiles(filePath);
             dataInfo.tileJSON = await getPMTilesInfos(dataInfo.source);
           } else if (item.xyz !== undefined) {
-            const dirPath = `${config.paths.xyzs}/${item.xyz}`;
+            let dirPath = `${config.paths.xyzs}/${item.xyz}`;
+
+            if (item.cache === true) {
+              dirPath = `${config.paths.caches.xyzs}/${item.xyz}`;
+            }
 
             dataInfo.sourceType = "xyz";
             dataInfo.source = dirPath;

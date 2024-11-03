@@ -29,9 +29,12 @@ export const configSchema = {
         },
         maxScaleRender: {
           type: "number",
+          minimum: 1,
         },
         renderedCompression: {
           type: "integer",
+          minimum: 1,
+          maximum: 9,
         },
         serveSwagger: {
           type: "boolean",
@@ -47,9 +50,11 @@ export const configSchema = {
         },
         minPoolSize: {
           type: "integer",
+          minimum: 1,
         },
         maxPoolSize: {
           type: "integer",
+          minimum: 1,
         },
       },
       required: [
@@ -101,6 +106,9 @@ export const configSchema = {
             },
             xyz: {
               type: "string",
+            },
+            cache: {
+              type: "boolean",
             },
           },
           additionalProperties: false,
@@ -449,6 +457,7 @@ export const cleanUpSchema = {
             },
             maxTry: {
               type: "integer",
+              minimum: 1,
             },
           },
           required: [

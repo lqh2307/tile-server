@@ -1,5 +1,6 @@
 "use strict";
 
+import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { program } from "commander";
 import pLimit from "p-limit";
@@ -130,7 +131,7 @@ export async function seedXYZTileDataFiles(
                   const response = await getData(url, timeout);
 
                   // Skip with 204 error code
-                  if (response.status === 204) {
+                  if (response.status === StatusCodes.NO_CONTENT) {
                     printLog(
                       "warning",
                       `Failed to download tile data file: Failed to request ${url} with status code: ${response.status} - ${response.statusText}. Skipping`
@@ -339,7 +340,7 @@ async function startTask() {
       for (const id in cleanUpData.datas) {
         try {
           await cleanXYZTileDataFiles(
-            `${opts.dataDir}/xyzs/${id}`,
+            `caches/${opts.dataDir}/xyzs/${id}`,
             cleanUpData.datas[id].zooms || seedData.datas[id].zooms,
             seedData.datas[id].format,
             cleanUpData.datas[id].bounds || seedData.datas[id].bounds,
@@ -378,7 +379,7 @@ async function startTask() {
             seedData.datas[id].name,
             seedData.datas[id].description,
             seedData.datas[id].url,
-            `${opts.dataDir}/xyzs/${id}`,
+            `caches/${opts.dataDir}/xyzs/${id}`,
             seedData.datas[id].format,
             seedData.datas[id].bounds,
             seedData.datas[id].center,

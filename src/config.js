@@ -1,9 +1,10 @@
 "use strict";
 
 import fsPromise from "node:fs/promises";
-import os from "os";
 
 let config;
+let seed;
+let cleanUp;
 
 /**
  * Load config.json file
@@ -12,67 +13,72 @@ let config;
  */
 async function loadConfigFile(dataDir) {
   /* Read config.json file */
-  const configData = JSON.parse(
+  config = JSON.parse(
     await fsPromise.readFile(`${dataDir}/config.json`, "utf8")
   );
 
-  /* Create config object */
-  config = {
-    paths: {
-      fonts: `${dataDir}/fonts`,
-      styles: `${dataDir}/styles`,
-      sprites: `${dataDir}/sprites`,
-      mbtiles: `${dataDir}/mbtiles`,
-      pmtiles: `${dataDir}/pmtiles`,
-      xyzs: `${dataDir}/xyzs`,
+  /* Fix object */
+  config.paths = {
+    fonts: `${dataDir}/fonts`,
+    styles: `${dataDir}/styles`,
+    sprites: `${dataDir}/sprites`,
+    mbtiles: `${dataDir}/mbtiles`,
+    pmtiles: `${dataDir}/pmtiles`,
+    xyzs: `${dataDir}/xyzs`,
+    caches: {
+      fonts: `caches/${dataDir}/fonts`,
+      styles: `caches/${dataDir}/styles`,
+      sprites: `caches/${dataDir}/sprites`,
+      mbtiles: `caches/${dataDir}/mbtiles`,
+      pmtiles: `caches/${dataDir}/pmtiles`,
+      xyzs: `caches/${dataDir}/xyzs`,
     },
-    options: {
-      listenPort: configData.options?.listenPort || 8080,
-      killEndpoint: configData.options?.killEndpoint ?? true,
-      restartEndpoint: configData.options?.restartEndpoint ?? true,
-      configEndpoint: configData.options?.configEndpoint ?? true,
-      frontPage: configData.options?.frontPage ?? true,
-      serveWMTS: configData.options?.serveWMTS ?? true,
-      serveRendered: configData.options?.serveRendered ?? true,
-      serveSwagger: configData.options?.serveSwagger ?? true,
-      createTilesIndex: configData.options?.createTilesIndex ?? false,
-      createMetadataIndex: configData.options?.createMetadataIndex ?? false,
-      renderedCompression: configData.options?.renderedCompression || 6,
-      loggerFormat:
-        configData.options?.loggerFormat ||
-        ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
-      maxScaleRender: configData.options?.maxScaleRender || 1,
-      minPoolSize: configData.options?.minPoolSize || os.cpus().length,
-      maxPoolSize: configData.options?.maxPoolSize || os.cpus().length * 2,
-    },
-    styles: configData.styles || {},
-    datas: configData.datas || {},
-    sprites: configData.sprites || {},
-    fonts: configData.fonts || {},
-    repo: {
-      styles: {},
-      rendereds: {},
-      datas: {},
-      fonts: {},
-      sprites: {},
-    },
-    configFilePath: `${dataDir}/config.json`,
-    fallbackFont: "Open Sans Regular",
-    startupComplete: false,
   };
 
-  /* Validate folders paths */
-  await Promise.all(
-    Object.keys(config.paths).map(async (name) => {
-      const stat = await fsPromise.stat(config.paths[name]);
+  config.repo = Object.fromEntries(
+    ["styles", "rendereds", "datas", "fonts", "sprites"].map((type) => [
+      type,
+      {},
+    ])
+  );
 
-      if (stat.isDirectory() === false) {
-        throw new Error(
-          `"${name}" folder: ${config.paths[name]} does not exist`
-        );
-      }
-    })
+  config.configFilePath = `${dataDir}/config.json`;
+  config.seedFilePath = `${dataDir}/seed.json`;
+  config.cleanUpFilePath = `${dataDir}/cleanup.json`;
+  config.fallbackFont = "Open Sans Regular";
+  config.startupComplete = false;
+}
+
+/**
+ * Load seed.json file
+ * @param {string} dataDir
+ * @returns {Promise<void>}
+ */
+async function loadSeedFile(dataDir) {
+  /* Read seed.json file */
+  seed = JSON.parse(await fsPromise.readFile(`${dataDir}/seed.json`, "utf8"));
+
+  /* Fix object */
+  seed.tileLocks = {
+    datas: Object.fromEntries(Object.keys(seed.datas).map((id) => [id, {}])),
+    styles: Object.fromEntries(Object.keys(seed.styles).map((id) => [id, {}])),
+    fonts: Object.fromEntries(Object.keys(seed.fonts).map((id) => [id, {}])),
+    sprites: Object.fromEntries(
+      Object.keys(seed.sprites).map((id) => [id, {}])
+    ),
+  };
+}
+
+/**
+ * Load cleanup.json file
+ * @param {string} dataDir
+ * @returns {Promise<void>}
+ */
+async function loadCleanUpFile(dataDir) {
+  /* Read cleanup.json file */
+  cleanUp = JSON.parse(
+    await fsPromise.readFile(`${dataDir}/cleanup.json`, "utf8")
   );
 }
 
-export { loadConfigFile, config };
+export { loadConfigFile, loadSeedFile, loadCleanUpFile, config, seed, cleanUp };

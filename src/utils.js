@@ -998,7 +998,7 @@ export async function downloadFile(
       }),
     });
 
-    if (response.status === 204) {
+    if (response.status === StatusCodes.NO_CONTENT) {
       throw new Error("No content");
     }
 
