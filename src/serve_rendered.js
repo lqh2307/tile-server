@@ -751,28 +751,30 @@ export const serve_rendered = {
                 const source = styleJSON.sources[id];
 
                 if (source.tiles !== undefined) {
-                  const tiles = source.tiles.map((tile) => {
-                    if (
-                      tile.startsWith("pmtiles://") === true ||
-                      tile.startsWith("mbtiles://") === true ||
-                      tile.startsWith("xyz://") === true
-                    ) {
-                      const queryIndex = tile.lastIndexOf("?");
-                      const sourceID =
-                        queryIndex === -1
-                          ? tile.split("/")[2]
-                          : tile.split("/")[2](0, queryIndex);
-                      const query =
-                        queryIndex === -1 ? "" : tile.slice(queryIndex);
-                      const sourceData = config.repo.datas[sourceID];
+                  const tiles = new Set(
+                    source.tiles.map((tile) => {
+                      if (
+                        tile.startsWith("pmtiles://") === true ||
+                        tile.startsWith("mbtiles://") === true ||
+                        tile.startsWith("xyz://") === true
+                      ) {
+                        const queryIndex = tile.lastIndexOf("?");
+                        const sourceID =
+                          queryIndex === -1
+                            ? tile.split("/")[2]
+                            : tile.split("/")[2].slice(0, queryIndex);
+                        const query =
+                          queryIndex === -1 ? "" : tile.slice(queryIndex);
+                        const sourceData = config.repo.datas[sourceID];
 
-                      tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}${query}`;
-                    }
+                        tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}${query}`;
+                      }
 
-                    return tile;
-                  });
+                      return tile;
+                    })
+                  );
 
-                  source.tiles = [...new Set(tiles)];
+                  source.tiles = Array.from(tiles);
                 }
 
                 if (source.urls !== undefined) {
@@ -788,7 +790,7 @@ export const serve_rendered = {
                       const sourceID =
                         queryIndex === -1
                           ? url.split("/")[2]
-                          : url.split("/")[2](0, queryIndex);
+                          : url.split("/")[2].slice(0, queryIndex);
                       const query =
                         queryIndex === -1 ? "" : url.slice(queryIndex);
                       const sourceData = config.repo.datas[sourceID];
@@ -826,7 +828,7 @@ export const serve_rendered = {
                     const sourceID =
                       queryIndex === -1
                         ? source.url.split("/")[2]
-                        : source.url.split("/")[2](0, queryIndex);
+                        : source.url.split("/")[2].slice(0, queryIndex);
                     const query =
                       queryIndex === -1 ? "" : source.url.slice(queryIndex);
                     const sourceData = config.repo.datas[sourceID];

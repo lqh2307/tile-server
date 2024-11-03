@@ -9,6 +9,7 @@ import {
   getBBoxFromTiles,
   findFolders,
   findFiles,
+  getLayerNamesFromPBFTile,
 } from "./utils.js";
 
 /**
@@ -37,6 +38,29 @@ export async function getXYZTile(sourcePath, z, x, y) {
 
     throw error;
   }
+}
+
+/**
+ * Get XYZ layers from tiles
+ * @param {object} sourcePath
+ * @returns {Promise<Array<string>>}
+ */
+export async function getXYZLayersFromTiles(sourcePath) {
+  const layerNames = new Set();
+
+  const pbfFilePaths = await findFiles(sourcePath, /^\d+\.pbf$/, true);
+
+  for (const pbfFile of pbfFilePaths) {
+    try {
+      const layers = await getLayerNamesFromPBFTile(pbfFile);
+
+      layers.forEach((layer) => layerNames.add(layer));
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  return Array.from(layerNames);
 }
 
 /**

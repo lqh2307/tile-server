@@ -55,7 +55,7 @@ function getStyleHandler() {
               const sourceID =
                 queryIndex === -1
                   ? source.url.split("/")[2]
-                  : source.url.split("/")[2](0, queryIndex);
+                  : source.url.split("/")[2].slice(0, queryIndex);
               const query =
                 queryIndex === -1 ? "" : source.url.slice(queryIndex);
 
@@ -66,52 +66,56 @@ function getStyleHandler() {
           }
 
           if (source.urls !== undefined) {
-            const urls = source.urls.map((url) => {
-              if (
-                url.startsWith("pmtiles://") === true ||
-                url.startsWith("mbtiles://") === true ||
-                url.startsWith("xyz://") === true
-              ) {
-                const queryIndex = url.lastIndexOf("?");
-                const sourceID =
-                  queryIndex === -1
-                    ? url.split("/")[2]
-                    : url.split("/")[2](0, queryIndex);
-                const query = queryIndex === -1 ? "" : url.slice(queryIndex);
+            const urls = new Set(
+              source.urls.map((url) => {
+                if (
+                  url.startsWith("pmtiles://") === true ||
+                  url.startsWith("mbtiles://") === true ||
+                  url.startsWith("xyz://") === true
+                ) {
+                  const queryIndex = url.lastIndexOf("?");
+                  const sourceID =
+                    queryIndex === -1
+                      ? url.split("/")[2]
+                      : url.split("/")[2].slice(0, queryIndex);
+                  const query = queryIndex === -1 ? "" : url.slice(queryIndex);
 
-                url = `${getRequestHost(req)}datas/${sourceID}.json${query}`;
-              }
+                  url = `${getRequestHost(req)}datas/${sourceID}.json${query}`;
+                }
 
-              return url;
-            });
+                return url;
+              })
+            );
 
-            source.urls = [...new Set(urls)];
+            source.urls = Array.from(urls);
           }
 
           if (source.tiles !== undefined) {
-            const tiles = source.tiles.map((tile) => {
-              if (
-                tile.startsWith("pmtiles://") === true ||
-                tile.startsWith("mbtiles://") === true ||
-                tile.startsWith("xyz://") === true
-              ) {
-                const queryIndex = tile.lastIndexOf("?");
-                const sourceID =
-                  queryIndex === -1
-                    ? tile.split("/")[2]
-                    : tile.split("/")[2](0, queryIndex);
-                const query = queryIndex === -1 ? "" : tile.slice(queryIndex);
-                const format = config.repo.datas[sourceID].tileJSON.format;
+            const tiles = new Set(
+              source.tiles.map((tile) => {
+                if (
+                  tile.startsWith("pmtiles://") === true ||
+                  tile.startsWith("mbtiles://") === true ||
+                  tile.startsWith("xyz://") === true
+                ) {
+                  const queryIndex = tile.lastIndexOf("?");
+                  const sourceID =
+                    queryIndex === -1
+                      ? tile.split("/")[2]
+                      : tile.split("/")[2].slice(0, queryIndex);
+                  const query = queryIndex === -1 ? "" : tile.slice(queryIndex);
+                  const format = config.repo.datas[sourceID].tileJSON.format;
 
-                tile = `${getRequestHost(
-                  req
-                )}datas/${sourceID}/{z}/{x}/{y}.${format}${query}`;
-              }
+                  tile = `${getRequestHost(
+                    req
+                  )}datas/${sourceID}/{z}/{x}/{y}.${format}${query}`;
+                }
 
-              return tile;
-            });
+                return tile;
+              })
+            );
 
-            source.tiles = [...new Set(tiles)];
+            source.tiles = Array.from(tiles);
           }
         })
       );

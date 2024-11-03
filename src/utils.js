@@ -17,17 +17,20 @@ import zlib from "zlib";
 import util from "util";
 import Ajv from "ajv";
 
-const protoMessage = protobuf(fs.readFileSync("public/protos/glyphs.proto"));
+const glyphsProto = protobuf(fs.readFileSync("public/protos/glyphs.proto"));
+const vectorTileProto = protobuf(
+  fs.readFileSync("public/protos/vector_tile.proto")
+);
 
 /**
- * Combine any number of glyph (SDF) PBFs.
+ * Combine any number of glyph (SDF) PBFs
  * Returns a re-encoded PBF with the combined
  * font faces, composited using array order
- * to determine glyph priority.
+ * to determine glyph priority
  * @param {array} buffers An array of SDF PBFs
  * @param {string} fontstack
  */
-function combine(buffers, fontstack) {
+function combinePBFFonts(buffers, fontstack) {
   if (buffers?.length === 0) {
     return;
   }
@@ -36,7 +39,7 @@ function combine(buffers, fontstack) {
   const coverage = {};
 
   for (const buffer of buffers) {
-    const decoded = protoMessage.glyphs.decode(buffer);
+    const decoded = glyphsProto.glyphs.decode(buffer);
     const glyphs = decoded.stacks[0].glyphs;
 
     if (result === undefined) {
@@ -63,7 +66,19 @@ function combine(buffers, fontstack) {
 
   result.stacks[0].glyphs.sort((a, b) => a.id - b.id);
 
-  return protoMessage.glyphs.encode(result);
+  return glyphsProto.glyphs.encode(result);
+}
+
+/**
+ * Extracts layer names from a vector tile PBF file
+ * @param {string} pbfFilePath - The file path of the PBF tile
+ * @returns {Promise<Array<string>} - A promise that resolves to an array of layer names
+ */
+export async function getLayerNamesFromPBFTile(pbfFilePath) {
+  const tileData = await fsPromise.readFile(pbfFilePath);
+  const decoded = vectorTileProto.tile.decode(tileData);
+
+  return decoded.layers.map((layer) => layer.name);
 }
 
 /**
@@ -630,7 +645,7 @@ export async function getFontsPBF(ids, fileName) {
     })
   );
 
-  return combine(data);
+  return combinePBFFonts(data);
 }
 
 /**
@@ -816,7 +831,7 @@ export async function validateStyle(config, styleJSON) {
           const sourceID =
             queryIndex === -1
               ? source.url.split("/")[2]
-              : source.url.split("/")[2](0, queryIndex);
+              : source.url.split("/")[2].slice(0, queryIndex);
 
           if (config.repo.datas[sourceID] === undefined) {
             throw new Error(
@@ -846,7 +861,7 @@ export async function validateStyle(config, styleJSON) {
             const sourceID =
               queryIndex === -1
                 ? url.split("/")[2]
-                : url.split("/")[2](0, queryIndex);
+                : url.split("/")[2].slice(0, queryIndex);
 
             if (config.repo.datas[sourceID] === undefined) {
               throw new Error(
@@ -877,7 +892,7 @@ export async function validateStyle(config, styleJSON) {
             const sourceID =
               queryIndex === -1
                 ? tile.split("/")[2]
-                : tile.split("/")[2](0, queryIndex);
+                : tile.split("/")[2].slice(0, queryIndex);
 
             if (config.repo.datas[sourceID] === undefined) {
               throw new Error(
