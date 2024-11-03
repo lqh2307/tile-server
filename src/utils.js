@@ -781,7 +781,7 @@ export async function validateStyle(config, styleJSON) {
   if (validationErrors.length > 0) {
     throw new Error(
       validationErrors
-        .map((validationError) => "\n\t" + validationError.message)
+        .map((validationError) => `\n\t${validationError.message}`)
         .join()
     );
   }
@@ -1234,10 +1234,11 @@ export async function validateJSON(schema, filePath) {
 
     const data = JSON.parse(await fsPromise.readFile(filePath, "utf8"));
     const validate = ajv.compile(schema);
-    const valid = validate(data);
 
-    if (!valid) {
-      throw validate.errors;
+    if (!validate(data)) {
+      throw validate.errors
+        .map((error) => `\n\t${error.instancePath} ${error.message}`)
+        .join();
     }
   } catch (error) {
     throw error;
