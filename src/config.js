@@ -101,7 +101,7 @@ async function loadConfigFile(dataDir) {
               },
             },
             required: ["style"],
-            additionalProperties: false,
+            additionalProperties: true,
           },
         },
         additionalProperties: false,
@@ -125,7 +125,7 @@ async function loadConfigFile(dataDir) {
                 type: "boolean",
               },
             },
-            additionalProperties: false,
+            additionalProperties: true,
             anyOf: [
               {
                 required: ["mbtiles"],
@@ -139,7 +139,7 @@ async function loadConfigFile(dataDir) {
             ],
           },
         },
-        additionalProperties: false,
+        additionalProperties: true,
       },
       sprites: {
         type: "object",
@@ -148,7 +148,7 @@ async function loadConfigFile(dataDir) {
             type: "boolean",
           },
         },
-        additionalProperties: false,
+        additionalProperties: true,
       },
       fonts: {
         type: "object",
@@ -157,7 +157,7 @@ async function loadConfigFile(dataDir) {
             type: "boolean",
           },
         },
-        additionalProperties: false,
+        additionalProperties: true,
       },
     },
     required: ["options", "styles", "datas", "sprites", "fonts"],
@@ -223,14 +223,12 @@ async function loadSeedFile(dataDir) {
             properties: {
               url: {
                 type: "string",
-                format: "uri",
               },
               refreshBefore: {
                 type: "object",
                 properties: {
                   time: {
                     type: "string",
-                    format: "date-time",
                   },
                 },
                 anyOf: [
@@ -238,14 +236,14 @@ async function loadSeedFile(dataDir) {
                     required: ["time"],
                   },
                 ],
-                additionalProperties: false,
+                additionalProperties: true,
               },
             },
             required: ["url", "refreshBefore"],
-            additionalProperties: false,
+            additionalProperties: true,
           },
         },
-        additionalProperties: false,
+        additionalProperties: true,
       },
       datas: {
         type: "object",
@@ -261,7 +259,6 @@ async function loadSeedFile(dataDir) {
               },
               url: {
                 type: "string",
-                format: "uri",
               },
               format: {
                 type: "string",
@@ -299,7 +296,6 @@ async function loadSeedFile(dataDir) {
                 properties: {
                   time: {
                     type: "string",
-                    format: "date-time",
                   },
                 },
                 anyOf: [
@@ -307,7 +303,7 @@ async function loadSeedFile(dataDir) {
                     required: ["time"],
                   },
                 ],
-                additionalProperties: false,
+                additionalProperties: true,
               },
               timeout: {
                 type: "integer",
@@ -334,10 +330,10 @@ async function loadSeedFile(dataDir) {
               "concurrency",
               "maxTry",
             ],
-            additionalProperties: false,
+            additionalProperties: true,
           },
         },
-        additionalProperties: false,
+        additionalProperties: true,
       },
       sprites: {
         type: "object",
@@ -347,14 +343,12 @@ async function loadSeedFile(dataDir) {
             properties: {
               url: {
                 type: "string",
-                format: "uri",
               },
               refreshBefore: {
                 type: "object",
                 properties: {
                   time: {
                     type: "string",
-                    format: "date-time",
                   },
                 },
                 anyOf: [
@@ -362,14 +356,14 @@ async function loadSeedFile(dataDir) {
                     required: ["time"],
                   },
                 ],
-                additionalProperties: false,
+                additionalProperties: true,
               },
             },
             required: ["url", "refreshBefore"],
-            additionalProperties: false,
+            additionalProperties: true,
           },
         },
-        additionalProperties: false,
+        additionalProperties: true,
       },
       fonts: {
         type: "object",
@@ -379,14 +373,12 @@ async function loadSeedFile(dataDir) {
             properties: {
               url: {
                 type: "string",
-                format: "uri",
               },
               refreshBefore: {
                 type: "object",
                 properties: {
                   time: {
                     type: "string",
-                    format: "date-time",
                   },
                 },
                 anyOf: [
@@ -394,14 +386,14 @@ async function loadSeedFile(dataDir) {
                     required: ["time"],
                   },
                 ],
-                additionalProperties: false,
+                additionalProperties: true,
               },
             },
             required: ["url", "refreshBefore"],
-            additionalProperties: false,
+            additionalProperties: true,
           },
         },
-        additionalProperties: false,
+        additionalProperties: true,
       },
     },
     required: ["restartServerAfterSeed", "styles", "datas", "sprites", "fonts"],
@@ -446,14 +438,12 @@ async function loadCleanUpFile(dataDir) {
             properties: {
               url: {
                 type: "string",
-                format: "uri",
               },
               cleanUpBefore: {
                 type: "object",
                 properties: {
                   time: {
                     type: "string",
-                    format: "date-time",
                   },
                 },
                 anyOf: [
@@ -461,14 +451,14 @@ async function loadCleanUpFile(dataDir) {
                     required: ["time"],
                   },
                 ],
-                additionalProperties: false,
+                additionalProperties: true,
               },
             },
             required: ["url", "cleanUpBefore"],
-            additionalProperties: false,
+            additionalProperties: true,
           },
         },
-        additionalProperties: false,
+        additionalProperties: true,
       },
       datas: {
         type: "object",
@@ -484,7 +474,6 @@ async function loadCleanUpFile(dataDir) {
               },
               url: {
                 type: "string",
-                format: "uri",
               },
               format: {
                 type: "string",
@@ -522,7 +511,6 @@ async function loadCleanUpFile(dataDir) {
                 properties: {
                   time: {
                     type: "string",
-                    format: "date-time",
                   },
                 },
                 anyOf: [
@@ -530,7 +518,7 @@ async function loadCleanUpFile(dataDir) {
                     required: ["time"],
                   },
                 ],
-                additionalProperties: false,
+                additionalProperties: true,
               },
               timeout: {
                 type: "integer",
@@ -558,10 +546,10 @@ async function loadCleanUpFile(dataDir) {
               "concurrency",
               "maxTry",
             ],
-            additionalProperties: false,
+            additionalProperties: true,
           },
         },
-        additionalProperties: false,
+        additionalProperties: true,
       },
       sprites: {
         type: "object",
@@ -571,14 +559,12 @@ async function loadCleanUpFile(dataDir) {
             properties: {
               url: {
                 type: "string",
-                format: "uri",
               },
               cleanUpBefore: {
                 type: "object",
                 properties: {
                   time: {
                     type: "string",
-                    format: "date-time",
                   },
                 },
                 anyOf: [
@@ -586,14 +572,14 @@ async function loadCleanUpFile(dataDir) {
                     required: ["time"],
                   },
                 ],
-                additionalProperties: false,
+                additionalProperties: true,
               },
             },
             required: ["url", "cleanUpBefore"],
-            additionalProperties: false,
+            additionalProperties: true,
           },
         },
-        additionalProperties: false,
+        additionalProperties: true,
       },
       fonts: {
         type: "object",
@@ -603,14 +589,12 @@ async function loadCleanUpFile(dataDir) {
             properties: {
               url: {
                 type: "string",
-                format: "uri",
               },
               cleanUpBefore: {
                 type: "object",
                 properties: {
                   time: {
                     type: "string",
-                    format: "date-time",
                   },
                 },
                 anyOf: [
@@ -618,14 +602,14 @@ async function loadCleanUpFile(dataDir) {
                     required: ["time"],
                   },
                 ],
-                additionalProperties: false,
+                additionalProperties: true,
               },
             },
             required: ["url", "cleanUpBefore"],
-            additionalProperties: false,
+            additionalProperties: true,
           },
         },
-        additionalProperties: false,
+        additionalProperties: true,
       },
     },
     required: ["restartServerAfterSeed", "styles", "datas", "sprites", "fonts"],
