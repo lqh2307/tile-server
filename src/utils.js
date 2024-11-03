@@ -15,6 +15,7 @@ import sharp from "sharp";
 import fs from "node:fs";
 import zlib from "zlib";
 import util from "util";
+import Ajv from "ajv";
 
 const protoMessage = protobuf(fs.readFileSync("public/protos/glyphs.proto"));
 
@@ -1201,3 +1202,28 @@ export const gzipAsync = util.promisify(zlib.gzip);
  *
  */
 export const unzipAsync = util.promisify(zlib.unzip);
+
+/**
+ * Validate tileJSON
+ * @param {string} schema JSON schema
+ * @param {string} filePath JSON file path
+ * @returns
+ */
+export async function validateJSON(schema, filePath) {
+  try {
+    const ajv = new Ajv({
+      allErrors: true,
+      useDefaults: true,
+    });
+
+    const data = JSON.parse(await fsPromise.readFile(filePath, "utf8"));
+    const validate = ajv.compile(schema);
+    const valid = validate(data);
+
+    if (!valid) {
+      throw validate.errors;
+    }
+  } catch (error) {
+    throw error;
+  }
+}

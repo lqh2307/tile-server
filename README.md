@@ -157,15 +157,21 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
   "styles": {
     "vietnam": {
       "url": "http://localhost:8080/styles/vietnam/style.json",
-      "directory": "vietnam"
+      "refreshBefore": {
+        "time": "2024-10-10T00:00:00"
+      },
     },
     "cambodia": {
       "url": "http://localhost:8080/styles/cambodia/style.json",
-      "directory": "cambodia"
+      "refreshBefore": {
+        "time": "2024-10-10T00:00:00"
+      },
     },
     "zurich_switzerland": {
       "url": "http://localhost:8080/styles/zurich_switzerland/style.json",
-      "directory": "zurich_switzerland"
+      "refreshBefore": {
+        "time": "2024-10-10T00:00:00"
+      },
     }
   },
   "datas": {
@@ -175,10 +181,9 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "url": "http://localhost:8080/datas/asia_vietnam/{z}/{x}/{y}.png",
       "format": "png",
       "bounds": [96, 4, 120, 28],
-      "center": [108, 16],
+      "center": [108, 16, 10],
       "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       "scheme": "xyz",
-      "type": "overlay",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
       },
@@ -192,10 +197,9 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "url": "http://localhost:8080/datas/asia_cambodia/{z}/{x}/{y}.pbf",
       "format": "pbf",
       "bounds": [96, 4, 120, 28],
-      "center": [108, 16],
+      "center": [108, 16, 10],
       "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       "scheme": "xyz",
-      "type": "overlay",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
       },
@@ -206,18 +210,30 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
   },
   "sprites": {
     "liberty": {
-      "url": "http://localhost:8080/sprites/liberty/sprite"
+      "url": "http://localhost:8080/sprites/liberty/sprite",
+      "refreshBefore": {
+        "time": "2024-10-10T00:00:00"
+      },
     },
     "basic": {
-      "url": "http://localhost:8080/sprites/basic/sprite"
+      "url": "http://localhost:8080/sprites/basic/sprite",
+      "refreshBefore": {
+        "time": "2024-10-10T00:00:00"
+      },
     }
   },
   "fonts": {
     "Open Sans Regular": {
-      "url": "http://localhost:8080/fonts/Open Sans Regular/{range}.pbf"
+      "url": "http://localhost:8080/fonts/Open Sans Regular/{range}.pbf",
+      "refreshBefore": {
+        "time": "2024-10-10T00:00:00"
+      },
     },
     "Times New Roman": {
-      "url": "http://localhost:8080/fonts/Times New Roman/{range}.pbf"
+      "url": "http://localhost:8080/fonts/Times New Roman/{range}.pbf",
+      "refreshBefore": {
+        "time": "2024-10-10T00:00:00"
+      },
     }
   }
 }
@@ -231,15 +247,21 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
   "styles": {
     "vietnam": {
       "url": "http://localhost:8080/styles/vietnam/style.json",
-      "directory": "vietnam"
+      "cleanUpBefore": {
+        "time": "2024-10-10T00:00:00"
+      },
     },
     "cambodia": {
       "url": "http://localhost:8080/styles/cambodia/style.json",
-      "directory": "cambodia"
+      "cleanUpBefore": {
+        "time": "2024-10-10T00:00:00"
+      }
     },
     "zurich_switzerland": {
       "url": "http://localhost:8080/styles/zurich_switzerland/style.json",
-      "directory": "zurich_switzerland"
+      "cleanUpBefore": {
+        "time": "2024-10-10T00:00:00"
+      }
     }
   },
   "datas": {
@@ -260,18 +282,30 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
   },
   "sprites": {
     "liberty": {
-      "url": "http://localhost:8080/sprites/liberty/sprite"
+      "url": "http://localhost:8080/sprites/liberty/sprite",
+      "cleanUpBefore": {
+        "time": "2024-10-10T00:00:00"
+      },
     },
     "basic": {
-      "url": "http://localhost:8080/sprites/basic/sprite"
+      "url": "http://localhost:8080/sprites/basic/sprite",
+      "cleanUpBefore": {
+        "time": "2024-10-10T00:00:00"
+      },
     }
   },
   "fonts": {
     "Open Sans Regular": {
-      "url": "http://localhost:8080/fonts/Open Sans Regular/{range}.pbf"
+      "url": "http://localhost:8080/fonts/Open Sans Regular/{range}.pbf",
+      "cleanUpBefore": {
+        "time": "2024-10-10T00:00:00"
+      },
     },
     "Times New Roman": {
-      "url": "http://localhost:8080/fonts/Times New Roman/{range}.pbf"
+      "url": "http://localhost:8080/fonts/Times New Roman/{range}.pbf",
+      "cleanUpBefore": {
+        "time": "2024-10-10T00:00:00"
+      },
     }
   }
 }
