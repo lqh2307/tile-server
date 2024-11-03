@@ -1,6 +1,7 @@
 "use strict";
 
 import fsPromise from "node:fs/promises";
+import path from "node:path";
 import {
   detectFormatAndHeaders,
   getTileBoundsFromBBox,
@@ -16,10 +17,10 @@ import {
  * @param {number} z
  * @param {number} x
  * @param {number} y
- * @param { "gif"|"png"|"jpg"|"jpeg"|"webp"|"pbf"} format
+ * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @returns {Promise<object>}
  */
-export async function getXYZTile(sourcePath, z, x, y, format = "png") {
+export async function getXYZTile(sourcePath, z, x, y) {
   try {
     const data = Buffer.from(
       await fsPromise.readFile(`${sourcePath}/${z}/${x}/${y}.${format}`)
@@ -213,6 +214,20 @@ export async function createXYZMD5File(outputFolder, hashs) {
     `${outputFolder}/md5.json`,
     JSON.stringify(hashs, null, 2)
   );
+}
+
+/**
+ * Create tile data file
+ * @param {string} filePath File path to store tile data file
+ * @param {Buffer} data Tile data
+ * @returns {Promise<void>}
+ */
+export async function createXYZTileDataFile(filePath, data) {
+  await fsPromise.mkdir(path.dirname(filePath), {
+    recursive: true,
+  });
+
+  await fsPromise.writeFile(filePath, data);
 }
 
 /**

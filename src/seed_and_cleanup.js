@@ -1,12 +1,15 @@
 "use strict";
 
-import { createXYZMD5File, createXYZMetadataFile } from "./xyz.js";
 import fsPromise from "node:fs/promises";
 import { program } from "commander";
 import pLimit from "p-limit";
-import path from "node:path";
 import fs from "node:fs";
 import os from "os";
+import {
+  createXYZMetadataFile,
+  createXYZTileDataFile,
+  createXYZMD5File,
+} from "./xyz.js";
 import {
   getTileBoundsFromBBox,
   removeEmptyFolders,
@@ -137,11 +140,7 @@ export async function seedXYZTileDataFiles(
                   }
 
                   // Store data to file
-                  await fsPromise.mkdir(path.dirname(filePath), {
-                    recursive: true,
-                  });
-
-                  await fsPromise.writeFile(filePath, response.data);
+                  await createXYZTileDataFile(filePath, response.data);
 
                   // Store data md5 hash
                   if (response.headers["Etag"]) {

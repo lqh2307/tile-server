@@ -989,6 +989,7 @@ export async function downloadFile(
 
     if (useStream === true) {
       const writer = fs.createWriteStream(outputPath);
+
       response.data.pipe(writer);
 
       return new Promise((resolve, reject) => {
