@@ -3,13 +3,13 @@
 import fsPromise from "node:fs/promises";
 import path from "node:path";
 import {
+  getLayerNamesFromPBFTile,
   detectFormatAndHeaders,
   getTileBoundsFromBBox,
   createNewTileJSON,
   getBBoxFromTiles,
   findFolders,
   findFiles,
-  getLayerNamesFromPBFTile,
 } from "./utils.js";
 
 /**
@@ -207,7 +207,18 @@ export async function getXYZInfos(
 
   /* Add vector_layers and tilestats */
   if (includeJSON === true && metadata.format === "pbf") {
-    tileJSON.vector_layers = metadata.vector_layers;
+    if (metadata.vector_layers === undefined) {
+      const layers = await getXYZLayersFromTiles(sourcePath);
+
+      tileJSON.vector_layers = layers.map((layer) => {
+        return {
+          id: layer,
+        };
+      });
+    } else {
+      tileJSON.vector_layers = metadata.vector_layers;
+    }
+
     tileJSON.tilestats = metadata.tilestats;
   }
 
