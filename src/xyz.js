@@ -317,6 +317,35 @@ export async function createXYZTileDataFile(filePath, data) {
 }
 
 /**
+ * Store tile data file
+ * @param {string} outputFolder
+ * @param {string} tileName
+ * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
+ * @param {Buffer} data Tile data
+ * @returns {Promise<void>}
+ */
+export async function storeXYZTileDataFile(
+  outputFolder,
+  tileName,
+  format,
+  data
+) {
+  if (seed.tileLocks.datas[id][tileName] === undefined) {
+    try {
+      seed.tileLocks.datas[id][tileName] = true;
+
+      await createXYZTileDataFile(
+        `${outputFolder}/${tileName}.${format}`,
+        data
+      );
+    } catch (error) {
+    } finally {
+      delete seed.tileLocks.datas[id][tileName];
+    }
+  }
+}
+
+/**
  * Get XYZ tile from bounding box for specific zoom levels intersecting a bounding box
  * @param {Array<number>} bbox [west, south, east, north] in EPSG:4326
  * @param {Array<number>} zooms Array of specific zoom levels

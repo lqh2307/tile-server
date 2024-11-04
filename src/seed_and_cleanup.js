@@ -340,7 +340,7 @@ async function startTask() {
       for (const id in cleanUpData.datas) {
         try {
           await cleanXYZTileDataFiles(
-            `caches/${opts.dataDir}/xyzs/${id}`,
+            `${opts.dataDir}/caches/xyzs/${id}`,
             cleanUpData.datas[id].zooms || seedData.datas[id].zooms,
             seedData.datas[id].format,
             cleanUpData.datas[id].bounds || seedData.datas[id].bounds,
@@ -379,7 +379,7 @@ async function startTask() {
             seedData.datas[id].name,
             seedData.datas[id].description,
             seedData.datas[id].url,
-            `caches/${opts.dataDir}/xyzs/${id}`,
+            `${opts.dataDir}/caches/xyzs/${id}`,
             seedData.datas[id].format,
             seedData.datas[id].bounds,
             seedData.datas[id].center,

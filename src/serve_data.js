@@ -1,7 +1,12 @@
 "use strict";
 
 import { getPMTilesInfos, getPMTilesTile, openPMTiles } from "./pmtiles.js";
-import { getXYZInfos, getXYZTile, getXYZTileFromURL } from "./xyz.js";
+import {
+  storeXYZTileDataFile,
+  getXYZTileFromURL,
+  getXYZInfos,
+  getXYZTile,
+} from "./xyz.js";
 import { StatusCodes } from "http-status-codes";
 import { config, seed } from "./config.js";
 import express from "express";
@@ -54,19 +59,33 @@ function getDataTileHandler() {
       } else if (item.sourceType === "pmtiles") {
         dataTile = await getPMTilesTile(item.source, z, x, y);
       } else if (item.sourceType === "xyz") {
+        const tileName = `${z}/${x}/${y}`;
+
         try {
-          dataTile = await getXYZTile(
-            item.source,
-            z,
-            x,
-            req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
-            req.params.format
-          );
+          if (
+            seed.tileLocks.datas[id][tileName] === undefined ||
+            seed.tileLocks.datas[id][tileName] === true
+          ) {
+            dataTile = await getXYZTile(
+              item.source,
+              z,
+              x,
+              req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+              req.params.format
+            );
+          }
         } catch (error) {
           if (error.code === "ENOENT") {
             if (seed.datas[id].url !== undefined) {
               try {
                 dataTile = await getXYZTileFromURL(seed.datas[id].url);
+
+                storeXYZTileDataFile(
+                  item.source,
+                  tileName,
+                  req.params.format,
+                  dataTile.data
+                );
               } catch (error) {
                 throw error;
               }
