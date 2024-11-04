@@ -56,12 +56,10 @@ function getStyleHandler() {
                 queryIndex === -1
                   ? source.url.split("/")[2]
                   : source.url.split("/")[2].slice(0, queryIndex);
-              const query =
-                queryIndex === -1 ? "" : source.url.slice(queryIndex);
 
-              source.url = `${getRequestHost(
-                req
-              )}datas/${sourceID}.json${query}`;
+              source.url = `${getRequestHost(req)}datas/${sourceID}.json${
+                queryIndex === -1 ? "" : source.url.slice(queryIndex)
+              }`;
             }
           }
 
@@ -78,9 +76,10 @@ function getStyleHandler() {
                     queryIndex === -1
                       ? url.split("/")[2]
                       : url.split("/")[2].slice(0, queryIndex);
-                  const query = queryIndex === -1 ? "" : url.slice(queryIndex);
 
-                  url = `${getRequestHost(req)}datas/${sourceID}.json${query}`;
+                  url = `${getRequestHost(req)}datas/${sourceID}.json${
+                    queryIndex === -1 ? "" : url.slice(queryIndex)
+                  }`;
                 }
 
                 return url;
@@ -103,12 +102,10 @@ function getStyleHandler() {
                     queryIndex === -1
                       ? tile.split("/")[2]
                       : tile.split("/")[2].slice(0, queryIndex);
-                  const query = queryIndex === -1 ? "" : tile.slice(queryIndex);
-                  const format = config.repo.datas[sourceID].tileJSON.format;
 
-                  tile = `${getRequestHost(
-                    req
-                  )}datas/${sourceID}/{z}/{x}/{y}.${format}${query}`;
+                  tile = `${getRequestHost(req)}datas/${sourceID}/{z}/{x}/{y}.${
+                    config.repo.datas[sourceID].tileJSON.format
+                  }${queryIndex === -1 ? "" : tile.slice(queryIndex)}`;
                 }
 
                 return tile;

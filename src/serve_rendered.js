@@ -1,13 +1,13 @@
 "use strict";
 
+import { getXYZTile, getXYZTileFromURL } from "./xyz.js";
 import mlgl from "@maplibre/maplibre-gl-native";
 import { StatusCodes } from "http-status-codes";
 import { getPMTilesTile } from "./pmtiles.js";
 import { getMBTilesTile } from "./mbtiles.js";
 import { Worker } from "node:worker_threads";
 import { createPool } from "generic-pool";
-import { getXYZTile } from "./xyz.js";
-import { config } from "./config.js";
+import { config, seed } from "./config.js";
 import express from "express";
 import {
   detectFormatAndHeaders,
@@ -641,13 +641,71 @@ export const serve_rendered = {
                 }
 
                 /* Get rendered tile */
-                const dataTile = await getXYZTile(
-                  sourceData.source,
-                  z,
-                  x,
-                  scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
-                  sourceData.tileJSON.format
-                );
+                let dataTile;
+
+                if (sourceData.cacheSourceID !== undefined) {
+                  const cacheItemLock =
+                    seed.tileLocks.datas[sourceData.cacheSourceID];
+                  const cacheItem = seed.datas[sourceData.cacheSourceID];
+
+                  try {
+                    if (cacheItemLock[`${z}/${x}/${y}`] === undefined) {
+                      dataTile = await getXYZTile(
+                        sourceData.source,
+                        z,
+                        x,
+                        scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+                        sourceData.tileJSON.format
+                      );
+                    }
+                  } catch (error) {
+                    if (error.message === "Tile does not exist") {
+                      const url = cacheItem.url.replaceAll(
+                        "{z}/{x}/{y}",
+                        `${z}/${x}/${scheme === "tms" ? (1 << z) - 1 - y : y}`
+                      );
+
+                      printLog(
+                        "info",
+                        `Getting data "${id}" - Tile ${z}/${x}/${y} - From ${url}...`
+                      );
+
+                      /* Get data */
+                      dataTile = await getXYZTileFromURL(url, 60000);
+
+                      /* Cache */
+                      if (cacheItemLock[`${z}/${x}/${y}`] === undefined) {
+                        // Lock
+                        cacheItemLock[`${z}/${x}/${y}`] = true;
+
+                        createXYZTileDataFile(
+                          `${sourceData.source}/${z}/${x}/${y}.${sourceData.tileJSON.format}`,
+                          dataTile.data
+                        )
+                          .catch((error) =>
+                            printLog(
+                              "error",
+                              `Failed to cache data "${id}" - Tile ${z}/${x}/${y} - From ${url}: ${error}...`
+                            )
+                          )
+                          .finally(() => {
+                            // Unlock
+                            delete cacheItemLock[`${z}/${x}/${y}`];
+                          });
+                      }
+                    } else {
+                      throw error;
+                    }
+                  }
+                } else {
+                  dataTile = await getXYZTile(
+                    sourceData.source,
+                    z,
+                    x,
+                    scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+                    sourceData.tileJSON.format
+                  );
+                }
 
                 /* Unzip pbf rendered tile */
                 if (
@@ -763,11 +821,13 @@ export const serve_rendered = {
                           queryIndex === -1
                             ? tile.split("/")[2]
                             : tile.split("/")[2].slice(0, queryIndex);
-                        const query =
-                          queryIndex === -1 ? "" : tile.slice(queryIndex);
                         const sourceData = config.repo.datas[sourceID];
 
-                        tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}${query}`;
+                        tile = `${
+                          sourceData.sourceType
+                        }://${sourceID}/{z}/{x}/{y}.${
+                          sourceData.tileJSON.format
+                        }${queryIndex === -1 ? "" : tile.slice(queryIndex)}`;
                       }
 
                       return tile;
@@ -791,11 +851,13 @@ export const serve_rendered = {
                         queryIndex === -1
                           ? url.split("/")[2]
                           : url.split("/")[2].slice(0, queryIndex);
-                      const query =
-                        queryIndex === -1 ? "" : url.slice(queryIndex);
                       const sourceData = config.repo.datas[sourceID];
 
-                      const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}${query}`;
+                      const tile = `${
+                        sourceData.sourceType
+                      }://${sourceID}/{z}/{x}/{y}.${
+                        sourceData.tileJSON.format
+                      }${queryIndex === -1 ? "" : url.slice(queryIndex)}`;
 
                       if (source.tiles !== undefined) {
                         if (source.tiles.includes(tile) === false) {
@@ -829,11 +891,13 @@ export const serve_rendered = {
                       queryIndex === -1
                         ? source.url.split("/")[2]
                         : source.url.split("/")[2].slice(0, queryIndex);
-                    const query =
-                      queryIndex === -1 ? "" : source.url.slice(queryIndex);
                     const sourceData = config.repo.datas[sourceID];
 
-                    const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}${query}`;
+                    const tile = `${
+                      sourceData.sourceType
+                    }://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}${
+                      queryIndex === -1 ? "" : source.url.slice(queryIndex)
+                    }`;
 
                     if (source.tiles !== undefined) {
                       if (source.tiles.includes(tile) === false) {

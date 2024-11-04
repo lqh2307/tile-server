@@ -45,11 +45,11 @@ function getDataTileHandler() {
     const z = Number(req.params.z);
     const x = Number(req.params.x);
     const y = Number(req.params.y);
-    const tileName = `${z}/${x}/${y}`;
-    let dataTile;
 
     try {
       /* Get tile data */
+      let dataTile;
+
       if (item.sourceType === "mbtiles") {
         dataTile = await getMBTilesTile(
           item.source,
@@ -65,45 +65,48 @@ function getDataTileHandler() {
           const cacheItem = seed.datas[item.cacheSourceID];
 
           try {
-            if (cacheItemLock[tileName] === undefined) {
+            if (cacheItemLock[`${z}/${x}/${y}`] === undefined) {
               dataTile = await getXYZTile(
                 item.source,
                 z,
                 x,
                 req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
-                req.params.format
+                item.tileJSON.format
               );
             }
           } catch (error) {
             if (error.message === "Tile does not exist") {
-              const url = cacheItem.url.replaceAll("{z}/{x}/{y}", tileName);
+              const url = cacheItem.url.replaceAll(
+                "{z}/{x}/{y}",
+                `${z}/${x}/${req.query.scheme === "tms" ? (1 << z) - 1 - y : y}`
+              );
 
               printLog(
                 "info",
-                `Getting data "${id}" - Tile ${tileName} - From ${url}...`
+                `Getting data "${id}" - Tile ${z}/${x}/${y} - From ${url}...`
               );
 
               /* Get data */
               dataTile = await getXYZTileFromURL(url, 60000);
 
               /* Cache */
-              if (cacheItemLock[tileName] === undefined) {
+              if (cacheItemLock[`${z}/${x}/${y}`] === undefined) {
                 // Lock
-                cacheItemLock[tileName] = true;
+                cacheItemLock[`${z}/${x}/${y}`] = true;
 
                 createXYZTileDataFile(
-                  `${item.source}/${tileName}.${req.params.format}`,
+                  `${item.source}/${z}/${x}/${y}.${item.tileJSON.format}`,
                   dataTile.data
                 )
                   .catch((error) =>
                     printLog(
                       "error",
-                      `Failed to cache data "${id}" - Tile ${tileName} - From ${url}: ${error}...`
+                      `Failed to cache data "${id}" - Tile ${z}/${x}/${y} - From ${url}: ${error}...`
                     )
                   )
                   .finally(() => {
                     // Unlock
-                    delete cacheItemLock[tileName];
+                    delete cacheItemLock[`${z}/${x}/${y}`];
                   });
               }
             } else {
@@ -137,7 +140,7 @@ function getDataTileHandler() {
     } catch (error) {
       printLog(
         "error",
-        `Failed to get data "${id}" - Tile ${tileName}: ${error}`
+        `Failed to get data "${id}" - Tile ${z}/${x}/${y}: ${error}`
       );
 
       if (error.message === "Tile does not exist") {
