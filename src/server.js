@@ -25,7 +25,7 @@ import {
  */
 export async function startServer(dataDir) {
   try {
-    printLog("info", "Loading config file...");
+    printLog("info", "Loading config, seed, clean up files...");
 
     await loadConfigFile(dataDir);
     await loadSeedFile(dataDir);

@@ -2,11 +2,10 @@
 
 import { getPMTilesInfos, getPMTilesTile, openPMTiles } from "./pmtiles.js";
 import {
-  storeXYZTileDataFile,
+  createXYZTileDataFile,
   getXYZTileFromURL,
   getXYZInfos,
   getXYZTile,
-  createXYZTileDataFile,
 } from "./xyz.js";
 import { StatusCodes } from "http-status-codes";
 import { config, seed } from "./config.js";
@@ -42,15 +41,15 @@ function getDataTileHandler() {
         .send("Data tile format is invalid");
     }
 
-    /* Get tile */
+    /* Get tile name */
     const z = Number(req.params.z);
     const x = Number(req.params.x);
     const y = Number(req.params.y);
-    const tileName = `${z}/${x}/${y}`
+    const tileName = `${z}/${x}/${y}`;
+    let dataTile;
 
     try {
-      let dataTile;
-
+      /* Get tile data */
       if (item.sourceType === "mbtiles") {
         dataTile = await getMBTilesTile(
           item.source,
@@ -62,10 +61,10 @@ function getDataTileHandler() {
         dataTile = await getPMTilesTile(item.source, z, x, y);
       } else if (item.sourceType === "xyz") {
         if (item.cacheSourceID !== undefined) {
-          const cacheItem = seed.tileLocks.datas[item.cacheSourceID]
+          const cacheItemLock = seed.tileLocks.datas[item.cacheSourceID];
 
           try {
-            if (cacheItem[tileName] === undefined) {
+            if (cacheItemLock[tileName] === undefined) {
               dataTile = await getXYZTile(
                 item.source,
                 z,
@@ -76,17 +75,38 @@ function getDataTileHandler() {
             }
           } catch (error) {
             if (error.message === "Tile does not exist") {
-              const url = cacheItem.url.replaceAll("{z}/{x}/{y}", tileName);
+              const url = cacheItemLock.url.replaceAll("{z}/{x}/{y}", tileName);
 
-              printLog("info", `Getting data "${id}" from ${url}...`)
+              printLog(
+                "info",
+                `Getting data "${id}" - Tile ${tileName} - From ${url}...`
+              );
 
-              dataTile = await getXYZTileFromURL(url, 60000)
+              /* Get data */
+              dataTile = await getXYZTileFromURL(url, 60000);
 
-              if (cacheItem[tileName] === undefined) {
-                cacheItem[tileName] = true;
+              /* Cache */
+              if (cacheItemLock[tileName] === undefined) {
+                // Lock
+                cacheItemLock[tileName] = true;
 
-                createXYZTileDataFile(`${item.source}/${tileName}.${req.params.format}`, dataTile.data).catch(error => printLog("error", `Failed to caching data "${id}" from ${url}: ${error}...`)).finally(() => delete cacheItem[tileName])
+                createXYZTileDataFile(
+                  `${item.source}/${tileName}.${req.params.format}`,
+                  dataTile.data
+                )
+                  .catch((error) =>
+                    printLog(
+                      "error",
+                      `Failed to cache data "${id}" - Tile ${tileName} - From ${url}: ${error}...`
+                    )
+                  )
+                  .finally(() => {
+                    // Unlock
+                    delete cacheItemLock[tileName];
+                  });
               }
+            } else {
+              throw error;
             }
           }
         } else {
@@ -148,15 +168,35 @@ function getDataHandler() {
       } else if (item.sourceType === "pmtiles") {
         dataInfo = await getPMTilesInfos(item.source, includeJSON);
       } else if (item.sourceType === "xyz") {
-        dataInfo = await getXYZInfos(
-          item.source,
-          req.query.scheme,
-          includeJSON
-        );
+        try {
+          dataInfo = await getXYZInfos(
+            item.source,
+            req.query.scheme,
+            includeJSON
+          );
+        } catch (error) {
+          if (item.cacheSourceID !== undefined) {
+            const cacheItem = seed.datas[item.cacheSourceID];
+
+            dataInfo = {
+              name: cacheItem.name,
+              description: cacheItem.description,
+              format: cacheItem.format,
+              bounds: cacheItem.bounds,
+              center: cacheItem.center,
+              minzoom: Math.min(...cacheItem.zooms),
+              maxzoom: Math.max(...cacheItem.zooms),
+              vector_layers:
+                includeJSON === true ? cacheItem.vector_layers : undefined,
+              tilestats: includeJSON === true ? cacheItem.tilestats : undefined,
+            };
+          }
+        }
       }
 
       dataInfo.tiles = [
-        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${req.query.scheme === "tms" ? "?scheme=tms" : ""
+        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${
+          req.query.scheme === "tms" ? "?scheme=tms" : ""
         }`,
       ];
 
@@ -212,17 +252,38 @@ function getDataTileJSONsListHandler() {
           } else if (item.sourceType === "pmtiles") {
             dataInfo = await getPMTilesInfos(item.source, includeJSON);
           } else if (item.sourceType === "xyz") {
-            dataInfo = await getXYZInfos(
-              item.source,
-              req.query.scheme,
-              includeJSON
-            );
+            try {
+              dataInfo = await getXYZInfos(
+                item.source,
+                req.query.scheme,
+                includeJSON
+              );
+            } catch (error) {
+              if (item.cacheSourceID !== undefined) {
+                const cacheItem = seed.datas[item.cacheSourceID];
+
+                dataInfo = {
+                  name: cacheItem.name,
+                  description: cacheItem.description,
+                  format: cacheItem.format,
+                  bounds: cacheItem.bounds,
+                  center: cacheItem.center,
+                  minzoom: Math.min(...cacheItem.zooms),
+                  maxzoom: Math.max(...cacheItem.zooms),
+                  vector_layers:
+                    includeJSON === true ? cacheItem.vector_layers : undefined,
+                  tilestats:
+                    includeJSON === true ? cacheItem.tilestats : undefined,
+                };
+              }
+            }
           }
 
           dataInfo.id = id;
 
           dataInfo.tiles = [
-            `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format
+            `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
+              item.tileJSON.format
             }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
           ];
 
@@ -523,11 +584,24 @@ export const serve_data = {
 
             dataInfo.sourceType = "xyz";
             dataInfo.source = dirPath;
-            dataInfo.tileJSON = await getXYZInfos(dataInfo.source);
-          } else {
-            throw new Error(
-              `Missing "pmtiles" or "mbtiles" or "xyz" property of data`
-            );
+
+            try {
+              dataInfo = await getXYZInfos(dataInfo.source);
+            } catch (error) {
+              if (dataInfo.cacheSourceID !== undefined) {
+                const cacheItem = seed.datas[dataInfo.cacheSourceID];
+
+                dataInfo.tileJSON = {
+                  name: cacheItem.name,
+                  description: cacheItem.description,
+                  format: cacheItem.format,
+                  bounds: cacheItem.bounds,
+                  center: cacheItem.center,
+                  minzoom: Math.min(...cacheItem.zooms),
+                  maxzoom: Math.max(...cacheItem.zooms),
+                };
+              }
+            }
           }
 
           /* Validate info */

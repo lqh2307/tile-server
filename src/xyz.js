@@ -1,7 +1,6 @@
 "use strict";
 
 import { StatusCodes } from "http-status-codes";
-import { config, seed } from "./config.js";
 import fsPromise from "node:fs/promises";
 import https from "node:https";
 import path from "node:path";
@@ -233,7 +232,7 @@ export async function getXYZInfos(
     metadata = JSON.parse(
       await fsPromise.readFile(`${sourcePath}/metadata.json`, "utf8")
     );
-  } catch (error) { }
+  } catch (error) {}
 
   /* Try get min zoom */
   if (metadata.minzoom === undefined) {
@@ -315,29 +314,6 @@ export async function createXYZTileDataFile(filePath, data) {
   });
 
   await fsPromise.writeFile(filePath, data);
-}
-
-/**
- * Store tile data file
- * @param {string} id
- * @param {string} tileName
- * @param {Buffer} data Tile data
- * @returns {Promise<void>}
- */
-export async function storeXYZTileDataFile(id, tileName, data) {
-  if (seed.tileLocks.datas[id][tileName] === undefined) {
-    try {
-      seed.tileLocks.datas[id][tileName] = true;
-
-      await createXYZTileDataFile(
-        `${config.repo.datas[id].source}/${tileName}.${config.repo.datas[id].tileJSON.format}`,
-        data
-      );
-    } catch (error) {
-    } finally {
-      delete seed.tileLocks.datas[id][tileName];
-    }
-  }
 }
 
 /**
