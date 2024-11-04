@@ -202,7 +202,7 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "center": [108, 16, 10],
       "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       "scheme": "xyz",
-      "vector_layer": [
+      "vector_layers": [
         {
           "id": "landuse"
         },
