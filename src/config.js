@@ -170,7 +170,7 @@ async function loadSeedFile(dataDir) {
                     type: "string",
                   },
                 },
-                required: ["time"],
+                anyOf: [{ required: ["time"] }, { required: ["day"] }],
                 additionalProperties: true,
               },
             },
@@ -236,7 +236,7 @@ async function loadSeedFile(dataDir) {
                     type: "string",
                   },
                 },
-                required: ["time"],
+                anyOf: [{ required: ["time"] }, { required: ["day"] }],
                 additionalProperties: true,
               },
               timeout: {
@@ -281,7 +281,7 @@ async function loadSeedFile(dataDir) {
                     type: "string",
                   },
                 },
-                required: ["time"],
+                anyOf: [{ required: ["time"] }, { required: ["day"] }],
                 additionalProperties: true,
               },
             },
@@ -304,7 +304,7 @@ async function loadSeedFile(dataDir) {
                     type: "string",
                   },
                 },
-                required: ["time"],
+                anyOf: [{ required: ["time"] }, { required: ["day"] }],
                 additionalProperties: true,
               },
             },
@@ -368,7 +368,7 @@ async function loadCleanUpFile(dataDir) {
                     type: "string",
                   },
                 },
-                required: ["time"],
+                anyOf: [{ required: ["time"] }, { required: ["day"] }],
                 additionalProperties: true,
               },
             },
@@ -381,19 +381,6 @@ async function loadCleanUpFile(dataDir) {
           additionalProperties: {
             type: "object",
             properties: {
-              name: {
-                type: "string",
-              },
-              description: {
-                type: "string",
-              },
-              url: {
-                type: "string",
-              },
-              format: {
-                type: "string",
-                enum: ["gif", "png", "jpg", "jpeg", "webp", "pbf"],
-              },
               bounds: {
                 type: "array",
                 items: {
@@ -404,16 +391,6 @@ async function loadCleanUpFile(dataDir) {
                 minimum: -180,
                 maximum: 180,
               },
-              center: {
-                type: "array",
-                items: {
-                  type: "number",
-                  minimum: -180,
-                  maximum: 180,
-                },
-                minItems: 3,
-                maxItems: 3,
-              },
               zooms: {
                 type: "array",
                 items: {
@@ -423,10 +400,6 @@ async function loadCleanUpFile(dataDir) {
                 },
                 maxItems: 23,
               },
-              scheme: {
-                type: "string",
-                enum: ["xyz", "tms"],
-              },
               cleanUpBefore: {
                 type: "object",
                 properties: {
@@ -434,34 +407,11 @@ async function loadCleanUpFile(dataDir) {
                     type: "string",
                   },
                 },
-                required: ["time"],
+                anyOf: [{ required: ["time"] }, { required: ["day"] }],
                 additionalProperties: true,
               },
-              timeout: {
-                type: "integer",
-              },
-              concurrency: {
-                type: "integer",
-              },
-              maxTry: {
-                type: "integer",
-                minimum: 1,
-              },
             },
-            required: [
-              "name",
-              "description",
-              "url",
-              "format",
-              "bounds",
-              "center",
-              "zooms",
-              "scheme",
-              "cleanUpBefore",
-              "timeout",
-              "concurrency",
-              "maxTry",
-            ],
+            required: ["bounds", "zooms", "cleanUpBefore"],
             additionalProperties: true,
           },
         },
@@ -480,7 +430,7 @@ async function loadCleanUpFile(dataDir) {
                     type: "string",
                   },
                 },
-                required: ["time"],
+                anyOf: [{ required: ["time"] }, { required: ["day"] }],
                 additionalProperties: true,
               },
             },
@@ -503,7 +453,7 @@ async function loadCleanUpFile(dataDir) {
                     type: "string",
                   },
                 },
-                required: ["time"],
+                anyOf: [{ required: ["time"] }, { required: ["day"] }],
                 additionalProperties: true,
               },
             },
