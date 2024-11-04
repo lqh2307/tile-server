@@ -7,7 +7,7 @@ import path from "node:path";
 import http from "node:http";
 import axios from "axios";
 import {
-  getLayerNamesFromPBFTile,
+  getLayerNamesFromPBFTileFile,
   detectFormatAndHeaders,
   getTileBoundsFromBBox,
   createNewTileJSON,
@@ -103,7 +103,7 @@ export async function getXYZLayersFromTiles(sourcePath) {
 
   for (const pbfFile of pbfFilePaths) {
     try {
-      const layers = await getLayerNamesFromPBFTile(`${sourcePath}/${pbfFile}`);
+      const layers = await getLayerNamesFromPBFTileFile(`${sourcePath}/${pbfFile}`);
 
       layers.forEach((layer) => layerNames.add(layer));
     } catch (error) {

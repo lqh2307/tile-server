@@ -70,9 +70,20 @@ function combinePBFFonts(buffers, fontstack) {
  * @param {string} pbfFilePath - The file path of the PBF tile
  * @returns {Promise<Array<string>} - A promise that resolves to an array of layer names
  */
-export async function getLayerNamesFromPBFTile(pbfFilePath) {
+export async function getLayerNamesFromPBFTileFile(pbfFilePath) {
   const tileData = await fsPromise.readFile(pbfFilePath);
   const decoded = vectorTileProto.tile.decode(tileData);
+
+  return decoded.layers.map((layer) => layer.name);
+}
+
+/**
+ * Extracts layer names from a vector tile PBF data
+ * @param {Buffer} pbfData - The PBF data buffer
+ * @returns {Promise<Array<string>} - A promise that resolves to an array of layer names
+ */
+export async function getLayerNamesFromPBFTileData(pbfData) {
+  const decoded = vectorTileProto.tile.decode(pbfData);
 
   return decoded.layers.map((layer) => layer.name);
 }

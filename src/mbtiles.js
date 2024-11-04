@@ -1,6 +1,7 @@
 "use strict";
 
 import {
+  getLayerNamesFromPBFTileData,
   detectFormatAndHeaders,
   createNewTileJSON,
   downloadFile,
@@ -102,6 +103,39 @@ export async function isMBTilesExistColumns(
   return columnNames.every((columnName) =>
     tableColumnNames.includes(columnName)
   );
+}
+
+/**
+ * Get MBTiles layers from tiles
+ * @param {object} mbtilesSource The MBTiles source object
+ * @returns {Promise<Array<string>>}
+ */
+export async function getMBTilesLayersFromTiles(mbtilesSource) {
+  const layerNames = new Set();
+
+  await new Promise((resolve, reject) => {
+    mbtilesSource.all("SELECT tile_data FROM tiles", async (error, rows) => {
+      if (error) {
+        return reject(error);
+      }
+
+      if (rows !== undefined) {
+        for (const row of rows) {
+          try {
+            const layers = await getLayerNamesFromPBFTileData(row.tile_data);
+
+            layers.forEach((layer) => layerNames.add(layer));
+          } catch (error) {
+            return reject(error);
+          }
+        }
+      }
+
+      resolve();
+    });
+  });
+
+  return Array.from(layerNames);
 }
 
 /**
@@ -299,6 +333,17 @@ export async function getMBTilesInfos(mbtilesSource) {
   /* Try get tile format */
   if (metadata.format === undefined) {
     metadata.format = await getMBTilesFormatFromTiles(mbtilesSource);
+  }
+
+  /* Add vector_layers */
+  if (metadata.format === "pbf" && metadata.vector_layers === undefined) {
+    const layers = await getMBTilesLayersFromTiles(mbtilesSource);
+
+    metadata.vector_layers = layers.map((layer) => {
+      return {
+        id: layer,
+      };
+    });
   }
 
   return createNewTileJSON(metadata);
