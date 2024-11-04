@@ -21,56 +21,21 @@ async function loadConfigFile(dataDir) {
         options: {
           type: "object",
           properties: {
-            listenPort: {
-              type: "integer",
-            },
-            killEndpoint: {
-              type: "boolean",
-            },
-            restartEndpoint: {
-              type: "boolean",
-            },
-            configEndpoint: {
-              type: "boolean",
-            },
-            frontPage: {
-              type: "boolean",
-            },
-            serveWMTS: {
-              type: "boolean",
-            },
-            serveRendered: {
-              type: "boolean",
-            },
-            maxScaleRender: {
-              type: "number",
-              minimum: 1,
-            },
-            renderedCompression: {
-              type: "integer",
-              minimum: 1,
-              maximum: 9,
-            },
-            serveSwagger: {
-              type: "boolean",
-            },
-            createMetadataIndex: {
-              type: "boolean",
-            },
-            createTilesIndex: {
-              type: "boolean",
-            },
-            loggerFormat: {
-              type: "string",
-            },
-            minPoolSize: {
-              type: "integer",
-              minimum: 1,
-            },
-            maxPoolSize: {
-              type: "integer",
-              minimum: 1,
-            },
+            listenPort: { type: "integer" },
+            killEndpoint: { type: "boolean" },
+            restartEndpoint: { type: "boolean" },
+            configEndpoint: { type: "boolean" },
+            frontPage: { type: "boolean" },
+            serveWMTS: { type: "boolean" },
+            serveRendered: { type: "boolean" },
+            maxScaleRender: { type: "number", minimum: 1 },
+            renderedCompression: { type: "integer", minimum: 1, maximum: 9 },
+            serveSwagger: { type: "boolean" },
+            createMetadataIndex: { type: "boolean" },
+            createTilesIndex: { type: "boolean" },
+            loggerFormat: { type: "string" },
+            minPoolSize: { type: "integer", minimum: 1 },
+            maxPoolSize: { type: "integer", minimum: 1 },
           },
           required: [
             "listenPort",
@@ -93,72 +58,44 @@ async function loadConfigFile(dataDir) {
         },
         styles: {
           type: "object",
-          patternProperties: {
-            "^(?![.-_])(?!.*[.-_]$)[a-zA-Z0-9-_]+(.[a-zA-Z0-9]+)?$": {
-              type: "object",
-              properties: {
-                style: {
-                  type: "string",
-                },
-              },
-              required: ["style"],
-              additionalProperties: true,
+          additionalProperties: {
+            type: "object",
+            properties: {
+              style: { type: "string" },
             },
+            required: ["style"],
+            additionalProperties: false,
           },
-          additionalProperties: false,
         },
         datas: {
           type: "object",
-          patternProperties: {
-            "^(?![.-_])(?!.*[.-_]$)[a-zA-Z0-9-_]+(.[a-zA-Z0-9]+)?$": {
-              type: "object",
-              properties: {
-                mbtiles: {
-                  type: "string",
-                },
-                pmtiles: {
-                  type: "string",
-                },
-                xyz: {
-                  type: "string",
-                },
-                cache: {
-                  type: "boolean",
-                },
-              },
-              additionalProperties: true,
-              anyOf: [
-                {
-                  required: ["mbtiles"],
-                },
-                {
-                  required: ["pmtiles"],
-                },
-                {
-                  required: ["xyz"],
-                },
-              ],
+          additionalProperties: {
+            type: "object",
+            properties: {
+              mbtiles: { type: "string" },
+              pmtiles: { type: "string" },
+              xyz: { type: "string" },
+              cache: { type: "boolean" },
             },
+            additionalProperties: false,
+            anyOf: [
+              { required: ["mbtiles"] },
+              { required: ["pmtiles"] },
+              { required: ["xyz"] },
+            ],
           },
-          additionalProperties: true,
         },
         sprites: {
           type: "object",
-          patternProperties: {
-            "^(?![.-_])(?!.*[.-_]$)[a-zA-Z0-9-_]+(.[a-zA-Z0-9]+)?$": {
-              type: "boolean",
-            },
+          additionalProperties: {
+            type: "boolean",
           },
-          additionalProperties: true,
         },
         fonts: {
           type: "object",
-          patternProperties: {
-            "^(?![.-_])(?!.*[.-_]$)[a-zA-Z0-9-_]+(.[a-zA-Z0-9]+)?$": {
-              type: "boolean",
-            },
+          additionalProperties: {
+            type: "boolean",
           },
-          additionalProperties: true,
         },
       },
       required: ["options", "styles", "datas", "sprites", "fonts"],
@@ -168,7 +105,9 @@ async function loadConfigFile(dataDir) {
   );
 
   /* Read config.json file */
-  config = JSON.parse(await fsPromise.readFile(configFilePath, "utf8"));
+  config = JSON.parse(
+    await fsPromise.readFile(`${dataDir}/config.json`, "utf8")
+  );
 
   /* Fix object */
   config.paths = {
@@ -218,183 +157,154 @@ async function loadSeedFile(dataDir) {
         },
         styles: {
           type: "object",
-          patternProperties: {
-            "^(?![.-_])(?!.*[.-_]$)[a-zA-Z0-9-_]+(.[a-zA-Z0-9]+)?$": {
-              type: "object",
-              properties: {
-                url: {
-                  type: "string",
-                },
-                refreshBefore: {
-                  type: "object",
-                  properties: {
-                    time: {
-                      type: "string",
-                    },
-                  },
-                  anyOf: [
-                    {
-                      required: ["time"],
-                    },
-                  ],
-                  additionalProperties: true,
-                },
+          additionalProperties: {
+            type: "object",
+            properties: {
+              url: {
+                type: "string",
               },
-              required: ["url", "refreshBefore"],
-              additionalProperties: true,
+              refreshBefore: {
+                type: "object",
+                properties: {
+                  time: {
+                    type: "string",
+                  },
+                },
+                required: ["time"],
+                additionalProperties: false,
+              },
             },
+            required: ["url", "refreshBefore"],
+            additionalProperties: false,
           },
-          additionalProperties: true,
         },
         datas: {
           type: "object",
-          patternProperties: {
-            "^(?![.-_])(?!.*[.-_]$)[a-zA-Z0-9-_]+(.[a-zA-Z0-9]+)?$": {
-              type: "object",
-              properties: {
-                name: {
-                  type: "string",
-                },
-                description: {
-                  type: "string",
-                },
-                url: {
-                  type: "string",
-                },
-                format: {
-                  type: "string",
-                  enum: ["gif", "png", "jpg", "jpeg", "webp", "pbf"],
-                },
-                bounds: {
-                  type: "array",
-                  items: {
-                    type: "number",
-                  },
-                  minItems: 4,
-                  maxItems: 4,
-                },
-                center: {
-                  type: "array",
-                  items: {
-                    type: "number",
-                  },
-                  minItems: 3,
-                  maxItems: 3,
-                },
-                zooms: {
-                  type: "array",
-                  items: {
-                    type: "integer",
-                  },
-                  maxItems: 23,
-                },
-                scheme: {
-                  type: "string",
-                  enum: ["xyz", "tms"],
-                },
-                refreshBefore: {
-                  type: "object",
-                  properties: {
-                    time: {
-                      type: "string",
-                    },
-                  },
-                  anyOf: [
-                    {
-                      required: ["time"],
-                    },
-                  ],
-                  additionalProperties: true,
-                },
-                timeout: {
-                  type: "integer",
-                },
-                concurrency: {
-                  type: "integer",
-                },
-                maxTry: {
-                  type: "integer",
-                },
+          additionalProperties: {
+            type: "object",
+            properties: {
+              name: {
+                type: "string",
               },
-              required: [
-                "name",
-                "description",
-                "url",
-                "format",
-                "bounds",
-                "center",
-                "zooms",
-                "scheme",
-                "type",
-                "refreshBefore",
-                "timeout",
-                "concurrency",
-                "maxTry",
-              ],
-              additionalProperties: true,
+              description: {
+                type: "string",
+              },
+              url: {
+                type: "string",
+              },
+              format: {
+                type: "string",
+                enum: ["gif", "png", "jpg", "jpeg", "webp", "pbf"],
+              },
+              bounds: {
+                type: "array",
+                items: {
+                  type: "number",
+                },
+                minItems: 4,
+                maxItems: 4,
+              },
+              center: {
+                type: "array",
+                items: {
+                  type: "number",
+                },
+                minItems: 3,
+                maxItems: 3,
+              },
+              zooms: {
+                type: "array",
+                items: {
+                  type: "integer",
+                },
+                maxItems: 23,
+              },
+              scheme: {
+                type: "string",
+                enum: ["xyz", "tms"],
+              },
+              refreshBefore: {
+                type: "object",
+                properties: {
+                  time: {
+                    type: "string",
+                  },
+                },
+                required: ["time"],
+                additionalProperties: false,
+              },
+              timeout: {
+                type: "integer",
+              },
+              concurrency: {
+                type: "integer",
+              },
+              maxTry: {
+                type: "integer",
+              },
             },
+            required: [
+              "name",
+              "description",
+              "url",
+              "format",
+              "bounds",
+              "center",
+              "zooms",
+              "scheme",
+              "refreshBefore",
+              "timeout",
+              "concurrency",
+              "maxTry",
+            ],
+            additionalProperties: false,
           },
-          additionalProperties: true,
         },
         sprites: {
           type: "object",
-          patternProperties: {
-            "^(?![.-_])(?!.*[.-_]$)[a-zA-Z0-9-_]+(.[a-zA-Z0-9]+)?$": {
-              type: "object",
-              properties: {
-                url: {
-                  type: "string",
-                },
-                refreshBefore: {
-                  type: "object",
-                  properties: {
-                    time: {
-                      type: "string",
-                    },
-                  },
-                  anyOf: [
-                    {
-                      required: ["time"],
-                    },
-                  ],
-                  additionalProperties: true,
-                },
+          additionalProperties: {
+            type: "object",
+            properties: {
+              url: {
+                type: "string",
               },
-              required: ["url", "refreshBefore"],
-              additionalProperties: true,
+              refreshBefore: {
+                type: "object",
+                properties: {
+                  time: {
+                    type: "string",
+                  },
+                },
+                required: ["time"],
+                additionalProperties: false,
+              },
             },
+            required: ["url", "refreshBefore"],
+            additionalProperties: false,
           },
-          additionalProperties: true,
         },
         fonts: {
           type: "object",
-          patternProperties: {
-            "^(?![.-_])(?!.*[.-_]$)[a-zA-Z0-9-_]+(.[a-zA-Z0-9]+)?$": {
-              type: "object",
-              properties: {
-                url: {
-                  type: "string",
-                },
-                refreshBefore: {
-                  type: "object",
-                  properties: {
-                    time: {
-                      type: "string",
-                    },
-                  },
-                  anyOf: [
-                    {
-                      required: ["time"],
-                    },
-                  ],
-                  additionalProperties: true,
-                },
+          additionalProperties: {
+            type: "object",
+            properties: {
+              url: {
+                type: "string",
               },
-              required: ["url", "refreshBefore"],
-              additionalProperties: true,
+              refreshBefore: {
+                type: "object",
+                properties: {
+                  time: {
+                    type: "string",
+                  },
+                },
+                required: ["time"],
+                additionalProperties: false,
+              },
             },
+            required: ["url", "refreshBefore"],
+            additionalProperties: false,
           },
-          additionalProperties: true,
         },
       },
       required: [
@@ -439,184 +349,155 @@ async function loadCleanUpFile(dataDir) {
         },
         styles: {
           type: "object",
-          patternProperties: {
-            "^(?![.-_])(?!.*[.-_]$)[a-zA-Z0-9-_]+(.[a-zA-Z0-9]+)?$": {
-              type: "object",
-              properties: {
-                url: {
-                  type: "string",
-                },
-                cleanUpBefore: {
-                  type: "object",
-                  properties: {
-                    time: {
-                      type: "string",
-                    },
-                  },
-                  anyOf: [
-                    {
-                      required: ["time"],
-                    },
-                  ],
-                  additionalProperties: true,
-                },
+          additionalProperties: {
+            type: "object",
+            properties: {
+              url: {
+                type: "string",
               },
-              required: ["url", "cleanUpBefore"],
-              additionalProperties: true,
+              cleanUpBefore: {
+                type: "object",
+                properties: {
+                  time: {
+                    type: "string",
+                  },
+                },
+                required: ["time"],
+                additionalProperties: false,
+              },
             },
+            required: ["url", "cleanUpBefore"],
+            additionalProperties: false,
           },
-          additionalProperties: true,
         },
         datas: {
           type: "object",
-          patternProperties: {
-            "^(?![.-_])(?!.*[.-_]$)[a-zA-Z0-9-_]+(.[a-zA-Z0-9]+)?$": {
-              type: "object",
-              properties: {
-                name: {
-                  type: "string",
-                },
-                description: {
-                  type: "string",
-                },
-                url: {
-                  type: "string",
-                },
-                format: {
-                  type: "string",
-                  enum: ["gif", "png", "jpg", "jpeg", "webp", "pbf"],
-                },
-                bounds: {
-                  type: "array",
-                  items: {
-                    type: "number",
-                  },
-                  minItems: 4,
-                  maxItems: 4,
-                },
-                center: {
-                  type: "array",
-                  items: {
-                    type: "number",
-                  },
-                  minItems: 3,
-                  maxItems: 3,
-                },
-                zooms: {
-                  type: "array",
-                  items: {
-                    type: "integer",
-                  },
-                  maxItems: 23,
-                },
-                scheme: {
-                  type: "string",
-                  enum: ["xyz", "tms"],
-                },
-                cleanUpBefore: {
-                  type: "object",
-                  properties: {
-                    time: {
-                      type: "string",
-                    },
-                  },
-                  anyOf: [
-                    {
-                      required: ["time"],
-                    },
-                  ],
-                  additionalProperties: true,
-                },
-                timeout: {
-                  type: "integer",
-                },
-                concurrency: {
-                  type: "integer",
-                },
-                maxTry: {
-                  type: "integer",
-                  minimum: 1,
-                },
+          additionalProperties: {
+            type: "object",
+            properties: {
+              name: {
+                type: "string",
               },
-              required: [
-                "name",
-                "description",
-                "url",
-                "format",
-                "bounds",
-                "center",
-                "zooms",
-                "scheme",
-                "type",
-                "cleanUpBefore",
-                "timeout",
-                "concurrency",
-                "maxTry",
-              ],
-              additionalProperties: true,
+              description: {
+                type: "string",
+              },
+              url: {
+                type: "string",
+              },
+              format: {
+                type: "string",
+                enum: ["gif", "png", "jpg", "jpeg", "webp", "pbf"],
+              },
+              bounds: {
+                type: "array",
+                items: {
+                  type: "number",
+                },
+                minItems: 4,
+                maxItems: 4,
+              },
+              center: {
+                type: "array",
+                items: {
+                  type: "number",
+                },
+                minItems: 3,
+                maxItems: 3,
+              },
+              zooms: {
+                type: "array",
+                items: {
+                  type: "integer",
+                },
+                maxItems: 23,
+              },
+              scheme: {
+                type: "string",
+                enum: ["xyz", "tms"],
+              },
+              cleanUpBefore: {
+                type: "object",
+                properties: {
+                  time: {
+                    type: "string",
+                  },
+                },
+                required: ["time"],
+                additionalProperties: false,
+              },
+              timeout: {
+                type: "integer",
+              },
+              concurrency: {
+                type: "integer",
+              },
+              maxTry: {
+                type: "integer",
+                minimum: 1,
+              },
             },
+            required: [
+              "name",
+              "description",
+              "url",
+              "format",
+              "bounds",
+              "center",
+              "zooms",
+              "scheme",
+              "cleanUpBefore",
+              "timeout",
+              "concurrency",
+              "maxTry",
+            ],
+            additionalProperties: false,
           },
-          additionalProperties: true,
         },
         sprites: {
           type: "object",
-          patternProperties: {
-            "^(?![.-_])(?!.*[.-_]$)[a-zA-Z0-9-_]+(.[a-zA-Z0-9]+)?$": {
-              type: "object",
-              properties: {
-                url: {
-                  type: "string",
-                },
-                cleanUpBefore: {
-                  type: "object",
-                  properties: {
-                    time: {
-                      type: "string",
-                    },
-                  },
-                  anyOf: [
-                    {
-                      required: ["time"],
-                    },
-                  ],
-                  additionalProperties: true,
-                },
+          additionalProperties: {
+            type: "object",
+            properties: {
+              url: {
+                type: "string",
               },
-              required: ["url", "cleanUpBefore"],
-              additionalProperties: true,
+              cleanUpBefore: {
+                type: "object",
+                properties: {
+                  time: {
+                    type: "string",
+                  },
+                },
+                required: ["time"],
+                additionalProperties: false,
+              },
             },
+            required: ["url", "cleanUpBefore"],
+            additionalProperties: false,
           },
-          additionalProperties: true,
         },
         fonts: {
           type: "object",
-          patternProperties: {
-            "^(?![.-_])(?!.*[.-_]$)[a-zA-Z0-9-_]+(.[a-zA-Z0-9]+)?$": {
-              type: "object",
-              properties: {
-                url: {
-                  type: "string",
-                },
-                cleanUpBefore: {
-                  type: "object",
-                  properties: {
-                    time: {
-                      type: "string",
-                    },
-                  },
-                  anyOf: [
-                    {
-                      required: ["time"],
-                    },
-                  ],
-                  additionalProperties: true,
-                },
+          additionalProperties: {
+            type: "object",
+            properties: {
+              url: {
+                type: "string",
               },
-              required: ["url", "cleanUpBefore"],
-              additionalProperties: true,
+              cleanUpBefore: {
+                type: "object",
+                properties: {
+                  time: {
+                    type: "string",
+                  },
+                },
+                required: ["time"],
+                additionalProperties: false,
+              },
             },
+            required: ["url", "cleanUpBefore"],
+            additionalProperties: false,
           },
-          additionalProperties: true,
         },
       },
       required: [
