@@ -1,6 +1,7 @@
 "use strict";
 
 import { StatusCodes } from "http-status-codes";
+import { config, seed } from "./config.js";
 import fsPromise from "node:fs/promises";
 import https from "node:https";
 import path from "node:path";
