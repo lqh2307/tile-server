@@ -6,6 +6,7 @@ import {
   getXYZTileFromURL,
   getXYZInfos,
   getXYZTile,
+  createXYZTileDataFile,
 } from "./xyz.js";
 import { StatusCodes } from "http-status-codes";
 import { config, seed } from "./config.js";
@@ -45,6 +46,7 @@ function getDataTileHandler() {
     const z = Number(req.params.z);
     const x = Number(req.params.x);
     const y = Number(req.params.y);
+    const tileName = `${z}/${x}/${y}`
 
     try {
       let dataTile;
@@ -59,33 +61,42 @@ function getDataTileHandler() {
       } else if (item.sourceType === "pmtiles") {
         dataTile = await getPMTilesTile(item.source, z, x, y);
       } else if (item.sourceType === "xyz") {
-        const tileName = `${z}/${x}/${y}`;
+        if (item.cacheSourceID !== undefined) {
+          const cacheItem = seed.tileLocks.datas[item.cacheSourceID]
 
-        try {
-          if (
-            seed.tileLocks.datas[id][tileName] === undefined ||
-            seed.tileLocks.datas[id][tileName] === true
-          ) {
-            dataTile = await getXYZTile(
-              item.source,
-              z,
-              x,
-              req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
-              req.params.format
-            );
-          }
-        } catch (error) {
-          if (error.code === "ENOENT") {
-            try {
-              dataTile = await getXYZTileFromURL(seed.datas[id].url, 60000);
-
-              storeXYZTileDataFile(id, tileName, dataTile.data);
-            } catch (error) {
-              throw error;
+          try {
+            if (cacheItem[tileName] === undefined) {
+              dataTile = await getXYZTile(
+                item.source,
+                z,
+                x,
+                req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+                req.params.format
+              );
             }
-          } else {
-            throw error;
+          } catch (error) {
+            if (error.message === "Tile does not exist") {
+              const url = cacheItem.url.replaceAll("{z}/{x}/{y}", tileName);
+
+              printLog("info", `Getting data "${id}" from ${url}...`)
+
+              dataTile = await getXYZTileFromURL(url, 60000)
+
+              if (cacheItem[tileName] === undefined) {
+                cacheItem[tileName] = true;
+
+                createXYZTileDataFile(`${item.source}/${tileName}.${req.params.format}`, dataTile.data).catch(error => printLog("error", `Failed to caching data "${id}" from ${url}: ${error}...`)).finally(() => delete cacheItem[tileName])
+              }
+            }
           }
+        } else {
+          dataTile = await getXYZTile(
+            item.source,
+            z,
+            x,
+            req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+            req.params.format
+          );
         }
       }
 
@@ -105,7 +116,7 @@ function getDataTileHandler() {
     } catch (error) {
       printLog(
         "error",
-        `Failed to get data "${id}" - Tile ${z}/${x}/${y}: ${error}`
+        `Failed to get data "${id}" - Tile ${tileName}: ${error}`
       );
 
       if (error.message === "Tile does not exist") {
@@ -145,8 +156,7 @@ function getDataHandler() {
       }
 
       dataInfo.tiles = [
-        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${
-          req.query.scheme === "tms" ? "?scheme=tms" : ""
+        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${req.query.scheme === "tms" ? "?scheme=tms" : ""
         }`,
       ];
 
@@ -212,8 +222,7 @@ function getDataTileJSONsListHandler() {
           dataInfo.id = id;
 
           dataInfo.tiles = [
-            `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
-              item.tileJSON.format
+            `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format
             }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
           ];
 
@@ -508,6 +517,8 @@ export const serve_data = {
 
             if (item.cache === true) {
               dirPath = `${config.paths.caches.xyzs}/${item.xyz}`;
+
+              dataInfo.cacheSourceID = item.xyz;
             }
 
             dataInfo.sourceType = "xyz";

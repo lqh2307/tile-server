@@ -31,10 +31,6 @@ const vectorTileProto = protobuf(
  * @param {string} fontstack
  */
 function combinePBFFonts(buffers, fontstack) {
-  if (buffers?.length === 0) {
-    return;
-  }
-
   let result;
   const coverage = {};
 

@@ -26,7 +26,7 @@ import {
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @returns {Promise<object>}
  */
-export async function getXYZTile(sourcePath, z, x, y) {
+export async function getXYZTile(sourcePath, z, x, y, format) {
   try {
     const data = Buffer.from(
       await fsPromise.readFile(`${sourcePath}/${z}/${x}/${y}.${format}`)
@@ -104,7 +104,7 @@ export async function getXYZLayersFromTiles(sourcePath) {
 
   for (const pbfFile of pbfFilePaths) {
     try {
-      const layers = await getLayerNamesFromPBFTile(pbfFile);
+      const layers = await getLayerNamesFromPBFTile(`${sourcePath}/${pbfFile}`);
 
       layers.forEach((layer) => layerNames.add(layer));
     } catch (error) {
@@ -233,7 +233,7 @@ export async function getXYZInfos(
     metadata = JSON.parse(
       await fsPromise.readFile(`${sourcePath}/metadata.json`, "utf8")
     );
-  } catch (error) {}
+  } catch (error) { }
 
   /* Try get min zoom */
   if (metadata.minzoom === undefined) {
