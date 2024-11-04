@@ -161,43 +161,16 @@ function getDataHandler() {
     }
 
     try {
-      let dataInfo;
-
-      if (item.sourceType === "mbtiles") {
-        dataInfo = await getMBTilesInfos(item.source);
-      } else if (item.sourceType === "pmtiles") {
-        dataInfo = await getPMTilesInfos(item.source);
-      } else if (item.sourceType === "xyz") {
-        try {
-          dataInfo = await getXYZInfos(item.source);
-        } catch (error) {
-          if (item.cacheSourceID !== undefined) {
-            const cacheItem = seed.datas[item.cacheSourceID];
-
-            dataInfo = {
-              name: cacheItem.name,
-              description: cacheItem.description,
-              format: cacheItem.format,
-              bounds: cacheItem.bounds,
-              center: cacheItem.center,
-              minzoom: Math.min(...cacheItem.zooms),
-              maxzoom: Math.max(...cacheItem.zooms),
-              vector_layers: cacheItem.vector_layers,
-              tilestats: cacheItem.tilestats,
-            };
-          }
-        }
-      }
-
-      dataInfo.tiles = [
-        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${
-          req.query.scheme === "tms" ? "?scheme=tms" : ""
-        }`,
-      ];
-
       res.header("Content-Type", "application/json");
 
-      return res.status(StatusCodes.OK).send(dataInfo);
+      return res.status(StatusCodes.OK).send({
+        ...item.tileJSON,
+        tiles: [
+          `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
+            item.tileJSON.format
+          }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
+        ],
+      });
     } catch (error) {
       printLog("error", `Failed to get data "${id}": ${error}`);
 
@@ -238,43 +211,16 @@ function getDataTileJSONsListHandler() {
       const result = await Promise.all(
         Object.keys(config.repo.datas).map(async (id) => {
           const item = config.repo.datas[id];
-          let dataInfo;
 
-          if (item.sourceType === "mbtiles") {
-            dataInfo = await getMBTilesInfos(item.source);
-          } else if (item.sourceType === "pmtiles") {
-            dataInfo = await getPMTilesInfos(item.source);
-          } else if (item.sourceType === "xyz") {
-            try {
-              dataInfo = await getXYZInfos(item.source);
-            } catch (error) {
-              if (item.cacheSourceID !== undefined) {
-                const cacheItem = seed.datas[item.cacheSourceID];
-
-                dataInfo = {
-                  name: cacheItem.name,
-                  description: cacheItem.description,
-                  format: cacheItem.format,
-                  bounds: cacheItem.bounds,
-                  center: cacheItem.center,
-                  minzoom: Math.min(...cacheItem.zooms),
-                  maxzoom: Math.max(...cacheItem.zooms),
-                  vector_layers: cacheItem.vector_layers,
-                  tilestats: cacheItem.tilestats,
-                };
-              }
-            }
-          }
-
-          dataInfo.id = id;
-
-          dataInfo.tiles = [
-            `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
-              item.tileJSON.format
-            }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
-          ];
-
-          return dataInfo;
+          return {
+            ...item.tileJSON,
+            id: id,
+            tiles: [
+              `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
+                item.tileJSON.format
+              }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
+            ],
+          };
         })
       );
 
@@ -546,21 +492,20 @@ export const serve_data = {
             dataInfo.source = openPMTiles(filePath);
             dataInfo.tileJSON = await getPMTilesInfos(dataInfo.source);
           } else if (item.xyz !== undefined) {
-            let dirPath = `${config.paths.xyzs}/${item.xyz}`;
+            let filePath = `${config.paths.xyzs}/${item.xyz}`;
 
             if (item.cache === true) {
-              dirPath = `${config.paths.caches.xyzs}/${item.xyz}`;
+              filePath = `${config.paths.caches.xyzs}/${item.xyz}`;
 
               dataInfo.cacheSourceID = item.xyz;
             }
 
             dataInfo.sourceType = "xyz";
-            dataInfo.source = dirPath;
-
+            dataInfo.source = filePath;
             try {
-              dataInfo = await getXYZInfos(dataInfo.source);
+              dataInfo.tileJSON = await getXYZInfos(dataInfo.source);
             } catch (error) {
-              if (dataInfo.cacheSourceID !== undefined) {
+              if (item.cache === true) {
                 const cacheItem = seed.datas[dataInfo.cacheSourceID];
 
                 dataInfo.tileJSON = {
@@ -571,6 +516,8 @@ export const serve_data = {
                   center: cacheItem.center,
                   minzoom: Math.min(...cacheItem.zooms),
                   maxzoom: Math.max(...cacheItem.zooms),
+                  vector_layers: cacheItem.vector_layers,
+                  tilestats: cacheItem.tilestats,
                 };
               }
             }
