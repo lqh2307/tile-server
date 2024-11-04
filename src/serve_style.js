@@ -23,7 +23,7 @@ function getStyleHandler() {
       /* Fix sprite url */
       if (styleJSON.sprite !== undefined) {
         if (styleJSON.sprite.startsWith("sprites://") === true) {
-          styleJSON.sprite = styleJSON.sprite.replace(
+          styleJSON.sprite = styleJSON.sprite.replaceAll(
             "sprites://",
             `${getRequestHost(req)}sprites/`
           );
@@ -33,7 +33,7 @@ function getStyleHandler() {
       /* Fix fonts url */
       if (styleJSON.glyphs !== undefined) {
         if (styleJSON.glyphs.startsWith("fonts://") === true) {
-          styleJSON.glyphs = styleJSON.glyphs.replace(
+          styleJSON.glyphs = styleJSON.glyphs.replaceAll(
             "fonts://",
             `${getRequestHost(req)}fonts/`
           );

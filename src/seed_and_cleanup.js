@@ -112,7 +112,7 @@ export async function seedXYZTileDataFiles(
           limitConcurrencyDownload(async () => {
             const tileName = `${z}/${x}/${y}`;
             const filePath = `${outputFolder}/${tileName}.${format}`;
-            const url = tileURL.replace("/{z}/{x}/{y}", tileName);
+            const url = tileURL.replaceAll("{z}/{x}/{y}", tileName);
 
             try {
               if (
