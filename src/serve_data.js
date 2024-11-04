@@ -79,12 +79,7 @@ function getDataTileHandler() {
             try {
               dataTile = await getXYZTileFromURL(seed.datas[id].url, 60000);
 
-              storeXYZTileDataFile(
-                id,
-                tileName,
-                req.params.format,
-                dataTile.data
-              );
+              storeXYZTileDataFile(id, tileName, dataTile.data);
             } catch (error) {
               throw error;
             }
@@ -150,7 +145,8 @@ function getDataHandler() {
       }
 
       dataInfo.tiles = [
-        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${req.query.scheme === "tms" ? "?scheme=tms" : ""
+        `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}${
+          req.query.scheme === "tms" ? "?scheme=tms" : ""
         }`,
       ];
 
@@ -216,7 +212,8 @@ function getDataTileJSONsListHandler() {
           dataInfo.id = id;
 
           dataInfo.tiles = [
-            `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format
+            `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
+              item.tileJSON.format
             }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
           ];
 
