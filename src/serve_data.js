@@ -62,6 +62,7 @@ function getDataTileHandler() {
       } else if (item.sourceType === "xyz") {
         if (item.cacheSourceID !== undefined) {
           const cacheItemLock = seed.tileLocks.datas[item.cacheSourceID];
+          const cacheItem = seed.datas[item.cacheSourceID];
 
           try {
             if (cacheItemLock[tileName] === undefined) {
@@ -75,7 +76,7 @@ function getDataTileHandler() {
             }
           } catch (error) {
             if (error.message === "Tile does not exist") {
-              const url = cacheItemLock.url.replaceAll("{z}/{x}/{y}", tileName);
+              const url = cacheItem.url.replaceAll("{z}/{x}/{y}", tileName);
 
               printLog(
                 "info",
