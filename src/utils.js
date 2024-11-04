@@ -1124,6 +1124,17 @@ export function createNewTileJSON(metadata) {
     ];
   }
 
+  // Add vector_layers and tilestats
+  if (data.format === "pbf") {
+    if (metadata.vector_layers !== undefined) {
+      data.vector_layers = metadata.vector_layers;
+    }
+
+    if (metadata.tilestats !== undefined) {
+      data.tilestats = metadata.tilestats;
+    }
+  }
+
   return data;
 }
 

@@ -147,10 +147,9 @@ export async function getXYZFormatFromTiles(sourcePath) {
 /**
  * Get XYZ bounding box from tiles
  * @param {object} sourcePath
- * @param {"xyz"|"tms"} scheme - Tile scheme
  * @returns {Promise<number>}
  */
-export async function getXYZBBoxFromTiles(sourcePath, scheme) {
+export async function getXYZBBoxFromTiles(sourcePath) {
   const boundsArr = [];
 
   const zFolders = await findFolders(sourcePath, /^\d+$/, false);
@@ -179,7 +178,7 @@ export async function getXYZBBoxFromTiles(sourcePath, scheme) {
           const yMax = Math.max(...yFiles.map((file) => Number(file)));
 
           boundsArr.push(
-            getBBoxFromTiles(xMin, yMin, xMax, yMax, zFolder, scheme)
+            getBBoxFromTiles(xMin, yMin, xMax, yMax, zFolder, "xyz")
           );
         }
       }
@@ -216,15 +215,9 @@ export async function getXYZZoomLevelFromTiles(
 /**
  * Get XYZ infos
  * @param {object} mbtilesSource
- * @param {boolean} includeJSON
- * @param {"xyz"|"tms"} scheme - Tile scheme
  * @returns {Promise<object>}
  */
-export async function getXYZInfos(
-  sourcePath,
-  scheme = "xyz",
-  includeJSON = false
-) {
+export async function getXYZInfos(sourcePath) {
   let metadata = {};
 
   /* Get metadatas */
@@ -251,29 +244,21 @@ export async function getXYZInfos(
 
   /* Try get bounds */
   if (metadata.bounds === undefined) {
-    metadata.bounds = await getXYZBBoxFromTiles(sourcePath, scheme);
+    metadata.bounds = await getXYZBBoxFromTiles(sourcePath, "xyz");
   }
 
-  const tileJSON = createNewTileJSON(metadata);
+  /* Add vector_layers */
+  if (metadata.format === "pbf" && metadata.vector_layers === undefined) {
+    const layers = await getXYZLayersFromTiles(sourcePath);
 
-  /* Add vector_layers and tilestats */
-  if (includeJSON === true && metadata.format === "pbf") {
-    if (metadata.vector_layers === undefined) {
-      const layers = await getXYZLayersFromTiles(sourcePath);
-
-      tileJSON.vector_layers = layers.map((layer) => {
-        return {
-          id: layer,
-        };
-      });
-    } else {
-      tileJSON.vector_layers = metadata.vector_layers;
-    }
-
-    tileJSON.tilestats = metadata.tilestats;
+    metadata.vector_layers = layers.map((layer) => {
+      return {
+        id: layer,
+      };
+    });
   }
 
-  return tileJSON;
+  return createNewTileJSON(metadata);
 }
 
 /**
@@ -320,11 +305,10 @@ export async function createXYZTileDataFile(filePath, data) {
  * Get XYZ tile from bounding box for specific zoom levels intersecting a bounding box
  * @param {Array<number>} bbox [west, south, east, north] in EPSG:4326
  * @param {Array<number>} zooms Array of specific zoom levels
- * @param {"xyz"|"tms"} scheme Tile scheme
  * @returns {Array<string>} Array values as z/x/y
  */
-export function getXYZTileFromBBox(bbox, zooms, scheme) {
-  const tilesSummary = getTileBoundsFromBBox(bbox, zooms, scheme);
+export function getXYZTileFromBBox(bbox, zooms) {
+  const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
   const tiles = [];
 
   for (const z in tilesSummary) {

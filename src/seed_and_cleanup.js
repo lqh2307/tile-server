@@ -61,7 +61,7 @@ process.on("SIGTERM", () => {
  * @param {Array<number>} bounds Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {Array<number>} center Center in format [lon, lat, zoom] in EPSG:4326
  * @param {Array<number>} zooms Array of specific zoom levels
- * @param {"xyz"|"tms"} scheme Tile scheme
+ * @param {Array<object>} vector_layers Vector layers
  * @param {number} concurrency Concurrency download
  * @param {boolean} overwrite Overwrite exist file
  * @param {number} maxTry Number of retry attempts on failure
@@ -80,7 +80,7 @@ export async function seedXYZTileDataFiles(
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
     21, 22,
   ],
-  scheme = "xyz",
+  vector_layers,
   concurrency = os.cpus().length,
   overwrite = true,
   maxTry = 5,
@@ -101,7 +101,7 @@ export async function seedXYZTileDataFiles(
   } catch (error) {}
 
   // Download file
-  const tilesSummary = getTileBoundsFromBBox(bounds, zooms, scheme);
+  const tilesSummary = getTileBoundsFromBBox(bounds, zooms, "xyz");
   const limitConcurrencyDownload = pLimit(concurrency);
   const tilePromises = [];
 
@@ -180,7 +180,7 @@ export async function seedXYZTileDataFiles(
     center: center || [0, 0, 11],
     minzoom: Math.min(...zooms),
     maxzoom: Math.max(...zooms),
-    scheme: scheme || "xyz",
+    vector_layers: vector_layers,
     time: new Date().toISOString().split(".")[0],
   });
 
@@ -233,7 +233,7 @@ export async function cleanXYZTileDataFiles(
   } catch (error) {}
 
   // Remove files
-  const tilesSummary = getTileBoundsFromBBox(bounds, zooms, scheme);
+  const tilesSummary = getTileBoundsFromBBox(bounds, zooms, "xyz");
   const tilePromises = [];
 
   for (const z in tilesSummary) {
@@ -384,7 +384,6 @@ async function startTask() {
             seedData.datas[id].bounds,
             seedData.datas[id].center,
             seedData.datas[id].zooms,
-            seedData.datas[id].scheme,
             seedData.datas[id].concurrency,
             false,
             seedData.datas[id].maxTry,

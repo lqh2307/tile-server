@@ -108,14 +108,7 @@ export async function getPMTilesInfos(pmtilesSource, includeJSON = false) {
     ];
   }
 
-  const tileJSON = createNewTileJSON(metadata);
-
-  if (includeJSON === true && metadata.format === "pbf") {
-    tileJSON.vector_layers = metadata.vector_layers;
-    tileJSON.tilestats = metadata.tilestats;
-  }
-
-  return tileJSON;
+  return createNewTileJSON(metadata);
 }
 
 /**

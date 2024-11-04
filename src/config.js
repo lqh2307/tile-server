@@ -225,10 +225,6 @@ async function loadSeedFile(dataDir) {
                 },
                 maxItems: 23,
               },
-              scheme: {
-                type: "string",
-                enum: ["xyz", "tms"],
-              },
               refreshBefore: {
                 type: "object",
                 properties: {
@@ -257,7 +253,6 @@ async function loadSeedFile(dataDir) {
               "bounds",
               "center",
               "zooms",
-              "scheme",
               "refreshBefore",
               "timeout",
               "concurrency",

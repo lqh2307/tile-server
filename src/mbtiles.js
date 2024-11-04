@@ -192,7 +192,7 @@ export async function getMBTilesZoomLevelFromTiles(
           return reject(error);
         }
 
-        if (row) {
+        if (row !== undefined) {
           return resolve(row.zoom);
         }
 
@@ -214,7 +214,7 @@ export async function getMBTilesFormatFromTiles(mbtilesSource) {
         return reject(error);
       }
 
-      if (row) {
+      if (row !== undefined) {
         return resolve(detectFormatAndHeaders(row.tile_data).format);
       }
 
@@ -226,10 +226,9 @@ export async function getMBTilesFormatFromTiles(mbtilesSource) {
 /**
  * Get MBTiles infos
  * @param {object} mbtilesSource
- * @param {boolean} includeJSON
  * @returns {Promise<object>}
  */
-export async function getMBTilesInfos(mbtilesSource, includeJSON = false) {
+export async function getMBTilesInfos(mbtilesSource) {
   const metadata = {};
 
   /* Get metadatas */
@@ -239,16 +238,14 @@ export async function getMBTilesInfos(mbtilesSource, includeJSON = false) {
         return reject(error);
       }
 
-      if (rows) {
+      if (rows !== undefined) {
         rows.forEach((row) => {
           switch (row.name) {
             case "json":
-              if (includeJSON === true) {
-                try {
-                  Object.assign(metadata, JSON.parse(row.value));
-                } catch (error) {
-                  return reject(error);
-                }
+              try {
+                Object.assign(metadata, JSON.parse(row.value));
+              } catch (error) {
+                return reject(error);
               }
 
               break;
@@ -297,15 +294,7 @@ export async function getMBTilesInfos(mbtilesSource, includeJSON = false) {
     metadata.format = await getMBTilesFormatFromTiles(mbtilesSource);
   }
 
-  const tileJSON = createNewTileJSON(metadata);
-
-  /* Add vector_layers and tilestats */
-  if (includeJSON === true && metadata.format === "pbf") {
-    tileJSON.vector_layers = metadata.vector_layers;
-    tileJSON.tilestats = metadata.tilestats;
-  }
-
-  return tileJSON;
+  return createNewTileJSON(metadata);
 }
 
 /**

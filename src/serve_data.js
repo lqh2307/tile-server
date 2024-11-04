@@ -161,20 +161,15 @@ function getDataHandler() {
     }
 
     try {
-      const includeJSON = req.query.json === "true" ? true : false;
       let dataInfo;
 
       if (item.sourceType === "mbtiles") {
-        dataInfo = await getMBTilesInfos(item.source, includeJSON);
+        dataInfo = await getMBTilesInfos(item.source);
       } else if (item.sourceType === "pmtiles") {
-        dataInfo = await getPMTilesInfos(item.source, includeJSON);
+        dataInfo = await getPMTilesInfos(item.source);
       } else if (item.sourceType === "xyz") {
         try {
-          dataInfo = await getXYZInfos(
-            item.source,
-            req.query.scheme,
-            includeJSON
-          );
+          dataInfo = await getXYZInfos(item.source);
         } catch (error) {
           if (item.cacheSourceID !== undefined) {
             const cacheItem = seed.datas[item.cacheSourceID];
@@ -187,9 +182,8 @@ function getDataHandler() {
               center: cacheItem.center,
               minzoom: Math.min(...cacheItem.zooms),
               maxzoom: Math.max(...cacheItem.zooms),
-              vector_layers:
-                includeJSON === true ? cacheItem.vector_layers : undefined,
-              tilestats: includeJSON === true ? cacheItem.tilestats : undefined,
+              vector_layers: cacheItem.vector_layers,
+              tilestats: cacheItem.tilestats,
             };
           }
         }
@@ -241,24 +235,18 @@ function getDatasListHandler() {
 function getDataTileJSONsListHandler() {
   return async (req, res, next) => {
     try {
-      const includeJSON = req.query.json === "true" ? true : false;
-
       const result = await Promise.all(
         Object.keys(config.repo.datas).map(async (id) => {
           const item = config.repo.datas[id];
           let dataInfo;
 
           if (item.sourceType === "mbtiles") {
-            dataInfo = await getMBTilesInfos(item.source, includeJSON);
+            dataInfo = await getMBTilesInfos(item.source);
           } else if (item.sourceType === "pmtiles") {
-            dataInfo = await getPMTilesInfos(item.source, includeJSON);
+            dataInfo = await getPMTilesInfos(item.source);
           } else if (item.sourceType === "xyz") {
             try {
-              dataInfo = await getXYZInfos(
-                item.source,
-                req.query.scheme,
-                includeJSON
-              );
+              dataInfo = await getXYZInfos(item.source);
             } catch (error) {
               if (item.cacheSourceID !== undefined) {
                 const cacheItem = seed.datas[item.cacheSourceID];
@@ -271,10 +259,8 @@ function getDataTileJSONsListHandler() {
                   center: cacheItem.center,
                   minzoom: Math.min(...cacheItem.zooms),
                   maxzoom: Math.max(...cacheItem.zooms),
-                  vector_layers:
-                    includeJSON === true ? cacheItem.vector_layers : undefined,
-                  tilestats:
-                    includeJSON === true ? cacheItem.tilestats : undefined,
+                  vector_layers: cacheItem.vector_layers,
+                  tilestats: cacheItem.tilestats,
                 };
               }
             }
@@ -357,14 +343,6 @@ export const serve_data = {
      *     tags:
      *       - Data
      *     summary: Get all data tileJSONs
-     *     parameters:
-     *       - in: query
-     *         name: json
-     *         schema:
-     *           type: string
-     *           enum: [true, false]
-     *         required: false
-     *         description: Include vector_layers and tilestats fields in response
      *     responses:
      *       200:
      *         description: List of all data tileJSONs
@@ -403,13 +381,6 @@ export const serve_data = {
      *         schema:
      *           type: string
      *         description: Data ID
-     *       - in: query
-     *         name: json
-     *         schema:
-     *           type: string
-     *           enum: [true, false]
-     *         required: false
-     *         description: Include vector_layers and tilestats fields in response
      *     responses:
      *       200:
      *         description: Data information

@@ -110,7 +110,7 @@
                   <div class="identifier">type: {{#if is_vector}}vector{{else}}raster{{/if}}</div>
                   <div class="identifier">ext: {{source_type}}</div>
                   <p class="services">
-                    services: <a href="/datas/{{@key}}.json?json=true">TileJSON</a>
+                    services: <a href="/datas/{{@key}}.json">TileJSON</a>
                     {{#if xyz}}
                       | <a href="#" onclick="toggleURL('xyz_data_{{@key}}', event)">XYZ</a>
                       <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz}}" onclick="copyToClipboard(this)" />
