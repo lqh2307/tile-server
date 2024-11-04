@@ -232,7 +232,7 @@ export async function getXYZInfos(
     metadata = JSON.parse(
       await fsPromise.readFile(`${sourcePath}/metadata.json`, "utf8")
     );
-  } catch (error) {}
+  } catch (error) { }
 
   /* Try get min zoom */
   if (metadata.minzoom === undefined) {
@@ -318,14 +318,14 @@ export async function createXYZTileDataFile(filePath, data) {
 
 /**
  * Store tile data file
- * @param {string} outputFolder
+ * @param {string} id
  * @param {string} tileName
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {Buffer} data Tile data
  * @returns {Promise<void>}
  */
 export async function storeXYZTileDataFile(
-  outputFolder,
+  id,
   tileName,
   format,
   data
@@ -335,7 +335,7 @@ export async function storeXYZTileDataFile(
       seed.tileLocks.datas[id][tileName] = true;
 
       await createXYZTileDataFile(
-        `${outputFolder}/${tileName}.${format}`,
+        `${config.repo.datas[id].source}/${tileName}.${format}`,
         data
       );
     } catch (error) {
