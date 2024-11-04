@@ -311,38 +311,6 @@ export async function retry(fn, maxTry, after = 0) {
 }
 
 /**
- * Download MBTiles file
- * @param {string} url The URL to download the file from
- * @param {string} outputPath The path where the file will be saved
- * @param {boolean} overwrite Overwrite exist file
- * @param {number} maxTry Number of retry attempts on failure
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<string>} Returns the output path if successful
- */
-export async function downloadMBTilesFile(
-  url,
-  outputPath,
-  overwrite = false,
-  maxTry = 5,
-  timeout = 60000
-) {
-  try {
-    if (overwrite === false && (await isExistFile(outputPath)) === true) {
-      printLog(
-        "info",
-        `MBTiles file is exist. Skipping download MBTiles data from ${url}...`
-      );
-    } else {
-      printLog("info", `Downloading MBTiles file from ${url}...`);
-
-      await retry(() => downloadFile(url, outputPath, true, timeout), maxTry);
-    }
-  } catch (error) {
-    throw error;
-  }
-}
-
-/**
  * Recursively removes empty folders in a directory
  * @param {string} folderPath The root directory to check for empty folders
  * @returns {Promise<void>}

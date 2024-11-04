@@ -1,6 +1,13 @@
 "use strict";
 
-import { detectFormatAndHeaders, createNewTileJSON } from "./utils.js";
+import {
+  detectFormatAndHeaders,
+  createNewTileJSON,
+  downloadFile,
+  isExistFile,
+  printLog,
+  retry,
+} from "./utils.js";
 import sqlite3 from "sqlite3";
 
 /**
@@ -312,4 +319,36 @@ export async function closeMBTiles(mbtilesSource) {
       resolve();
     });
   });
+}
+
+/**
+ * Download MBTiles file
+ * @param {string} url The URL to download the file from
+ * @param {string} outputPath The path where the file will be saved
+ * @param {boolean} overwrite Overwrite exist file
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<string>} Returns the output path if successful
+ */
+export async function downloadMBTilesFile(
+  url,
+  outputPath,
+  overwrite = false,
+  maxTry = 5,
+  timeout = 60000
+) {
+  try {
+    if (overwrite === false && (await isExistFile(outputPath)) === true) {
+      printLog(
+        "info",
+        `MBTiles file is exist. Skipping download MBTiles data from ${url}...`
+      );
+    } else {
+      printLog("info", `Downloading MBTiles file from ${url}...`);
+
+      await retry(() => downloadFile(url, outputPath, true, timeout), maxTry);
+    }
+  } catch (error) {
+    throw error;
+  }
 }

@@ -11,13 +11,13 @@ import { StatusCodes } from "http-status-codes";
 import { config, seed } from "./config.js";
 import express from "express";
 import {
+  downloadMBTilesFile,
   createMBTilesIndex,
   getMBTilesInfos,
   getMBTilesTile,
   openMBTiles,
 } from "./mbtiles.js";
 import {
-  downloadMBTilesFile,
   validateDataInfo,
   getRequestHost,
   gzipAsync,
