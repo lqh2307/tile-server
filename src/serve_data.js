@@ -58,7 +58,12 @@ function getDataTileHandler() {
           req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
         );
       } else if (item.sourceType === "pmtiles") {
-        dataTile = await getPMTilesTile(item.source, z, x, y);
+        dataTile = await getPMTilesTile(
+          item.source,
+          z,
+          x,
+          req.query.scheme === "tms" ? (1 << z) - 1 - y : y // Default of PMTiles is xyz. Flip Y to convert xyz scheme => tms scheme
+        );
       } else if (item.sourceType === "xyz") {
         if (item.cacheSourceID !== undefined) {
           const cacheItemLock = seed.tileLocks.datas[item.cacheSourceID];
@@ -176,6 +181,79 @@ function getDataHandler() {
       });
     } catch (error) {
       printLog("error", `Failed to get data "${id}": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
+function getDataTileMD5Handler() {
+  return async (req, res, next) => {
+    const id = decodeURI(req.params.id);
+    const item = config.repo.datas[id];
+
+    /* Check data is exist? */
+    if (item === undefined) {
+      return res.status(StatusCodes.NOT_FOUND).send("Data is not found");
+    }
+
+    /* Check data tile format */
+    if (req.params.format !== item.tileJSON.format) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .send("Data tile format is invalid");
+    }
+
+    /* Get tile name */
+    const z = Number(req.params.z);
+    const x = Number(req.params.x);
+    const y = Number(req.params.y);
+
+    try {
+      /* Get tile data MD5 */
+      let dataTile;
+
+      if (item.sourceType === "mbtiles") {
+        dataTile = await getMBTilesTile(
+          item.source,
+          z,
+          x,
+          req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+        );
+      } else if (item.sourceType === "pmtiles") {
+        dataTile = await getPMTilesTile(
+          item.source,
+          z,
+          x,
+          req.query.scheme === "tms" ? (1 << z) - 1 - y : y // Default of PMTiles is xyz. Flip Y to convert xyz scheme => tms scheme
+        );
+      } else if (item.sourceType === "xyz") {
+        dataTile = await getXYZTile(
+          item.source,
+          z,
+          x,
+          req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+          req.params.format
+        );
+      }
+
+      /* Add MD5 to header */
+      dataTile.headers["Etag"] === "application/x-protobuf";
+
+      res.set(dataTile.headers);
+
+      return res.status(StatusCodes.OK).send(dataTile.data);
+    } catch (error) {
+      printLog(
+        "error",
+        `Failed to get md5 data "${id}" - Tile "${z}/${x}/${y}": ${error}`
+      );
+
+      if (error.message === "Tile MD5 does not exist") {
+        return res.status(StatusCodes.NO_CONTENT).send(error.message);
+      }
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -350,6 +428,79 @@ export const serve_data = {
      *         description: Internal server error
      */
     app.get("/:id.json", getDataHandler());
+
+    /**
+     * @swagger
+     * tags:
+     *   - name: Data
+     *     description: Data related endpoints
+     * /datas/md5/{z}/{x}/{y}.{format}:
+     *   get:
+     *     tags:
+     *       - Data
+     *     summary: Get data tile MD5
+     *     parameters:
+     *       - in: path
+     *         name: z
+     *         required: true
+     *         schema:
+     *           type: integer
+     *           example: 0
+     *         description: Zoom level
+     *       - in: path
+     *         name: x
+     *         required: true
+     *         schema:
+     *           type: integer
+     *           example: 0
+     *         description: Tile X coordinate
+     *       - in: path
+     *         name: y
+     *         required: true
+     *         schema:
+     *           type: integer
+     *           example: 0
+     *         description: Tile Y coordinate
+     *       - in: path
+     *         name: format
+     *         required: true
+     *         schema:
+     *           type: string
+     *           enum: [jpeg, jpg, pbf, png, webp, gif]
+     *         description: Tile format
+     *       - in: query
+     *         name: scheme
+     *         schema:
+     *           type: string
+     *           enum: [xyz, tms]
+     *         required: false
+     *         description: Use xyz or tms scheme
+     *     responses:
+     *       200:
+     *         description: Data tile
+     *         content:
+     *           application/octet-stream:
+     *             schema:
+     *               type: string
+     *               format: binary
+     *       204:
+     *         description: No content
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get(
+      `/md5/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp|gif)`,
+      getDataTileMD5Handler()
+    );
 
     /**
      * @swagger
