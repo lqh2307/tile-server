@@ -565,11 +565,11 @@ export async function findFolders(dirPath, regex, recurse = false) {
 }
 
 /**
- * Delete files or folders
+ * Remove files or folders
  * @param {Array<string>} fileOrFolders File or folder paths
  * @returns {Promise<void>}
  */
-export async function deleteFilesOrFolders(fileOrFolders) {
+export async function removeFilesOrFolders(fileOrFolders) {
   await Promise.all(
     fileOrFolders.map((fileOrFolder) =>
       fsPromise.rm(fileOrFolder, {
@@ -578,6 +578,18 @@ export async function deleteFilesOrFolders(fileOrFolders) {
       })
     )
   );
+}
+
+/**
+ * Remove file or folder
+ * @param {string} fileOrFolder File or folder path
+ * @returns {Promise<void>}
+ */
+export async function removeFilesOrFolder(fileOrFolder) {
+  fsPromise.rm(fileOrFolder, {
+    force: true,
+    recursive: true,
+  });
 }
 
 /**

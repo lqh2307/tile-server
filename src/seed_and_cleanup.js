@@ -13,6 +13,7 @@ import {
 } from "./xyz.js";
 import {
   getTileBoundsFromBBox,
+  removeFilesOrFolder,
   removeEmptyFolders,
   calculateMD5,
   printLog,
@@ -213,9 +214,7 @@ export async function seedXYZTileDataFiles(
               );
 
               // Remove error tile data file
-              await fsPromise.rm(filePath, {
-                force: true,
-              });
+              await removeFilesOrFolder(filePath);
             }
           })
         );
@@ -322,9 +321,7 @@ export async function cleanXYZTileDataFiles(
                     `Removing tile data file "${z}/${x}/${y}"...`
                   );
 
-                  await fsPromise.rm(filePath, {
-                    force: true,
-                  });
+                  await removeFilesOrFolder(filePath);
 
                   delete hashs[`${z}/${x}/${y}`];
                 }
@@ -332,9 +329,7 @@ export async function cleanXYZTileDataFiles(
             } catch (error) {
               printLog("info", `Removing tile data file "${z}/${x}/${y}"...`);
 
-              await fsPromise.rm(filePath, {
-                force: true,
-              });
+              await removeFilesOrFolder(filePath);
 
               delete hashs[`${z}/${x}/${y}`];
             }
@@ -355,10 +350,7 @@ export async function cleanXYZTileDataFiles(
   await createXYZMD5File(outputFolder, hashs);
 
   // Remove parent folder if empty
-  await fsPromise.rm(outputFolder, {
-    force: true,
-    recursive: true,
-  });
+  await removeFilesOrFolder(outputFolder);
 }
 
 /**
