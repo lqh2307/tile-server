@@ -12,6 +12,7 @@ import {
   getTileBoundsFromBBox,
   createNewTileJSON,
   getBBoxFromTiles,
+  calculateMD5,
   findFolders,
   findFiles,
 } from "./utils.js";
@@ -27,9 +28,15 @@ import {
  */
 export async function getXYZTile(sourcePath, z, x, y, format) {
   try {
-    const data = Buffer.from(
-      await fsPromise.readFile(`${sourcePath}/${z}/${x}/${y}.${format}`)
+    let data = await fsPromise.readFile(
+      `${sourcePath}/${z}/${x}/${y}.${format}`
     );
+
+    if (!data) {
+      throw new Error("Tile does not exist");
+    }
+
+    data = Buffer.from(data);
 
     return {
       data: data,
@@ -103,7 +110,9 @@ export async function getXYZLayersFromTiles(sourcePath) {
 
   for (const pbfFile of pbfFilePaths) {
     try {
-      const layers = await getLayerNamesFromPBFTileFile(`${sourcePath}/${pbfFile}`);
+      const layers = await getLayerNamesFromPBFTileFile(
+        `${sourcePath}/${pbfFile}`
+      );
 
       layers.forEach((layer) => layerNames.add(layer));
     } catch (error) {
@@ -320,4 +329,47 @@ export function getXYZTileFromBBox(bbox, zooms) {
   }
 
   return tiles;
+}
+
+/**
+ * Get XYZ tile MD5
+ * @param {object} sourcePath
+ * @param {number} z
+ * @param {number} x
+ * @param {number} y
+ * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
+ * @returns {Promise<string>}
+ */
+export async function getXYZTileMD5(sourcePath, z, x, y, format) {
+  try {
+    const hashs = JSON.parse(
+      await fsPromise.readFile(`${sourcePath}/md5.json`)
+    );
+
+    if (!hashs[`${z}/${x}/${y}`]) {
+      throw new Error("Tile MD5 does not exist");
+    }
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      try {
+        let data = await fsPromise.readFile(
+          `${sourcePath}/${z}/${x}/${y}.${format}`
+        );
+
+        if (!data) {
+          throw new Error("Tile MD5 does not exist");
+        }
+
+        return calculateMD5(Buffer.from(data));
+      } catch (error) {
+        if (error.code === "ENOENT") {
+          throw new Error("Tile MD5 does not exist");
+        }
+
+        throw error;
+      }
+    }
+
+    throw error;
+  }
 }

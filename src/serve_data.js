@@ -1,9 +1,15 @@
 "use strict";
 
-import { getPMTilesInfos, getPMTilesTile, openPMTiles } from "./pmtiles.js";
+import {
+  getPMTilesTileMD5,
+  getPMTilesInfos,
+  getPMTilesTile,
+  openPMTiles,
+} from "./pmtiles.js";
 import {
   createXYZTileDataFile,
   getXYZTileFromURL,
+  getXYZTileMD5,
   getXYZInfos,
   getXYZTile,
 } from "./xyz.js";
@@ -13,6 +19,7 @@ import express from "express";
 import {
   downloadMBTilesFile,
   createMBTilesIndex,
+  getMBTilesTileMD5,
   getMBTilesInfos,
   getMBTilesTile,
   openMBTiles,
@@ -213,24 +220,24 @@ function getDataTileMD5Handler() {
 
     try {
       /* Get tile data MD5 */
-      let dataTile;
+      let md5;
 
       if (item.sourceType === "mbtiles") {
-        dataTile = await getMBTilesTile(
+        md5 = await getMBTilesTileMD5(
           item.source,
           z,
           x,
           req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
         );
       } else if (item.sourceType === "pmtiles") {
-        dataTile = await getPMTilesTile(
+        md5 = await getPMTilesTileMD5(
           item.source,
           z,
           x,
           req.query.scheme === "tms" ? (1 << z) - 1 - y : y // Default of PMTiles is xyz. Flip Y to convert xyz scheme => tms scheme
         );
       } else if (item.sourceType === "xyz") {
-        dataTile = await getXYZTile(
+        md5 = await getXYZTileMD5(
           item.source,
           z,
           x,
@@ -240,11 +247,11 @@ function getDataTileMD5Handler() {
       }
 
       /* Add MD5 to header */
-      dataTile.headers["Etag"] === "application/x-protobuf";
+      res.set({
+        Etag: md5,
+      });
 
-      res.set(dataTile.headers);
-
-      return res.status(StatusCodes.OK).send(dataTile.data);
+      return res.status(StatusCodes.OK).send();
     } catch (error) {
       printLog(
         "error",

@@ -1,6 +1,10 @@
 "use strict";
 
-import { detectFormatAndHeaders, createNewTileJSON } from "./utils.js";
+import {
+  detectFormatAndHeaders,
+  createNewTileJSON,
+  calculateMD5,
+} from "./utils.js";
 import { PMTiles, FetchSource } from "pmtiles";
 import fs from "node:fs";
 
@@ -53,10 +57,9 @@ export function openPMTiles(filePath) {
 /**
  * Get PMTiles infos
  * @param {object} pmtilesSource
- * @param {boolean} includeJSON
  * @returns {Promise<object>}
  */
-export async function getPMTilesInfos(pmtilesSource, includeJSON = false) {
+export async function getPMTilesInfos(pmtilesSource) {
   const [header, metadata] = await Promise.all([
     pmtilesSource.getHeader(),
     pmtilesSource.getMetadata(),
@@ -131,4 +134,21 @@ export async function getPMTilesTile(pmtilesSource, z, x, y) {
     data: data,
     headers: detectFormatAndHeaders(data).headers,
   };
+}
+
+/**
+ * Get PMTiles tile MD5
+ * @param {object} pmtilesSource
+ * @param {number} z
+ * @param {number} x
+ * @param {number} y
+ * @returns {Promise<string>}
+ */
+export async function getPMTilesTileMD5(pmtilesSource, z, x, y) {
+  const zxyTile = await pmtilesSource.getZxy(z, x, y);
+  if (!zxyTile?.data) {
+    throw new Error("Tile MD5 does not exist");
+  }
+
+  resolve(calculateMD5(Buffer.from(zxyTile.data)));
 }
