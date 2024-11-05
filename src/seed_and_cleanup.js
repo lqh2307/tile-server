@@ -167,7 +167,7 @@ export async function seedXYZTileDataFiles(
                     ) {
                       printLog(
                         "info",
-                        `Downloading tile data file "${z}/${x}/${y}" from ${url}...`
+                        `Downloading tile data file "${z}/${x}/${y}" from "${url}"...`
                       );
 
                       await retry(async () => {
@@ -178,7 +178,7 @@ export async function seedXYZTileDataFiles(
                         if (response.status === StatusCodes.NO_CONTENT) {
                           printLog(
                             "warning",
-                            `Failed to download tile data file "${z}/${x}/${y}": Failed to request ${url} with status code: ${response.status} - ${response.statusText}. Skipping`
+                            `Failed to download tile data file "${z}/${x}/${y}": Failed to request "${url}" with status code: ${response.status} - ${response.statusText}. Skipping`
                           );
 
                           return;
@@ -201,7 +201,7 @@ export async function seedXYZTileDataFiles(
                   ) {
                     printLog(
                       "info",
-                      `Downloading tile data file "${z}/${x}/${y}" from ${url}...`
+                      `Downloading tile data file "${z}/${x}/${y}" from "${url}"...`
                     );
 
                     await retry(async () => {
@@ -212,7 +212,7 @@ export async function seedXYZTileDataFiles(
                       if (response.status === StatusCodes.NO_CONTENT) {
                         printLog(
                           "warning",
-                          `Failed to download tile data file "${z}/${x}/${y}": Failed to request ${url} with status code: ${response.status} - ${response.statusText}. Skipping`
+                          `Failed to download tile data file "${z}/${x}/${y}": Failed to request "${url}" with status code: ${response.status} - ${response.statusText}. Skipping`
                         );
 
                         return;
@@ -233,7 +233,7 @@ export async function seedXYZTileDataFiles(
               } catch (error) {
                 printLog(
                   "info",
-                  `Downloading tile data file "${z}/${x}/${y}" from ${url}...`
+                  `Downloading tile data file "${z}/${x}/${y}" from "${url}"...`
                 );
 
                 await retry(async () => {
@@ -244,7 +244,7 @@ export async function seedXYZTileDataFiles(
                   if (response.status === StatusCodes.NO_CONTENT) {
                     printLog(
                       "warning",
-                      `Failed to download tile data file "${z}/${x}/${y}": Failed to request ${url} with status code: ${response.status} - ${response.statusText}. Skipping`
+                      `Failed to download tile data file "${z}/${x}/${y}": Failed to request "${url}" with status code: ${response.status} - ${response.statusText}. Skipping`
                     );
 
                     return;

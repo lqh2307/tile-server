@@ -672,7 +672,7 @@ export const serve_rendered = {
 
                       printLog(
                         "info",
-                        `Getting data "${id}" - Tile "${z}/${x}/${y}" - From ${url}...`
+                        `Getting data "${id}" - Tile "${z}/${x}/${y}" - From "${url}"...`
                       );
 
                       /* Get data */
@@ -690,7 +690,7 @@ export const serve_rendered = {
                           .catch((error) =>
                             printLog(
                               "error",
-                              `Failed to cache data "${id}" - Tile "${z}/${x}/${y}" - From ${url}: ${error}...`
+                              `Failed to cache data "${id}" - Tile "${z}/${x}/${y}" - From "${url}": ${error}...`
                             )
                           )
                           .finally(() => {

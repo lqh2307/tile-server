@@ -66,23 +66,11 @@ function combinePBFFonts(buffers, fontstack) {
 }
 
 /**
- * Extracts layer names from a vector tile PBF file
- * @param {string} pbfFilePath - The file path of the PBF tile
- * @returns {Promise<Array<string>} - A promise that resolves to an array of layer names
- */
-export async function getLayerNamesFromPBFTileFile(pbfFilePath) {
-  const tileData = await fsPromise.readFile(pbfFilePath);
-  const decoded = vectorTileProto.tile.decode(tileData);
-
-  return decoded.layers.map((layer) => layer.name);
-}
-
-/**
- * Extracts layer names from a vector tile PBF data
+ * Extracts layer names from a vector tile PBF buffer
  * @param {Buffer} pbfData - The PBF data buffer
  * @returns {Promise<Array<string>} - A promise that resolves to an array of layer names
  */
-export async function getLayerNamesFromPBFTileData(pbfData) {
+export async function getLayerNamesFromPBFTileBuffer(pbfData) {
   const decoded = vectorTileProto.tile.decode(pbfData);
 
   return decoded.layers.map((layer) => layer.name);
@@ -114,10 +102,10 @@ export async function getData(url, timeout) {
   } catch (error) {
     if (error.response) {
       throw new Error(
-        `Failed to request ${url} with status code: ${error.response.status} - ${error.response.statusText}`
+        `Failed to request "${url}" with status code: ${error.response.status} - ${error.response.statusText}`
       );
     } else {
-      throw new Error(`Failed to request ${url}: ${error.message}`);
+      throw new Error(`Failed to request "${url}": ${error.message}`);
     }
   }
 }
@@ -1005,10 +993,10 @@ export async function downloadFile(
   } catch (error) {
     if (error.response) {
       throw new Error(
-        `Failed to request ${url} with status code: ${error.response.status} - ${error.response.statusText}`
+        `Failed to request "${url}" with status code: ${error.response.status} - ${error.response.statusText}`
       );
     } else {
-      throw new Error(`Failed to request ${url}: ${error.message}`);
+      throw new Error(`Failed to request "${url}": ${error.message}`);
     }
   }
 }

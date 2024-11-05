@@ -3,11 +3,12 @@
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import https from "node:https";
+import pLimit from "p-limit";
 import path from "node:path";
 import http from "node:http";
 import axios from "axios";
 import {
-  getLayerNamesFromPBFTileFile,
+  getLayerNamesFromPBFTileBuffer,
   detectFormatAndHeaders,
   getTileBoundsFromBBox,
   createNewTileJSON,
@@ -65,6 +66,9 @@ export async function getXYZTileFromURL(url, timeout) {
       headers: {
         "User-Agent": "Tile Server",
       },
+      validateStatus: (status) => {
+        return status === StatusCodes.OK;
+      },
       httpAgent: new http.Agent({
         keepAlive: false,
       }),
@@ -73,59 +77,60 @@ export async function getXYZTileFromURL(url, timeout) {
       }),
     });
 
-    if (response.status === StatusCodes.NO_CONTENT) {
-      throw new Error("Tile does not exist");
-    }
-
     return {
       data: response.data,
       headers: detectFormatAndHeaders(response.data).headers,
     };
   } catch (error) {
-    if (error.message === "Tile does not exist") {
-      throw error;
-    } else if (error.response) {
-      if (error.response.status === StatusCodes.NOT_FOUND) {
+    if (error.response) {
+      if (
+        error.response.status === StatusCodes.NOT_FOUND ||
+        error.response.status === StatusCodes.NOT_FOUND
+      ) {
         throw new Error("Tile does not exist");
-      } else {
-        throw new Error(
-          `Failed to request ${url} with status code: ${error.response.status} - ${error.response.statusText}`
-        );
       }
-    } else {
-      throw new Error(`Failed to request ${url}: ${error.message}`);
+
+      throw new Error(
+        `Failed to request "${url}" with status code: ${error.response.status} - ${error.response.statusText}`
+      );
     }
+
+    throw new Error(`Failed to request "${url}": ${error.message}`);
   }
 }
 
 /**
  * Get XYZ layers from tiles
- * @param {object} sourcePath
+ * @param {string} sourcePath
  * @returns {Promise<Array<string>>}
  */
 export async function getXYZLayersFromTiles(sourcePath) {
+  const pbfFilePaths = await findFiles(sourcePath, /^\d+\.pbf$/, true);
+  const limitConcurrencyRead = pLimit(100);
   const layerNames = new Set();
 
-  const pbfFilePaths = await findFiles(sourcePath, /^\d+\.pbf$/, true);
+  await Promise.all(
+    pbfFilePaths.map((pbfFilePath) =>
+      limitConcurrencyRead(async () => {
+        try {
+          const data = await fsPromise.readFile(`${sourcePath}/${pbfFilePath}`);
 
-  for (const pbfFile of pbfFilePaths) {
-    try {
-      const layers = await getLayerNamesFromPBFTileFile(
-        `${sourcePath}/${pbfFile}`
-      );
+          const layers = await getLayerNamesFromPBFTileBuffer(data);
 
-      layers.forEach((layer) => layerNames.add(layer));
-    } catch (error) {
-      throw error;
-    }
-  }
+          layers.forEach((layer) => layerNames.add(layer));
+        } catch (error) {
+          throw error;
+        }
+      })
+    )
+  );
 
   return Array.from(layerNames);
 }
 
 /**
  * Get XYZ tile format from tiles
- * @param {object} sourcePath
+ * @param {string} sourcePath
  * @returns {Promise<number>}
  */
 export async function getXYZFormatFromTiles(sourcePath) {
@@ -155,13 +160,12 @@ export async function getXYZFormatFromTiles(sourcePath) {
 
 /**
  * Get XYZ bounding box from tiles
- * @param {object} sourcePath
+ * @param {string} sourcePath
  * @returns {Promise<number>}
  */
 export async function getXYZBBoxFromTiles(sourcePath) {
-  const boundsArr = [];
-
   const zFolders = await findFolders(sourcePath, /^\d+$/, false);
+  const boundsArr = [];
 
   for (const zFolder of zFolders) {
     const xFolders = await findFolders(
@@ -206,7 +210,7 @@ export async function getXYZBBoxFromTiles(sourcePath) {
 
 /**
  * Get XYZ zoom level from tiles
- * @param {object} sourcePath
+ * @param {string} sourcePath
  * @param {"minzoom"|"maxzoom"} zoomType
  * @returns {Promise<number>}
  */
@@ -223,7 +227,7 @@ export async function getXYZZoomLevelFromTiles(
 
 /**
  * Get XYZ infos
- * @param {object} mbtilesSource
+ * @param {string} sourcePath
  * @returns {Promise<object>}
  */
 export async function getXYZInfos(sourcePath) {
@@ -299,7 +303,7 @@ export async function createXYZMD5File(outputFolder, hashs) {
 /**
  * Create tile data file
  * @param {string} filePath File path to store tile data file
- * @param {Buffer} data Tile data
+ * @param {Buffer} data Tile data buffer
  * @returns {Promise<void>}
  */
 export async function createXYZTileDataFile(filePath, data) {
@@ -333,7 +337,7 @@ export function getXYZTileFromBBox(bbox, zooms) {
 
 /**
  * Get XYZ tile MD5
- * @param {object} sourcePath
+ * @param {string} sourcePath
  * @param {number} z
  * @param {number} x
  * @param {number} y
@@ -346,7 +350,7 @@ export async function getXYZTileMD5(sourcePath, z, x, y, format) {
       await fsPromise.readFile(`${sourcePath}/md5.json`)
     );
 
-    if (!hashs[`${z}/${x}/${y}`]) {
+    if (hashs[`${z}/${x}/${y}`] === undefined) {
       throw new Error("Tile MD5 does not exist");
     }
   } catch (error) {

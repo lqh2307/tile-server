@@ -10,12 +10,13 @@ import {
   printLog,
   retry,
 } from "./utils.js";
+import pLimit from "p-limit";
 import sqlite3 from "sqlite3";
 
 /**
  * Open MBTiles
- * @param {string} filePath
- * @param {"sqlite3.OPEN_READONLY"|"sqlite3.OPEN_READWRITE"} mode
+ * @param {string} filePath MBTiles file path
+ * @param {"sqlite3.OPEN_READONLY"|"sqlite3.OPEN_READWRITE"} mode Open mode
  * @returns {Promise<object>}
  */
 export async function openMBTiles(filePath, mode = sqlite3.OPEN_READONLY) {
@@ -112,6 +113,7 @@ export async function isMBTilesExistColumns(
  * @returns {Promise<Array<string>>}
  */
 export async function getMBTilesLayersFromTiles(mbtilesSource) {
+  const limitConcurrencyRead = pLimit(100);
   const layerNames = new Set();
 
   await new Promise((resolve, reject) => {
@@ -121,15 +123,19 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
       }
 
       if (rows !== undefined) {
-        for (const row of rows) {
-          try {
-            const layers = await getLayerNamesFromPBFTileData(row.tile_data);
+        const promises = rows.map((row) =>
+          limitConcurrencyRead(async () => {
+            try {
+              const layers = await getLayerNamesFromPBFTileData(row.tile_data);
 
-            layers.forEach((layer) => layerNames.add(layer));
-          } catch (error) {
-            return reject(error);
-          }
-        }
+              layers.forEach((layer) => layerNames.add(layer));
+            } catch (error) {
+              return reject(error);
+            }
+          })
+        );
+
+        await Promise.all(promises);
       }
 
       resolve();
@@ -141,7 +147,7 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
 
 /**
  * Create unique index on the metadata table
- * @param {string} mbtilesFilePath
+ * @param {string} mbtilesFilePath MBTiles file path
  * @param {string} indexName The name of the index
  * @param {string} tableName The name of the table to check
  * @param {Array<string>} columnNames The expected column names in the index
@@ -284,7 +290,7 @@ export async function getMBTilesZoomLevelFromTiles(
           return resolve(row.zoom);
         }
 
-        reject(new Error("No tile found"));
+        resolve();
       }
     );
   });
@@ -306,7 +312,7 @@ export async function getMBTilesFormatFromTiles(mbtilesSource) {
         return resolve(detectFormatAndHeaders(row.tile_data).format);
       }
 
-      reject(new Error("No tile found"));
+      resolve();
     });
   });
 }
@@ -430,17 +436,17 @@ export async function downloadMBTilesFile(
   timeout = 60000
 ) {
   try {
-    if (overwrite === false && (await isExistFile(outputPath)) === true) {
+    if (overwrite === true || (await isExistFile(outputPath)) === false) {
       printLog(
         "info",
-        `MBTiles file is exist. Skipping download MBTiles data from ${url}...`
+        `Downloading MBTiles file "${outputPath}" from "${url}"...`
       );
-    } else {
-      printLog("info", `Downloading MBTiles file from ${url}...`);
 
-      await retry(() => downloadFile(url, outputPath, true, timeout), maxTry);
+      await retry(async () => {
+        await downloadFile(url, outputPath, true, timeout);
+      }, maxTry);
     }
   } catch (error) {
-    throw error;
+    throw `Failed to download MBTiles file "${outputPath}" from "${url}": ${error}`;
   }
 }

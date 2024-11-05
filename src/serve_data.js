@@ -95,7 +95,7 @@ function getDataTileHandler() {
 
               printLog(
                 "info",
-                `Getting data "${id}" - Tile "${z}/${x}/${y}" - From ${url}...`
+                `Getting data "${id}" - Tile "${z}/${x}/${y}" - From "${url}"...`
               );
 
               /* Get data */
@@ -113,7 +113,7 @@ function getDataTileHandler() {
                   .catch((error) =>
                     printLog(
                       "error",
-                      `Failed to cache data "${id}" - Tile "${z}/${x}/${y}" - From ${url}: ${error}...`
+                      `Failed to cache data "${id}" - Tile "${z}/${x}/${y}" - From "${url}": ${error}...`
                     )
                   )
                   .finally(() => {
