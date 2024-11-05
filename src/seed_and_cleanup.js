@@ -356,8 +356,10 @@ async function startTask() {
             seedData.datas[id].format,
             cleanUpData.datas[id].zooms || seedData.datas[id].zooms,
             cleanUpData.datas[id].bounds || seedData.datas[id].bounds,
-            cleanUpData.datas[id].cleanUpBefore.time ||
-              seedData.datas[id].refreshBefore.time
+            cleanUpData.datas[id].cleanUpBefore?.time ||
+              cleanUpData.datas[id].cleanUpBefore?.day ||
+              seedData.datas[id].refreshBefore?.time ||
+              seedData.datas[id].refreshBefore?.day
           );
         } catch (error) {
           printLog(
