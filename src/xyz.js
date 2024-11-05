@@ -16,6 +16,7 @@ import {
   calculateMD5,
   findFolders,
   findFiles,
+  getData,
 } from "./utils.js";
 
 /**
@@ -80,12 +81,13 @@ export async function getXYZTileFromURL(url, timeout) {
     return {
       data: response.data,
       headers: detectFormatAndHeaders(response.data).headers,
+      etag: response.headers["Etag"],
     };
   } catch (error) {
     if (error.response) {
       if (
         error.response.status === StatusCodes.NOT_FOUND ||
-        error.response.status === StatusCodes.NOT_FOUND
+        error.response.status === StatusCodes.NO_CONTENT
       ) {
         throw new Error("Tile does not exist");
       }
@@ -146,7 +148,8 @@ export async function getXYZFormatFromTiles(sourcePath) {
     for (const xFolder of xFolders) {
       const yFiles = await findFiles(
         `${sourcePath}/${zFolder}/${xFolder}`,
-        /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/
+        /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/,
+        false
       );
 
       if (yFiles.length > 0) {
@@ -181,7 +184,8 @@ export async function getXYZBBoxFromTiles(sourcePath) {
       for (const xFolder of xFolders) {
         let yFiles = await findFiles(
           `${sourcePath}/${zFolder}/${xFolder}`,
-          /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/
+          /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/,
+          false
         );
 
         if (yFiles.length > 0) {
@@ -301,6 +305,29 @@ export async function createXYZMD5File(outputFolder, hashs) {
 }
 
 /**
+ * Update XYZ md5.json file
+ * @param {string} outputFolder Folder path to store md5.json file
+ * @param {string} key
+ * @param {string} value
+ * @returns {Promise<void>}
+ */
+export async function updateXYZMD5File(outputFolder, key, value) {
+  // Read md5.json file if existed
+  const md5FilePath = `${outputFolder}/md5.json`;
+  let hashs = {};
+
+  try {
+    hashs = JSON.parse(await fsPromise.readFile(md5FilePath));
+  } catch (error) {}
+
+  // Update md5
+  hashs[key] = value;
+
+  // Write to md5.json file
+  await fsPromise.writeFile(md5FilePath, JSON.stringify(hashs, null, 2));
+}
+
+/**
  * Create tile data file
  * @param {string} filePath File path to store tile data file
  * @param {Buffer} data Tile data buffer
@@ -312,6 +339,103 @@ export async function createXYZTileDataFile(filePath, data) {
   });
 
   await fsPromise.writeFile(filePath, data);
+}
+
+/**
+ * Download XYZ tile data file
+ * @param {string} filePath
+ * @param {string} url The URL to download the file from
+ * @param {number} z
+ * @param {number} x
+ * @param {number} y
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
+ * @param {object} hashs
+ * @returns {Promise<void>}
+ */
+export async function downloadXYZTileDataFile(
+  filePath,
+  url,
+  z,
+  x,
+  y,
+  maxTry,
+  timeout,
+  hashs
+) {
+  try {
+    printLog(
+      "info",
+      `Downloading tile data file "${z}/${x}/${y}" from "${url}"...`
+    );
+
+    await retry(async () => {
+      // Get data
+      const response = await getData(url, timeout);
+
+      // Store data to file
+      await createXYZTileDataFile(filePath, response.data);
+
+      // Store data md5 hash
+      hashs[`${z}/${x}/${y}`] =
+        response.headers["Etag"] === undefined
+          ? calculateMD5(response.data)
+          : response.headers["Etag"];
+    }, maxTry);
+  } catch (error) {
+    printLog(
+      "info",
+      `Failed to download tile data file "${z}/${x}/${y}" from "${url}": ${error}`
+    );
+
+    // Remove error tile data file
+    await removeFilesOrFolder(filePath);
+  }
+}
+
+/**
+ * Cache tile data file
+ * @param {string} sourcePath
+ * @param {number} z
+ * @param {number} x
+ * @param {number} y
+ * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
+ * @param {Buffer} data Tile data buffer
+ * @param {object} cacheItemLock Cache item lock
+ * @param {string} md5
+ * @returns {Promise<void>}
+ */
+export async function cacheXYZTileDataFile(
+  sourcePath,
+  z,
+  x,
+  y,
+  format,
+  data,
+  cacheItemLock,
+  md5
+) {
+  if (cacheItemLock[`${z}/${x}/${y}`] === undefined) {
+    // Lock
+    cacheItemLock[`${z}/${x}/${y}`] = true;
+
+    const filePath = `${sourcePath}/${z}/${x}/${y}.${format}`;
+
+    try {
+      await createXYZTileDataFile(filePath, data);
+
+      // await updateXYZMD5File(
+      //   sourcePath,
+      //   `${z}/${x}/${y}`,
+      //   md5 === undefined ? calculateMD5(data) : md5
+      // );
+    } catch (error) {
+      throw error;
+    } finally {
+      // Unlock
+      delete cacheItemLock[`${z}/${x}/${y}`];
+    }
+  }
 }
 
 /**

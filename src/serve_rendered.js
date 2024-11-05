@@ -1,16 +1,17 @@
 "use strict";
 
-import { getXYZTile, getXYZTileFromURL } from "./xyz.js";
+import { cacheXYZTileDataFile, getXYZTile, getXYZTileFromURL } from "./xyz.js";
 import mlgl from "@maplibre/maplibre-gl-native";
 import { StatusCodes } from "http-status-codes";
 import { getPMTilesTile } from "./pmtiles.js";
 import { getMBTilesTile } from "./mbtiles.js";
 import { Worker } from "node:worker_threads";
-import { createPool } from "generic-pool";
 import { config, seed } from "./config.js";
+import { createPool } from "generic-pool";
 import express from "express";
 import {
   detectFormatAndHeaders,
+  getDataTileFromURL,
   createNewTileJSON,
   getRequestHost,
   processImage,
@@ -19,7 +20,6 @@ import {
   renderData,
   getSprite,
   printLog,
-  getData,
 } from "./utils.js";
 
 async function processImageInWorker(data, scale, compression, tileSize, z) {
@@ -562,7 +562,10 @@ export const serve_rendered = {
 
                 /* Unzip pbf font */
                 const headers = detectFormatAndHeaders(data).headers;
-                if (headers["Content-Encoding"] !== undefined) {
+                if (
+                  headers["Content-Type"] === "application/x-protobuf" &&
+                  headers["Content-Encoding"] !== undefined
+                ) {
                   data = await unzipAsync(data);
                 }
 
@@ -679,25 +682,21 @@ export const serve_rendered = {
                       dataTile = await getXYZTileFromURL(url, 60000);
 
                       /* Cache */
-                      if (cacheItemLock[`${z}/${x}/${y}`] === undefined) {
-                        // Lock
-                        cacheItemLock[`${z}/${x}/${y}`] = true;
-
-                        createXYZTileDataFile(
-                          `${sourceData.source}/${z}/${x}/${y}.${sourceData.tileJSON.format}`,
-                          dataTile.data
+                      cacheXYZTileDataFile(
+                        sourceData.source,
+                        z,
+                        x,
+                        y,
+                        sourceData.tileJSON.format,
+                        dataTile.data,
+                        cacheItemLock,
+                        dataTile.etag
+                      ).catch((error) =>
+                        printLog(
+                          "error",
+                          `Failed to cache data "${id}" - Tile "${z}/${x}/${y}" - From "${url}": ${error}...`
                         )
-                          .catch((error) =>
-                            printLog(
-                              "error",
-                              `Failed to cache data "${id}" - Tile "${z}/${x}/${y}" - From "${url}": ${error}...`
-                            )
-                          )
-                          .finally(() => {
-                            // Unlock
-                            delete cacheItemLock[`${z}/${x}/${y}`];
-                          });
-                      }
+                      );
                     } else {
                       throw error;
                     }
@@ -737,22 +736,19 @@ export const serve_rendered = {
               }
             } else if (protocol === "http:" || protocol === "https:") {
               try {
-                const response = await getData(url, 60000);
-
-                if (response.status === StatusCodes.NO_CONTENT) {
-                  throw new Error(
-                    `Status code: ${response.status} - ${response.statusText}`
-                  );
-                }
+                const dataTile = await getDataTileFromURL(url, 60000);
 
                 /* Unzip pbf data */
-                const headers = detectFormatAndHeaders(response.data).headers;
-                if (headers["Content-Encoding"] !== undefined) {
-                  response.data = await unzipAsync(response.data);
+                if (
+                  dataTile.headers["Content-Type"] ===
+                    "application/x-protobuf" &&
+                  dataTile.headers["Content-Encoding"] !== undefined
+                ) {
+                  dataTile.data = await unzipAsync(dataTile.data);
                 }
 
                 callback(null, {
-                  data: response.data,
+                  data: dataTile.data,
                 });
               } catch (error) {
                 printLog(

@@ -2,16 +2,17 @@
 
 import {
   getLayerNamesFromPBFTileData,
+  downloadFileWithStream,
   detectFormatAndHeaders,
+  removeFilesOrFolder,
   createNewTileJSON,
-  downloadFile,
   calculateMD5,
   isExistFile,
   printLog,
   retry,
 } from "./utils.js";
-import pLimit from "p-limit";
 import sqlite3 from "sqlite3";
+import pLimit from "p-limit";
 
 /**
  * Open MBTiles
@@ -443,10 +444,16 @@ export async function downloadMBTilesFile(
       );
 
       await retry(async () => {
-        await downloadFile(url, outputPath, true, timeout);
+        await downloadFileWithStream(url, outputPath, timeout);
       }, maxTry);
     }
   } catch (error) {
-    throw `Failed to download MBTiles file "${outputPath}" from "${url}": ${error}`;
+    printLog(
+      "info",
+      `Failed to download MBTiles file "${outputPath}" from "${url}": ${error}`
+    );
+
+    // Remove error tile data file
+    await removeFilesOrFolder(outputPath);
   }
 }

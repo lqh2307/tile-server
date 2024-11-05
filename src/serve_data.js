@@ -1,21 +1,15 @@
 "use strict";
 
+import { StatusCodes } from "http-status-codes";
+import { config, seed } from "./config.js";
+import express from "express";
 import {
-  getPMTilesTileMD5,
-  getPMTilesInfos,
-  getPMTilesTile,
-  openPMTiles,
-} from "./pmtiles.js";
-import {
-  createXYZTileDataFile,
+  cacheXYZTileDataFile,
   getXYZTileFromURL,
   getXYZTileMD5,
   getXYZInfos,
   getXYZTile,
 } from "./xyz.js";
-import { StatusCodes } from "http-status-codes";
-import { config, seed } from "./config.js";
-import express from "express";
 import {
   downloadMBTilesFile,
   createMBTilesIndex,
@@ -24,6 +18,12 @@ import {
   getMBTilesTile,
   openMBTiles,
 } from "./mbtiles.js";
+import {
+  getPMTilesTileMD5,
+  getPMTilesInfos,
+  getPMTilesTile,
+  openPMTiles,
+} from "./pmtiles.js";
 import {
   validateDataInfo,
   getRequestHost,
@@ -102,25 +102,21 @@ function getDataTileHandler() {
               dataTile = await getXYZTileFromURL(url, 60000);
 
               /* Cache */
-              if (cacheItemLock[`${z}/${x}/${y}`] === undefined) {
-                // Lock
-                cacheItemLock[`${z}/${x}/${y}`] = true;
-
-                createXYZTileDataFile(
-                  `${item.source}/${z}/${x}/${y}.${item.tileJSON.format}`,
-                  dataTile.data
+              cacheXYZTileDataFile(
+                item.source,
+                z,
+                x,
+                y,
+                item.tileJSON.format,
+                dataTile.data,
+                cacheItemLock,
+                dataTile.etag
+              ).catch((error) =>
+                printLog(
+                  "error",
+                  `Failed to cache data "${id}" - Tile "${z}/${x}/${y}" - From "${url}": ${error}...`
                 )
-                  .catch((error) =>
-                    printLog(
-                      "error",
-                      `Failed to cache data "${id}" - Tile "${z}/${x}/${y}" - From "${url}": ${error}...`
-                    )
-                  )
-                  .finally(() => {
-                    // Unlock
-                    delete cacheItemLock[`${z}/${x}/${y}`];
-                  });
-              }
+              );
             } else {
               throw error;
             }

@@ -1,6 +1,6 @@
 "use strict";
 
-import { checkReadyMiddleware, printLog } from "./utils.js";
+import { checkReadyMiddleware, findFiles, printLog } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import swaggerUi from "swagger-ui-express";
 import fsPromise from "node:fs/promises";
@@ -78,6 +78,10 @@ function serveInfoHandler() {
             count: 0,
             size: 0,
           },
+          xyz: {
+            count: 0,
+            size: 0,
+          },
         },
         style: {
           count: 0,
@@ -91,7 +95,11 @@ function serveInfoHandler() {
       // Fonts info
       for (const font in config.repo.fonts) {
         const dirPath = `${config.paths.fonts}/${font}`;
-        const fileNames = await fsPromise.readdir(dirPath);
+        const fileNames = await findFiles(
+          dirPath,
+          /^\d{1,5}-\d{1,5}\.pbf$/,
+          true
+        );
 
         result.font.count += 1;
 
@@ -99,19 +107,18 @@ function serveInfoHandler() {
           const filePath = `${dirPath}/${fileName}`;
           const stat = await fsPromise.stat(filePath);
 
-          if (
-            /^\d{1,5}-\d{1,5}\.pbf$/.test(fileName) === true &&
-            stat.isFile() === true
-          ) {
-            result.font.size += stat.size;
-          }
+          result.font.size += stat.size;
         }
       }
 
       // Sprites info
       for (const sprite in config.repo.sprites) {
         const dirPath = `${config.paths.sprites}/${sprite}`;
-        const fileNames = await fsPromise.readdir(dirPath);
+        const fileNames = await findFiles(
+          dirPath,
+          /^sprite(@\d+x)?\.(json|png)$/,
+          true
+        );
 
         result.sprite.count += 1;
 
@@ -119,12 +126,7 @@ function serveInfoHandler() {
           const filePath = `${dirPath}/${fileName}`;
           const stat = await fsPromise.stat(filePath);
 
-          if (
-            /^sprite(@\d+x)?\.(json|png)$/.test(fileName) === true &&
-            stat.isFile() === true
-          ) {
-            result.sprite.size += stat.size;
-          }
+          result.sprite.size += stat.size;
         }
       }
 
@@ -136,7 +138,7 @@ function serveInfoHandler() {
 
           result.data.mbtiles.count += 1;
           result.data.mbtiles.size += stat.size;
-        } else {
+        } else if (config.repo.datas[data].sourceType === "pmtiles") {
           result.data.pmtiles.count += 1;
 
           if (
@@ -148,11 +150,32 @@ function serveInfoHandler() {
 
             result.data.pmtiles.size += stat.size;
           }
+        } else if (config.repo.datas[data].sourceType === "xyz") {
+          const fileNames = await findFiles(
+            config.repo.datas[data].source,
+            /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/,
+            true
+          );
+
+          result.data.xyz.count += 1;
+
+          for (const fileName of fileNames) {
+            const filePath = `${config.repo.datas[data].source}/${fileName}`;
+            const stat = await fsPromise.stat(filePath);
+
+            result.data.xyz.size += stat.size;
+          }
         }
       }
 
-      result.data.count = result.data.mbtiles.count + result.data.pmtiles.count;
-      result.data.size = result.data.mbtiles.size + result.data.pmtiles.size;
+      result.data.count =
+        result.data.mbtiles.count +
+        result.data.pmtiles.count +
+        result.data.xyz.count;
+      result.data.size =
+        result.data.mbtiles.size +
+        result.data.pmtiles.size +
+        result.data.xyz.size;
 
       // Styles info
       for (const style in config.repo.styles) {

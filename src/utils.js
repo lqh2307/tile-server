@@ -77,6 +77,53 @@ export async function getLayerNamesFromPBFTileBuffer(pbfData) {
 }
 
 /**
+ * Get data tile from a URL
+ * @param {string} url The URL to fetch data from
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<object>}
+ */
+export async function getDataTileFromURL(url, timeout) {
+  try {
+    const response = await axios.get(url, {
+      timeout: timeout,
+      responseType: "arraybuffer",
+      headers: {
+        "User-Agent": "Tile Server",
+      },
+      validateStatus: (status) => {
+        return status === StatusCodes.OK;
+      },
+      httpAgent: new http.Agent({
+        keepAlive: false,
+      }),
+      httpsAgent: new https.Agent({
+        keepAlive: false,
+      }),
+    });
+
+    return {
+      data: response.data,
+      headers: detectFormatAndHeaders(response.data).headers,
+    };
+  } catch (error) {
+    if (error.response) {
+      if (
+        error.response.status === StatusCodes.NOT_FOUND ||
+        error.response.status === StatusCodes.NO_CONTENT
+      ) {
+        throw new Error("Tile does not exist");
+      }
+
+      throw new Error(
+        `Failed to request "${url}" with status code: ${error.response.status} - ${error.response.statusText}`
+      );
+    }
+
+    throw new Error(`Failed to request "${url}": ${error.message}`);
+  }
+}
+
+/**
  * Get data from a URL
  * @param {string} url The URL to fetch data from
  * @param {number} timeout Timeout in milliseconds
@@ -89,6 +136,9 @@ export async function getData(url, timeout) {
       responseType: "arraybuffer",
       headers: {
         "User-Agent": "Tile Server",
+      },
+      validateStatus: (status) => {
+        return status === StatusCodes.OK;
       },
       httpAgent: new http.Agent({
         keepAlive: false,
@@ -104,9 +154,9 @@ export async function getData(url, timeout) {
       throw new Error(
         `Failed to request "${url}" with status code: ${error.response.status} - ${error.response.statusText}`
       );
-    } else {
-      throw new Error(`Failed to request "${url}": ${error.message}`);
     }
+
+    throw new Error(`Failed to request "${url}": ${error.message}`);
   }
 }
 
@@ -893,8 +943,8 @@ export async function validateStyle(config, styleJSON) {
  */
 export async function validateSprite(spriteDirPath) {
   const [jsonSpriteFileNames, pngSpriteNames] = await Promise.all([
-    findFiles(spriteDirPath, /^sprite(@\d+x)?\.json$/),
-    findFiles(spriteDirPath, /^sprite(@\d+x)?\.png$/),
+    findFiles(spriteDirPath, /^sprite(@\d+x)?\.json$/, false),
+    findFiles(spriteDirPath, /^sprite(@\d+x)?\.png$/, false),
   ]);
 
   if (jsonSpriteFileNames.length !== pngSpriteNames.length) {
@@ -939,19 +989,13 @@ export async function validateSprite(spriteDirPath) {
 }
 
 /**
- * Download file
+ * Download file with stream
  * @param {string} url The URL to download the file from
  * @param {string} outputPath The path where the file will be saved
- * @param {boolean} useStream Whether to use stream for downloading
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<object>}
  */
-export async function downloadFile(
-  url,
-  outputPath,
-  useStream = false,
-  timeout = 60000
-) {
+export async function downloadFileWithStream(url, outputPath, timeout) {
   try {
     await fsPromise.mkdir(path.dirname(outputPath), {
       recursive: true,
@@ -959,11 +1003,14 @@ export async function downloadFile(
 
     const response = await axios({
       url,
-      responseType: useStream === true ? "stream" : "arraybuffer",
+      responseType: "stream",
       method: "GET",
       timeout: timeout,
       headers: {
         "User-Agent": "Tile Server",
+      },
+      validateStatus: (status) => {
+        return status === StatusCodes.OK;
       },
       httpAgent: new http.Agent({
         keepAlive: false,
@@ -973,31 +1020,21 @@ export async function downloadFile(
       }),
     });
 
-    if (response.status === StatusCodes.NO_CONTENT) {
-      throw new Error("No content");
-    }
+    const writer = fs.createWriteStream(outputPath);
 
-    if (useStream === true) {
-      const writer = fs.createWriteStream(outputPath);
+    response.data.pipe(writer);
 
-      response.data.pipe(writer);
-
-      return new Promise((resolve, reject) => {
-        writer.on("finish", resolve(response)).on("error", reject);
-      });
-    } else {
-      await fsPromise.writeFile(outputPath, response.data);
-
-      return response;
-    }
+    return new Promise((resolve, reject) => {
+      writer.on("finish", resolve).on("error", reject);
+    });
   } catch (error) {
     if (error.response) {
       throw new Error(
         `Failed to request "${url}" with status code: ${error.response.status} - ${error.response.statusText}`
       );
-    } else {
-      throw new Error(`Failed to request "${url}": ${error.message}`);
     }
+
+    throw new Error(`Failed to request "${url}": ${error.message}`);
   }
 }
 

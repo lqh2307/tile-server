@@ -1,24 +1,21 @@
 "use strict";
 
-import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { program } from "commander";
 import pLimit from "p-limit";
 import fs from "node:fs";
 import os from "os";
 import {
+  downloadXYZTileDataFile,
   createXYZMetadataFile,
-  createXYZTileDataFile,
   createXYZMD5File,
 } from "./xyz.js";
 import {
   getTileBoundsFromBBox,
   removeFilesOrFolder,
   removeEmptyFolders,
-  calculateMD5,
   printLog,
   getData,
-  retry,
 } from "./utils.js";
 
 /* Setup commands */
@@ -151,124 +148,51 @@ export async function seedXYZTileDataFiles(
             const url = tileURL.replaceAll("{z}/{x}/{y}", `${z}/${x}/${y}`);
 
             try {
-              try {
-                const stats = await fsPromise.stat(filePath);
+              const stats = await fsPromise.stat(filePath);
 
-                if (refreshTimestamp !== undefined) {
-                  if (refreshTimestamp === true) {
-                    const response = await getData(
-                      tileURL.replaceAll("{z}/{x}/{y}", `md5/${z}/${x}/${y}`),
-                      timeout
+              if (refreshTimestamp !== undefined) {
+                if (refreshTimestamp === true) {
+                  const response = await getData(
+                    tileURL.replaceAll("{z}/{x}/{y}", `md5/${z}/${x}/${y}`),
+                    timeout
+                  );
+
+                  if (response.headers["Etag"] !== hashs[`${z}/${x}/${y}`]) {
+                    await downloadXYZTileDataFile(
+                      filePath,
+                      url,
+                      z,
+                      x,
+                      y,
+                      maxTry,
+                      timeout,
+                      hashs
                     );
-
-                    if (
-                      response.status === StatusCodes.NO_CONTENT ||
-                      response.headers["Etag"] !== hashs[`${z}/${x}/${y}`]
-                    ) {
-                      printLog(
-                        "info",
-                        `Downloading tile data file "${z}/${x}/${y}" from "${url}"...`
-                      );
-
-                      await retry(async () => {
-                        // Get data
-                        const response = await getData(url, timeout);
-
-                        // Skip with 204 error code
-                        if (response.status === StatusCodes.NO_CONTENT) {
-                          printLog(
-                            "warning",
-                            `Failed to download tile data file "${z}/${x}/${y}": Failed to request "${url}" with status code: ${response.status} - ${response.statusText}. Skipping`
-                          );
-
-                          return;
-                        }
-
-                        // Store data to file
-                        await createXYZTileDataFile(filePath, response.data);
-
-                        // Store data md5 hash
-                        if (response.headers["Etag"]) {
-                          hashs[`${z}/${x}/${y}`] = response.headers["Etag"];
-                        } else {
-                          hashs[`${z}/${x}/${y}`] = calculateMD5(response.data);
-                        }
-                      }, maxTry);
-                    }
-                  } else if (
-                    !stats.ctimeMs ||
-                    stats.ctimeMs < refreshTimestamp
-                  ) {
-                    printLog(
-                      "info",
-                      `Downloading tile data file "${z}/${x}/${y}" from "${url}"...`
-                    );
-
-                    await retry(async () => {
-                      // Get data
-                      const response = await getData(url, timeout);
-
-                      // Skip with 204 error code
-                      if (response.status === StatusCodes.NO_CONTENT) {
-                        printLog(
-                          "warning",
-                          `Failed to download tile data file "${z}/${x}/${y}": Failed to request "${url}" with status code: ${response.status} - ${response.statusText}. Skipping`
-                        );
-
-                        return;
-                      }
-
-                      // Store data to file
-                      await createXYZTileDataFile(filePath, response.data);
-
-                      // Store data md5 hash
-                      if (response.headers["Etag"]) {
-                        hashs[`${z}/${x}/${y}`] = response.headers["Etag"];
-                      } else {
-                        hashs[`${z}/${x}/${y}`] = calculateMD5(response.data);
-                      }
-                    }, maxTry);
                   }
+                } else if (!stats.ctimeMs || stats.ctimeMs < refreshTimestamp) {
+                  await downloadXYZTileDataFile(
+                    filePath,
+                    url,
+                    z,
+                    x,
+                    y,
+                    maxTry,
+                    timeout,
+                    hashs
+                  );
                 }
-              } catch (error) {
-                printLog(
-                  "info",
-                  `Downloading tile data file "${z}/${x}/${y}" from "${url}"...`
-                );
-
-                await retry(async () => {
-                  // Get data
-                  const response = await getData(url, timeout);
-
-                  // Skip with 204 error code
-                  if (response.status === StatusCodes.NO_CONTENT) {
-                    printLog(
-                      "warning",
-                      `Failed to download tile data file "${z}/${x}/${y}": Failed to request "${url}" with status code: ${response.status} - ${response.statusText}. Skipping`
-                    );
-
-                    return;
-                  }
-
-                  // Store data to file
-                  await createXYZTileDataFile(filePath, response.data);
-
-                  // Store data md5 hash
-                  if (response.headers["Etag"]) {
-                    hashs[`${z}/${x}/${y}`] = response.headers["Etag"];
-                  } else {
-                    hashs[`${z}/${x}/${y}`] = calculateMD5(response.data);
-                  }
-                }, maxTry);
               }
             } catch (error) {
-              printLog(
-                "error",
-                `Failed to download tile data file "${z}/${x}/${y}": ${error}`
+              await downloadXYZTileDataFile(
+                filePath,
+                url,
+                z,
+                x,
+                y,
+                maxTry,
+                timeout,
+                hashs
               );
-
-              // Remove error tile data file
-              await removeFilesOrFolder(filePath);
             }
           })
         );
