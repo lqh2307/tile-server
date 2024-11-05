@@ -109,7 +109,7 @@ function getRenderedTileHandler() {
     } catch (error) {
       printLog(
         "error",
-        `Failed to get rendered "${id}" - Tile ${z}/${x}/${y}: ${error}`
+        `Failed to get rendered "${id}" - Tile "${z}/${x}/${y}: ${error}`
       );
 
       return res
@@ -616,7 +616,7 @@ export const serve_rendered = {
               } catch (error) {
                 printLog(
                   "warning",
-                  `Failed to get data "${sourceID}" - Tile ${z}/${x}/${y}: ${error}. Serving empty tile...`
+                  `Failed to get data "${sourceID}" - Tile "${z}/${x}/${y}": ${error}. Serving empty tile...`
                 );
 
                 callback(null, {
@@ -667,7 +667,7 @@ export const serve_rendered = {
 
                       printLog(
                         "info",
-                        `Getting data "${id}" - Tile ${z}/${x}/${y} - From ${url}...`
+                        `Getting data "${id}" - Tile "${z}/${x}/${y}" - From ${url}...`
                       );
 
                       /* Get data */
@@ -685,7 +685,7 @@ export const serve_rendered = {
                           .catch((error) =>
                             printLog(
                               "error",
-                              `Failed to cache data "${id}" - Tile ${z}/${x}/${y} - From ${url}: ${error}...`
+                              `Failed to cache data "${id}" - Tile "${z}/${x}/${y}" - From ${url}: ${error}...`
                             )
                           )
                           .finally(() => {
@@ -722,7 +722,7 @@ export const serve_rendered = {
               } catch (error) {
                 printLog(
                   "warning",
-                  `Failed to get data "${sourceID}" - Tile ${z}/${x}/${y}: ${error}. Serving empty tile...`
+                  `Failed to get data "${sourceID}" - Tile "${z}/${x}/${y}": ${error}. Serving empty tile...`
                 );
 
                 callback(null, {

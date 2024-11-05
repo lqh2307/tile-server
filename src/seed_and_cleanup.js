@@ -15,7 +15,6 @@ import {
   getTileBoundsFromBBox,
   removeEmptyFolders,
   calculateMD5,
-  isExistFile,
   printLog,
   getData,
   retry,
@@ -46,7 +45,10 @@ process.on("SIGINT", () => {
 });
 
 process.on("SIGTERM", () => {
-  printLog("info", `Received "SIGTERM" signal. Restaring seed and clean up...`);
+  printLog(
+    "info",
+    `Received "SIGTERM" signal. Restarting seed and clean up...`
+  );
 
   process.exit(1);
 });
@@ -64,9 +66,9 @@ process.on("SIGTERM", () => {
  * @param {Array<object>} vector_layers Vector layers
  * @param {object} tilestats Tile stats
  * @param {number} concurrency Concurrency download
- * @param {boolean} overwrite Overwrite exist file
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
+ * @param {string|number} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
  * @returns {Promise<void>}
  */
 export async function seedXYZTileDataFiles(
@@ -84,16 +86,37 @@ export async function seedXYZTileDataFiles(
   vector_layers,
   tilestats,
   concurrency = os.cpus().length,
-  overwrite = false,
   maxTry = 5,
-  timeout = 60000
+  timeout = 60000,
+  refreshBefore
 ) {
-  printLog(
-    "info",
-    `Downloading tile data files with Zoom levels [${zooms.join(
-      ", "
-    )}] - BBox [${bounds.join(", ")}]...`
-  );
+  let refreshTimestamp;
+
+  if (typeof refreshBefore === "string") {
+    refreshTimestamp = new Date(refreshBefore).getTime();
+  } else if (typeof refreshBefore === "number") {
+    const now = new Date();
+
+    refreshTimestamp = now.setDate(now.getDate() - refreshBefore);
+  }
+
+  if (refreshTimestamp !== undefined) {
+    printLog(
+      "info",
+      `Downloading tile data files with Zoom levels [${zooms.join(
+        ", "
+      )}] - BBox [${bounds.join(", ")}] - Before ${new Date(
+        refreshTimestamp
+      ).toISOString()}...`
+    );
+  } else {
+    printLog(
+      "info",
+      `Downloading tile data files with Zoom levels [${zooms.join(
+        ", "
+      )}] - BBox [${bounds.join(", ")}]...`
+    );
+  }
 
   // Read md5.json file
   let hashs = {};
@@ -116,16 +139,47 @@ export async function seedXYZTileDataFiles(
             const url = tileURL.replaceAll("{z}/{x}/{y}", `${z}/${x}/${y}`);
 
             try {
-              if (
-                overwrite === false &&
-                (await isExistFile(filePath)) === true
-              ) {
+              try {
+                const stats = await fsPromise.stat(filePath);
+
+                if (refreshTimestamp !== undefined) {
+                  if (!stats.ctimeMs || stats.ctimeMs < refreshTimestamp) {
+                    printLog(
+                      "info",
+                      `Downloading tile data file "${z}/${x}/${y}" from ${url}...`
+                    );
+
+                    await retry(async () => {
+                      // Get data
+                      const response = await getData(url, timeout);
+
+                      // Skip with 204 error code
+                      if (response.status === StatusCodes.NO_CONTENT) {
+                        printLog(
+                          "warning",
+                          `Failed to download tile data file "${z}/${x}/${y}": Failed to request ${url} with status code: ${response.status} - ${response.statusText}. Skipping`
+                        );
+
+                        return;
+                      }
+
+                      // Store data to file
+                      await createXYZTileDataFile(filePath, response.data);
+
+                      // Store data md5 hash
+                      if (response.headers["Etag"]) {
+                        hashs[`${z}/${x}/${y}`] = response.headers["Etag"];
+                      } else {
+                        hashs[`${z}/${x}/${y}`] = calculateMD5(response.data);
+                      }
+                    }, maxTry);
+                  }
+                }
+              } catch (error) {
                 printLog(
                   "info",
-                  `Tile data file is exists. Skipping download from ${url}...`
+                  `Downloading tile data file "${z}/${x}/${y}" from ${url}...`
                 );
-              } else {
-                printLog("info", `Downloading tile data file from ${url}...`);
 
                 await retry(async () => {
                   // Get data
@@ -135,7 +189,7 @@ export async function seedXYZTileDataFiles(
                   if (response.status === StatusCodes.NO_CONTENT) {
                     printLog(
                       "warning",
-                      `Failed to download tile data file: Failed to request ${url} with status code: ${response.status} - ${response.statusText}. Skipping`
+                      `Failed to download tile data file "${z}/${x}/${y}": Failed to request ${url} with status code: ${response.status} - ${response.statusText}. Skipping`
                     );
 
                     return;
@@ -155,7 +209,7 @@ export async function seedXYZTileDataFiles(
             } catch (error) {
               printLog(
                 "error",
-                `Failed to download tile data file "${filePath}": ${error}`
+                `Failed to download tile data file "${z}/${x}/${y}": ${error}`
               );
 
               // Remove error tile data file
@@ -184,7 +238,6 @@ export async function seedXYZTileDataFiles(
     maxzoom: Math.max(...zooms),
     vector_layers: vector_layers,
     tilestats: tilestats,
-    time: new Date().toISOString().split(".")[0],
   });
 
   // Create md5.json file
@@ -205,9 +258,12 @@ export async function seedXYZTileDataFiles(
  */
 export async function cleanXYZTileDataFiles(
   outputFolder,
-  format,
-  zooms,
-  bounds,
+  format = "png",
+  zooms = [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22,
+  ],
+  bounds = [-180, -85.051129, 180, 85.051129],
   cleanUpBefore
 ) {
   let cleanUpTimestamp;
@@ -256,17 +312,26 @@ export async function cleanXYZTileDataFiles(
           const filePath = `${outputFolder}/${z}/${x}/${y}.${format}`;
 
           try {
-            if (cleanUpTimestamp !== undefined) {
+            try {
               const stats = await fsPromise.stat(filePath);
 
-              if (!stats.ctimeMs || stats.ctimeMs < cleanUpTimestamp) {
-                await fsPromise.rm(filePath, {
-                  force: true,
-                });
+              if (cleanUpTimestamp !== undefined) {
+                if (!stats.ctimeMs || stats.ctimeMs < cleanUpTimestamp) {
+                  printLog(
+                    "info",
+                    `Removing tile data file "${z}/${x}/${y}"...`
+                  );
 
-                delete hashs[`${z}/${x}/${y}`];
+                  await fsPromise.rm(filePath, {
+                    force: true,
+                  });
+
+                  delete hashs[`${z}/${x}/${y}`];
+                }
               }
-            } else {
+            } catch (error) {
+              printLog("info", `Removing tile data file "${z}/${x}/${y}"...`);
+
               await fsPromise.rm(filePath, {
                 force: true,
               });
@@ -276,7 +341,7 @@ export async function cleanXYZTileDataFiles(
           } catch (error) {
             printLog(
               "error",
-              `Failed to remove tile data file "${filePath}": ${error}`
+              `Failed to remove tile data file "${z}/${x}/${y}": ${error}`
             );
           }
         });
@@ -333,7 +398,7 @@ async function startTask() {
 =========='-.____'.___ \\_____/___.-'____.-'==========
                      '=---='
           Buddha bless, server immortal
-        Starting seed data with ${opts.numProcesses} processes
+        Starting seed and clean up data with ${opts.numProcesses} processes
 `
   );
 
@@ -347,6 +412,7 @@ async function startTask() {
     await fsPromise.readFile(`${opts.dataDir}/seed.json`, "utf8")
   );
 
+  /* Run clean up task */
   if (opts.cleanUp) {
     try {
       for (const id in cleanUpData.datas) {
@@ -370,7 +436,7 @@ async function startTask() {
       }
 
       if (cleanUpData.restartServerAfterCleanUp === true) {
-        printLog("info", "Completed cleaning up data. Restaring server...");
+        printLog("info", "Completed cleaning up data. Restarting server...");
 
         process.kill(
           JSON.parse(await fsPromise.readFile("server-info.json", "utf8"))
@@ -385,6 +451,7 @@ async function startTask() {
     }
   }
 
+  /* Run seed task */
   if (opts.seed) {
     try {
       for (const id in seedData.datas) {
@@ -401,7 +468,6 @@ async function startTask() {
             seedData.datas[id].vector_layers,
             seedData.datas[id].tilestats,
             seedData.datas[id].concurrency,
-            seedData.datas[id].overwrite,
             seedData.datas[id].maxTry,
             seedData.datas[id].timeout
           );
@@ -414,7 +480,7 @@ async function startTask() {
       }
 
       if (seedData.restartServerAfterSeed === true) {
-        printLog("info", "Completed seeding data. Restaring server...");
+        printLog("info", "Completed seeding data. Restarting server...");
 
         process.kill(
           JSON.parse(await fsPromise.readFile("server-info.json", "utf8"))

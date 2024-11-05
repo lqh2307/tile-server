@@ -287,9 +287,6 @@ async function loadSeedFile(dataDir) {
                 anyOf: [{ required: ["time"] }, { required: ["day"] }],
                 additionalProperties: true,
               },
-              overwrite: {
-                type: "boolean",
-              },
               timeout: {
                 type: "integer",
               },

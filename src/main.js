@@ -54,7 +54,7 @@ async function startClusterServer() {
     });
 
     process.on("SIGTERM", () => {
-      printLog("info", `Received "SIGTERM" signal. Restaring server...`);
+      printLog("info", `Received "SIGTERM" signal. Restarting server...`);
 
       process.exit(1);
     });
@@ -102,7 +102,7 @@ async function startClusterServer() {
           interval: opts.restartInterval,
         })
         .on("change", () => {
-          printLog("info", "Config file has changed. Restaring server...");
+          printLog("info", "Config file has changed. Restarting server...");
 
           process.exit(1);
         });
