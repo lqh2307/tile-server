@@ -13,6 +13,10 @@ let cleanUp;
  * @returns {Promise<void>}
  */
 async function loadConfigFile(dataDir) {
+  const configFilePath = `${dataDir}/config.json`;
+  const seedFilePath = `${dataDir}/seed.json`;
+  const cleanUpFilePath = `${dataDir}/cleanup.json`;
+
   /* Validate config.json file */
   await validateJSON(
     {
@@ -101,13 +105,11 @@ async function loadConfigFile(dataDir) {
       required: ["options", "styles", "datas", "sprites", "fonts"],
       additionalProperties: true,
     },
-    `${dataDir}/config.json`
+    configFilePath
   );
 
   /* Read config.json file */
-  config = JSON.parse(
-    await fsPromise.readFile(`${dataDir}/config.json`, "utf8")
-  );
+  config = JSON.parse(await fsPromise.readFile(configFilePath, "utf8"));
 
   /* Fix object */
   config.paths = {
@@ -134,9 +136,9 @@ async function loadConfigFile(dataDir) {
     ])
   );
 
-  config.configFilePath = `${dataDir}/config.json`;
-  config.seedFilePath = `${dataDir}/seed.json`;
-  config.cleanUpFilePath = `${dataDir}/cleanup.json`;
+  config.configFilePath = configFilePath;
+  config.seedFilePath = seedFilePath;
+  config.cleanUpFilePath = cleanUpFilePath;
   config.fallbackFont = "Open Sans Regular";
   config.startupComplete = false;
 }
@@ -147,6 +149,8 @@ async function loadConfigFile(dataDir) {
  * @returns {Promise<void>}
  */
 async function loadSeedFile(dataDir) {
+  const seedFilePath = `${dataDir}/seed.json`;
+
   /* Validate seed.json file */
   await validateJSON(
     {
@@ -401,11 +405,11 @@ async function loadSeedFile(dataDir) {
       ],
       additionalProperties: true,
     },
-    `${dataDir}/seed.json`
+    seedFilePath
   );
 
   /* Read seed.json file */
-  seed = JSON.parse(await fsPromise.readFile(`${dataDir}/seed.json`, "utf8"));
+  seed = JSON.parse(await fsPromise.readFile(seedFilePath, "utf8"));
 
   /* Fix object */
   seed.tileLocks = {
@@ -424,6 +428,8 @@ async function loadSeedFile(dataDir) {
  * @returns {Promise<void>}
  */
 async function loadCleanUpFile(dataDir) {
+  const cleanUpFilePath = `${dataDir}/cleanup.json`;
+
   /* Validate cleanup.json file */
   await validateJSON(
     {
@@ -566,13 +572,11 @@ async function loadCleanUpFile(dataDir) {
       ],
       additionalProperties: true,
     },
-    `${dataDir}/seed.json`
+    cleanUpFilePath
   );
 
   /* Read cleanup.json file */
-  cleanUp = JSON.parse(
-    await fsPromise.readFile(`${dataDir}/cleanup.json`, "utf8")
-  );
+  cleanUp = JSON.parse(await fsPromise.readFile(cleanUpFilePath, "utf8"));
 }
 
 export { loadConfigFile, loadSeedFile, loadCleanUpFile, config, seed, cleanUp };

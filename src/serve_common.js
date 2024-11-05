@@ -16,7 +16,7 @@ function serveSwagger() {
           openapi: "3.0.0",
           info: {
             title: "Tile Server API",
-            version: "1.0.0",
+            version: "0.0.1",
             description: "API for tile server",
           },
         },
