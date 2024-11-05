@@ -441,79 +441,6 @@ export const serve_data = {
      * tags:
      *   - name: Data
      *     description: Data related endpoints
-     * /datas/md5/{z}/{x}/{y}.{format}:
-     *   get:
-     *     tags:
-     *       - Data
-     *     summary: Get data tile MD5
-     *     parameters:
-     *       - in: path
-     *         name: z
-     *         required: true
-     *         schema:
-     *           type: integer
-     *           example: 0
-     *         description: Zoom level
-     *       - in: path
-     *         name: x
-     *         required: true
-     *         schema:
-     *           type: integer
-     *           example: 0
-     *         description: Tile X coordinate
-     *       - in: path
-     *         name: y
-     *         required: true
-     *         schema:
-     *           type: integer
-     *           example: 0
-     *         description: Tile Y coordinate
-     *       - in: path
-     *         name: format
-     *         required: true
-     *         schema:
-     *           type: string
-     *           enum: [jpeg, jpg, pbf, png, webp, gif]
-     *         description: Tile format
-     *       - in: query
-     *         name: scheme
-     *         schema:
-     *           type: string
-     *           enum: [xyz, tms]
-     *         required: false
-     *         description: Use xyz or tms scheme
-     *     responses:
-     *       200:
-     *         description: Data tile
-     *         content:
-     *           application/octet-stream:
-     *             schema:
-     *               type: string
-     *               format: binary
-     *       204:
-     *         description: No content
-     *       404:
-     *         description: Not found
-     *       503:
-     *         description: Server is starting up
-     *         content:
-     *           text/plain:
-     *             schema:
-     *               type: string
-     *               example: Starting...
-     *       500:
-     *         description: Internal server error
-     */
-    app.get(
-      `/md5/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp|gif)`,
-      getDataTileMD5Handler()
-    );
-
-    /**
-     * @swagger
-     * tags:
-     *   - name: Data
-     *     description: Data related endpoints
      * /datas/{id}/{z}/{x}/{y}.{format}:
      *   get:
      *     tags:
@@ -586,6 +513,85 @@ export const serve_data = {
     app.get(
       `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp|gif)`,
       getDataTileHandler()
+    );
+
+    /**
+     * @swagger
+     * tags:
+     *   - name: Data
+     *     description: Data related endpoints
+     * /datas/{id}/md5/{z}/{x}/{y}.{format}:
+     *   get:
+     *     tags:
+     *       - Data
+     *     summary: Get data tile MD5
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         required: true
+     *         schema:
+     *           type: string
+     *         description: Data ID
+     *       - in: path
+     *         name: z
+     *         required: true
+     *         schema:
+     *           type: integer
+     *           example: 0
+     *         description: Zoom level
+     *       - in: path
+     *         name: x
+     *         required: true
+     *         schema:
+     *           type: integer
+     *           example: 0
+     *         description: Tile X coordinate
+     *       - in: path
+     *         name: y
+     *         required: true
+     *         schema:
+     *           type: integer
+     *           example: 0
+     *         description: Tile Y coordinate
+     *       - in: path
+     *         name: format
+     *         required: true
+     *         schema:
+     *           type: string
+     *           enum: [jpeg, jpg, pbf, png, webp, gif]
+     *         description: Tile format
+     *       - in: query
+     *         name: scheme
+     *         schema:
+     *           type: string
+     *           enum: [xyz, tms]
+     *         required: false
+     *         description: Use xyz or tms scheme
+     *     responses:
+     *       200:
+     *         description: Data tile
+     *         content:
+     *           application/octet-stream:
+     *             schema:
+     *               type: string
+     *               format: binary
+     *       204:
+     *         description: No content
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get(
+      `/:id/md5/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp|gif)`,
+      getDataTileMD5Handler()
     );
 
     return app;
