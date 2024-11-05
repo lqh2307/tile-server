@@ -62,6 +62,7 @@ process.on("SIGTERM", () => {
  * @param {Array<number>} center Center in format [lon, lat, zoom] in EPSG:4326
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {Array<object>} vector_layers Vector layers
+ * @param {object} tilestats Tile stats
  * @param {number} concurrency Concurrency download
  * @param {boolean} overwrite Overwrite exist file
  * @param {number} maxTry Number of retry attempts on failure
@@ -69,11 +70,11 @@ process.on("SIGTERM", () => {
  * @returns {Promise<void>}
  */
 export async function seedXYZTileDataFiles(
-  name,
-  description,
+  name = "Unknown",
+  description = "Unknown",
   tileURL,
   outputFolder,
-  format,
+  format = "png",
   bounds = [-180, -85.051129, 180, 85.051129],
   center = [0, 0, 11],
   zooms = [
@@ -81,8 +82,9 @@ export async function seedXYZTileDataFiles(
     21, 22,
   ],
   vector_layers,
+  tilestats,
   concurrency = os.cpus().length,
-  overwrite = true,
+  overwrite = false,
   maxTry = 5,
   timeout = 60000
 ) {
@@ -110,9 +112,8 @@ export async function seedXYZTileDataFiles(
       for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
         tilePromises.push(
           limitConcurrencyDownload(async () => {
-            const tileName = `${z}/${x}/${y}`;
-            const filePath = `${outputFolder}/${tileName}.${format}`;
-            const url = tileURL.replaceAll("{z}/{x}/{y}", tileName);
+            const filePath = `${outputFolder}/${z}/${x}/${y}.${format}`;
+            const url = tileURL.replaceAll("{z}/{x}/{y}", `${z}/${x}/${y}`);
 
             try {
               if (
@@ -145,9 +146,9 @@ export async function seedXYZTileDataFiles(
 
                   // Store data md5 hash
                   if (response.headers["Etag"]) {
-                    hashs[tileName] = response.headers["Etag"];
+                    hashs[`${z}/${x}/${y}`] = response.headers["Etag"];
                   } else {
-                    hashs[tileName] = calculateMD5(response.data);
+                    hashs[`${z}/${x}/${y}`] = calculateMD5(response.data);
                   }
                 }, maxTry);
               }
@@ -172,15 +173,17 @@ export async function seedXYZTileDataFiles(
 
   // Create metadata.json file
   await createXYZMetadataFile(outputFolder, {
-    name: name || "Unknown",
-    description: description || "Unknown",
+    name: name,
+    description: description,
     version: "1.0.0",
-    format: format || "png",
-    bounds: bounds || [-180, -85.051129, 180, 85.051129],
-    center: center || [0, 0, 11],
+    format: format,
+    bounds: bounds,
+    center: center,
+    type: "overlay",
     minzoom: Math.min(...zooms),
     maxzoom: Math.max(...zooms),
     vector_layers: vector_layers,
+    tilestats: tilestats,
     time: new Date().toISOString().split(".")[0],
   });
 
@@ -197,7 +200,7 @@ export async function seedXYZTileDataFiles(
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {Array<number>} bounds Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
- * @param {string} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" before which files should be deleted
+ * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
 export async function cleanXYZTileDataFiles(
@@ -207,15 +210,25 @@ export async function cleanXYZTileDataFiles(
   bounds,
   cleanUpBefore
 ) {
-  if (cleanUpBefore) {
+  let cleanUpTimestamp;
+
+  if (typeof cleanUpBefore === "string") {
+    cleanUpTimestamp = new Date(cleanUpBefore).getTime();
+  } else if (typeof cleanUpBefore === "number") {
+    const now = new Date();
+
+    cleanUpTimestamp = now.setDate(now.getDate() - cleanUpBefore);
+  }
+
+  if (cleanUpTimestamp !== undefined) {
     printLog(
       "info",
       `Cleaning up tile data files with Zoom levels [${zooms.join(
         ", "
-      )}] - BBox [${bounds.join(", ")}] - Before ${cleanUpBefore}...`
+      )}] - BBox [${bounds.join(", ")}] - Before ${new Date(
+        cleanUpTimestamp
+      ).toISOString()}...`
     );
-
-    cleanUpBefore = new Date(cleanUpBefore).getTime();
   } else {
     printLog(
       "info",
@@ -240,26 +253,25 @@ export async function cleanXYZTileDataFiles(
     for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
       for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
         tilePromises.push(async () => {
-          const tileName = `${z}/${x}/${y}`;
-          const filePath = `${outputFolder}/${tileName}.${format}`;
+          const filePath = `${outputFolder}/${z}/${x}/${y}.${format}`;
 
           try {
-            if (cleanUpBefore) {
+            if (cleanUpTimestamp !== undefined) {
               const stats = await fsPromise.stat(filePath);
 
-              if (!stats.ctimeMs || stats.ctimeMs < cleanUpBefore) {
+              if (!stats.ctimeMs || stats.ctimeMs < cleanUpTimestamp) {
                 await fsPromise.rm(filePath, {
                   force: true,
                 });
 
-                delete hashs[tileName];
+                delete hashs[`${z}/${x}/${y}`];
               }
             } else {
               await fsPromise.rm(filePath, {
                 force: true,
               });
 
-              delete hashs[tileName];
+              delete hashs[`${z}/${x}/${y}`];
             }
           } catch (error) {
             printLog(
@@ -341,8 +353,8 @@ async function startTask() {
         try {
           await cleanXYZTileDataFiles(
             `${opts.dataDir}/caches/xyzs/${id}`,
-            cleanUpData.datas[id].zooms || seedData.datas[id].zooms,
             seedData.datas[id].format,
+            cleanUpData.datas[id].zooms || seedData.datas[id].zooms,
             cleanUpData.datas[id].bounds || seedData.datas[id].bounds,
             cleanUpData.datas[id].cleanUpBefore.time ||
               seedData.datas[id].refreshBefore.time
@@ -384,8 +396,10 @@ async function startTask() {
             seedData.datas[id].bounds,
             seedData.datas[id].center,
             seedData.datas[id].zooms,
+            seedData.datas[id].vector_layers,
+            seedData.datas[id].tilestats,
             seedData.datas[id].concurrency,
-            false,
+            seedData.datas[id].overwrite,
             seedData.datas[id].maxTry,
             seedData.datas[id].timeout
           );

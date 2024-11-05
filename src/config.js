@@ -169,6 +169,10 @@ async function loadSeedFile(dataDir) {
                   time: {
                     type: "string",
                   },
+                  day: {
+                    type: "integer",
+                    minimum: 0,
+                  },
                 },
                 anyOf: [{ required: ["time"] }, { required: ["day"] }],
                 additionalProperties: true,
@@ -225,15 +229,67 @@ async function loadSeedFile(dataDir) {
                 },
                 maxItems: 23,
               },
+              vector_layers: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: {
+                      type: "string",
+                    },
+                    description: {
+                      type: "string",
+                    },
+                    minzoom: {
+                      type: "integer",
+                      minimum: 0,
+                      maximum: 22,
+                    },
+                    maxzoom: {
+                      type: "integer",
+                      minimum: 0,
+                      maximum: 22,
+                    },
+                    fields: {
+                      type: "object",
+                      additionalProperties: {
+                        type: "string",
+                        additionalProperties: true,
+                      },
+                    },
+                  },
+                  required: ["id"],
+                  additionalProperties: true,
+                },
+              },
+              tilestats: {
+                type: "object",
+                additionalProperties: {
+                  type: "object",
+                  properties: {
+                    layerCount: {
+                      type: "integer",
+                    },
+                  },
+                  additionalProperties: true,
+                },
+              },
               refreshBefore: {
                 type: "object",
                 properties: {
                   time: {
                     type: "string",
                   },
+                  day: {
+                    type: "integer",
+                    minimum: 0,
+                  },
                 },
                 anyOf: [{ required: ["time"] }, { required: ["day"] }],
                 additionalProperties: true,
+              },
+              overwrite: {
+                type: "boolean",
               },
               timeout: {
                 type: "integer",
@@ -253,10 +309,6 @@ async function loadSeedFile(dataDir) {
               "bounds",
               "center",
               "zooms",
-              "refreshBefore",
-              "timeout",
-              "concurrency",
-              "maxTry",
             ],
             additionalProperties: true,
           },
@@ -274,6 +326,10 @@ async function loadSeedFile(dataDir) {
                 properties: {
                   time: {
                     type: "string",
+                  },
+                  day: {
+                    type: "integer",
+                    minimum: 0,
                   },
                 },
                 anyOf: [{ required: ["time"] }, { required: ["day"] }],
@@ -297,6 +353,10 @@ async function loadSeedFile(dataDir) {
                 properties: {
                   time: {
                     type: "string",
+                  },
+                  day: {
+                    type: "integer",
+                    minimum: 0,
                   },
                 },
                 anyOf: [{ required: ["time"] }, { required: ["day"] }],
@@ -362,6 +422,10 @@ async function loadCleanUpFile(dataDir) {
                   time: {
                     type: "string",
                   },
+                  day: {
+                    type: "integer",
+                    minimum: 0,
+                  },
                 },
                 anyOf: [{ required: ["time"] }, { required: ["day"] }],
                 additionalProperties: true,
@@ -401,6 +465,10 @@ async function loadCleanUpFile(dataDir) {
                   time: {
                     type: "string",
                   },
+                  day: {
+                    type: "integer",
+                    minimum: 0,
+                  },
                 },
                 anyOf: [{ required: ["time"] }, { required: ["day"] }],
                 additionalProperties: true,
@@ -424,6 +492,10 @@ async function loadCleanUpFile(dataDir) {
                   time: {
                     type: "string",
                   },
+                  day: {
+                    type: "integer",
+                    minimum: 0,
+                  },
                 },
                 anyOf: [{ required: ["time"] }, { required: ["day"] }],
                 additionalProperties: true,
@@ -446,6 +518,10 @@ async function loadCleanUpFile(dataDir) {
                 properties: {
                   time: {
                     type: "string",
+                  },
+                  day: {
+                    type: "integer",
+                    minimum: 0,
                   },
                 },
                 anyOf: [{ required: ["time"] }, { required: ["day"] }],
