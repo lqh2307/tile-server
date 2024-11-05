@@ -254,7 +254,6 @@ async function loadSeedFile(dataDir) {
                       type: "object",
                       additionalProperties: {
                         type: "string",
-                        additionalProperties: true,
                       },
                     },
                   },
