@@ -207,7 +207,7 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
         {
           "id": "waterway"
         }
-      ], 
+      ],
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
       },

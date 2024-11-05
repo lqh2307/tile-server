@@ -69,7 +69,7 @@ process.on("SIGTERM", () => {
  * @param {number} concurrency Concurrency download
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
- * @param {string|number} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
+ * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
  * @returns {Promise<void>}
  */
 export async function seedXYZTileDataFiles(
@@ -99,17 +99,28 @@ export async function seedXYZTileDataFiles(
     const now = new Date();
 
     refreshTimestamp = now.setDate(now.getDate() - refreshBefore);
+  } else if (typeof refreshBefore === "boolean") {
+    refreshBefore = true;
   }
 
   if (refreshTimestamp !== undefined) {
-    printLog(
-      "info",
-      `Downloading tile data files with Zoom levels [${zooms.join(
-        ", "
-      )}] - BBox [${bounds.join(", ")}] - Before ${new Date(
-        refreshTimestamp
-      ).toISOString()}...`
-    );
+    if (refreshTimestamp === true) {
+      printLog(
+        "info",
+        `Downloading tile data files with Zoom levels [${zooms.join(
+          ", "
+        )}] - BBox [${bounds.join(", ")}] - Before check MD5...`
+      );
+    } else {
+      printLog(
+        "info",
+        `Downloading tile data files with Zoom levels [${zooms.join(
+          ", "
+        )}] - BBox [${bounds.join(", ")}] - Before ${new Date(
+          refreshTimestamp
+        ).toISOString()}...`
+      );
+    }
   } else {
     printLog(
       "info",
@@ -144,7 +155,50 @@ export async function seedXYZTileDataFiles(
                 const stats = await fsPromise.stat(filePath);
 
                 if (refreshTimestamp !== undefined) {
-                  if (!stats.ctimeMs || stats.ctimeMs < refreshTimestamp) {
+                  if (refreshTimestamp === true) {
+                    const response = await getData(
+                      tileURL.replaceAll("{z}/{x}/{y}", `md5/${z}/${x}/${y}`),
+                      timeout
+                    );
+
+                    if (
+                      response.status === StatusCodes.NO_CONTENT ||
+                      response.headers["Etag"] !== hashs[`${z}/${x}/${y}`]
+                    ) {
+                      printLog(
+                        "info",
+                        `Downloading tile data file "${z}/${x}/${y}" from ${url}...`
+                      );
+
+                      await retry(async () => {
+                        // Get data
+                        const response = await getData(url, timeout);
+
+                        // Skip with 204 error code
+                        if (response.status === StatusCodes.NO_CONTENT) {
+                          printLog(
+                            "warning",
+                            `Failed to download tile data file "${z}/${x}/${y}": Failed to request ${url} with status code: ${response.status} - ${response.statusText}. Skipping`
+                          );
+
+                          return;
+                        }
+
+                        // Store data to file
+                        await createXYZTileDataFile(filePath, response.data);
+
+                        // Store data md5 hash
+                        if (response.headers["Etag"]) {
+                          hashs[`${z}/${x}/${y}`] = response.headers["Etag"];
+                        } else {
+                          hashs[`${z}/${x}/${y}`] = calculateMD5(response.data);
+                        }
+                      }, maxTry);
+                    }
+                  } else if (
+                    !stats.ctimeMs ||
+                    stats.ctimeMs < refreshTimestamp
+                  ) {
                     printLog(
                       "info",
                       `Downloading tile data file "${z}/${x}/${y}" from ${url}...`

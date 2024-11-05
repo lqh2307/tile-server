@@ -173,8 +173,15 @@ async function loadSeedFile(dataDir) {
                     type: "integer",
                     minimum: 0,
                   },
+                  md5: {
+                    type: "boolean",
+                  },
                 },
-                anyOf: [{ required: ["time"] }, { required: ["day"] }],
+                anyOf: [
+                  { required: ["time"] },
+                  { required: ["day"] },
+                  { required: ["md5"] },
+                ],
                 additionalProperties: true,
               },
             },
@@ -283,8 +290,15 @@ async function loadSeedFile(dataDir) {
                     type: "integer",
                     minimum: 0,
                   },
+                  md5: {
+                    type: "boolean",
+                  },
                 },
-                anyOf: [{ required: ["time"] }, { required: ["day"] }],
+                anyOf: [
+                  { required: ["time"] },
+                  { required: ["day"] },
+                  { required: ["md5"] },
+                ],
                 additionalProperties: true,
               },
               timeout: {
@@ -327,8 +341,15 @@ async function loadSeedFile(dataDir) {
                     type: "integer",
                     minimum: 0,
                   },
+                  md5: {
+                    type: "boolean",
+                  },
                 },
-                anyOf: [{ required: ["time"] }, { required: ["day"] }],
+                anyOf: [
+                  { required: ["time"] },
+                  { required: ["day"] },
+                  { required: ["md5"] },
+                ],
                 additionalProperties: true,
               },
             },
@@ -354,8 +375,15 @@ async function loadSeedFile(dataDir) {
                     type: "integer",
                     minimum: 0,
                   },
+                  md5: {
+                    type: "boolean",
+                  },
                 },
-                anyOf: [{ required: ["time"] }, { required: ["day"] }],
+                anyOf: [
+                  { required: ["time"] },
+                  { required: ["day"] },
+                  { required: ["md5"] },
+                ],
                 additionalProperties: true,
               },
             },
