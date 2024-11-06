@@ -318,13 +318,57 @@ export async function createXYZMD5File(outputFolder, hashs) {
 
 /**
  * Update XYZ md5.json file
+ * @param {string} outputFolder Folder path to store md5.json file
+ * @param {string} key
+ * @param {string} value
+ * @returns {Promise<void>}
+ */
+export async function updateXYZMD5File(outputFolder, key, value) {
+  try {
+    const hashs = JSON.parse(
+      await fsPromise.readFile(`${outputFolder}/md5.json`, "utf8")
+    );
+
+    hashs[key] = value;
+
+    await fsPromise.writeFile(JSON.stringify(hashs, null, 2), "utf8");
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      await fsPromise.mkdir(outputFolder, {
+        recursive: true,
+      });
+
+      await fsPromise.writeFile(
+        `${outputFolder}/md5.json`,
+        JSON.stringify(
+          {
+            [key]: value,
+          },
+          null,
+          2
+        ),
+        "utf8"
+      );
+    } else {
+      throw error;
+    }
+  }
+}
+
+/**
+ * Update XYZ md5.json file with lock
  * @param {string} sourcePath Folder path to store md5.json file
  * @param {string} key
  * @param {string} value
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function updateXYZMD5File(sourcePath, key, value, timeout) {
+export async function updateXYZMD5FileWithLock(
+  sourcePath,
+  key,
+  value,
+  timeout
+) {
   const startTime = Date.now();
   let lockFileID;
 
@@ -332,26 +376,7 @@ export async function updateXYZMD5File(sourcePath, key, value, timeout) {
     try {
       lockFileID = fs.openSync(`${sourcePath}/md5.json.lock`, "wx");
 
-      try {
-        // Open md5.json file
-        const hashs = JSON.parse(
-          await fsPromise.readFile(`${sourcePath}/md5.json`, "utf8")
-        );
-
-        // Update md5
-        hashs[key] = value;
-
-        // Write the new content back to the md5.json file
-        await fsPromise.writeFile(JSON.stringify(hashs, null, 2), "utf8");
-      } catch (error) {
-        if (error.code === "ENOENT") {
-          await createXYZMD5File(sourcePath, {
-            [key]: value,
-          });
-        } else {
-          throw error;
-        }
-      }
+      await updateXYZMD5File(sourcePath, key, value);
     } catch (error) {
       if (error.code === "EEXIST") {
         await delay(100);
