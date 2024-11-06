@@ -20,6 +20,7 @@ import {
   findFiles,
   printLog,
   getData,
+  delay,
 } from "./utils.js";
 
 /**
@@ -390,9 +391,9 @@ export async function updateXYZMD5FileWithLock(
           fs.closeSync(lockFileID);
 
           await removeFilesOrFolder(`${sourcePath}/md5.json.lock`);
+        } else {
+          throw error;
         }
-
-        throw error;
       }
     }
   }
