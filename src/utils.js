@@ -409,9 +409,9 @@ export async function compileTemplate(template, data) {
  * @param {object} item
  * @param {number} scale
  * @param {256|512} tileSize
- * @param {number} x
- * @param {number} y
- * @param {number} z
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @param {number} z Zoom level
  * @param {"xyz"|"tms"} scheme
  * @returns {Promise<Buffer>}
  */
@@ -463,7 +463,7 @@ export async function renderData(
  * @param {number} scale
  * @param {number} compression
  * @param {256|512} tileSize
- * @param {number} z
+ * @param {number} z Zoom level
  * @returns {Promise<Buffer>}
  */
 export async function processImage(data, scale, compression, tileSize, z) {
@@ -1289,7 +1289,7 @@ export async function openFileWithLock(filePath, timeout) {
         };
       } catch (error) {
         if (error.code === "ENOENT") {
-          await fsPromise.writeFile(filePath, "{}", "utf8")
+          await fsPromise.writeFile(filePath, "{}", "utf8");
         } else {
           fs.closeSync(fd);
 

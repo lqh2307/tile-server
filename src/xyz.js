@@ -25,18 +25,18 @@ import {
 
 /**
  * Get XYZ tile
- * @param {string} sourcePath
- * @param {number} z
- * @param {number} x
- * @param {number} y
+ * @param {string} sourcePath Folder path
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @returns {Promise<object>}
  */
 export async function getXYZTile(sourcePath, z, x, y, format) {
+  const filePath = `${sourcePath}/${z}/${x}/${y}.${format}`;
+
   try {
-    let data = await fsPromise.readFile(
-      `${sourcePath}/${z}/${x}/${y}.${format}`
-    );
+    let data = await fsPromise.readFile(filePath);
 
     if (!data) {
       throw new Error("Tile does not exist");
@@ -107,12 +107,12 @@ export async function getXYZTileFromURL(url, timeout) {
 
 /**
  * Get XYZ layers from tiles
- * @param {string} sourcePath
+ * @param {string} sourcePath Folder path
  * @returns {Promise<Array<string>>}
  */
 export async function getXYZLayersFromTiles(sourcePath) {
   const pbfFilePaths = await findFiles(sourcePath, /^\d+\.pbf$/, true);
-  const limitConcurrencyRead = pLimit(100);
+  const limitConcurrencyRead = pLimit(200);
   const layerNames = new Set();
 
   await Promise.all(
@@ -136,8 +136,8 @@ export async function getXYZLayersFromTiles(sourcePath) {
 
 /**
  * Get XYZ tile format from tiles
- * @param {string} sourcePath
- * @returns {Promise<number>}
+ * @param {string} sourcePath Folder path
+ * @returns {Promise<string>}
  */
 export async function getXYZFormatFromTiles(sourcePath) {
   const zFolders = await findFolders(sourcePath, /^\d+$/, false);
@@ -165,8 +165,8 @@ export async function getXYZFormatFromTiles(sourcePath) {
 
 /**
  * Get XYZ bounding box from tiles
- * @param {string} sourcePath
- * @returns {Promise<number>}
+ * @param {string} sourcePath Folder path
+ * @returns {Promise<Array<number>>}
  */
 export async function getXYZBBoxFromTiles(sourcePath) {
   const zFolders = await findFolders(sourcePath, /^\d+$/, false);
@@ -216,7 +216,7 @@ export async function getXYZBBoxFromTiles(sourcePath) {
 
 /**
  * Get XYZ zoom level from tiles
- * @param {string} sourcePath
+ * @param {string} sourcePath Folder path
  * @param {"minzoom"|"maxzoom"} zoomType
  * @returns {Promise<number>}
  */
@@ -233,7 +233,7 @@ export async function getXYZZoomLevelFromTiles(
 
 /**
  * Get XYZ infos
- * @param {string} sourcePath
+ * @param {string} sourcePath Folder path
  * @returns {Promise<object>}
  */
 export async function getXYZInfos(sourcePath) {
@@ -241,10 +241,13 @@ export async function getXYZInfos(sourcePath) {
 
   /* Get metadatas */
   try {
-    metadata = JSON.parse(
-      await fsPromise.readFile(`${sourcePath}/metadata.json`, "utf8")
+    const data = await fsPromise.readFile(
+      `${sourcePath}/metadata.json`,
+      "utf8"
     );
-  } catch (error) { }
+
+    metadata = JSON.parse(data);
+  } catch (error) {}
 
   /* Try get min zoom */
   if (metadata.minzoom === undefined) {
@@ -282,18 +285,20 @@ export async function getXYZInfos(sourcePath) {
 
 /**
  * Update XYZ metadata.json file
- * @param {string} outputFolder Folder path to metadata.json file
+ * @param {string} sourcePath Folder path to metadata.json file
  * @param {Object<string,string>} metadataAdds Metadata object
  * @returns {Promise<void>}
  */
-export async function updateXYZMetadataFile(outputFolder, metadataAdds) {
+export async function updateXYZMetadataFile(sourcePath, metadataAdds) {
+  const filePath = `${sourcePath}/metadata.json`;
+
   try {
-    const metadatas = JSON.parse(
-      await fsPromise.readFile(`${outputFolder}/metadata.json`, "utf8")
-    );
+    const data = await fsPromise.readFile(filePath, "utf8");
+
+    const metadatas = JSON.parse(data);
 
     await fsPromise.writeFile(
-      `${outputFolder}/metadata.json`,
+      filePath,
       JSON.stringify(
         {
           ...metadatas,
@@ -306,12 +311,12 @@ export async function updateXYZMetadataFile(outputFolder, metadataAdds) {
     );
   } catch (error) {
     if (error.code === "ENOENT") {
-      await fsPromise.mkdir(outputFolder, {
+      await fsPromise.mkdir(sourcePath, {
         recursive: true,
       });
 
       await fsPromise.writeFile(
-        `${outputFolder}/metadata.json`,
+        filePath,
         JSON.stringify(metadataAdds, null, 2),
         "utf8"
       );
@@ -328,59 +333,62 @@ export async function updateXYZMetadataFile(outputFolder, metadataAdds) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function updateXYZMetadataFileWithLock(sourcePath, metadataAdds, timeout) {
+export async function updateXYZMetadataFileWithLock(
+  sourcePath,
+  metadataAdds,
+  timeout
+) {
   const startTime = Date.now();
+  const lockFilePath = `${sourcePath}/metadata.json.lock`;
   let lockFileHandle;
 
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(
-        `${sourcePath}/metadata.json.lock`,
-        "wx"
-      );
+  try {
+    while (Date.now() - startTime <= timeout) {
+      try {
+        lockFileHandle = await fsPromise.open(lockFilePath, "wx");
 
-      await updateXYZMetadataFile(sourcePath, metadataAdds);
+        await updateXYZMetadataFile(sourcePath, metadataAdds);
 
-      await lockFileHandle.close();
+        await lockFileHandle.close();
 
-      await removeFilesOrFolder(`${sourcePath}/metadata.json.lock`);
+        await removeFilesOrFolder(lockFilePath);
 
-      return;
-    } catch (error) {
-      if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await removeFilesOrFolder(`${sourcePath}/metadata.json.lock`);
+        return;
+      } catch (error) {
+        if (error.code === "EEXIST") {
+          await delay(50);
         } else {
+          if (lockFileHandle !== undefined) {
+            await lockFileHandle.close();
+
+            await removeFilesOrFolder(lockFilePath);
+          }
+
           throw error;
         }
       }
     }
-  }
 
-  printLog(
-    "error",
-    `Failed to update metadata: Timeout to access ${sourcePath}/metadata.json.lock file`
-  );
+    throw new Error(`Timeout to access ${lockFilePath} file`);
+  } catch (error) {
+    printLog("error", `Failed to update metadata: ${error}`);
+  }
 }
 
 /**
  * Update XYZ md5.json file
- * @param {string} outputFolder Folder path to store md5.json file
+ * @param {string} sourcePath Folder path to store md5.json file
  * @param {Object<string,string>} hashAdds Hash data object
  * @returns {Promise<void>}
  */
-export async function updateXYZMD5File(outputFolder, hashAdds) {
+export async function updateXYZMD5File(sourcePath, hashAdds) {
+  const filePath = `${sourcePath}/md5.json`;
+
   try {
-    const hashs = JSON.parse(
-      await fsPromise.readFile(`${outputFolder}/md5.json`, "utf8")
-    );
+    const hashs = JSON.parse(await fsPromise.readFile(filePath, "utf8"));
 
     await fsPromise.writeFile(
-      `${outputFolder}/md5.json`,
+      filePath,
       JSON.stringify(
         {
           ...hashs,
@@ -393,12 +401,12 @@ export async function updateXYZMD5File(outputFolder, hashAdds) {
     );
   } catch (error) {
     if (error.code === "ENOENT") {
-      await fsPromise.mkdir(outputFolder, {
+      await fsPromise.mkdir(sourcePath, {
         recursive: true,
       });
 
       await fsPromise.writeFile(
-        `${outputFolder}/md5.json`,
+        filePath,
         JSON.stringify(hashAdds, null, 2),
         "utf8"
       );
@@ -417,45 +425,44 @@ export async function updateXYZMD5File(outputFolder, hashAdds) {
  */
 export async function updateXYZMD5FileWithLock(sourcePath, hashAdds, timeout) {
   const startTime = Date.now();
+  const lockFilePath = `${sourcePath}/md5.json.lock`;
   let lockFileHandle;
 
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(
-        `${sourcePath}/md5.json.lock`,
-        "wx"
-      );
+  try {
+    while (Date.now() - startTime <= timeout) {
+      try {
+        lockFileHandle = await fsPromise.open(lockFilePath, "wx");
 
-      await updateXYZMD5File(sourcePath, hashAdds);
+        await updateXYZMD5File(sourcePath, hashAdds);
 
-      await lockFileHandle.close();
+        await lockFileHandle.close();
 
-      await removeFilesOrFolder(`${sourcePath}/md5.json.lock`);
+        await removeFilesOrFolder(lockFilePath);
 
-      return;
-    } catch (error) {
-      if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await removeFilesOrFolder(`${sourcePath}/md5.json.lock`);
+        return;
+      } catch (error) {
+        if (error.code === "EEXIST") {
+          await delay(50);
         } else {
+          if (lockFileHandle !== undefined) {
+            await lockFileHandle.close();
+
+            await removeFilesOrFolder(lockFilePath);
+          }
+
           throw error;
         }
       }
     }
-  }
 
-  printLog(
-    "error",
-    `Failed to update md5: Timeout to access ${sourcePath}/md5.json.lock file`
-  );
+    throw new Error(`Timeout to access ${lockFilePath} file`);
+  } catch (error) {
+    printLog("error", `Failed to update md5: ${error}`);
+  }
 }
 
 /**
- * Create tile data file
+ * Create XYZ tile data file
  * @param {string} filePath File path to store tile data file
  * @param {Buffer} data Tile data buffer
  * @returns {Promise<void>}
@@ -469,14 +476,52 @@ export async function createXYZTileDataFile(filePath, data) {
 }
 
 /**
+ * Create XYZ tile data file with lock
+ * @param {string} filePath File path to store tile data file
+ * @param {Buffer} data Tile data buffer
+ * @returns {Promise<boolean>}
+ */
+export async function createXYZTileDataFileWithLock(filePath, data) {
+  let fileHandle;
+
+  try {
+    await fsPromise.mkdir(path.dirname(filePath), {
+      recursive: true,
+    });
+
+    fileHandle = await fsPromise.open(filePath, "wx+");
+
+    await fileHandle.writeFile(data);
+
+    await fileHandle.close();
+
+    return true;
+  } catch (error) {
+    if (error.code === "EEXIST") {
+      return false;
+    } else {
+      printLog("error", `Failed to create tile data file: ${error}`);
+
+      if (fileHandle !== undefined) {
+        await fileHandle.close();
+      }
+
+      await removeFilesOrFolder(filePath);
+
+      throw error;
+    }
+  }
+}
+
+/**
  * Download XYZ tile data file
  * @param {string} url The URL to download the file from
- * @param {string} sourcePath
- * @param {string} tileName
+ * @param {string} sourcePath Folder path
+ * @param {string} tileName Tile name
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
- * @param {object} hashs
+ * @param {object} hashs Hash data object
  * @returns {Promise<void>}
  */
 export async function downloadXYZTileDataFile(
@@ -522,11 +567,11 @@ export async function downloadXYZTileDataFile(
 
 /**
  * Remove XYZ tile data file
- * @param {string} sourcePath
- * @param {string} tileName
+ * @param {string} sourcePath Folder path
+ * @param {string} tileName Tile name
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {number} maxTry Number of retry attempts on failure
- * @param {object} hashs
+ * @param {object} hashs Hash data object
  * @returns {Promise<void>}
  */
 export async function removeXYZTileDataFile(
@@ -542,9 +587,9 @@ export async function removeXYZTileDataFile(
     printLog("info", `Removing tile data file "${tileName}"...`);
 
     await retry(async () => {
-      await removeFilesOrFolder(filePath);
-
       delete hashs[tileName];
+
+      await removeFilesOrFolder(filePath);
     }, maxTry);
   } catch (error) {
     printLog(
@@ -556,12 +601,12 @@ export async function removeXYZTileDataFile(
 
 /**
  * Cache tile data file
- * @param {string} sourcePath
- * @param {string} tileName
+ * @param {string} sourcePath Folder path
+ * @param {string} tileName Tile name
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {Buffer} data Tile data buffer
  * @param {object} cacheItemLock Cache item lock
- * @param {string} md5
+ * @param {string} md5 MD5 hash string
  * @returns {Promise<void>}
  */
 export async function cacheXYZTileDataFile(
@@ -579,15 +624,15 @@ export async function cacheXYZTileDataFile(
     const filePath = `${sourcePath}/${tileName}.${format}`;
 
     try {
-      await createXYZTileDataFile(filePath, data);
-
-      updateXYZMD5FileWithLock(
-        sourcePath,
-        {
-          [tileName]: md5 === undefined ? calculateMD5(data) : md5,
-        },
-        300000 // 5 mins
-      );
+      if ((await createXYZTileDataFileWithLock(filePath, data)) === true) {
+        updateXYZMD5FileWithLock(
+          sourcePath,
+          {
+            [tileName]: md5 === undefined ? calculateMD5(data) : md5,
+          },
+          300000 // 5 mins
+        );
+      }
     } catch (error) {
       throw error;
     } finally {
@@ -620,18 +665,18 @@ export function getXYZTileFromBBox(bbox, zooms) {
 
 /**
  * Get XYZ tile MD5
- * @param {string} sourcePath
- * @param {number} z
- * @param {number} x
- * @param {number} y
+ * @param {string} sourcePath Folder path
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @returns {Promise<string>}
  */
 export async function getXYZTileMD5(sourcePath, z, x, y, format) {
   try {
-    const hashs = JSON.parse(
-      await fsPromise.readFile(`${sourcePath}/md5.json`)
-    );
+    const data = await fsPromise.readFile(`${sourcePath}/md5.json`);
+
+    const hashs = JSON.parse(data);
 
     if (hashs[`${z}/${x}/${y}`] === undefined) {
       throw new Error("Tile MD5 does not exist");

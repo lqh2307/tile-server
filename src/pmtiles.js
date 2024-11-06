@@ -117,9 +117,9 @@ export async function getPMTilesInfos(pmtilesSource) {
 /**
  * Get PMTiles tile
  * @param {object} pmtilesSource
- * @param {number} z
- * @param {number} x
- * @param {number} y
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
  * @returns {Promise<object>}
  */
 export async function getPMTilesTile(pmtilesSource, z, x, y) {
@@ -139,9 +139,9 @@ export async function getPMTilesTile(pmtilesSource, z, x, y) {
 /**
  * Get PMTiles tile MD5
  * @param {object} pmtilesSource
- * @param {number} z
- * @param {number} x
- * @param {number} y
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
  * @returns {Promise<string>}
  */
 export async function getPMTilesTileMD5(pmtilesSource, z, x, y) {

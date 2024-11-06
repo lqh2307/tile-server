@@ -114,7 +114,7 @@ export async function isMBTilesExistColumns(
  * @returns {Promise<Array<string>>}
  */
 export async function getMBTilesLayersFromTiles(mbtilesSource) {
-  const limitConcurrencyRead = pLimit(100);
+  const limitConcurrencyRead = pLimit(200);
   const layerNames = new Set();
 
   await new Promise((resolve, reject) => {
@@ -194,9 +194,9 @@ export async function createMBTilesIndex(
 /**
  * Get MBTiles tile
  * @param {object} mbtilesSource
- * @param {number} z
- * @param {number} x
- * @param {number} y
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
  * @returns {Promise<object>}
  */
 export async function getMBTilesTile(mbtilesSource, z, x, y) {
@@ -226,9 +226,9 @@ export async function getMBTilesTile(mbtilesSource, z, x, y) {
 /**
  * Get MBTiles tile MD5
  * @param {object} mbtilesSource
- * @param {number} z
- * @param {number} x
- * @param {number} y
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
  * @returns {Promise<string>}
  */
 export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
@@ -434,9 +434,9 @@ export async function closeMBTiles(mbtilesSource) {
 export async function downloadMBTilesFile(
   url,
   outputPath,
-  overwrite = false,
-  maxTry = 5,
-  timeout = 60000
+  overwrite,
+  maxTry,
+  timeout
 ) {
   try {
     if (overwrite === true || (await isExistFile(outputPath)) === false) {
