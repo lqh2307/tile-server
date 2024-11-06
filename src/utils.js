@@ -326,7 +326,7 @@ export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
  * @param {number} ms Time to wait in milliseconds
  * @returns {Promise<void>}
  */
-function delay(ms) {
+export function delay(ms) {
   if (ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
