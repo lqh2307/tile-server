@@ -451,7 +451,7 @@ export async function downloadMBTilesFile(
     }
   } catch (error) {
     printLog(
-      "info",
+      "error",
       `Failed to download MBTiles file "${outputPath}" from "${url}": ${error}`
     );
 
