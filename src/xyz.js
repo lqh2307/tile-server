@@ -523,7 +523,7 @@ export async function cacheXYZTileDataFile(
     try {
       await createXYZTileDataFile(filePath, data);
 
-      updateXYZMD5File(
+      updateXYZMD5FileWithLock(
         sourcePath,
         tileName,
         md5 === undefined ? calculateMD5(data) : md5,
