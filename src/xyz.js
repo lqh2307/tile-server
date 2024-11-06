@@ -318,23 +318,30 @@ export async function createXYZMD5File(outputFolder, hashs) {
  * @returns {Promise<void>}
  */
 export async function updateXYZMD5File(sourcePath, key, value, timeout) {
-  // Open file md5.json file (or create if not exist) with exclusive lock
-  const { fileHandle, lockFileHandle } = await openFileWithLock(
-    `${sourcePath}/md5.json`,
-    timeout
-  );
-
   try {
-    const hashs = JSON.parse(await fileHandle.readFile("utf8"));
+    // Open file md5.json file (or create if not exist) with exclusive lock
+    const { fileHandle, lockFileHandle } = await openFileWithLock(
+      `${sourcePath}/md5.json`,
+      timeout
+    );
 
-    // Update md5
-    hashs[key] = value;
+    try {
+      const hashs = JSON.parse(await fileHandle.readFile("utf8"));
 
-    // Write the new content back to the file
-    await fileHandle.writeFile(JSON.stringify(hashs, null, 2), "utf8");
-  } finally {
-    // Close the file to release the exclusive lock
-    await closeFileWithLock(fileHandle, lockFileHandle);
+      // Update md5
+      hashs[key] = value;
+
+      // Write the new content back to the file
+      await fileHandle.writeFile(JSON.stringify(hashs, null, 2), "utf8");
+    } finally {
+      // Close the file to release the exclusive lock
+      await closeFileWithLock(fileHandle, lockFileHandle);
+    }
+  } catch (error) {
+    printLog(
+      "error",
+      `Failed to update md5 for tile data file "${key}": ${error}`
+    );
   }
 }
 
@@ -395,7 +402,7 @@ export async function downloadXYZTileDataFile(
     }, maxTry);
   } catch (error) {
     printLog(
-      "info",
+      "error",
       `Failed to download tile data file "${tileName}" from "${url}": ${error}`
     );
 
@@ -469,7 +476,7 @@ export async function cacheXYZTileDataFile(
         sourcePath,
         tileName,
         md5 === undefined ? calculateMD5(data) : md5,
-        60000
+        300000 // 5 mins
       );
     } catch (error) {
       throw error;
