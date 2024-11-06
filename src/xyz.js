@@ -7,6 +7,7 @@ import pLimit from "p-limit";
 import path from "node:path";
 import http from "node:http";
 import axios from "axios";
+import fs from "node:fs";
 import {
   getLayerNamesFromPBFTileBuffer,
   detectFormatAndHeaders,
