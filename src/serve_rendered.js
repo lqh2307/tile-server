@@ -1,6 +1,5 @@
 "use strict";
 
-import { cacheXYZTileDataFile, getXYZTile, getXYZTileFromURL } from "./xyz.js";
 import mlgl from "@maplibre/maplibre-gl-native";
 import { StatusCodes } from "http-status-codes";
 import { getPMTilesTile } from "./pmtiles.js";
@@ -9,6 +8,12 @@ import { Worker } from "node:worker_threads";
 import { config, seed } from "./config.js";
 import { createPool } from "generic-pool";
 import express from "express";
+import {
+  isXYZTileDataAvailable,
+  cacheXYZTileDataFile,
+  getXYZTileFromURL,
+  getXYZTile,
+} from "./xyz.js";
 import {
   detectFormatAndHeaders,
   getDataTileFromURL,
@@ -637,6 +642,7 @@ export const serve_rendered = {
               const z = Number(parts[3]);
               const x = Number(parts[4]);
               const y = Number(parts[5].slice(0, parts[5].indexOf(".")));
+              const tileName = `${z}/${x}/${y}`;
               const sourceData = config.repo.datas[sourceID];
               let scheme = "xyz";
 
@@ -652,12 +658,40 @@ export const serve_rendered = {
                 let dataTile;
 
                 if (sourceData.cacheSourceID !== undefined) {
-                  const cacheItemLock =
-                    seed.tileLocks.datas[sourceData.cacheSourceID];
                   const cacheItem = seed.datas[sourceData.cacheSourceID];
+                  const filePath = `${sourceData.source}/${z}/${x}${
+                    req.query.scheme === "tms" ? (1 << z) - 1 - y : y
+                  }.${sourceData.tileJSON.format}`; // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
 
                   try {
-                    if (cacheItemLock[`${z}/${x}/${y}`] === undefined) {
+                    if ((await isXYZTileDataAvailable(filePath)) === false) {
+                      const url = cacheItem.url.replaceAll(
+                        "{z}/{x}/{y}",
+                        tileName
+                      );
+
+                      printLog(
+                        "info",
+                        `Getting data "${id}" - Tile "${tileName}" - From "${url}"...`
+                      );
+
+                      /* Get data */
+                      dataTile = await getXYZTileFromURL(url, 60000);
+
+                      /* Cache */
+                      cacheXYZTileDataFile(
+                        sourceData.source,
+                        tileName,
+                        sourceData.tileJSON.format,
+                        dataTile.data,
+                        dataTile.etag
+                      ).catch((error) =>
+                        printLog(
+                          "error",
+                          `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}...`
+                        )
+                      );
+                    } else {
                       dataTile = await getXYZTile(
                         sourceData.source,
                         z,
@@ -667,37 +701,7 @@ export const serve_rendered = {
                       );
                     }
                   } catch (error) {
-                    if (error.message === "Tile does not exist") {
-                      const url = cacheItem.url.replaceAll(
-                        "{z}/{x}/{y}",
-                        `${z}/${x}/${y}`
-                      );
-
-                      printLog(
-                        "info",
-                        `Getting data "${id}" - Tile "${z}/${x}/${y}" - From "${url}"...`
-                      );
-
-                      /* Get data */
-                      dataTile = await getXYZTileFromURL(url, 60000);
-
-                      /* Cache */
-                      cacheXYZTileDataFile(
-                        sourceData.source,
-                        `${z}/${x}/${y}`,
-                        sourceData.tileJSON.format,
-                        dataTile.data,
-                        cacheItemLock,
-                        dataTile.etag
-                      ).catch((error) =>
-                        printLog(
-                          "error",
-                          `Failed to cache data "${id}" - Tile "${z}/${x}/${y}" - From "${url}": ${error}...`
-                        )
-                      );
-                    } else {
-                      throw error;
-                    }
+                    throw error;
                   }
                 } else {
                   dataTile = await getXYZTile(
@@ -724,7 +728,7 @@ export const serve_rendered = {
               } catch (error) {
                 printLog(
                   "warning",
-                  `Failed to get data "${sourceID}" - Tile "${z}/${x}/${y}": ${error}. Serving empty tile...`
+                  `Failed to get data "${sourceID}" - Tile "${tileName}": ${error}. Serving empty tile...`
                 );
 
                 callback(null, {

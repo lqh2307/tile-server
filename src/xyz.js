@@ -342,37 +342,33 @@ export async function updateXYZMetadataFileWithLock(
   const lockFilePath = `${sourcePath}/metadata.json.lock`;
   let lockFileHandle;
 
-  try {
-    while (Date.now() - startTime <= timeout) {
-      try {
-        lockFileHandle = await fsPromise.open(lockFilePath, "wx");
+  while (Date.now() - startTime <= timeout) {
+    try {
+      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
 
-        await updateXYZMetadataFile(sourcePath, metadataAdds);
+      await updateXYZMetadataFile(sourcePath, metadataAdds);
 
-        await lockFileHandle.close();
+      await lockFileHandle.close();
 
-        await removeFilesOrFolder(lockFilePath);
+      await removeFilesOrFolder(lockFilePath);
 
-        return;
-      } catch (error) {
-        if (error.code === "EEXIST") {
-          await delay(50);
-        } else {
-          if (lockFileHandle !== undefined) {
-            await lockFileHandle.close();
+      return;
+    } catch (error) {
+      if (error.code === "EEXIST") {
+        await delay(50);
+      } else {
+        if (lockFileHandle !== undefined) {
+          await lockFileHandle.close();
 
-            await removeFilesOrFolder(lockFilePath);
-          }
-
-          throw error;
+          await removeFilesOrFolder(lockFilePath);
         }
+
+        throw error;
       }
     }
-
-    throw new Error(`Timeout to access ${lockFilePath} file`);
-  } catch (error) {
-    printLog("error", `Failed to update metadata: ${error}`);
   }
+
+  throw new Error(`Timeout to access ${lockFilePath} file`);
 }
 
 /**
@@ -428,37 +424,33 @@ export async function updateXYZMD5FileWithLock(sourcePath, hashAdds, timeout) {
   const lockFilePath = `${sourcePath}/md5.json.lock`;
   let lockFileHandle;
 
-  try {
-    while (Date.now() - startTime <= timeout) {
-      try {
-        lockFileHandle = await fsPromise.open(lockFilePath, "wx");
+  while (Date.now() - startTime <= timeout) {
+    try {
+      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
 
-        await updateXYZMD5File(sourcePath, hashAdds);
+      await updateXYZMD5File(sourcePath, hashAdds);
 
-        await lockFileHandle.close();
+      await lockFileHandle.close();
 
-        await removeFilesOrFolder(lockFilePath);
+      await removeFilesOrFolder(lockFilePath);
 
-        return;
-      } catch (error) {
-        if (error.code === "EEXIST") {
-          await delay(50);
-        } else {
-          if (lockFileHandle !== undefined) {
-            await lockFileHandle.close();
+      return;
+    } catch (error) {
+      if (error.code === "EEXIST") {
+        await delay(50);
+      } else {
+        if (lockFileHandle !== undefined) {
+          await lockFileHandle.close();
 
-            await removeFilesOrFolder(lockFilePath);
-          }
-
-          throw error;
+          await removeFilesOrFolder(lockFilePath);
         }
+
+        throw error;
       }
     }
-
-    throw new Error(`Timeout to access ${lockFilePath} file`);
-  } catch (error) {
-    printLog("error", `Failed to update md5: ${error}`);
   }
+
+  throw new Error(`Timeout to access ${lockFilePath} file`);
 }
 
 /**
@@ -500,8 +492,6 @@ export async function createXYZTileDataFileWithLock(filePath, data) {
     if (error.code === "EEXIST") {
       return false;
     } else {
-      printLog("error", `Failed to create tile data file: ${error}`);
-
       if (fileHandle !== undefined) {
         await fileHandle.close();
       }
@@ -510,6 +500,33 @@ export async function createXYZTileDataFileWithLock(filePath, data) {
 
       throw error;
     }
+  }
+}
+
+/**
+ * Check XYZ tile data is avaiable?
+ * @param {string} filePath File path to store tile data file
+ * @returns {Promise<boolean>}
+ */
+export async function isXYZTileDataAvailable(filePath) {
+  let fileHandle;
+
+  try {
+    fileHandle = await fsPromise.open(filePath, "wx+");
+
+    await fileHandle.close();
+
+    return true;
+  } catch (error) {
+    if (error.code === "ENOENT" || error.code === "EEXIST") {
+      return false;
+    }
+
+    if (fileHandle !== undefined) {
+      await fileHandle.close();
+    }
+
+    throw error;
   }
 }
 
@@ -605,7 +622,6 @@ export async function removeXYZTileDataFile(
  * @param {string} tileName Tile name
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {Buffer} data Tile data buffer
- * @param {object} cacheItemLock Cache item lock
  * @param {string} md5 MD5 hash string
  * @returns {Promise<void>}
  */
@@ -614,31 +630,27 @@ export async function cacheXYZTileDataFile(
   tileName,
   format,
   data,
-  cacheItemLock,
   md5
 ) {
-  if (cacheItemLock[tileName] === undefined) {
-    // Lock
-    cacheItemLock[tileName] = true;
+  const filePath = `${sourcePath}/${tileName}.${format}`;
 
-    const filePath = `${sourcePath}/${tileName}.${format}`;
-
-    try {
-      if ((await createXYZTileDataFileWithLock(filePath, data)) === true) {
-        updateXYZMD5FileWithLock(
-          sourcePath,
-          {
-            [tileName]: md5 === undefined ? calculateMD5(data) : md5,
-          },
-          300000 // 5 mins
+  try {
+    if ((await createXYZTileDataFileWithLock(filePath, data)) === true) {
+      updateXYZMD5FileWithLock(
+        sourcePath,
+        {
+          [tileName]: md5 === undefined ? calculateMD5(data) : md5,
+        },
+        300000 // 5 mins
+      ).catch((error) => {
+        printLog(
+          "error",
+          `Failed to update md5 for tile "${tileName}": ${error}`
         );
-      }
-    } catch (error) {
-      throw error;
-    } finally {
-      // Unlock
-      delete cacheItemLock[tileName];
+      });
     }
+  } catch (error) {
+    throw error;
   }
 }
 

@@ -4,6 +4,7 @@ import { StatusCodes } from "http-status-codes";
 import { config, seed } from "./config.js";
 import express from "express";
 import {
+  isXYZTileDataAvailable,
   cacheXYZTileDataFile,
   getXYZTileFromURL,
   getXYZTileMD5,
@@ -52,6 +53,7 @@ function getDataTileHandler() {
     const z = Number(req.params.z);
     const x = Number(req.params.x);
     const y = Number(req.params.y);
+    const tileName = `${z}/${x}/${y}`;
 
     try {
       /* Get tile data */
@@ -73,11 +75,37 @@ function getDataTileHandler() {
         );
       } else if (item.sourceType === "xyz") {
         if (item.cacheSourceID !== undefined) {
-          const cacheItemLock = seed.tileLocks.datas[item.cacheSourceID];
           const cacheItem = seed.datas[item.cacheSourceID];
+          const filePath = `${item.source}/${z}/${x}${
+            req.query.scheme === "tms" ? (1 << z) - 1 - y : y
+          }.${item.tileJSON.format}`; // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
 
           try {
-            if (cacheItemLock[`${z}/${x}/${y}`] === undefined) {
+            if ((await isXYZTileDataAvailable(filePath)) === false) {
+              const url = cacheItem.url.replaceAll("{z}/{x}/{y}", tileName);
+
+              printLog(
+                "info",
+                `Getting data "${id}" - Tile "${tileName}" - From "${url}"...`
+              );
+
+              /* Get data */
+              dataTile = await getXYZTileFromURL(url, 60000);
+
+              /* Cache */
+              cacheXYZTileDataFile(
+                item.source,
+                tileName,
+                item.tileJSON.format,
+                dataTile.data,
+                dataTile.etag
+              ).catch((error) =>
+                printLog(
+                  "error",
+                  `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}...`
+                )
+              );
+            } else {
               dataTile = await getXYZTile(
                 item.source,
                 z,
@@ -87,37 +115,7 @@ function getDataTileHandler() {
               );
             }
           } catch (error) {
-            if (error.message === "Tile does not exist") {
-              const url = cacheItem.url.replaceAll(
-                "{z}/{x}/{y}",
-                `${z}/${x}/${y}`
-              );
-
-              printLog(
-                "info",
-                `Getting data "${id}" - Tile "${z}/${x}/${y}" - From "${url}"...`
-              );
-
-              /* Get data */
-              dataTile = await getXYZTileFromURL(url, 60000);
-
-              /* Cache */
-              cacheXYZTileDataFile(
-                item.source,
-                `${z}/${x}/${y}`,
-                item.tileJSON.format,
-                dataTile.data,
-                cacheItemLock,
-                dataTile.etag
-              ).catch((error) =>
-                printLog(
-                  "error",
-                  `Failed to cache data "${id}" - Tile "${z}/${x}/${y}" - From "${url}": ${error}...`
-                )
-              );
-            } else {
-              throw error;
-            }
+            throw error;
           }
         } else {
           dataTile = await getXYZTile(
@@ -125,7 +123,7 @@ function getDataTileHandler() {
             z,
             x,
             req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
-            req.params.format
+            item.tileJSON.format
           );
         }
       }
@@ -146,7 +144,7 @@ function getDataTileHandler() {
     } catch (error) {
       printLog(
         "error",
-        `Failed to get data "${id}" - Tile "${z}/${x}/${y}": ${error}`
+        `Failed to get data "${id}" - Tile "${tileName}": ${error}`
       );
 
       if (error.message === "Tile does not exist") {

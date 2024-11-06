@@ -402,16 +402,6 @@ async function loadSeedFile(dataDir) {
 
   /* Read seed.json file */
   seed = JSON.parse(await fsPromise.readFile(seedFilePath, "utf8"));
-
-  /* Fix object */
-  seed.tileLocks = {
-    datas: Object.fromEntries(Object.keys(seed.datas).map((id) => [id, {}])),
-    styles: Object.fromEntries(Object.keys(seed.styles).map((id) => [id, {}])),
-    fonts: Object.fromEntries(Object.keys(seed.fonts).map((id) => [id, {}])),
-    sprites: Object.fromEntries(
-      Object.keys(seed.sprites).map((id) => [id, {}])
-    ),
-  };
 }
 
 /**
