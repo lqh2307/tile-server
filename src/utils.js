@@ -1282,7 +1282,7 @@ export async function openFileInExclusive(filePath, timeout) {
       return await fsPromise.open(filePath, "r+");
     } catch (error) {
       if (error.code === "ENOENT") {
-        await fsPromise.writeFile(filePath, JSON.stringify({}), "utf8");
+        await fsPromise.writeFile(filePath, "{}", "utf8");
       } else if (error.code === "EACCES" || error.code === "EBUSY") {
         if (Date.now() - startTime > timeout) {
           throw new Error(

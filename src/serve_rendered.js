@@ -799,7 +799,7 @@ export const serve_rendered = {
             }
 
             /* Clone style JSON */
-            const stringJSON = JSON.stringify(item.styleJSON);
+            const stringJSON = JSON.stringify(item.styleJSON, null, 2);
             const styleJSON = JSON.parse(stringJSON);
 
             await Promise.all(
