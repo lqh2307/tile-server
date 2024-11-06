@@ -670,7 +670,7 @@ export const serve_rendered = {
                     if (error.message === "Tile does not exist") {
                       const url = cacheItem.url.replaceAll(
                         "{z}/{x}/{y}",
-                        `${z}/${x}/${scheme === "tms" ? (1 << z) - 1 - y : y}`
+                        `${z}/${x}/${y}`
                       );
 
                       printLog(
