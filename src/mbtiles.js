@@ -1,7 +1,7 @@
 "use strict";
 
 import {
-  getLayerNamesFromPBFTileData,
+  getLayerNamesFromPBFTileBuffer,
   downloadFileWithStream,
   detectFormatAndHeaders,
   removeFilesOrFolder,
@@ -127,7 +127,9 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
         const promises = rows.map((row) =>
           limitConcurrencyRead(async () => {
             try {
-              const layers = await getLayerNamesFromPBFTileData(row.tile_data);
+              const layers = await getLayerNamesFromPBFTileBuffer(
+                row.tile_data
+              );
 
               layers.forEach((layer) => layerNames.add(layer));
             } catch (error) {
