@@ -11,10 +11,10 @@ import {
   getLayerNamesFromPBFTileBuffer,
   detectFormatAndHeaders,
   getTileBoundsFromBBox,
-  openFileInExclusive,
   removeFilesOrFolder,
   createNewTileJSON,
   closeFileWithLock,
+  openFileWithLock,
   getBBoxFromTiles,
   calculateMD5,
   findFolders,
@@ -319,7 +319,7 @@ export async function createXYZMD5File(outputFolder, hashs) {
  */
 export async function updateXYZMD5File(sourcePath, key, value, timeout) {
   // Open file md5.json file (or create if not exist) with exclusive lock
-  const { fileHandle, lockFileHandle } = await openFileInExclusive(
+  const { fileHandle, lockFileHandle } = await openFileWithLock(
     `${sourcePath}/md5.json`,
     timeout
   );
