@@ -1289,9 +1289,13 @@ export async function openFileWithLock(filePath, timeout) {
           lockFileHandle,
         };
       } catch (error) {
-        await lockFileHandle.close();
+        if (error.code === "ENOENT") {
+          await fsPromise.writeFile(filePath, "{}", "utf8")
+        } else {
+          await lockFileHandle.close();
 
-        throw error;
+          throw error;
+        }
       }
     } catch (error) {
       if (error.code === "EEXIST") {
