@@ -1279,19 +1279,20 @@ export async function openFileWithLock(filePath, timeout) {
 
   while (Date.now() - startTime <= timeout) {
     try {
-      const lockFileHandle = await fsPromise.open(`${filePath}.lock`, "wx");
+      const lockFileID = fs.openSync(`${filePath}.lock`, "wx");
       try {
-        const fileHandle = await fsPromise.open(filePath, "r+");
+        const fileID = fs.openSync(filePath, "r+");
 
         return {
-          fileHandle,
-          lockFileHandle,
+          fileID,
+          lockFileID,
         };
       } catch (error) {
         if (error.code === "ENOENT") {
           await fsPromise.writeFile(filePath, "{}", "utf8")
         } else {
-          await lockFileHandle.close();
+          fs.closeSync(fd);
+
           await removeFilesOrFolder(`${filePath}.lock`);
 
           throw error;
@@ -1313,12 +1314,12 @@ export async function openFileWithLock(filePath, timeout) {
 
 /**
  * Close both the main file and the lock file
- * @param {fsPromise.FileHandle} fileHandle Handle to the main file
- * @param {fsPromise.FileHandle} lockFileHandle Handle to the lock file
+ * @param {number} fileID Main file ID
+ * @param {number} lockFileID Lock file ID
  */
-export async function closeFileWithLock(fileHandle, lockFileHandle) {
-  await fileHandle.close();
+export async function closeFileWithLock(fileID, lockFileID) {
+  fs.closeSync(fileID);
 
-  await lockFileHandle.close();
+  fs.closeSync(lockFileID);
   await removeFilesOrFolder(lockFileHandle.path);
 }
