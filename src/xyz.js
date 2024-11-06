@@ -344,6 +344,8 @@ export async function updateXYZMetadataFileWithLock(sourcePath, metadataAdds, ti
       await lockFileHandle.close();
 
       await removeFilesOrFolder(`${sourcePath}/metadata.json.lock`);
+
+      return;
     } catch (error) {
       if (error.code === "EEXIST") {
         await delay(50);
@@ -429,6 +431,8 @@ export async function updateXYZMD5FileWithLock(sourcePath, hashAdds, timeout) {
       await lockFileHandle.close();
 
       await removeFilesOrFolder(`${sourcePath}/md5.json.lock`);
+
+      return;
     } catch (error) {
       if (error.code === "EEXIST") {
         await delay(50);
