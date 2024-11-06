@@ -1279,7 +1279,7 @@ export async function openFileInExclusive(filePath, timeout) {
 
   while (true) {
     try {
-      return await fsPromise.open(filePath, "rx+");
+      return await fsPromise.open(filePath, "r+");
     } catch (error) {
       if (error.code === "ENOENT") {
         await fsPromise.writeFile(filePath, JSON.stringify({}), "utf8");
