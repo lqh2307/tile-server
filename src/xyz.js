@@ -7,7 +7,6 @@ import pLimit from "p-limit";
 import path from "node:path";
 import http from "node:http";
 import axios from "axios";
-import fs from "node:fs";
 import {
   getLayerNamesFromPBFTileBuffer,
   detectFormatAndHeaders,
@@ -333,7 +332,11 @@ export async function updateXYZMD5File(outputFolder, key, value) {
 
     hashs[key] = value;
 
-    await fsPromise.writeFile(JSON.stringify(hashs, null, 2), "utf8");
+    await fsPromise.writeFile(
+      `${outputFolder}/md5.json`,
+      JSON.stringify(hashs, null, 2),
+      "utf8"
+    );
   } catch (error) {
     if (error.code === "ENOENT") {
       await fsPromise.mkdir(outputFolder, {
@@ -372,23 +375,26 @@ export async function updateXYZMD5FileWithLock(
   timeout
 ) {
   const startTime = Date.now();
-  let lockFileID;
+  let lockFileHandle;
 
   while (Date.now() - startTime <= timeout) {
     try {
-      lockFileID = fs.openSync(`${sourcePath}/md5.json.lock`, "wx");
+      lockFileHandle = await fsPromise.open(
+        `${sourcePath}/md5.json.lock`,
+        "wx"
+      );
 
       await updateXYZMD5File(sourcePath, key, value);
 
-      fs.closeSync(lockFileID);
+      await lockFileHandle.close();
 
       await removeFilesOrFolder(`${sourcePath}/md5.json.lock`);
     } catch (error) {
       if (error.code === "EEXIST") {
         await delay(100);
       } else {
-        if (lockFileID !== undefined) {
-          fs.closeSync(lockFileID);
+        if (lockFileHandle !== undefined) {
+          await lockFileHandle.close();
 
           await removeFilesOrFolder(`${sourcePath}/md5.json.lock`);
         } else {
@@ -400,7 +406,7 @@ export async function updateXYZMD5FileWithLock(
 
   printLog(
     "error",
-    `Failed to update md5 for tile data file "${key}": Failed to acquire exclusive access to file ${filePath}: Timeout exceeded`
+    `Failed to update md5 for tile data file "${key}": Timeout to access ${sourcePath}/md5.json.lock file`
   );
 }
 
