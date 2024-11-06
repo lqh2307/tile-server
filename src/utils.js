@@ -1275,12 +1275,11 @@ export async function validateJSON(schema, filePath) {
  * @returns {Promise<object>}
  */
 export async function openFileWithLock(filePath, timeout) {
-  const lockFilePath = `${filePath}.lock`;
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
     try {
-      const lockFileHandle = await fsPromise.open(lockFilePath, "wx");
+      const lockFileHandle = await fsPromise.open(`${filePath}.lock`, "wx");
       try {
         const fileHandle = await fsPromise.open(filePath, "r+");
 
@@ -1293,6 +1292,7 @@ export async function openFileWithLock(filePath, timeout) {
           await fsPromise.writeFile(filePath, "{}", "utf8");
         } else {
           await lockFileHandle.close();
+          await removeFilesOrFolder(`${filePath}.lock`);
 
           throw error;
         }
@@ -1318,6 +1318,7 @@ export async function openFileWithLock(filePath, timeout) {
  */
 export async function closeFileWithLock(fileHandle, lockFileHandle) {
   await fileHandle.close();
+
   await lockFileHandle.close();
   await removeFilesOrFolder(lockFileHandle.path);
 }
