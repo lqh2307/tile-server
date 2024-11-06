@@ -1272,27 +1272,28 @@ export async function validateJSON(schema, filePath) {
  * Open a file in exclusive mode with a timeout
  * @param {string} filePath Path to the file
  * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<fsPromise.FileHandle>}
+ * @returns {Promise<object>}
  */
-export async function openFileInExclusive(filePath, timeout) {
+export async function openFileWithLock(filePath, timeout) {
+  const lockFilePath = `${filePath}.lock`;
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
     try {
-      return await fsPromise.open(filePath, "r+");
+      const lockFileHandle = await fsPromise.open(lockFilePath, "wx");
+      try {
+        const fileHandle = await fsPromise.open(filePath, "r+");
+
+        return {
+          fileHandle,
+          lockFileHandle,
+        };
+      } catch (error) {
+        await lockFileHandle.close();
+        throw error;
+      }
     } catch (error) {
-      if (error.code === "ENOENT") {
-        try {
-          await fsPromise.writeFile(filePath, "{}", {
-            flag: "wx",
-            encoding: "utf8",
-          });
-        } catch (error) {
-          if (error.code !== "EEXIST") {
-            throw error;
-          }
-        }
-      } else if (error.code === "EACCES" || error.code === "EBUSY") {
+      if (error.code === "EEXIST") {
         await delay(100);
       } else {
         throw error;
@@ -1301,6 +1302,17 @@ export async function openFileInExclusive(filePath, timeout) {
   }
 
   throw new Error(
-    `Failed to acquire exclusive access file ${filePath}: Timeout exceeded`
+    `Failed to acquire exclusive access to file ${filePath}: Timeout exceeded`
   );
+}
+
+/**
+ * Close both the main file and the lock file
+ * @param {fsPromise.FileHandle} fileHandle Handle to the main file
+ * @param {fsPromise.FileHandle} lockFileHandle Handle to the lock file
+ */
+export async function closeFileWithLock(fileHandle, lockFileHandle) {
+  await fileHandle.close();
+  await lockFileHandle.close();
+  await removeFilesOrFolder(lockFileHandle.path);
 }

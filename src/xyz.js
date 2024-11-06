@@ -14,6 +14,7 @@ import {
   openFileInExclusive,
   removeFilesOrFolder,
   createNewTileJSON,
+  closeFileWithLock,
   getBBoxFromTiles,
   calculateMD5,
   findFolders,
@@ -318,22 +319,22 @@ export async function createXYZMD5File(outputFolder, hashs) {
  */
 export async function updateXYZMD5File(sourcePath, key, value, timeout) {
   // Open file md5.json file (or create if not exist) with exclusive lock
-  const md5FileHandler = await openFileInExclusive(
+  const { fileHandle, lockFileHandle } = await openFileInExclusive(
     `${sourcePath}/md5.json`,
     timeout
   );
 
   try {
-    const hashs = JSON.parse(await md5FileHandler.readFile("utf8"));
+    const hashs = JSON.parse(await fileHandle.readFile("utf8"));
 
     // Update md5
     hashs[key] = value;
 
     // Write the new content back to the file
-    await md5FileHandler.writeFile(JSON.stringify(hashs, null, 2), "utf8");
+    await fileHandle.writeFile(JSON.stringify(hashs, null, 2), "utf8");
   } finally {
     // Close the file to release the exclusive lock
-    await md5FileHandler.close();
+    await closeFileWithLock(fileHandle, lockFileHandle);
   }
 }
 
