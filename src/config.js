@@ -315,15 +315,7 @@ async function loadSeedFile(dataDir) {
                 type: "integer",
               },
             },
-            required: [
-              "name",
-              "description",
-              "url",
-              "format",
-              "bounds",
-              "center",
-              "zooms",
-            ],
+            required: ["url"],
             additionalProperties: true,
           },
         },
@@ -435,7 +427,7 @@ async function loadCleanUpFile(dataDir) {
     {
       type: "object",
       properties: {
-        restartServerAfterSeed: {
+        restartServerAfterCleanUp: {
           type: "boolean",
         },
         styles: {
@@ -504,7 +496,6 @@ async function loadCleanUpFile(dataDir) {
                 additionalProperties: true,
               },
             },
-            required: ["bounds", "zooms"],
             additionalProperties: true,
           },
         },
@@ -564,7 +555,7 @@ async function loadCleanUpFile(dataDir) {
         },
       },
       required: [
-        "restartServerAfterSeed",
+        "restartServerAfterCleanUp",
         "styles",
         "datas",
         "sprites",
