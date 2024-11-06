@@ -102,7 +102,7 @@ function getDataTileHandler() {
               ).catch((error) =>
                 printLog(
                   "error",
-                  `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}...`
+                  `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}`
                 )
               );
             } else {
