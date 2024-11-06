@@ -142,7 +142,7 @@ export async function getXYZLayersFromTiles(sourcePath) {
 export async function getXYZFormatFromTiles(sourcePath) {
   const zFolders = await findFolders(sourcePath, /^\d+$/, false);
 
-  loop: for (const zFolder of zFolders) {
+  for (const zFolder of zFolders) {
     const xFolders = await findFolders(
       `${sourcePath}/${zFolder}`,
       /^\d+$/,
@@ -157,9 +157,7 @@ export async function getXYZFormatFromTiles(sourcePath) {
       );
 
       if (yFiles.length > 0) {
-        metadata.format = yFiles[0].split(".")[1];
-
-        break loop;
+        return yFiles[0].split(".")[1];
       }
     }
   }
@@ -207,7 +205,7 @@ export async function getXYZBBoxFromTiles(sourcePath) {
   }
 
   if (boundsArr.length > 0) {
-    metadata.bounds = [
+    return [
       Math.min(...boundsArr.map((bbox) => bbox[0])),
       Math.min(...boundsArr.map((bbox) => bbox[1])),
       Math.max(...boundsArr.map((bbox) => bbox[2])),
@@ -246,7 +244,7 @@ export async function getXYZInfos(sourcePath) {
     metadata = JSON.parse(
       await fsPromise.readFile(`${sourcePath}/metadata.json`, "utf8")
     );
-  } catch (error) {}
+  } catch (error) { }
 
   /* Try get min zoom */
   if (metadata.minzoom === undefined) {
@@ -283,38 +281,87 @@ export async function getXYZInfos(sourcePath) {
 }
 
 /**
- * Create XYZ metadata.json file
- * @param {string} outputFolder Folder path to store metadata.json file
- * @param {Object<string,string>} metadatas Metadata object
+ * Update XYZ metadata.json file
+ * @param {string} outputFolder Folder path to metadata.json file
+ * @param {Object<string,string>} metadataAdds Metadata object
  * @returns {Promise<void>}
  */
-export async function createXYZMetadataFile(outputFolder, metadatas) {
-  await fsPromise.mkdir(outputFolder, {
-    recursive: true,
-  });
+export async function updateXYZMetadataFile(outputFolder, metadataAdds) {
+  try {
+    const metadatas = JSON.parse(
+      await fsPromise.readFile(`${outputFolder}/metadata.json`, "utf8")
+    );
 
-  await fsPromise.writeFile(
-    `${outputFolder}/metadata.json`,
-    JSON.stringify(metadatas, null, 2),
-    "utf8"
-  );
+    await fsPromise.writeFile(
+      `${outputFolder}/metadata.json`,
+      JSON.stringify(
+        {
+          ...metadatas,
+          ...metadataAdds,
+        },
+        null,
+        2
+      ),
+      "utf8"
+    );
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      await fsPromise.mkdir(outputFolder, {
+        recursive: true,
+      });
+
+      await fsPromise.writeFile(
+        `${outputFolder}/metadata.json`,
+        JSON.stringify(metadataAdds, null, 2),
+        "utf8"
+      );
+    } else {
+      throw error;
+    }
+  }
 }
 
 /**
- * Create XYZ md5.json file
- * @param {string} outputFolder Folder path to store md5.json file
- * @param {Object<string,string>} hashs Hash data object
+ * Update XYZ metadata.json file with lock
+ * @param {string} sourcePath Folder path to metadata md5.json file
+ * @param {Object<string,string>} metadataAdds Metadata object
+ * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function createXYZMD5File(outputFolder, hashs) {
-  await fsPromise.mkdir(outputFolder, {
-    recursive: true,
-  });
+export async function updateXYZMetadataFileWithLock(sourcePath, metadataAdds, timeout) {
+  const startTime = Date.now();
+  let lockFileHandle;
 
-  await fsPromise.writeFile(
-    `${outputFolder}/md5.json`,
-    JSON.stringify(hashs, null, 2),
-    "utf8"
+  while (Date.now() - startTime <= timeout) {
+    try {
+      lockFileHandle = await fsPromise.open(
+        `${sourcePath}/metadata.json.lock`,
+        "wx"
+      );
+
+      await updateXYZMetadataFile(sourcePath, metadataAdds);
+
+      await lockFileHandle.close();
+
+      await removeFilesOrFolder(`${sourcePath}/metadata.json.lock`);
+    } catch (error) {
+      if (error.code === "EEXIST") {
+        await delay(50);
+      } else {
+        if (lockFileHandle !== undefined) {
+          await lockFileHandle.close();
+
+          await removeFilesOrFolder(`${sourcePath}/metadata.json.lock`);
+        } else {
+          throw error;
+        }
+      }
+    }
+  }
+
+  printLog(
+    "error",
+    `Failed to update metadata: Timeout to access ${sourcePath}/metadata.json.lock file`
   );
 }
 
@@ -399,7 +446,7 @@ export async function updateXYZMD5FileWithLock(sourcePath, hashAdds, timeout) {
 
   printLog(
     "error",
-    `Failed to update md5 for tile data file "${key}": Timeout to access ${sourcePath}/md5.json.lock file`
+    `Failed to update md5: Timeout to access ${sourcePath}/md5.json.lock file`
   );
 }
 

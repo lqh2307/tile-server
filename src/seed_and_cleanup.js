@@ -6,9 +6,9 @@ import pLimit from "p-limit";
 import fs from "node:fs";
 import os from "os";
 import {
+  updateXYZMetadataFileWithLock,
   updateXYZMD5FileWithLock,
   downloadXYZTileDataFile,
-  createXYZMetadataFile,
   removeXYZTileDataFile,
 } from "./xyz.js";
 import {
@@ -200,23 +200,27 @@ export async function seedXYZTileDataFiles(
 
   await Promise.all(tilePromises);
 
-  // Create metadata.json file
-  await createXYZMetadataFile(outputFolder, {
-    name: name,
-    description: description,
-    version: "1.0.0",
-    format: format,
-    bounds: bounds,
-    center: center,
-    type: "overlay",
-    minzoom: Math.min(...zooms),
-    maxzoom: Math.max(...zooms),
-    vector_layers: vector_layers,
-    tilestats: tilestats,
-  });
+  // Update metadata.json file
+  await updateXYZMetadataFileWithLock(
+    outputFolder,
+    {
+      name: name,
+      description: description,
+      version: "1.0.0",
+      format: format,
+      bounds: bounds,
+      center: center,
+      type: "overlay",
+      minzoom: Math.min(...zooms),
+      maxzoom: Math.max(...zooms),
+      vector_layers: vector_layers,
+      tilestats: tilestats,
+    },
+    300000,
+  );
 
   // Update md5.json file
-  await updateXYZMD5FileWithLock(outputFolder, hashs);
+  await updateXYZMD5FileWithLock(outputFolder, hashs, 300000);
 
   // Remove folders if empty
   await removeEmptyFolders(outputFolder);
@@ -322,7 +326,7 @@ export async function cleanXYZTileDataFiles(
   await Promise.all(tilePromises);
 
   // Update md5.json file
-  await updateXYZMD5FileWithLock(outputFolder, hashs);
+  await updateXYZMD5FileWithLock(outputFolder, hashs, 300000);
 
   // Remove parent folder if empty
   await removeFilesOrFolder(outputFolder);
@@ -392,9 +396,9 @@ async function startTask() {
             seedData.datas[id].concurrency,
             seedData.datas[id].maxTry,
             cleanUpData.datas[id].cleanUpBefore?.time ||
-              cleanUpData.datas[id].cleanUpBefore?.day ||
-              seedData.datas[id].refreshBefore?.time ||
-              seedData.datas[id].refreshBefore?.day
+            cleanUpData.datas[id].cleanUpBefore?.day ||
+            seedData.datas[id].refreshBefore?.time ||
+            seedData.datas[id].refreshBefore?.day
           );
         } catch (error) {
           printLog(
@@ -440,8 +444,8 @@ async function startTask() {
             seedData.datas[id].maxTry,
             seedData.datas[id].timeout,
             seedData.datas[id].refreshBefore?.time ||
-              seedData.datas[id].refreshBefore?.day ||
-              seedData.datas[id].refreshBefore?.md5
+            seedData.datas[id].refreshBefore?.day ||
+            seedData.datas[id].refreshBefore?.md5
           );
         } catch (error) {
           printLog(
