@@ -19,6 +19,7 @@ import {
   calculateMD5,
   findFolders,
   findFiles,
+  printLog,
   getData,
 } from "./utils.js";
 
