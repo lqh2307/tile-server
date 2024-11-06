@@ -1290,6 +1290,7 @@ export async function openFileWithLock(filePath, timeout) {
         };
       } catch (error) {
         await lockFileHandle.close();
+
         throw error;
       }
     } catch (error) {
