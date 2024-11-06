@@ -378,6 +378,10 @@ export async function updateXYZMD5FileWithLock(
       lockFileID = fs.openSync(`${sourcePath}/md5.json.lock`, "wx");
 
       await updateXYZMD5File(sourcePath, key, value);
+
+      fs.closeSync(lockFileID);
+
+      await removeFilesOrFolder(`${sourcePath}/md5.json.lock`);
     } catch (error) {
       if (error.code === "EEXIST") {
         await delay(100);
