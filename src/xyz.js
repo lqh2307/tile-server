@@ -320,21 +320,25 @@ export async function createXYZMD5File(outputFolder, hashs) {
 /**
  * Update XYZ md5.json file
  * @param {string} outputFolder Folder path to store md5.json file
- * @param {string} key
- * @param {string} value
+ * @param {Object<string,string>} hashAdds Hash data object
  * @returns {Promise<void>}
  */
-export async function updateXYZMD5File(outputFolder, key, value) {
+export async function updateXYZMD5File(outputFolder, hashAdds) {
   try {
     const hashs = JSON.parse(
       await fsPromise.readFile(`${outputFolder}/md5.json`, "utf8")
     );
 
-    hashs[key] = value;
-
     await fsPromise.writeFile(
       `${outputFolder}/md5.json`,
-      JSON.stringify(hashs, null, 2),
+      JSON.stringify(
+        {
+          ...hashs,
+          ...hashAdds,
+        },
+        null,
+        2
+      ),
       "utf8"
     );
   } catch (error) {
@@ -345,13 +349,7 @@ export async function updateXYZMD5File(outputFolder, key, value) {
 
       await fsPromise.writeFile(
         `${outputFolder}/md5.json`,
-        JSON.stringify(
-          {
-            [key]: value,
-          },
-          null,
-          2
-        ),
+        JSON.stringify(hashAdds, null, 2),
         "utf8"
       );
     } else {
@@ -363,17 +361,11 @@ export async function updateXYZMD5File(outputFolder, key, value) {
 /**
  * Update XYZ md5.json file with lock
  * @param {string} sourcePath Folder path to store md5.json file
- * @param {string} key
- * @param {string} value
+ * @param {Object<string,string>} hashAdds Hash data object
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function updateXYZMD5FileWithLock(
-  sourcePath,
-  key,
-  value,
-  timeout
-) {
+export async function updateXYZMD5FileWithLock(sourcePath, hashAdds, timeout) {
   const startTime = Date.now();
   let lockFileHandle;
 
@@ -384,14 +376,14 @@ export async function updateXYZMD5FileWithLock(
         "wx"
       );
 
-      await updateXYZMD5File(sourcePath, key, value);
+      await updateXYZMD5File(sourcePath, hashAdds);
 
       await lockFileHandle.close();
 
       await removeFilesOrFolder(`${sourcePath}/md5.json.lock`);
     } catch (error) {
       if (error.code === "EEXIST") {
-        await delay(100);
+        await delay(50);
       } else {
         if (lockFileHandle !== undefined) {
           await lockFileHandle.close();
@@ -539,8 +531,9 @@ export async function cacheXYZTileDataFile(
 
       updateXYZMD5FileWithLock(
         sourcePath,
-        tileName,
-        md5 === undefined ? calculateMD5(data) : md5,
+        {
+          [tileName]: md5 === undefined ? calculateMD5(data) : md5,
+        },
         300000 // 5 mins
       );
     } catch (error) {
