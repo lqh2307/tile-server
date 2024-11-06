@@ -13,8 +13,6 @@ import {
   getTileBoundsFromBBox,
   removeFilesOrFolder,
   createNewTileJSON,
-  closeFileWithLock,
-  openFileWithLock,
   getBBoxFromTiles,
   calculateMD5,
   findFolders,
@@ -289,6 +287,10 @@ export async function getXYZInfos(sourcePath) {
  * @returns {Promise<void>}
  */
 export async function createXYZMetadataFile(outputFolder, metadatas) {
+  await fsPromise.mkdir(outputFolder, {
+    recursive: true,
+  });
+
   await fsPromise.writeFile(
     `${outputFolder}/metadata.json`,
     JSON.stringify(metadatas, null, 2),
@@ -303,6 +305,10 @@ export async function createXYZMetadataFile(outputFolder, metadatas) {
  * @returns {Promise<void>}
  */
 export async function createXYZMD5File(outputFolder, hashs) {
+  await fsPromise.mkdir(outputFolder, {
+    recursive: true,
+  });
+
   await fsPromise.writeFile(
     `${outputFolder}/md5.json`,
     JSON.stringify(hashs, null, 2),
@@ -319,31 +325,50 @@ export async function createXYZMD5File(outputFolder, hashs) {
  * @returns {Promise<void>}
  */
 export async function updateXYZMD5File(sourcePath, key, value, timeout) {
-  try {
-    // Open file md5.json file (or create if not exist) with exclusive lock
-    const { fileHandle, lockFileHandle } = await openFileWithLock(
-      `${sourcePath}/md5.json`,
-      timeout
-    );
+  const startTime = Date.now();
+  let lockFileID;
 
+  while (Date.now() - startTime <= timeout) {
     try {
-      const hashs = JSON.parse(await fileHandle.readFile("utf8"));
+      lockFileID = fs.openSync(`${sourcePath}/md5.json.lock`, "wx");
 
-      // Update md5
-      hashs[key] = value;
+      try {
+        // Open md5.json file
+        const hashs = JSON.parse(
+          await fsPromise.readFile(`${sourcePath}/md5.json`, "utf8")
+        );
 
-      // Write the new content back to the file
-      await fileHandle.writeFile(JSON.stringify(hashs, null, 2), "utf8");
+        // Update md5
+        hashs[key] = value;
+
+        // Write the new content back to the md5.json file
+        await fsPromise.writeFile(JSON.stringify(hashs, null, 2), "utf8");
+      } catch (error) {
+        if (error.code === "ENOENT") {
+          await createXYZMD5File(sourcePath, {
+            [key]: value,
+          });
+        } else {
+          throw error;
+        }
+      }
+    } catch (error) {
+      if (error.code === "EEXIST") {
+        await delay(100);
+      } else {
+        throw error;
+      }
     } finally {
-      // Close the file to release the exclusive lock
-      await closeFileWithLock(fileHandle, lockFileHandle);
+      fs.closeSync(lockFileID);
+
+      await removeFilesOrFolder(`${sourcePath}/md5.json.lock`);
     }
-  } catch (error) {
-    printLog(
-      "error",
-      `Failed to update md5 for tile data file "${key}": ${error}`
-    );
   }
+
+  printLog(
+    "error",
+    `Failed to update md5 for tile data file "${key}": Failed to acquire exclusive access to file ${filePath}: Timeout exceeded`
+  );
 }
 
 /**
