@@ -90,7 +90,7 @@ function getDataTileHandler() {
             if (error.message === "Tile does not exist") {
               const url = cacheItem.url.replaceAll(
                 "{z}/{x}/{y}",
-                `${z}/${x}/${req.query.scheme === "tms" ? (1 << z) - 1 - y : y}`
+                `${z}/${x}/${y}`
               );
 
               printLog(
@@ -104,9 +104,7 @@ function getDataTileHandler() {
               /* Cache */
               cacheXYZTileDataFile(
                 item.source,
-                z,
-                x,
-                y,
+                `${z}/${x}/${y}`,
                 item.tileJSON.format,
                 dataTile.data,
                 cacheItemLock,

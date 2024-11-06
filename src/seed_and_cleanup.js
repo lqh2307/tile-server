@@ -8,6 +8,7 @@ import os from "os";
 import {
   downloadXYZTileDataFile,
   createXYZMetadataFile,
+  removeXYZTileDataFile,
   createXYZMD5File,
 } from "./xyz.js";
 import {
@@ -97,7 +98,7 @@ export async function seedXYZTileDataFiles(
 
     refreshTimestamp = now.setDate(now.getDate() - refreshBefore);
   } else if (typeof refreshBefore === "boolean") {
-    refreshBefore = true;
+    refreshTimestamp = true;
   }
 
   if (refreshTimestamp !== undefined) {
@@ -144,38 +145,42 @@ export async function seedXYZTileDataFiles(
       for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
         tilePromises.push(
           limitConcurrencyDownload(async () => {
-            const filePath = `${outputFolder}/${z}/${x}/${y}.${format}`;
-            const url = tileURL.replaceAll("{z}/{x}/{y}", `${z}/${x}/${y}`);
+            const tileName = `${z}/${x}/${y}`;
+            const filePath = `${outputFolder}/${tileName}.${format}`;
+            const url = tileURL.replaceAll("{z}/{x}/{y}", tileName);
 
             try {
               const stats = await fsPromise.stat(filePath);
 
               if (refreshTimestamp !== undefined) {
                 if (refreshTimestamp === true) {
-                  const response = await getData(
-                    tileURL.replaceAll("{z}/{x}/{y}", `md5/${z}/${x}/${y}`),
-                    timeout
+                  const md5URL = tileURL.replaceAll(
+                    "{z}/{x}/{y}",
+                    `md5/${tileName}`
                   );
 
-                  if (response.headers["Etag"] !== hashs[`${z}/${x}/${y}`]) {
+                  const response = await getData(md5URL, timeout);
+
+                  if (response.headers["Etag"] !== hashs[tileName]) {
                     await downloadXYZTileDataFile(
-                      filePath,
                       url,
-                      z,
-                      x,
-                      y,
+                      outputFolder,
+                      tileName,
+                      format,
                       maxTry,
                       timeout,
                       hashs
                     );
                   }
-                } else if (!stats.ctimeMs || stats.ctimeMs < refreshTimestamp) {
+                } else if (
+                  stats.ctimeMs === undefined ||
+                  stats.ctimeMs < refreshTimestamp
+                ) {
                   await downloadXYZTileDataFile(
-                    filePath,
                     url,
-                    z,
-                    x,
-                    y,
+                    outputFolder,
+                    tileName,
+                    format,
                     maxTry,
                     timeout,
                     hashs
@@ -184,11 +189,10 @@ export async function seedXYZTileDataFiles(
               }
             } catch (error) {
               await downloadXYZTileDataFile(
-                filePath,
                 url,
-                z,
-                x,
-                y,
+                outputFolder,
+                tileName,
+                format,
                 maxTry,
                 timeout,
                 hashs
@@ -230,6 +234,8 @@ export async function seedXYZTileDataFiles(
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {Array<number>} bounds Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {number} concurrency Concurrency download
+ * @param {number} maxTry Number of retry attempts on failure
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
@@ -241,6 +247,8 @@ export async function cleanXYZTileDataFiles(
     21, 22,
   ],
   bounds = [-180, -85.051129, 180, 85.051129],
+  concurrency = os.cpus().length,
+  maxTry = 5,
   cleanUpBefore
 ) {
   let cleanUpTimestamp;
@@ -280,44 +288,45 @@ export async function cleanXYZTileDataFiles(
 
   // Remove files
   const tilesSummary = getTileBoundsFromBBox(bounds, zooms, "xyz");
+  const limitConcurrencyDownload = pLimit(concurrency);
   const tilePromises = [];
 
   for (const z in tilesSummary) {
     for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
       for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-        tilePromises.push(async () => {
-          const filePath = `${outputFolder}/${z}/${x}/${y}.${format}`;
+        tilePromises.push(
+          limitConcurrencyDownload(async () => {
+            const tileName = `${z}/${x}/${y}`;
+            const filePath = `${outputFolder}/${tileName}.${format}`;
 
-          try {
             try {
               const stats = await fsPromise.stat(filePath);
 
               if (cleanUpTimestamp !== undefined) {
-                if (!stats.ctimeMs || stats.ctimeMs < cleanUpTimestamp) {
-                  printLog(
-                    "info",
-                    `Removing tile data file "${z}/${x}/${y}"...`
+                if (
+                  stats.ctimeMs === undefined ||
+                  stats.ctimeMs < cleanUpTimestamp
+                ) {
+                  await removeXYZTileDataFile(
+                    outputFolder,
+                    tileName,
+                    format,
+                    maxTry,
+                    hashs
                   );
-
-                  await removeFilesOrFolder(filePath);
-
-                  delete hashs[`${z}/${x}/${y}`];
                 }
               }
             } catch (error) {
-              printLog("info", `Removing tile data file "${z}/${x}/${y}"...`);
-
-              await removeFilesOrFolder(filePath);
-
-              delete hashs[`${z}/${x}/${y}`];
+              await removeXYZTileDataFile(
+                outputFolder,
+                tileName,
+                format,
+                maxTry,
+                hashs
+              );
             }
-          } catch (error) {
-            printLog(
-              "error",
-              `Failed to remove tile data file "${z}/${x}/${y}": ${error}`
-            );
-          }
-        });
+          })
+        );
       }
     }
   }
@@ -392,6 +401,8 @@ async function startTask() {
             seedData.datas[id].format,
             cleanUpData.datas[id].zooms || seedData.datas[id].zooms,
             cleanUpData.datas[id].bounds || seedData.datas[id].bounds,
+            seedData.datas[id].concurrency,
+            seedData.datas[id].maxTry,
             cleanUpData.datas[id].cleanUpBefore?.time ||
               cleanUpData.datas[id].cleanUpBefore?.day ||
               seedData.datas[id].refreshBefore?.time ||
@@ -439,7 +450,10 @@ async function startTask() {
             seedData.datas[id].tilestats,
             seedData.datas[id].concurrency,
             seedData.datas[id].maxTry,
-            seedData.datas[id].timeout
+            seedData.datas[id].timeout,
+            seedData.datas[id].refreshBefore?.time ||
+              seedData.datas[id].refreshBefore?.day ||
+              seedData.datas[id].refreshBefore?.md5
           );
         } catch (error) {
           printLog(

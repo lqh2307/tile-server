@@ -11,6 +11,8 @@ import {
   getLayerNamesFromPBFTileBuffer,
   detectFormatAndHeaders,
   getTileBoundsFromBBox,
+  openFileInExclusive,
+  removeFilesOrFolder,
   createNewTileJSON,
   getBBoxFromTiles,
   calculateMD5,
@@ -287,7 +289,8 @@ export async function getXYZInfos(sourcePath) {
 export async function createXYZMetadataFile(outputFolder, metadatas) {
   await fsPromise.writeFile(
     `${outputFolder}/metadata.json`,
-    JSON.stringify(metadatas, null, 2)
+    JSON.stringify(metadatas, null, 2),
+    "utf8"
   );
 }
 
@@ -300,31 +303,40 @@ export async function createXYZMetadataFile(outputFolder, metadatas) {
 export async function createXYZMD5File(outputFolder, hashs) {
   await fsPromise.writeFile(
     `${outputFolder}/md5.json`,
-    JSON.stringify(hashs, null, 2)
+    JSON.stringify(hashs, null, 2),
+    "utf8"
   );
 }
 
 /**
  * Update XYZ md5.json file
- * @param {string} outputFolder Folder path to store md5.json file
+ * @param {string} sourcePath Folder path to store md5.json file
  * @param {string} key
  * @param {string} value
+ * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function updateXYZMD5File(outputFolder, key, value) {
-  // Read md5.json file if existed
-  const md5FilePath = `${outputFolder}/md5.json`;
-  let hashs = {};
+export async function updateXYZMD5File(sourcePath, key, value, timeout) {
+  // Open file md5.json file (or create if not exist) with exclusive lock
+  const md5FileHandler = await openFileInExclusive(
+    `${sourcePath}/md5.json`,
+    timeout
+  );
 
   try {
-    hashs = JSON.parse(await fsPromise.readFile(md5FilePath));
-  } catch (error) {}
+    await md5FileHandler.readFile("utf8");
 
-  // Update md5
-  hashs[key] = value;
+    const hashs = JSON.parse(await md5FileHandler.readFile("utf8"));
 
-  // Write to md5.json file
-  await fsPromise.writeFile(md5FilePath, JSON.stringify(hashs, null, 2));
+    // Update md5
+    hashs[key] = value;
+
+    // Write the new content back to the file
+    await md5FileHandler.writeFile(JSON.stringify(hashs, null, 2), "utf8");
+  } finally {
+    // Close the file to release the exclusive lock
+    await md5FileHandler.close();
+  }
 }
 
 /**
@@ -343,30 +355,30 @@ export async function createXYZTileDataFile(filePath, data) {
 
 /**
  * Download XYZ tile data file
- * @param {string} filePath
  * @param {string} url The URL to download the file from
- * @param {number} z
- * @param {number} x
- * @param {number} y
+ * @param {string} sourcePath
+ * @param {string} tileName
+ * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
  * @param {object} hashs
  * @returns {Promise<void>}
  */
 export async function downloadXYZTileDataFile(
-  filePath,
   url,
-  z,
-  x,
-  y,
+  sourcePath,
+  tileName,
+  format,
   maxTry,
   timeout,
   hashs
 ) {
+  const filePath = `${sourcePath}/${tileName}.${format}`;
+
   try {
     printLog(
       "info",
-      `Downloading tile data file "${z}/${x}/${y}" from "${url}"...`
+      `Downloading tile data file "${tileName}" from "${url}"...`
     );
 
     await retry(async () => {
@@ -377,7 +389,7 @@ export async function downloadXYZTileDataFile(
       await createXYZTileDataFile(filePath, response.data);
 
       // Store data md5 hash
-      hashs[`${z}/${x}/${y}`] =
+      hashs[tileName] =
         response.headers["Etag"] === undefined
           ? calculateMD5(response.data)
           : response.headers["Etag"];
@@ -385,7 +397,7 @@ export async function downloadXYZTileDataFile(
   } catch (error) {
     printLog(
       "info",
-      `Failed to download tile data file "${z}/${x}/${y}" from "${url}": ${error}`
+      `Failed to download tile data file "${tileName}" from "${url}": ${error}`
     );
 
     // Remove error tile data file
@@ -394,11 +406,43 @@ export async function downloadXYZTileDataFile(
 }
 
 /**
+ * Remove XYZ tile data file
+ * @param {string} sourcePath
+ * @param {string} tileName
+ * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {object} hashs
+ * @returns {Promise<void>}
+ */
+export async function removeXYZTileDataFile(
+  sourcePath,
+  tileName,
+  format,
+  maxTry,
+  hashs
+) {
+  const filePath = `${sourcePath}/${tileName}.${format}`;
+
+  try {
+    printLog("info", `Removing tile data file "${tileName}"...`);
+
+    await retry(async () => {
+      await removeFilesOrFolder(filePath);
+
+      delete hashs[tileName];
+    }, maxTry);
+  } catch (error) {
+    printLog(
+      "error",
+      `Failed to remove tile data file "${tileName}": ${error}`
+    );
+  }
+}
+
+/**
  * Cache tile data file
  * @param {string} sourcePath
- * @param {number} z
- * @param {number} x
- * @param {number} y
+ * @param {string} tileName
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {Buffer} data Tile data buffer
  * @param {object} cacheItemLock Cache item lock
@@ -407,33 +451,32 @@ export async function downloadXYZTileDataFile(
  */
 export async function cacheXYZTileDataFile(
   sourcePath,
-  z,
-  x,
-  y,
+  tileName,
   format,
   data,
   cacheItemLock,
   md5
 ) {
-  if (cacheItemLock[`${z}/${x}/${y}`] === undefined) {
+  if (cacheItemLock[tileName] === undefined) {
     // Lock
-    cacheItemLock[`${z}/${x}/${y}`] = true;
+    cacheItemLock[tileName] = true;
 
-    const filePath = `${sourcePath}/${z}/${x}/${y}.${format}`;
+    const filePath = `${sourcePath}/${tileName}.${format}`;
 
     try {
       await createXYZTileDataFile(filePath, data);
 
-      // await updateXYZMD5File(
-      //   sourcePath,
-      //   `${z}/${x}/${y}`,
-      //   md5 === undefined ? calculateMD5(data) : md5
-      // );
+      updateXYZMD5File(
+        sourcePath,
+        tileName,
+        md5 === undefined ? calculateMD5(data) : md5,
+        60000
+      );
     } catch (error) {
       throw error;
     } finally {
       // Unlock
-      delete cacheItemLock[`${z}/${x}/${y}`];
+      delete cacheItemLock[tileName];
     }
   }
 }

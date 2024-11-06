@@ -684,9 +684,7 @@ export const serve_rendered = {
                       /* Cache */
                       cacheXYZTileDataFile(
                         sourceData.source,
-                        z,
-                        x,
-                        y,
+                        `${z}/${x}/${y}`,
                         sourceData.tileJSON.format,
                         dataTile.data,
                         cacheItemLock,

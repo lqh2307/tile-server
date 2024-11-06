@@ -1267,3 +1267,34 @@ export async function validateJSON(schema, filePath) {
     throw error;
   }
 }
+
+/**
+ * Open a file in exclusive mode with a timeout
+ * @param {string} filePath Path to the file
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<fsPromise.FileHandle>}
+ */
+export async function openFileInExclusive(filePath, timeout) {
+  const startTime = Date.now();
+
+  while (true) {
+    try {
+      return await fsPromise.open(filePath, "rw+");
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        await fsPromise.writeFile(filePath, JSON.stringify({}), "utf8");
+      } else if (error.code === "EACCES" || error.code === "EBUSY") {
+        if (Date.now() - startTime > timeout) {
+          throw new Error(
+            `Failed to acquire exclusive access file ${filePath}: Timeout exceeded`
+          );
+        }
+
+        // Try after 100ms
+        await delay(100);
+      } else {
+        throw error;
+      }
+    }
+  }
+}
