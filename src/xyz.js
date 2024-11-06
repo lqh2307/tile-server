@@ -324,8 +324,6 @@ export async function updateXYZMD5File(sourcePath, key, value, timeout) {
   );
 
   try {
-    await md5FileHandler.readFile("utf8");
-
     const hashs = JSON.parse(await md5FileHandler.readFile("utf8"));
 
     // Update md5

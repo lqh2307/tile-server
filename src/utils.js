@@ -1277,24 +1277,21 @@ export async function validateJSON(schema, filePath) {
 export async function openFileInExclusive(filePath, timeout) {
   const startTime = Date.now();
 
-  while (true) {
+  while (Date.now() - startTime <= timeout) {
     try {
       return await fsPromise.open(filePath, "r+");
     } catch (error) {
       if (error.code === "ENOENT") {
         await fsPromise.writeFile(filePath, "{}", "utf8");
       } else if (error.code === "EACCES" || error.code === "EBUSY") {
-        if (Date.now() - startTime > timeout) {
-          throw new Error(
-            `Failed to acquire exclusive access file ${filePath}: Timeout exceeded`
-          );
-        }
-
-        // Try after 100ms
         await delay(100);
       } else {
         throw error;
       }
     }
   }
+
+  throw new Error(
+    `Failed to acquire exclusive access file ${filePath}: Timeout exceeded`
+  );
 }
