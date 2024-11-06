@@ -6,10 +6,10 @@ import pLimit from "p-limit";
 import fs from "node:fs";
 import os from "os";
 import {
+  updateXYZMD5FileWithLock,
   downloadXYZTileDataFile,
   createXYZMetadataFile,
   removeXYZTileDataFile,
-  createXYZMD5File,
 } from "./xyz.js";
 import {
   getTileBoundsFromBBox,
@@ -128,17 +128,11 @@ export async function seedXYZTileDataFiles(
     );
   }
 
-  // Read md5.json file
-  let hashs = {};
-
-  try {
-    hashs = JSON.parse(await fsPromise.readFile(`${outputFolder}/md5.json`));
-  } catch (error) {}
-
   // Download file
   const tilesSummary = getTileBoundsFromBBox(bounds, zooms, "xyz");
   const limitConcurrencyDownload = pLimit(concurrency);
   const tilePromises = [];
+  const hashs = {};
 
   for (const z in tilesSummary) {
     for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
@@ -221,8 +215,8 @@ export async function seedXYZTileDataFiles(
     tilestats: tilestats,
   });
 
-  // Create md5.json file
-  await createXYZMD5File(outputFolder, hashs);
+  // Update md5.json file
+  await updateXYZMD5FileWithLock(outputFolder, hashs);
 
   // Remove folders if empty
   await removeEmptyFolders(outputFolder);
@@ -279,17 +273,11 @@ export async function cleanXYZTileDataFiles(
     );
   }
 
-  // Read md5.json file
-  let hashs = {};
-
-  try {
-    hashs = JSON.parse(await fsPromise.readFile(`${outputFolder}/md5.json`));
-  } catch (error) {}
-
   // Remove files
   const tilesSummary = getTileBoundsFromBBox(bounds, zooms, "xyz");
   const limitConcurrencyDownload = pLimit(concurrency);
   const tilePromises = [];
+  const hashs = {};
 
   for (const z in tilesSummary) {
     for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
@@ -334,7 +322,7 @@ export async function cleanXYZTileDataFiles(
   await Promise.all(tilePromises);
 
   // Update md5.json file
-  await createXYZMD5File(outputFolder, hashs);
+  await updateXYZMD5FileWithLock(outputFolder, hashs);
 
   // Remove parent folder if empty
   await removeFilesOrFolder(outputFolder);
