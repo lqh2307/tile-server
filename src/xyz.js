@@ -382,12 +382,14 @@ export async function updateXYZMD5FileWithLock(
       if (error.code === "EEXIST") {
         await delay(100);
       } else {
+        if (lockFileID !== undefined) {
+          fs.closeSync(lockFileID);
+
+          await removeFilesOrFolder(`${sourcePath}/md5.json.lock`);
+        }
+
         throw error;
       }
-    } finally {
-      fs.closeSync(lockFileID);
-
-      await removeFilesOrFolder(`${sourcePath}/md5.json.lock`);
     }
   }
 
