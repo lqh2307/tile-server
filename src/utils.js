@@ -1282,7 +1282,16 @@ export async function openFileInExclusive(filePath, timeout) {
       return await fsPromise.open(filePath, "r+");
     } catch (error) {
       if (error.code === "ENOENT") {
-        await fsPromise.writeFile(filePath, "{}", "utf8");
+        try {
+          await fsPromise.writeFile(filePath, "{}", {
+            flag: "wx",
+            encoding: "utf8",
+          });
+        } catch (error) {
+          if (error.code !== "EEXIST") {
+            throw error;
+          }
+        }
       } else if (error.code === "EACCES" || error.code === "EBUSY") {
         await delay(100);
       } else {
