@@ -655,9 +655,18 @@ export const serve_data = {
             dataInfo.sourceType = "xyz";
             dataInfo.source = `${config.paths.xyzs}/${item.xyz}`;
 
+            let cacheSource;
+
             if (item.cache === true) {
               dataInfo.source = `${config.paths.caches.xyzs}/${item.xyz}`;
-              dataInfo.sourceURL = seed.datas[item.xyz].url;
+
+              cacheSource = seed.datas[item.xyz];
+
+              if (cacheSource === undefined) {
+                throw new Error(`Cache data id "${item.xyz}" is not valid`);
+              }
+
+              dataInfo.sourceURL = cacheSource.url;
             }
 
             try {
@@ -665,15 +674,15 @@ export const serve_data = {
             } catch (error) {
               if (item.cache === true) {
                 dataInfo.tileJSON = {
-                  name: seed.datas[item.xyz].name,
-                  description: seed.datas[item.xyz].description,
-                  format: seed.datas[item.xyz].format,
-                  bounds: [...seed.datas[item.xyz].bounds],
-                  center: [...seed.datas[item.xyz].center],
-                  minzoom: Math.min(...seed.datas[item.xyz].zooms),
-                  maxzoom: Math.max(...seed.datas[item.xyz].zooms),
-                  vector_layers: deepClone(seed.datas[item.xyz].vector_layers),
-                  tilestats: deepClone(seed.datas[item.xyz].tilestats),
+                  name: cacheSource.name,
+                  description: cacheSource.description,
+                  format: cacheSource.format,
+                  bounds: deepClone(cacheSource.bounds),
+                  center: deepClone(cacheSource.center),
+                  minzoom: cacheSource.zooms ?? Math.min(...cacheSource.zooms),
+                  maxzoom: cacheSource.zooms ?? Math.max(...cacheSource.zooms),
+                  vector_layers: deepClone(cacheSource.vector_layers),
+                  tilestats: deepClone(cacheSource.tilestats),
                 };
               } else {
                 throw error;

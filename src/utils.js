@@ -1290,5 +1290,7 @@ export async function validateJSON(schema, filePath) {
  * @returns {Object} The deep-cloned object
  */
 export function deepClone(obj) {
-  return JSON.parse(JSON.stringify(obj));
+  if (obj !== undefined) {
+    return JSON.parse(JSON.stringify(obj));
+  }
 }
