@@ -251,7 +251,7 @@ export const serve_style = {
 
           /* Read style json file */
           const filePath = `${config.paths.styles}/${stylePath}`;
-          const fileData = await fsPromise.readFile(filePath, "utf-8");
+          const fileData = await fsPromise.readFile(filePath, "utf8");
           const styleJSON = JSON.parse(fileData);
 
           /* Validate style */

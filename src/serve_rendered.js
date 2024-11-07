@@ -5,8 +5,8 @@ import { StatusCodes } from "http-status-codes";
 import { getPMTilesTile } from "./pmtiles.js";
 import { getMBTilesTile } from "./mbtiles.js";
 import { Worker } from "node:worker_threads";
-import { config, seed } from "./config.js";
 import { createPool } from "generic-pool";
+import { config } from "./config.js";
 import express from "express";
 import {
   cacheXYZTileDataFile,
@@ -657,9 +657,7 @@ export const serve_rendered = {
                 /* Get rendered tile */
                 let dataTile;
 
-                if (sourceData.cacheSourceID !== undefined) {
-                  const cacheItem = seed.datas[sourceData.cacheSourceID];
-
+                if (sourceData.sourceURL !== undefined) {
                   try {
                     dataTile = await getXYZTileWithLock(
                       sourceData.source,
@@ -670,7 +668,7 @@ export const serve_rendered = {
                     );
                   } catch (error) {
                     if (error.code === "EEXIST" || error.code === "ENOENT") {
-                      const url = cacheItem.url.replaceAll(
+                      const url = sourceData.sourceURL.replaceAll(
                         "{z}/{x}/{y}",
                         tileName
                       );
@@ -681,7 +679,10 @@ export const serve_rendered = {
                       );
 
                       /* Get data */
-                      dataTile = await getXYZTileFromURL(url, 60000);
+                      dataTile = await getXYZTileFromURL(
+                        url,
+                        60000 // 1 mins
+                      );
 
                       /* Cache */
                       cacheXYZTileDataFile(

@@ -4,8 +4,6 @@ import { validateJSON } from "./utils.js";
 import fsPromise from "node:fs/promises";
 
 let config;
-let seed;
-let cleanUp;
 
 /**
  * Load config.json file
@@ -14,8 +12,6 @@ let cleanUp;
  */
 async function loadConfigFile(dataDir) {
   const configFilePath = `${dataDir}/config.json`;
-  const seedFilePath = `${dataDir}/seed.json`;
-  const cleanUpFilePath = `${dataDir}/cleanup.json`;
 
   /* Validate config.json file */
   await validateJSON(
@@ -113,6 +109,10 @@ async function loadConfigFile(dataDir) {
 
   /* Fix object */
   config.paths = {
+    dir: dataDir,
+    config: `${dataDir}/config.json`,
+    seed: `${dataDir}/seed.json`,
+    cleanUp: `${dataDir}/cleanup.json`,
     fonts: `${dataDir}/fonts`,
     styles: `${dataDir}/styles`,
     sprites: `${dataDir}/sprites`,
@@ -136,9 +136,6 @@ async function loadConfigFile(dataDir) {
     ])
   );
 
-  config.configFilePath = configFilePath;
-  config.seedFilePath = seedFilePath;
-  config.cleanUpFilePath = cleanUpFilePath;
   config.fallbackFont = "Open Sans Regular";
   config.startupComplete = false;
 }
@@ -560,4 +557,4 @@ async function loadCleanUpFile(dataDir) {
   cleanUp = JSON.parse(await fsPromise.readFile(cleanUpFilePath, "utf8"));
 }
 
-export { loadConfigFile, loadSeedFile, loadCleanUpFile, config, seed, cleanUp };
+export { loadConfigFile, loadSeedFile, loadCleanUpFile, config };

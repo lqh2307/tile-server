@@ -30,7 +30,7 @@ function serveConfigHandler() {
   return async (req, res, next) => {
     try {
       const configJSON = JSON.parse(
-        await fsPromise.readFile(config.configFilePath, "utf-8")
+        await fsPromise.readFile(config.paths.config, "utf8")
       );
 
       res.header("Content-Type", "application/json");
@@ -38,6 +38,46 @@ function serveConfigHandler() {
       return res.status(StatusCodes.OK).send(configJSON);
     } catch (error) {
       printLog("error", `Failed to get config": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
+function serveSeedHandler() {
+  return async (req, res, next) => {
+    try {
+      const seedJSON = JSON.parse(
+        await fsPromise.readFile(config.paths.seed, "utf8")
+      );
+
+      res.header("Content-Type", "application/json");
+
+      return res.status(StatusCodes.OK).send(seedJSON);
+    } catch (error) {
+      printLog("error", `Failed to get seed": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
+function serveCleanUpHandler() {
+  return async (req, res, next) => {
+    try {
+      const cleanUpJSON = JSON.parse(
+        await fsPromise.readFile(config.paths.cleanUp, "utf8")
+      );
+
+      res.header("Content-Type", "application/json");
+
+      return res.status(StatusCodes.OK).send(cleanUpJSON);
+    } catch (error) {
+      printLog("error", `Failed to get clean up": ${error}`);
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -356,6 +396,68 @@ export const serve_common = {
        *         description: Internal server error
        */
       app.get("/config", serveConfigHandler());
+
+      /**
+       * @swagger
+       * tags:
+       *   - name: Common
+       *     description: Common related endpoints
+       * /restart:
+       *   get:
+       *     tags:
+       *       - Common
+       *     summary: Get seed
+       *     responses:
+       *       200:
+       *         description: Seed
+       *         content:
+       *           application/json:
+       *             schema:
+       *               type: object
+       *       404:
+       *         description: Not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
+       *       500:
+       *         description: Internal server error
+       */
+      app.get("/seed", serveSeedHandler());
+
+      /**
+       * @swagger
+       * tags:
+       *   - name: Common
+       *     description: Common related endpoints
+       * /restart:
+       *   get:
+       *     tags:
+       *       - Common
+       *     summary: Get clean up
+       *     responses:
+       *       200:
+       *         description: Clean up
+       *         content:
+       *           application/json:
+       *             schema:
+       *               type: object
+       *       404:
+       *         description: Not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
+       *       500:
+       *         description: Internal server error
+       */
+      app.get("/cleanup", serveCleanUpHandler());
     }
 
     if (config.options.restartEndpoint === true) {

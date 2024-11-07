@@ -429,7 +429,7 @@ export async function closeMBTiles(mbtilesSource) {
  * @param {boolean} overwrite Overwrite exist file
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<string>} Returns the output path if successful
+ * @returns {Promise<void>}
  */
 export async function downloadMBTilesFile(
   url,
