@@ -387,6 +387,25 @@ export async function removeEmptyFolders(folderPath) {
 }
 
 /**
+ * Recursively removes old cache locks
+ * @param {string} folderPath The root directory to removes old cache locks
+ * @returns {Promise<void>}
+ */
+export async function removeOldCacheLocks(folderPath) {
+  const fileNames = await findFiles(folderPath, /^.*\.lock$/, true);
+
+  await Promise.all(
+    fileNames.map(async (fileName) => {
+      const lockFilePath = `${folderPath}/${fileName}`;
+      const filePath = lockFilePath.slice(0, lockFilePath.lastIndexOf("."));
+
+      await removeFilesOrFolder(lockFilePath);
+      await removeFilesOrFolder(filePath);
+    })
+  );
+}
+
+/**
  * Compile template
  * @param {string} template
  * @param {object} data

@@ -13,6 +13,7 @@ import {
 } from "./xyz.js";
 import {
   getTileBoundsFromBBox,
+  removeOldCacheLocks,
   removeEmptyFolders,
   printLog,
   getData,
@@ -26,6 +27,10 @@ program
   .option("-d, --data_dir <dir>", "Data directory", "data")
   .option("-c, --cleanup", "Run cleanup task to remove specified tiles")
   .option("-s, --seed", "Run seed task to download tiles")
+  .option(
+    "-r, --remove_old_cache_locks",
+    "Remove old cache locks before run task"
+  )
   .version(
     JSON.parse(fs.readFileSync("package.json", "utf8")).version,
     "-v, --version"
@@ -328,6 +333,7 @@ async function startTask() {
     dataDir: argOpts.data_dir,
     cleanUp: argOpts.cleanup,
     seed: argOpts.seed,
+    removeOldCacheLocks: argOpts.remove_old_cache_locks,
   };
 
   printLog(
@@ -366,6 +372,13 @@ async function startTask() {
   const seedData = JSON.parse(
     await fsPromise.readFile(`${opts.dataDir}/seed.json`, "utf8")
   );
+
+  /* Remove old cache locks */
+  if (opts.removeOldCacheLocks) {
+    printLog("info", `Starting remove old cache locks...`);
+
+    await removeOldCacheLocks(`${opts.dataDir}/caches`);
+  }
 
   /* Run clean up task */
   if (opts.cleanUp) {
