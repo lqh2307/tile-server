@@ -553,7 +553,7 @@ export async function storeXYZTileDataFileWithLock(filePath, data, timeout) {
           recursive: true,
         });
 
-        return await storeXYZTileDataFileWithLock(filePath, data);
+        return await storeXYZTileDataFileWithLock(filePath, data, timeout);
       } else if (error.code === "EEXIST") {
         await delay(100);
       } else {
@@ -694,7 +694,11 @@ export async function downloadXYZTileDataFile(
       }
 
       // Store data to file
-      await storeXYZTileDataFileWithLock(filePath, response.data, timeout);
+      await storeXYZTileDataFileWithLock(
+        filePath,
+        response.data,
+        300000 // 5 mins
+      );
 
       // Store data md5 hash
       hashs[tileName] =
