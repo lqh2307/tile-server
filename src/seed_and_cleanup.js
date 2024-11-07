@@ -370,24 +370,22 @@ async function startTask() {
   /* Run clean up task */
   if (opts.cleanUp) {
     try {
-      const cleanUpDataSources = Object.keys(cleanUpData.datas);
-
       printLog(
         "info",
-        `Starting clean up ${cleanUpDataSources.length} datas...`
+        `Starting clean up ${Object.keys(cleanUpData.datas).length} datas...`
       );
 
-      for (const cleanUpDataSource of cleanUpDataSources) {
+      for (const id in cleanUpData) {
         try {
           await cleanXYZTileDataFiles(
             `${opts.dataDir}/caches/xyzs/${id}`,
             seedData.datas[id].format,
-            cleanUpDataSource.zooms || seedData.datas[id].zooms,
-            cleanUpDataSource.bounds || seedData.datas[id].bounds,
+            cleanUpData[id].zooms || seedData.datas[id].zooms,
+            cleanUpData[id].bounds || seedData.datas[id].bounds,
             seedData.datas[id].concurrency,
             seedData.datas[id].maxTry,
-            cleanUpDataSource.cleanUpBefore?.time ||
-              cleanUpDataSource.cleanUpBefore?.day ||
+            cleanUpData[id].cleanUpBefore?.time ||
+              cleanUpData[id].cleanUpBefore?.day ||
               seedData.datas[id].refreshBefore?.time ||
               seedData.datas[id].refreshBefore?.day
           );
@@ -418,29 +416,30 @@ async function startTask() {
   /* Run seed task */
   if (opts.seed) {
     try {
-      const seedDataSources = Object.keys(seedData.datas);
+      printLog(
+        "info",
+        `Starting seed ${Object.keys(seedData.datas).length} datas...`
+      );
 
-      printLog("info", `Starting seed ${seedDataSources.length} datas...`);
-
-      for (const seedDataSource of seedDataSources) {
+      for (const id of seedData) {
         try {
           await seedXYZTileDataFiles(
-            seedDataSource.name,
-            seedDataSource.description,
-            seedDataSource.url,
+            seedData[id].name,
+            seedData[id].description,
+            seedData[id].url,
             `${opts.dataDir}/caches/xyzs/${id}`,
-            seedDataSource.format,
-            seedDataSource.bounds,
-            seedDataSource.center,
-            seedDataSource.zooms,
-            seedDataSource.vector_layers,
-            seedDataSource.tilestats,
-            seedDataSource.concurrency,
-            seedDataSource.maxTry,
-            seedDataSource.timeout,
-            seedDataSource.refreshBefore?.time ||
-              seedDataSource.refreshBefore?.day ||
-              seedDataSource.refreshBefore?.md5
+            seedData[id].format,
+            seedData[id].bounds,
+            seedData[id].center,
+            seedData[id].zooms,
+            seedData[id].vector_layers,
+            seedData[id].tilestats,
+            seedData[id].concurrency,
+            seedData[id].maxTry,
+            seedData[id].timeout,
+            seedData[id].refreshBefore?.time ||
+              seedData[id].refreshBefore?.day ||
+              seedData[id].refreshBefore?.md5
           );
         } catch (error) {
           printLog(
