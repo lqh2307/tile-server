@@ -1283,3 +1283,12 @@ export async function validateJSON(schema, filePath) {
     throw error;
   }
 }
+
+/**
+ * Deep clone an object using JSON serialization
+ * @param {Object} obj The object to clone
+ * @returns {Object} The deep-cloned object
+ */
+export function deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}

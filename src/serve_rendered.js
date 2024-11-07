@@ -24,6 +24,7 @@ import {
   unzipAsync,
   renderData,
   getSprite,
+  deepClone,
   printLog,
 } from "./utils.js";
 
@@ -801,8 +802,7 @@ export const serve_rendered = {
             }
 
             /* Clone style JSON */
-            const stringJSON = JSON.stringify(item.styleJSON, null, 2);
-            const styleJSON = JSON.parse(stringJSON);
+            const styleJSON = deepClone(item.styleJSON);
 
             await Promise.all(
               // Fix source urls

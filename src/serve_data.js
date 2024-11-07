@@ -29,6 +29,7 @@ import {
   validateDataInfo,
   getRequestHost,
   gzipAsync,
+  deepClone,
   printLog,
 } from "./utils.js";
 
@@ -667,12 +668,12 @@ export const serve_data = {
                   name: seed.datas[item.xyz].name,
                   description: seed.datas[item.xyz].description,
                   format: seed.datas[item.xyz].format,
-                  bounds: seed.datas[item.xyz].bounds,
-                  center: seed.datas[item.xyz].center,
+                  bounds: [...seed.datas[item.xyz].bounds],
+                  center: [...seed.datas[item.xyz].center],
                   minzoom: Math.min(...seed.datas[item.xyz].zooms),
                   maxzoom: Math.max(...seed.datas[item.xyz].zooms),
-                  vector_layers: seed.datas[item.xyz].vector_layers,
-                  tilestats: seed.datas[item.xyz].tilestats,
+                  vector_layers: deepClone(seed.datas[item.xyz].vector_layers),
+                  tilestats: deepClone(seed.datas[item.xyz].tilestats),
                 };
               } else {
                 throw error;

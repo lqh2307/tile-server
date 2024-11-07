@@ -1,6 +1,6 @@
 "use strict";
 
-import { getRequestHost, validateStyle, printLog } from "./utils.js";
+import { getRequestHost, validateStyle, printLog, deepClone } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { config } from "./config.js";
@@ -17,8 +17,7 @@ function getStyleHandler() {
 
     try {
       /* Clone style JSON */
-      const stringJSON = JSON.stringify(item.styleJSON, null, 2);
-      const styleJSON = JSON.parse(stringJSON);
+      const styleJSON = deepClone(item.styleJSON);
 
       /* Fix sprite url */
       if (styleJSON.sprite !== undefined) {
