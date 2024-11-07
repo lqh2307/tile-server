@@ -375,17 +375,17 @@ async function startTask() {
         `Starting clean up ${Object.keys(cleanUpData.datas).length} datas...`
       );
 
-      for (const id in cleanUpData) {
+      for (const id in cleanUpData.datas) {
         try {
           await cleanXYZTileDataFiles(
             `${opts.dataDir}/caches/xyzs/${id}`,
             seedData.datas[id].format,
-            cleanUpData[id].zooms || seedData.datas[id].zooms,
-            cleanUpData[id].bounds || seedData.datas[id].bounds,
+            cleanUpData.datas[id].zooms || seedData.datas[id].zooms,
+            cleanUpData.datas[id].bounds || seedData.datas[id].bounds,
             seedData.datas[id].concurrency,
             seedData.datas[id].maxTry,
-            cleanUpData[id].cleanUpBefore?.time ||
-              cleanUpData[id].cleanUpBefore?.day ||
+            cleanUpData.datas[id].cleanUpBefore?.time ||
+              cleanUpData.datas[id].cleanUpBefore?.day ||
               seedData.datas[id].refreshBefore?.time ||
               seedData.datas[id].refreshBefore?.day
           );
@@ -421,25 +421,25 @@ async function startTask() {
         `Starting seed ${Object.keys(seedData.datas).length} datas...`
       );
 
-      for (const id of seedData) {
+      for (const id in seedData.datas) {
         try {
           await seedXYZTileDataFiles(
-            seedData[id].name,
-            seedData[id].description,
-            seedData[id].url,
+            seedData.datas[id].name,
+            seedData.datas[id].description,
+            seedData.datas[id].url,
             `${opts.dataDir}/caches/xyzs/${id}`,
-            seedData[id].format,
-            seedData[id].bounds,
-            seedData[id].center,
-            seedData[id].zooms,
-            seedData[id].vector_layers,
-            seedData[id].tilestats,
-            seedData[id].concurrency,
-            seedData[id].maxTry,
-            seedData[id].timeout,
-            seedData[id].refreshBefore?.time ||
-              seedData[id].refreshBefore?.day ||
-              seedData[id].refreshBefore?.md5
+            seedData.datas[id].format,
+            seedData.datas[id].bounds,
+            seedData.datas[id].center,
+            seedData.datas[id].zooms,
+            seedData.datas[id].vector_layers,
+            seedData.datas[id].tilestats,
+            seedData.datas[id].concurrency,
+            seedData.datas[id].maxTry,
+            seedData.datas[id].timeout,
+            seedData.datas[id].refreshBefore?.time ||
+              seedData.datas[id].refreshBefore?.day ||
+              seedData.datas[id].refreshBefore?.md5
           );
         } catch (error) {
           printLog(
