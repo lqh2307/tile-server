@@ -675,8 +675,6 @@ export async function downloadXYZTileDataFile(
   timeout,
   hashs
 ) {
-  const filePath = `${sourcePath}/${tileName}.${format}`;
-
   printLog("info", `Downloading tile data file "${tileName}" from "${url}"...`);
 
   try {
@@ -695,7 +693,7 @@ export async function downloadXYZTileDataFile(
 
       // Store data to file
       await storeXYZTileDataFileWithLock(
-        filePath,
+        `${sourcePath}/${tileName}.${format}`,
         response.data,
         300000 // 5 mins
       );
@@ -732,13 +730,14 @@ export async function removeXYZTileDataFile(
   timeout,
   hashs
 ) {
-  const filePath = `${sourcePath}/${tileName}.${format}`;
+  printLog("info", `Removing tile data file "${tileName}"...`);
 
   try {
-    printLog("info", `Removing tile data file "${tileName}"...`);
-
     await retry(async () => {
-      await removeXYZTileDataFileWithLock(filePath, timeout);
+      await removeXYZTileDataFileWithLock(
+        `${sourcePath}/${tileName}.${format}`,
+        timeout
+      );
 
       delete hashs[tileName];
     }, maxTry);
