@@ -37,7 +37,6 @@ export async function getXYZTile(sourcePath, z, x, y, format) {
 
   try {
     let data = await fsPromise.readFile(filePath);
-
     if (!data) {
       throw new Error("Tile does not exist");
     }
@@ -354,7 +353,15 @@ export async function updateXYZMetadataFileWithLock(
 
       return;
     } catch (error) {
-      if (error.code === "EEXIST") {
+      if (error.code === "ENOENT") {
+        await fsPromise.mkdir(sourcePath, {
+          recursive: true,
+        });
+
+        await updateXYZMetadataFile(sourcePath, metadataAdds, timeout);
+
+        return;
+      } else if (error.code === "EEXIST") {
         await delay(50);
       } else {
         if (lockFileHandle !== undefined) {
@@ -436,7 +443,15 @@ export async function updateXYZMD5FileWithLock(sourcePath, hashAdds, timeout) {
 
       return;
     } catch (error) {
-      if (error.code === "EEXIST") {
+      if (error.code === "ENOENT") {
+        await fsPromise.mkdir(sourcePath, {
+          recursive: true,
+        });
+
+        await updateXYZMD5FileWithLock(sourcePath, hashAdds, timeout);
+
+        return;
+      } else if (error.code === "EEXIST") {
         await delay(50);
       } else {
         if (lockFileHandle !== undefined) {
@@ -474,29 +489,34 @@ export async function createXYZTileDataFile(filePath, data) {
  * @returns {Promise<boolean>}
  */
 export async function createXYZTileDataFileWithLock(filePath, data) {
-  let fileHandle;
+  const lockFilePath = `${filePath}.lock`;
+  let lockFileHandle;
 
   try {
-    await fsPromise.mkdir(path.dirname(filePath), {
-      recursive: true,
-    });
+    lockFileHandle = await fsPromise.open(lockFilePath, "wx");
 
-    fileHandle = await fsPromise.open(filePath, "wx+");
+    await createXYZTileDataFile(filePath, data);
 
-    await fileHandle.writeFile(data);
+    await lockFileHandle.close();
 
-    await fileHandle.close();
+    await removeFilesOrFolder(lockFilePath);
 
     return true;
   } catch (error) {
-    if (error.code === "EEXIST") {
+    if (error.code === "ENOENT") {
+      await fsPromise.mkdir(path.dirname(filePath), {
+        recursive: true,
+      });
+
+      return await createXYZTileDataFileWithLock(filePath, data);
+    } else if (error.code === "EEXIST") {
       return false;
     } else {
-      if (fileHandle !== undefined) {
-        await fileHandle.close();
-      }
+      if (lockFileHandle !== undefined) {
+        await lockFileHandle.close();
 
-      await removeFilesOrFolder(filePath);
+        await removeFilesOrFolder(lockFilePath);
+      }
 
       throw error;
     }
@@ -504,26 +524,42 @@ export async function createXYZTileDataFileWithLock(filePath, data) {
 }
 
 /**
- * Check XYZ tile data is avaiable?
- * @param {string} filePath File path to store tile data file
- * @returns {Promise<boolean>}
+ * Get XYZ tile with lock
+ * @param {string} sourcePath Folder path
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
+ * @returns {Promise<object>}
  */
-export async function isXYZTileDataAvailable(filePath) {
-  let fileHandle;
+export async function getXYZTileWithLock(sourcePath, z, x, y, format) {
+  const filePath = `${sourcePath}/${z}/${x}/${y}.${format}`;
+  const lockFilePath = `${filePath}.lock`;
+  let lockFileHandle;
 
   try {
-    fileHandle = await fsPromise.open(filePath, "wx+");
+    lockFileHandle = await fsPromise.open(lockFilePath, "wx");
 
-    await fileHandle.close();
-
-    return true;
-  } catch (error) {
-    if (error.code === "ENOENT" || error.code === "EEXIST") {
-      return false;
+    let data = await fsPromise.readFile(filePath);
+    if (!data) {
+      throw new Error("Tile does not exist");
     }
 
-    if (fileHandle !== undefined) {
-      await fileHandle.close();
+    data = Buffer.from(data);
+
+    await lockFileHandle.close();
+
+    await removeFilesOrFolder(lockFilePath);
+
+    return {
+      data: data,
+      headers: detectFormatAndHeaders(data).headers,
+    };
+  } catch (error) {
+    if (lockFileHandle !== undefined) {
+      await lockFileHandle.close();
+
+      await removeFilesOrFolder(lockFilePath);
     }
 
     throw error;
@@ -699,7 +735,6 @@ export async function getXYZTileMD5(sourcePath, z, x, y, format) {
         let data = await fsPromise.readFile(
           `${sourcePath}/${z}/${x}/${y}.${format}`
         );
-
         if (!data) {
           throw new Error("Tile MD5 does not exist");
         }

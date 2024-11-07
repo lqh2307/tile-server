@@ -9,8 +9,8 @@ import { config, seed } from "./config.js";
 import { createPool } from "generic-pool";
 import express from "express";
 import {
-  isXYZTileDataAvailable,
   cacheXYZTileDataFile,
+  getXYZTileWithLock,
   getXYZTileFromURL,
   getXYZTile,
 } from "./xyz.js";
@@ -659,12 +659,17 @@ export const serve_rendered = {
 
                 if (sourceData.cacheSourceID !== undefined) {
                   const cacheItem = seed.datas[sourceData.cacheSourceID];
-                  const filePath = `${sourceData.source}/${z}/${x}${
-                    req.query.scheme === "tms" ? (1 << z) - 1 - y : y
-                  }.${sourceData.tileJSON.format}`; // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
 
                   try {
-                    if ((await isXYZTileDataAvailable(filePath)) === false) {
+                    dataTile = await getXYZTileWithLock(
+                      sourceData.source,
+                      z,
+                      x,
+                      scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+                      sourceData.tileJSON.format
+                    );
+                  } catch (error) {
+                    if (error.code === "EEXIST" || error.code === "ENOENT") {
                       const url = cacheItem.url.replaceAll(
                         "{z}/{x}/{y}",
                         tileName
@@ -692,16 +697,8 @@ export const serve_rendered = {
                         )
                       );
                     } else {
-                      dataTile = await getXYZTile(
-                        sourceData.source,
-                        z,
-                        x,
-                        scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
-                        sourceData.tileJSON.format
-                      );
+                      throw error;
                     }
-                  } catch (error) {
-                    throw error;
                   }
                 } else {
                   dataTile = await getXYZTile(

@@ -4,8 +4,8 @@ import { StatusCodes } from "http-status-codes";
 import { config, seed } from "./config.js";
 import express from "express";
 import {
-  isXYZTileDataAvailable,
   cacheXYZTileDataFile,
+  getXYZTileWithLock,
   getXYZTileFromURL,
   getXYZTileMD5,
   getXYZInfos,
@@ -76,12 +76,17 @@ function getDataTileHandler() {
       } else if (item.sourceType === "xyz") {
         if (item.cacheSourceID !== undefined) {
           const cacheItem = seed.datas[item.cacheSourceID];
-          const filePath = `${item.source}/${z}/${x}${
-            req.query.scheme === "tms" ? (1 << z) - 1 - y : y
-          }.${item.tileJSON.format}`; // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
 
           try {
-            if ((await isXYZTileDataAvailable(filePath)) === false) {
+            dataTile = await getXYZTileWithLock(
+              item.source,
+              z,
+              x,
+              req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+              item.tileJSON.format
+            );
+          } catch (error) {
+            if (error.code === "EEXIST" || error.code === "ENOENT") {
               const url = cacheItem.url.replaceAll("{z}/{x}/{y}", tileName);
 
               printLog(
@@ -106,16 +111,8 @@ function getDataTileHandler() {
                 )
               );
             } else {
-              dataTile = await getXYZTile(
-                item.source,
-                z,
-                x,
-                req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
-                item.tileJSON.format
-              );
+              throw error;
             }
-          } catch (error) {
-            throw error;
           }
         } else {
           dataTile = await getXYZTile(
