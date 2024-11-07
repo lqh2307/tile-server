@@ -515,12 +515,101 @@ export async function createXYZTileDataFileWithLock(filePath, data) {
       if (lockFileHandle !== undefined) {
         await lockFileHandle.close();
 
+        await removeFilesOrFolder(filePath);
         await removeFilesOrFolder(lockFilePath);
       }
 
       throw error;
     }
   }
+}
+
+/**
+ * Store XYZ tile data file with lock
+ * @param {string} filePath File path to store tile data file
+ * @param {Buffer} data Tile data buffer
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<void>}
+ */
+export async function storeXYZTileDataFileWithLock(filePath, data, timeout) {
+  const startTime = Date.now();
+  const lockFilePath = `${filePath}.lock`;
+  let lockFileHandle;
+
+  while (Date.now() - startTime <= timeout) {
+    try {
+      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
+
+      await createXYZTileDataFile(filePath, data);
+
+      await lockFileHandle.close();
+
+      await removeFilesOrFolder(lockFilePath);
+
+      return;
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        await fsPromise.mkdir(path.dirname(filePath), {
+          recursive: true,
+        });
+
+        return await storeXYZTileDataFileWithLock(filePath, data);
+      } else if (error.code === "EEXIST") {
+        await delay(100);
+      } else {
+        if (lockFileHandle !== undefined) {
+          await lockFileHandle.close();
+
+          await removeFilesOrFolder(filePath);
+          await removeFilesOrFolder(lockFilePath);
+        }
+
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(`Timeout to access ${lockFilePath} file`);
+}
+
+/**
+ * Remove XYZ tile data file with lock
+ * @param {string} filePath File path to remove tile data file
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<void>}
+ */
+export async function removeXYZTileDataFileWithLock(filePath, timeout) {
+  const startTime = Date.now();
+  const lockFilePath = `${filePath}.lock`;
+  let lockFileHandle;
+
+  while (Date.now() - startTime <= timeout) {
+    try {
+      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
+
+      await removeFilesOrFolder(filePath);
+
+      await lockFileHandle.close();
+
+      await removeFilesOrFolder(lockFilePath);
+
+      return;
+    } catch (error) {
+      if (error.code === "EEXIST") {
+        await delay(50);
+      } else {
+        if (lockFileHandle !== undefined) {
+          await lockFileHandle.close();
+
+          await removeFilesOrFolder(lockFilePath);
+        }
+
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(`Timeout to access ${lockFilePath} file`);
 }
 
 /**
@@ -588,18 +677,24 @@ export async function downloadXYZTileDataFile(
 ) {
   const filePath = `${sourcePath}/${tileName}.${format}`;
 
-  try {
-    printLog(
-      "info",
-      `Downloading tile data file "${tileName}" from "${url}"...`
-    );
+  printLog("info", `Downloading tile data file "${tileName}" from "${url}"...`);
 
+  try {
     await retry(async () => {
       // Get data
       const response = await getData(url, timeout);
 
+      if (response.status === StatusCodes.NO_CONTENT) {
+        printLog(
+          "error",
+          `Failed to download tile data file "${tileName}" from "${url}": Status code: ${response.status} - ${response.statusText}`
+        );
+
+        return;
+      }
+
       // Store data to file
-      await createXYZTileDataFile(filePath, response.data);
+      await storeXYZTileDataFileWithLock(filePath, response.data, timeout);
 
       // Store data md5 hash
       hashs[tileName] =
@@ -612,9 +707,6 @@ export async function downloadXYZTileDataFile(
       "error",
       `Failed to download tile data file "${tileName}" from "${url}": ${error}`
     );
-
-    // Remove error tile data file
-    await removeFilesOrFolder(filePath);
   }
 }
 
@@ -624,6 +716,7 @@ export async function downloadXYZTileDataFile(
  * @param {string} tileName Tile name
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
  * @param {object} hashs Hash data object
  * @returns {Promise<void>}
  */
@@ -632,6 +725,7 @@ export async function removeXYZTileDataFile(
   tileName,
   format,
   maxTry,
+  timeout,
   hashs
 ) {
   const filePath = `${sourcePath}/${tileName}.${format}`;
@@ -640,9 +734,9 @@ export async function removeXYZTileDataFile(
     printLog("info", `Removing tile data file "${tileName}"...`);
 
     await retry(async () => {
-      delete hashs[tileName];
+      await removeXYZTileDataFileWithLock(filePath, timeout);
 
-      await removeFilesOrFolder(filePath);
+      delete hashs[tileName];
     }, maxTry);
   } catch (error) {
     printLog(

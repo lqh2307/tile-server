@@ -13,7 +13,6 @@ import {
 } from "./xyz.js";
 import {
   getTileBoundsFromBBox,
-  removeFilesOrFolder,
   removeEmptyFolders,
   printLog,
   getData,
@@ -216,11 +215,15 @@ export async function seedXYZTileDataFiles(
       vector_layers: vector_layers,
       tilestats: tilestats,
     },
-    300000
+    300000 // 5 mins
   );
 
   // Update md5.json file
-  await updateXYZMD5FileWithLock(outputFolder, hashs, 300000);
+  await updateXYZMD5FileWithLock(
+    outputFolder,
+    hashs,
+    300000 // 5 mins
+  );
 
   // Remove folders if empty
   await removeEmptyFolders(outputFolder);
@@ -304,6 +307,7 @@ export async function cleanXYZTileDataFiles(
                     tileName,
                     format,
                     maxTry,
+                    300000, // 5 mins
                     hashs
                   );
                 }
@@ -314,6 +318,7 @@ export async function cleanXYZTileDataFiles(
                 tileName,
                 format,
                 maxTry,
+                300000, // 5 mins
                 hashs
               );
             }
@@ -326,10 +331,14 @@ export async function cleanXYZTileDataFiles(
   await Promise.all(tilePromises);
 
   // Update md5.json file
-  await updateXYZMD5FileWithLock(outputFolder, hashs, 300000);
+  await updateXYZMD5FileWithLock(
+    outputFolder,
+    hashs,
+    300000 // 5 mins
+  );
 
   // Remove parent folder if empty
-  await removeFilesOrFolder(outputFolder);
+  await removeEmptyFolders(outputFolder);
 }
 
 /**

@@ -137,9 +137,6 @@ export async function getData(url, timeout) {
       headers: {
         "User-Agent": "Tile Server",
       },
-      validateStatus: (status) => {
-        return status === StatusCodes.OK;
-      },
       httpAgent: new http.Agent({
         keepAlive: false,
       }),
@@ -152,11 +149,11 @@ export async function getData(url, timeout) {
   } catch (error) {
     if (error.response) {
       throw new Error(
-        `Failed to request "${url}" with status code: ${error.response.status} - ${error.response.statusText}`
+        `Status code: ${error.response.status} - ${error.response.statusText}`
       );
     }
 
-    throw new Error(`Failed to request "${url}": ${error.message}`);
+    throw error;
   }
 }
 

@@ -27,9 +27,11 @@ export async function startServer(dataDir) {
   try {
     printLog("info", "Loading config, seed, clean up files...");
 
-    await loadConfigFile(dataDir);
-    await loadSeedFile(dataDir);
-    await loadCleanUpFile(dataDir);
+    await Promise.all([
+      loadConfigFile(dataDir),
+      loadSeedFile(dataDir),
+      loadCleanUpFile(dataDir),
+    ]);
 
     printLog("info", "Starting HTTP server...");
 
