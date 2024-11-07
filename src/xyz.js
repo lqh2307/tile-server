@@ -595,7 +595,9 @@ export async function removeXYZTileDataFileWithLock(filePath, timeout) {
 
       return;
     } catch (error) {
-      if (error.code === "EEXIST") {
+      if (error.code === "ENOENT") {
+        return;
+      } else if (error.code === "EEXIST") {
         await delay(50);
       } else {
         if (lockFileHandle !== undefined) {
