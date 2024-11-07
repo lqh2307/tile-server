@@ -89,43 +89,27 @@ export async function seedXYZTileDataFiles(
   refreshBefore
 ) {
   let refreshTimestamp;
+  let log = `Downloading tile data files with:\n\tZoom levels [${zooms.join(
+    ", "
+  )}]\n\tBBox [${bounds.join(", ")}]`;
 
   if (typeof refreshBefore === "string") {
     refreshTimestamp = new Date(refreshBefore).getTime();
+
+    log += `\n\tBefore ${refreshBefore}`;
   } else if (typeof refreshBefore === "number") {
     const now = new Date();
 
     refreshTimestamp = now.setDate(now.getDate() - refreshBefore);
+
+    log += `\n\tOld than ${refreshBefore} days`;
   } else if (typeof refreshBefore === "boolean") {
     refreshTimestamp = true;
+
+    log += `\n\tBefore check MD5`;
   }
 
-  if (refreshTimestamp !== undefined) {
-    if (refreshTimestamp === true) {
-      printLog(
-        "info",
-        `Downloading tile data files with Zoom levels [${zooms.join(
-          ", "
-        )}] - BBox [${bounds.join(", ")}] - Before check MD5...`
-      );
-    } else {
-      printLog(
-        "info",
-        `Downloading tile data files with Zoom levels [${zooms.join(
-          ", "
-        )}] - BBox [${bounds.join(", ")}] - Before ${new Date(
-          refreshTimestamp
-        ).toISOString()}...`
-      );
-    }
-  } else {
-    printLog(
-      "info",
-      `Downloading tile data files with Zoom levels [${zooms.join(
-        ", "
-      )}] - BBox [${bounds.join(", ")}]...`
-    );
-  }
+  printLog("info", log);
 
   // Download file
   const tilesSummary = getTileBoundsFromBBox(bounds, zooms, "xyz");
@@ -253,32 +237,23 @@ export async function cleanXYZTileDataFiles(
   cleanUpBefore
 ) {
   let cleanUpTimestamp;
+  let log = `Removing tile data files with:\n\tZoom levels [${zooms.join(
+    ", "
+  )}]\n\tBBox [${bounds.join(", ")}]`;
 
   if (typeof cleanUpBefore === "string") {
     cleanUpTimestamp = new Date(cleanUpBefore).getTime();
+
+    log += `\n\tBefore ${cleanUpBefore}`;
   } else if (typeof cleanUpBefore === "number") {
     const now = new Date();
 
     cleanUpTimestamp = now.setDate(now.getDate() - cleanUpBefore);
+
+    log += `\n\tOld than ${cleanUpBefore} days`;
   }
 
-  if (cleanUpTimestamp !== undefined) {
-    printLog(
-      "info",
-      `Cleaning up tile data files with Zoom levels [${zooms.join(
-        ", "
-      )}] - BBox [${bounds.join(", ")}] - Before ${new Date(
-        cleanUpTimestamp
-      ).toISOString()}...`
-    );
-  } else {
-    printLog(
-      "info",
-      `Cleaning up tile data files with Zoom levels [${zooms.join(
-        ", "
-      )}] - BBox [${bounds.join(", ")}]...`
-    );
-  }
+  printLog("info", log);
 
   // Remove files
   const tilesSummary = getTileBoundsFromBBox(bounds, zooms, "xyz");
@@ -395,17 +370,24 @@ async function startTask() {
   /* Run clean up task */
   if (opts.cleanUp) {
     try {
-      for (const id in cleanUpData.datas) {
+      const cleanUpDataSources = Object.keys(cleanUpData.datas);
+
+      printLog(
+        "info",
+        `Starting clean up ${cleanUpDataSources.length} datas...`
+      );
+
+      for (const cleanUpDataSource of cleanUpDataSources) {
         try {
           await cleanXYZTileDataFiles(
             `${opts.dataDir}/caches/xyzs/${id}`,
             seedData.datas[id].format,
-            cleanUpData.datas[id].zooms || seedData.datas[id].zooms,
-            cleanUpData.datas[id].bounds || seedData.datas[id].bounds,
+            cleanUpDataSource.zooms || seedData.datas[id].zooms,
+            cleanUpDataSource.bounds || seedData.datas[id].bounds,
             seedData.datas[id].concurrency,
             seedData.datas[id].maxTry,
-            cleanUpData.datas[id].cleanUpBefore?.time ||
-              cleanUpData.datas[id].cleanUpBefore?.day ||
+            cleanUpDataSource.cleanUpBefore?.time ||
+              cleanUpDataSource.cleanUpBefore?.day ||
               seedData.datas[id].refreshBefore?.time ||
               seedData.datas[id].refreshBefore?.day
           );
@@ -429,32 +411,36 @@ async function startTask() {
         printLog("info", "Completed cleaning up data!");
       }
     } catch (error) {
-      printLog("error", `Failed clean data: ${error}. Exited!`);
+      printLog("error", `Failed to clean up data: ${error}. Exited!`);
     }
   }
 
   /* Run seed task */
   if (opts.seed) {
     try {
-      for (const id in seedData.datas) {
+      const seedDataSources = Object.keys(seedData.datas);
+
+      printLog("info", `Starting seed ${seedDataSources.length} datas...`);
+
+      for (const seedDataSource of seedDataSources) {
         try {
           await seedXYZTileDataFiles(
-            seedData.datas[id].name,
-            seedData.datas[id].description,
-            seedData.datas[id].url,
+            seedDataSource.name,
+            seedDataSource.description,
+            seedDataSource.url,
             `${opts.dataDir}/caches/xyzs/${id}`,
-            seedData.datas[id].format,
-            seedData.datas[id].bounds,
-            seedData.datas[id].center,
-            seedData.datas[id].zooms,
-            seedData.datas[id].vector_layers,
-            seedData.datas[id].tilestats,
-            seedData.datas[id].concurrency,
-            seedData.datas[id].maxTry,
-            seedData.datas[id].timeout,
-            seedData.datas[id].refreshBefore?.time ||
-              seedData.datas[id].refreshBefore?.day ||
-              seedData.datas[id].refreshBefore?.md5
+            seedDataSource.format,
+            seedDataSource.bounds,
+            seedDataSource.center,
+            seedDataSource.zooms,
+            seedDataSource.vector_layers,
+            seedDataSource.tilestats,
+            seedDataSource.concurrency,
+            seedDataSource.maxTry,
+            seedDataSource.timeout,
+            seedDataSource.refreshBefore?.time ||
+              seedDataSource.refreshBefore?.day ||
+              seedDataSource.refreshBefore?.md5
           );
         } catch (error) {
           printLog(
@@ -476,7 +462,7 @@ async function startTask() {
         printLog("info", "Completed seeding data!");
       }
     } catch (error) {
-      printLog("error", `Failed seed data: ${error}. Exited!`);
+      printLog("error", `Failed to seed data: ${error}. Exited!`);
     }
   }
 }
