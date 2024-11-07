@@ -1,5 +1,6 @@
 "use strict";
 
+import { loadCleanUpFile, loadSeedFile } from "./config.js";
 import fsPromise from "node:fs/promises";
 import { program } from "commander";
 import pLimit from "p-limit";
@@ -363,15 +364,11 @@ async function startTask() {
 `
   );
 
-  /* Read cleanup.json file */
-  const cleanUpData = JSON.parse(
-    await fsPromise.readFile(`${opts.dataDir}/cleanup.json`, "utf8")
-  );
-
-  /* Read seed.json file */
-  const seedData = JSON.parse(
-    await fsPromise.readFile(`${opts.dataDir}/seed.json`, "utf8")
-  );
+  /* Read cleanup.json and seed.json files */
+  const [cleanUpData, seedData] = await Promise.all([
+    loadCleanUpFile(opts.dataDir),
+    loadSeedFile(opts.dataDir),
+  ]);
 
   /* Remove old cache locks */
   if (opts.removeOldCacheLocks) {

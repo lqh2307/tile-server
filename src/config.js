@@ -105,7 +105,9 @@ async function loadConfigFile(dataDir) {
   );
 
   /* Read config.json file */
-  config = JSON.parse(await fsPromise.readFile(configFilePath, "utf8"));
+  const data = await fsPromise.readFile(configFilePath, "utf8");
+
+  config = JSON.parse(data);
 
   /* Fix object */
   config.paths = {
@@ -143,7 +145,7 @@ async function loadConfigFile(dataDir) {
 /**
  * Load seed.json file
  * @param {string} dataDir
- * @returns {Promise<void>}
+ * @returns {Promise<object>}
  */
 async function loadSeedFile(dataDir) {
   const seedFilePath = `${dataDir}/seed.json`;
@@ -398,13 +400,15 @@ async function loadSeedFile(dataDir) {
   );
 
   /* Read seed.json file */
-  seed = JSON.parse(await fsPromise.readFile(seedFilePath, "utf8"));
+  const data = await fsPromise.readFile(seedFilePath, "utf8");
+
+  return JSON.parse(data);
 }
 
 /**
  * Load cleanup.json file
  * @param {string} dataDir
- * @returns {Promise<void>}
+ * @returns {Promise<object>}
  */
 async function loadCleanUpFile(dataDir) {
   const cleanUpFilePath = `${dataDir}/cleanup.json`;
@@ -554,7 +558,9 @@ async function loadCleanUpFile(dataDir) {
   );
 
   /* Read cleanup.json file */
-  cleanUp = JSON.parse(await fsPromise.readFile(cleanUpFilePath, "utf8"));
+  const data = await fsPromise.readFile(cleanUpFilePath, "utf8");
+
+  return JSON.parse(data);
 }
 
 export { loadConfigFile, loadSeedFile, loadCleanUpFile, config };

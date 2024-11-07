@@ -3,6 +3,7 @@
 import { checkReadyMiddleware, printLog } from "./utils.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
+import { loadConfigFile, config } from "./config.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
 import { serve_style } from "./serve_style.js";
@@ -11,12 +12,6 @@ import { serve_data } from "./serve_data.js";
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
-import {
-  loadCleanUpFile,
-  loadConfigFile,
-  loadSeedFile,
-  config,
-} from "./config.js";
 
 /**
  * Start server
@@ -27,11 +22,7 @@ export async function startServer(dataDir) {
   try {
     printLog("info", "Loading config, seed, clean up files...");
 
-    await Promise.all([
-      loadConfigFile(dataDir),
-      loadSeedFile(dataDir),
-      loadCleanUpFile(dataDir),
-    ]);
+    await loadConfigFile(dataDir);
 
     printLog("info", "Starting HTTP server...");
 
