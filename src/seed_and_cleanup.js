@@ -190,8 +190,10 @@ export async function seedXYZTileDataFiles(
   await Promise.all(tilePromises);
 
   // Update metadata.json file
+  const metadataFilePath = `${outputFolder}/metadata.json`;
+
   await updateXYZMetadataFileWithLock(
-    outputFolder,
+    metadataFilePath,
     {
       name: name,
       description: description,
@@ -209,8 +211,10 @@ export async function seedXYZTileDataFiles(
   );
 
   // Update md5.json file
+  const md5FilePath = `${outputFolder}/md5.json`;
+
   await updateXYZMD5FileWithLock(
-    outputFolder,
+    md5FilePath,
     hashs,
     300000 // 5 mins
   );
@@ -312,8 +316,10 @@ export async function cleanXYZTileDataFiles(
   await Promise.all(tilePromises);
 
   // Update md5.json file
+  const md5FilePath = `${outputFolder}/md5.json`;
+
   await updateXYZMD5FileWithLock(
-    outputFolder,
+    md5FilePath,
     hashs,
     300000 // 5 mins
   );

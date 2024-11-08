@@ -284,12 +284,12 @@ export async function getXYZInfos(sourcePath) {
 
 /**
  * Update XYZ metadata.json file
- * @param {string} sourcePath Folder path to metadata.json file
+ * @param {string} filePath File path to store metadata.json file
  * @param {Object<string,string>} metadataAdds Metadata object
  * @returns {Promise<void>}
  */
-export async function updateXYZMetadataFile(sourcePath, metadataAdds) {
-  const filePath = `${sourcePath}/metadata.json`;
+export async function updateXYZMetadataFile(filePath, metadataAdds) {
+  const tempFilePath = `${filePath}.tmp`;
 
   try {
     const data = await fsPromise.readFile(filePath, "utf8");
@@ -297,7 +297,7 @@ export async function updateXYZMetadataFile(sourcePath, metadataAdds) {
     const metadatas = JSON.parse(data);
 
     await fsPromise.writeFile(
-      filePath,
+      tempFilePath,
       JSON.stringify(
         {
           ...metadatas,
@@ -308,9 +308,11 @@ export async function updateXYZMetadataFile(sourcePath, metadataAdds) {
       ),
       "utf8"
     );
+
+    await fsPromise.rename(tempFilePath, filePath);
   } catch (error) {
     if (error.code === "ENOENT") {
-      await fsPromise.mkdir(sourcePath, {
+      await fsPromise.mkdir(path.dirname(filePath), {
         recursive: true,
       });
 
@@ -320,6 +322,8 @@ export async function updateXYZMetadataFile(sourcePath, metadataAdds) {
         "utf8"
       );
     } else {
+      await removeFilesOrFolder(tempFilePath);
+
       throw error;
     }
   }
@@ -327,25 +331,25 @@ export async function updateXYZMetadataFile(sourcePath, metadataAdds) {
 
 /**
  * Update XYZ metadata.json file with lock
- * @param {string} sourcePath Folder path to metadata md5.json file
+ * @param {string} filePath File path to store metadata.json file
  * @param {Object<string,string>} metadataAdds Metadata object
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
 export async function updateXYZMetadataFileWithLock(
-  sourcePath,
+  filePath,
   metadataAdds,
   timeout
 ) {
   const startTime = Date.now();
-  const lockFilePath = `${sourcePath}/metadata.json.lock`;
+  const lockFilePath = `${filePath}.lock`;
   let lockFileHandle;
 
   while (Date.now() - startTime <= timeout) {
     try {
       lockFileHandle = await fsPromise.open(lockFilePath, "wx");
 
-      await updateXYZMetadataFile(sourcePath, metadataAdds);
+      await updateXYZMetadataFile(filePath, metadataAdds);
 
       await lockFileHandle.close();
 
@@ -354,11 +358,11 @@ export async function updateXYZMetadataFileWithLock(
       return;
     } catch (error) {
       if (error.code === "ENOENT") {
-        await fsPromise.mkdir(sourcePath, {
+        await fsPromise.mkdir(path.dirname(filePath), {
           recursive: true,
         });
 
-        await updateXYZMetadataFile(sourcePath, metadataAdds, timeout);
+        await updateXYZMetadataFileWithLock(filePath, metadataAdds, timeout);
 
         return;
       } else if (error.code === "EEXIST") {
@@ -380,18 +384,18 @@ export async function updateXYZMetadataFileWithLock(
 
 /**
  * Update XYZ md5.json file
- * @param {string} sourcePath Folder path to store md5.json file
+ * @param {string} filePath File path to store md5.json file
  * @param {Object<string,string>} hashAdds Hash data object
  * @returns {Promise<void>}
  */
-export async function updateXYZMD5File(sourcePath, hashAdds) {
-  const filePath = `${sourcePath}/md5.json`;
+export async function updateXYZMD5File(filePath, hashAdds) {
+  const tempFilePath = `${filePath}.tmp`;
 
   try {
     const hashs = JSON.parse(await fsPromise.readFile(filePath, "utf8"));
 
     await fsPromise.writeFile(
-      filePath,
+      tempFilePath,
       JSON.stringify(
         {
           ...hashs,
@@ -402,9 +406,11 @@ export async function updateXYZMD5File(sourcePath, hashAdds) {
       ),
       "utf8"
     );
+
+    await fsPromise.rename(tempFilePath, filePath);
   } catch (error) {
     if (error.code === "ENOENT") {
-      await fsPromise.mkdir(sourcePath, {
+      await fsPromise.mkdir(path.dirname(filePath), {
         recursive: true,
       });
 
@@ -414,6 +420,8 @@ export async function updateXYZMD5File(sourcePath, hashAdds) {
         "utf8"
       );
     } else {
+      await removeFilesOrFolder(tempFilePath);
+
       throw error;
     }
   }
@@ -421,21 +429,21 @@ export async function updateXYZMD5File(sourcePath, hashAdds) {
 
 /**
  * Update XYZ md5.json file with lock
- * @param {string} sourcePath Folder path to store md5.json file
+ * @param {string} filePath File path to store md5.json file
  * @param {Object<string,string>} hashAdds Hash data object
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function updateXYZMD5FileWithLock(sourcePath, hashAdds, timeout) {
+export async function updateXYZMD5FileWithLock(filePath, hashAdds, timeout) {
   const startTime = Date.now();
-  const lockFilePath = `${sourcePath}/md5.json.lock`;
+  const lockFilePath = `${filePath}.lock`;
   let lockFileHandle;
 
   while (Date.now() - startTime <= timeout) {
     try {
       lockFileHandle = await fsPromise.open(lockFilePath, "wx");
 
-      await updateXYZMD5File(sourcePath, hashAdds);
+      await updateXYZMD5File(filePath, hashAdds);
 
       await lockFileHandle.close();
 
@@ -444,7 +452,7 @@ export async function updateXYZMD5FileWithLock(sourcePath, hashAdds, timeout) {
       return;
     } catch (error) {
       if (error.code === "ENOENT") {
-        await fsPromise.mkdir(sourcePath, {
+        await fsPromise.mkdir(path.dirname(filePath), {
           recursive: true,
         });
 
@@ -475,11 +483,21 @@ export async function updateXYZMD5FileWithLock(sourcePath, hashAdds, timeout) {
  * @returns {Promise<void>}
  */
 export async function createXYZTileDataFile(filePath, data) {
-  await fsPromise.mkdir(path.dirname(filePath), {
-    recursive: true,
-  });
+  const tempFilePath = `${filePath}.tmp`;
 
-  await fsPromise.writeFile(filePath, data);
+  try {
+    await fsPromise.mkdir(path.dirname(filePath), {
+      recursive: true,
+    });
+
+    await fsPromise.writeFile(tempFilePath, data);
+
+    await fsPromise.rename(tempFilePath, filePath);
+  } catch (error) {
+    await removeFilesOrFolder(tempFilePath);
+
+    throw error;
+  }
 }
 
 /**
@@ -515,7 +533,6 @@ export async function createXYZTileDataFileWithLock(filePath, data) {
       if (lockFileHandle !== undefined) {
         await lockFileHandle.close();
 
-        await removeFilesOrFolder(filePath);
         await removeFilesOrFolder(lockFilePath);
       }
 
@@ -560,7 +577,6 @@ export async function storeXYZTileDataFileWithLock(filePath, data, timeout) {
         if (lockFileHandle !== undefined) {
           await lockFileHandle.close();
 
-          await removeFilesOrFolder(filePath);
           await removeFilesOrFolder(lockFilePath);
         }
 
@@ -612,49 +628,6 @@ export async function removeXYZTileDataFileWithLock(filePath, timeout) {
   }
 
   throw new Error(`Timeout to access ${lockFilePath} file`);
-}
-
-/**
- * Get XYZ tile with lock
- * @param {string} sourcePath Folder path
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
- * @returns {Promise<object>}
- */
-export async function getXYZTileWithLock(sourcePath, z, x, y, format) {
-  const filePath = `${sourcePath}/${z}/${x}/${y}.${format}`;
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  try {
-    lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-    let data = await fsPromise.readFile(filePath);
-    if (!data) {
-      throw new Error("Tile does not exist");
-    }
-
-    data = Buffer.from(data);
-
-    await lockFileHandle.close();
-
-    await removeFilesOrFolder(lockFilePath);
-
-    return {
-      data: data,
-      headers: detectFormatAndHeaders(data).headers,
-    };
-  } catch (error) {
-    if (lockFileHandle !== undefined) {
-      await lockFileHandle.close();
-
-      await removeFilesOrFolder(lockFilePath);
-    }
-
-    throw error;
-  }
 }
 
 /**

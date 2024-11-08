@@ -5,7 +5,6 @@ import { StatusCodes } from "http-status-codes";
 import express from "express";
 import {
   cacheXYZTileDataFile,
-  getXYZTileWithLock,
   getXYZTileFromURL,
   getXYZTileMD5,
   getXYZInfos,
@@ -77,7 +76,7 @@ function getDataTileHandler() {
       } else if (item.sourceType === "xyz") {
         if (item.sourceURL !== undefined) {
           try {
-            dataTile = await getXYZTileWithLock(
+            dataTile = await getXYZTile(
               item.source,
               z,
               x,
@@ -85,7 +84,7 @@ function getDataTileHandler() {
               item.tileJSON.format
             );
           } catch (error) {
-            if (error.code === "EEXIST" || error.code === "ENOENT") {
+            if (error.message === "Tile does not exist") {
               const url = item.sourceURL.replaceAll("{z}/{x}/{y}", tileName);
 
               printLog(

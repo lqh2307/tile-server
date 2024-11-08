@@ -1,5 +1,6 @@
 "use strict";
 
+import { cacheXYZTileDataFile, getXYZTileFromURL, getXYZTile } from "./xyz.js";
 import mlgl from "@maplibre/maplibre-gl-native";
 import { StatusCodes } from "http-status-codes";
 import { getPMTilesTile } from "./pmtiles.js";
@@ -8,12 +9,6 @@ import { Worker } from "node:worker_threads";
 import { createPool } from "generic-pool";
 import { config } from "./config.js";
 import express from "express";
-import {
-  cacheXYZTileDataFile,
-  getXYZTileWithLock,
-  getXYZTileFromURL,
-  getXYZTile,
-} from "./xyz.js";
 import {
   detectFormatAndHeaders,
   getDataTileFromURL,
@@ -660,7 +655,7 @@ export const serve_rendered = {
 
                 if (sourceData.sourceURL !== undefined) {
                   try {
-                    dataTile = await getXYZTileWithLock(
+                    dataTile = await getXYZTile(
                       sourceData.source,
                       z,
                       x,
@@ -668,7 +663,7 @@ export const serve_rendered = {
                       sourceData.tileJSON.format
                     );
                   } catch (error) {
-                    if (error.code === "EEXIST" || error.code === "ENOENT") {
+                    if (error.message === "Tile does not exist") {
                       const url = sourceData.sourceURL.replaceAll(
                         "{z}/{x}/{y}",
                         tileName
