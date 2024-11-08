@@ -681,18 +681,20 @@ export const serve_rendered = {
                       );
 
                       /* Cache */
-                      cacheXYZTileDataFile(
-                        sourceData.source,
-                        tileName,
-                        sourceData.tileJSON.format,
-                        dataTile.data,
-                        dataTile.etag
-                      ).catch((error) =>
-                        printLog(
-                          "error",
-                          `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}`
-                        )
-                      );
+                      if (sourceData.storeCache === true) {
+                        cacheXYZTileDataFile(
+                          sourceData.source,
+                          tileName,
+                          sourceData.tileJSON.format,
+                          dataTile.data,
+                          dataTile.etag
+                        ).catch((error) =>
+                          printLog(
+                            "error",
+                            `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}`
+                          )
+                        );
+                      }
                     } else {
                       throw error;
                     }

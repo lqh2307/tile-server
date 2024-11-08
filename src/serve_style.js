@@ -244,10 +244,6 @@ export const serve_style = {
         try {
           const stylePath = config.styles[id].style;
 
-          if (!stylePath) {
-            throw new Error(`"style" property is empty`);
-          }
-
           /* Read style json file */
           const filePath = `${config.paths.styles}/${stylePath}`;
           const fileData = await fsPromise.readFile(filePath, "utf8");

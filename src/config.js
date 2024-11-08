@@ -21,21 +21,56 @@ async function loadConfigFile(dataDir) {
         options: {
           type: "object",
           properties: {
-            listenPort: { type: "integer" },
-            killEndpoint: { type: "boolean" },
-            restartEndpoint: { type: "boolean" },
-            configEndpoint: { type: "boolean" },
-            frontPage: { type: "boolean" },
-            serveWMTS: { type: "boolean" },
-            serveRendered: { type: "boolean" },
-            maxScaleRender: { type: "number", minimum: 1 },
-            renderedCompression: { type: "integer", minimum: 1, maximum: 9 },
-            serveSwagger: { type: "boolean" },
-            createMetadataIndex: { type: "boolean" },
-            createTilesIndex: { type: "boolean" },
-            loggerFormat: { type: "string" },
-            minPoolSize: { type: "integer", minimum: 1 },
-            maxPoolSize: { type: "integer", minimum: 1 },
+            listenPort: {
+              type: "integer",
+            },
+            killEndpoint: {
+              type: "boolean",
+            },
+            restartEndpoint: {
+              type: "boolean",
+            },
+            configEndpoint: {
+              type: "boolean",
+            },
+            frontPage: {
+              type: "boolean",
+            },
+            serveWMTS: {
+              type: "boolean",
+            },
+            serveRendered: {
+              type: "boolean",
+            },
+            maxScaleRender: {
+              type: "number",
+              minimum: 1,
+            },
+            renderedCompression: {
+              type: "integer",
+              minimum: 1,
+              maximum: 9,
+            },
+            serveSwagger: {
+              type: "boolean",
+            },
+            createMetadataIndex: {
+              type: "boolean",
+            },
+            createTilesIndex: {
+              type: "boolean",
+            },
+            loggerFormat: {
+              type: "string",
+            },
+            minPoolSize: {
+              type: "integer",
+              minimum: 1,
+            },
+            maxPoolSize: {
+              type: "integer",
+              minimum: 1,
+            },
           },
           required: [
             "listenPort",
@@ -61,7 +96,10 @@ async function loadConfigFile(dataDir) {
           additionalProperties: {
             type: "object",
             properties: {
-              style: { type: "string" },
+              style: {
+                type: "string",
+                minLength: 1,
+              },
             },
             required: ["style"],
             additionalProperties: true,
@@ -72,10 +110,30 @@ async function loadConfigFile(dataDir) {
           additionalProperties: {
             type: "object",
             properties: {
-              mbtiles: { type: "string" },
-              pmtiles: { type: "string" },
-              xyz: { type: "string" },
-              cache: { type: "boolean" },
+              mbtiles: {
+                type: "string",
+                minLength: 1,
+              },
+              pmtiles: {
+                type: "string",
+                minLength: 1,
+              },
+              xyz: {
+                type: "string",
+                minLength: 1,
+              },
+              cache: {
+                type: "object",
+                properties: {
+                  forward: {
+                    type: "boolean",
+                  },
+                  store: {
+                    type: "boolean",
+                  },
+                },
+                additionalProperties: true,
+              },
             },
             additionalProperties: true,
             anyOf: [
@@ -165,12 +223,14 @@ async function loadSeedFile(dataDir) {
             properties: {
               url: {
                 type: "string",
+                minLength: 1,
               },
               refreshBefore: {
                 type: "object",
                 properties: {
                   time: {
                     type: "string",
+                    minLength: 1,
                   },
                   day: {
                     type: "integer",
@@ -205,6 +265,7 @@ async function loadSeedFile(dataDir) {
               },
               url: {
                 type: "string",
+                minLength: 1,
               },
               format: {
                 type: "string",
@@ -237,6 +298,7 @@ async function loadSeedFile(dataDir) {
                   minimum: 0,
                   maximum: 22,
                 },
+                minItems: 0,
                 maxItems: 23,
               },
               vector_layers: {
@@ -288,6 +350,7 @@ async function loadSeedFile(dataDir) {
                 properties: {
                   time: {
                     type: "string",
+                    minLength: 1,
                   },
                   day: {
                     type: "integer",
@@ -306,12 +369,15 @@ async function loadSeedFile(dataDir) {
               },
               timeout: {
                 type: "integer",
+                minimum: 0,
               },
               concurrency: {
                 type: "integer",
+                minimum: 1,
               },
               maxTry: {
                 type: "integer",
+                minimum: 1,
               },
             },
             required: ["url"],
@@ -325,12 +391,14 @@ async function loadSeedFile(dataDir) {
             properties: {
               url: {
                 type: "string",
+                minLength: 1,
               },
               refreshBefore: {
                 type: "object",
                 properties: {
                   time: {
                     type: "string",
+                    minLength: 1,
                   },
                   day: {
                     type: "integer",
@@ -359,12 +427,14 @@ async function loadSeedFile(dataDir) {
             properties: {
               url: {
                 type: "string",
+                minLength: 1,
               },
               refreshBefore: {
                 type: "object",
                 properties: {
                   time: {
                     type: "string",
+                    minLength: 1,
                   },
                   day: {
                     type: "integer",
@@ -426,9 +496,6 @@ async function loadCleanUpFile(dataDir) {
           additionalProperties: {
             type: "object",
             properties: {
-              url: {
-                type: "string",
-              },
               cleanUpBefore: {
                 type: "object",
                 properties: {
@@ -470,6 +537,7 @@ async function loadCleanUpFile(dataDir) {
                   minimum: 0,
                   maximum: 22,
                 },
+                minItems: 0,
                 maxItems: 23,
               },
               cleanUpBefore: {
@@ -477,6 +545,7 @@ async function loadCleanUpFile(dataDir) {
                 properties: {
                   time: {
                     type: "string",
+                    minLength: 1,
                   },
                   day: {
                     type: "integer",
@@ -495,14 +564,12 @@ async function loadCleanUpFile(dataDir) {
           additionalProperties: {
             type: "object",
             properties: {
-              url: {
-                type: "string",
-              },
               cleanUpBefore: {
                 type: "object",
                 properties: {
                   time: {
                     type: "string",
+                    minLength: 1,
                   },
                   day: {
                     type: "integer",
@@ -522,14 +589,12 @@ async function loadCleanUpFile(dataDir) {
           additionalProperties: {
             type: "object",
             properties: {
-              url: {
-                type: "string",
-              },
               cleanUpBefore: {
                 type: "object",
                 properties: {
                   time: {
                     type: "string",
+                    minLength: 1,
                   },
                   day: {
                     type: "integer",

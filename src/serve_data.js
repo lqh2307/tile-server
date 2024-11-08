@@ -99,18 +99,20 @@ function getDataTileHandler() {
               );
 
               /* Cache */
-              cacheXYZTileDataFile(
-                item.source,
-                tileName,
-                item.tileJSON.format,
-                dataTile.data,
-                dataTile.etag
-              ).catch((error) =>
-                printLog(
-                  "error",
-                  `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}`
-                )
-              );
+              if (item.storeCache === true) {
+                cacheXYZTileDataFile(
+                  item.source,
+                  tileName,
+                  item.tileJSON.format,
+                  dataTile.data,
+                  dataTile.etag
+                ).catch((error) =>
+                  printLog(
+                    "error",
+                    `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}`
+                  )
+                );
+              }
             } else {
               throw error;
             }
@@ -656,7 +658,7 @@ export const serve_data = {
 
             let cacheSource;
 
-            if (item.cache === true) {
+            if (item.cache !== undefined) {
               dataInfo.source = `${config.paths.caches.xyzs}/${item.xyz}`;
 
               cacheSource = seed.datas[item.xyz];
@@ -665,13 +667,17 @@ export const serve_data = {
                 throw new Error(`Cache data id "${item.xyz}" is not valid`);
               }
 
-              dataInfo.sourceURL = cacheSource.url;
+              if (item.cache.forward === true) {
+                dataInfo.sourceURL = cacheSource.url;
+              }
+
+              dataInfo.storeCache = item.cache.store;
             }
 
             try {
               dataInfo.tileJSON = await getXYZInfos(dataInfo.source);
             } catch (error) {
-              if (item.cache === true) {
+              if (item.cache !== undefined) {
                 dataInfo.tileJSON = {
                   name: cacheSource.name,
                   description: cacheSource.description,

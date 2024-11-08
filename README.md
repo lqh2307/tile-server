@@ -254,19 +254,16 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
   "restartServerAfterCleanUp": true,
   "styles": {
     "vietnam": {
-      "url": "http://localhost:8080/styles/vietnam/style.json",
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
       },
     },
     "cambodia": {
-      "url": "http://localhost:8080/styles/cambodia/style.json",
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
       }
     },
     "zurich_switzerland": {
-      "url": "http://localhost:8080/styles/zurich_switzerland/style.json",
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
       }
@@ -290,13 +287,11 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
   },
   "sprites": {
     "liberty": {
-      "url": "http://localhost:8080/sprites/liberty/sprite",
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
       },
     },
     "basic": {
-      "url": "http://localhost:8080/sprites/basic/sprite",
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
       },
@@ -304,13 +299,11 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
   },
   "fonts": {
     "Open Sans Regular": {
-      "url": "http://localhost:8080/fonts/Open Sans Regular/{range}.pbf",
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
       },
     },
     "Times New Roman": {
-      "url": "http://localhost:8080/fonts/Times New Roman/{range}.pbf",
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
       },
