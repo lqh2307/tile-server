@@ -397,10 +397,13 @@ export async function removeOldCacheLocks(folderPath) {
   await Promise.all(
     fileNames.map(async (fileName) => {
       const lockFilePath = `${folderPath}/${fileName}`;
-      const filePath = lockFilePath.slice(0, lockFilePath.lastIndexOf("."));
+      const tempFilePath = `${lockFilePath.slice(
+        0,
+        lockFilePath.lastIndexOf(".")
+      )}.tmp`;
 
+      await removeFilesOrFolder(tempFilePath);
       await removeFilesOrFolder(lockFilePath);
-      await removeFilesOrFolder(filePath);
     })
   );
 }
