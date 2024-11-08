@@ -1010,13 +1010,15 @@ export async function validateSprite(spriteDirPath) {
 /**
  * Download file with stream
  * @param {string} url The URL to download the file from
- * @param {string} outputPath The path where the file will be saved
+ * @param {string} filePath The path where the file will be saved
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<object>}
  */
-export async function downloadFileWithStream(url, outputPath, timeout) {
+export async function downloadFileWithStream(url, filePath, timeout) {
+  const tempFilePath = `${filePath}.tmp`;
+
   try {
-    await fsPromise.mkdir(path.dirname(outputPath), {
+    await fsPromise.mkdir(path.dirname(filePath), {
       recursive: true,
     });
 
@@ -1039,12 +1041,22 @@ export async function downloadFileWithStream(url, outputPath, timeout) {
       }),
     });
 
-    const writer = fs.createWriteStream(outputPath);
+    const writer = fs.createWriteStream(tempFilePath);
 
     response.data.pipe(writer);
 
     return new Promise((resolve, reject) => {
-      writer.on("finish", resolve).on("error", reject);
+      writer
+        .on("finish", async () => {
+          await fsPromise.rename(tempFilePath, filePath);
+
+          resolve();
+        })
+        .on("error", async (error) => {
+          await removeFilesOrFolder(tempFilePath);
+
+          reject(error);
+        });
     });
   } catch (error) {
     if (error.response) {

@@ -425,7 +425,7 @@ export async function closeMBTiles(mbtilesSource) {
 /**
  * Download MBTiles file
  * @param {string} url The URL to download the file from
- * @param {string} outputPath The path where the file will be saved
+ * @param {string} filePath The path where the file will be saved
  * @param {boolean} overwrite Overwrite exist file
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
@@ -433,29 +433,29 @@ export async function closeMBTiles(mbtilesSource) {
  */
 export async function downloadMBTilesFile(
   url,
-  outputPath,
+  filePath,
   overwrite,
   maxTry,
   timeout
 ) {
   try {
-    if (overwrite === true || (await isExistFile(outputPath)) === false) {
+    if (overwrite === true || (await isExistFile(filePath)) === false) {
       printLog(
         "info",
-        `Downloading MBTiles file "${outputPath}" from "${url}"...`
+        `Downloading MBTiles file "${filePath}" from "${url}"...`
       );
 
       await retry(async () => {
-        await downloadFileWithStream(url, outputPath, timeout);
+        await downloadFileWithStream(url, filePath, timeout);
       }, maxTry);
     }
   } catch (error) {
     printLog(
       "error",
-      `Failed to download MBTiles file "${outputPath}" from "${url}": ${error}`
+      `Failed to download MBTiles file "${filePath}" from "${url}": ${error}`
     );
 
     // Remove error tile data file
-    await removeFilesOrFolder(outputPath);
+    await removeFilesOrFolder(filePath);
   }
 }
