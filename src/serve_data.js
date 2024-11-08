@@ -669,9 +669,8 @@ export const serve_data = {
 
               if (item.cache.forward === true) {
                 dataInfo.sourceURL = cacheSource.url;
+                dataInfo.storeCache = item.cache.store;
               }
-
-              dataInfo.storeCache = item.cache.store;
             }
 
             try {
