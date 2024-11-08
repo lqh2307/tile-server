@@ -456,7 +456,7 @@ export async function updateXYZMD5FileWithLock(filePath, hashAdds, timeout) {
           recursive: true,
         });
 
-        await updateXYZMD5FileWithLock(sourcePath, hashAdds, timeout);
+        await updateXYZMD5FileWithLock(filePath, hashAdds, timeout);
 
         return;
       } else if (error.code === "EEXIST") {
@@ -744,8 +744,10 @@ export async function cacheXYZTileDataFile(
 
   try {
     if ((await createXYZTileDataFileWithLock(filePath, data)) === true) {
+      const md5FilePath = `${sourcePath}/md5.json`;
+
       updateXYZMD5FileWithLock(
-        sourcePath,
+        md5FilePath,
         {
           [tileName]: md5 === undefined ? calculateMD5(data) : md5,
         },
