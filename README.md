@@ -133,11 +133,17 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
     },
     "asia_vietnam_cache": {
       "xyz": "asia_vietnam_cache",
-      "cache": true
+      "cache": {
+        "forward": true,
+        "store": true
+      }
     },
     "asia_cambodia_cache": {
       "xyz": "asia_cambodia_cache",
-      "cache": true
+      "cache": {
+        "forward": true,
+        "store": false
+      }
     }
   },
   "sprites": {

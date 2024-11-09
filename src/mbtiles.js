@@ -1,5 +1,6 @@
 "use strict";
 
+import { printLog } from "./logger.js";
 import {
   getLayerNamesFromPBFTileBuffer,
   downloadFileWithStream,
@@ -8,7 +9,6 @@ import {
   createNewTileJSON,
   calculateMD5,
   isExistFile,
-  printLog,
   retry,
 } from "./utils.js";
 import sqlite3 from "sqlite3";

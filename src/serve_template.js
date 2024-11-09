@@ -2,6 +2,7 @@
 
 import { getXYZFromLonLatZ, compileTemplate, getRequestHost } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
+import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
 

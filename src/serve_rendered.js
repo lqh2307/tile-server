@@ -7,6 +7,7 @@ import { getPMTilesTile } from "./pmtiles.js";
 import { getMBTilesTile } from "./mbtiles.js";
 import { Worker } from "node:worker_threads";
 import { createPool } from "generic-pool";
+import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
 import {
@@ -20,7 +21,6 @@ import {
   renderData,
   getSprite,
   deepClone,
-  printLog,
 } from "./utils.js";
 
 async function processImageInWorker(data, scale, compression, tileSize, z) {
@@ -133,8 +133,7 @@ function getRenderedHandler() {
       const renderedInfo = {
         ...item.tileJSON,
         tiles: [
-          `${getRequestHost(req)}styles/${id}/${
-            req.params.tileSize || 256
+          `${getRequestHost(req)}styles/${id}/${req.params.tileSize || 256
           }/{z}/{x}/{y}.png${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
         ],
       };
@@ -190,8 +189,7 @@ function getRenderedTileJSONsListHandler() {
             ...item.tileJSON,
             id: id,
             tiles: [
-              `${getRequestHost(req)}styles/${id}/{z}/{x}/{y}.png${
-                req.query.scheme === "tms" ? "?scheme=tms" : ""
+              `${getRequestHost(req)}styles/${id}/{z}/{x}/{y}.png${req.query.scheme === "tms" ? "?scheme=tms" : ""
               }`,
             ],
           };
@@ -598,22 +596,22 @@ export const serve_rendered = {
                 const dataTile =
                   sourceData.sourceType === "mbtiles"
                     ? await getMBTilesTile(
-                        sourceData.source,
-                        z,
-                        x,
-                        scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
-                      )
+                      sourceData.source,
+                      z,
+                      x,
+                      scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+                    )
                     : await getPMTilesTile(
-                        sourceData.source,
-                        z,
-                        x,
-                        scheme === "tms" ? (1 << z) - 1 - y : y // Default of PMTiles is xyz. Flip Y to convert xyz scheme => tms scheme
-                      );
+                      sourceData.source,
+                      z,
+                      x,
+                      scheme === "tms" ? (1 << z) - 1 - y : y // Default of PMTiles is xyz. Flip Y to convert xyz scheme => tms scheme
+                    );
 
                 /* Unzip pbf rendered tile */
                 if (
                   dataTile.headers["Content-Type"] ===
-                    "application/x-protobuf" &&
+                  "application/x-protobuf" &&
                   dataTile.headers["Content-Encoding"] !== undefined
                 ) {
                   dataTile.data = await unzipAsync(dataTile.data);
@@ -653,53 +651,7 @@ export const serve_rendered = {
                 /* Get rendered tile */
                 let dataTile;
 
-                if (sourceData.sourceURL !== undefined) {
-                  try {
-                    dataTile = await getXYZTile(
-                      sourceData.source,
-                      z,
-                      x,
-                      scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
-                      sourceData.tileJSON.format
-                    );
-                  } catch (error) {
-                    if (error.message === "Tile does not exist") {
-                      const url = sourceData.sourceURL.replaceAll(
-                        "{z}/{x}/{y}",
-                        tileName
-                      );
-
-                      printLog(
-                        "info",
-                        `Getting data "${id}" - Tile "${tileName}" - From "${url}"...`
-                      );
-
-                      /* Get data */
-                      dataTile = await getXYZTileFromURL(
-                        url,
-                        60000 // 1 mins
-                      );
-
-                      /* Cache */
-                      if (sourceData.storeCache === true) {
-                        cacheXYZTileDataFile(
-                          sourceData.source,
-                          tileName,
-                          sourceData.tileJSON.format,
-                          dataTile.data,
-                          dataTile.etag
-                        ).catch((error) =>
-                          printLog(
-                            "error",
-                            `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}`
-                          )
-                        );
-                      }
-                    } else {
-                      throw error;
-                    }
-                  }
-                } else {
+                try {
                   dataTile = await getXYZTile(
                     sourceData.source,
                     z,
@@ -707,12 +659,48 @@ export const serve_rendered = {
                     scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
                     sourceData.tileJSON.format
                   );
+                } catch (error) {
+                  if (sourceData.sourceURL !== undefined) {
+                    const url = sourceData.sourceURL.replaceAll(
+                      "{z}/{x}/{y}",
+                      tileName
+                    );
+
+                    printLog(
+                      "info",
+                      `Getting data "${id}" - Tile "${tileName}" - From "${url}"...`
+                    );
+
+                    /* Get data */
+                    dataTile = await getXYZTileFromURL(
+                      url,
+                      60000 // 1 mins
+                    );
+
+                    /* Cache */
+                    if (sourceData.storeCache === true) {
+                      cacheXYZTileDataFile(
+                        sourceData.source,
+                        tileName,
+                        sourceData.tileJSON.format,
+                        dataTile.data,
+                        dataTile.etag
+                      ).catch((error) =>
+                        printLog(
+                          "error",
+                          `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}`
+                        )
+                      );
+                    }
+                  } else {
+                    throw error;
+                  }
                 }
 
                 /* Unzip pbf rendered tile */
                 if (
                   dataTile.headers["Content-Type"] ===
-                    "application/x-protobuf" &&
+                  "application/x-protobuf" &&
                   dataTile.headers["Content-Encoding"] !== undefined
                 ) {
                   dataTile.data = await unzipAsync(dataTile.data);
@@ -739,7 +727,7 @@ export const serve_rendered = {
                 /* Unzip pbf data */
                 if (
                   dataTile.headers["Content-Type"] ===
-                    "application/x-protobuf" &&
+                  "application/x-protobuf" &&
                   dataTile.headers["Content-Encoding"] !== undefined
                 ) {
                   dataTile.data = await unzipAsync(dataTile.data);
@@ -821,11 +809,9 @@ export const serve_rendered = {
                             : tile.split("/")[2].slice(0, queryIndex);
                         const sourceData = config.repo.datas[sourceID];
 
-                        tile = `${
-                          sourceData.sourceType
-                        }://${sourceID}/{z}/{x}/{y}.${
-                          sourceData.tileJSON.format
-                        }${queryIndex === -1 ? "" : tile.slice(queryIndex)}`;
+                        tile = `${sourceData.sourceType
+                          }://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format
+                          }${queryIndex === -1 ? "" : tile.slice(queryIndex)}`;
                       }
 
                       return tile;
@@ -851,11 +837,9 @@ export const serve_rendered = {
                           : url.split("/")[2].slice(0, queryIndex);
                       const sourceData = config.repo.datas[sourceID];
 
-                      const tile = `${
-                        sourceData.sourceType
-                      }://${sourceID}/{z}/{x}/{y}.${
-                        sourceData.tileJSON.format
-                      }${queryIndex === -1 ? "" : url.slice(queryIndex)}`;
+                      const tile = `${sourceData.sourceType
+                        }://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format
+                        }${queryIndex === -1 ? "" : url.slice(queryIndex)}`;
 
                       if (source.tiles !== undefined) {
                         if (source.tiles.includes(tile) === false) {
@@ -891,11 +875,9 @@ export const serve_rendered = {
                         : source.url.split("/")[2].slice(0, queryIndex);
                     const sourceData = config.repo.datas[sourceID];
 
-                    const tile = `${
-                      sourceData.sourceType
-                    }://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}${
-                      queryIndex === -1 ? "" : source.url.slice(queryIndex)
-                    }`;
+                    const tile = `${sourceData.sourceType
+                      }://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}${queryIndex === -1 ? "" : source.url.slice(queryIndex)
+                      }`;
 
                     if (source.tiles !== undefined) {
                       if (source.tiles.includes(tile) === false) {
@@ -936,7 +918,7 @@ export const serve_rendered = {
                 if (
                   source.attribution &&
                   rendered.tileJSON.attribution.includes(source.attribution) ===
-                    false
+                  false
                 ) {
                   rendered.tileJSON.attribution += ` | ${source.attribution}`;
                 }

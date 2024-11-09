@@ -1,10 +1,11 @@
 "use strict";
 
-import { checkReadyMiddleware, findFiles, printLog } from "./utils.js";
+import { checkReadyMiddleware, findFiles } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import swaggerUi from "swagger-ui-express";
 import fsPromise from "node:fs/promises";
 import swaggerJsdoc from "swagger-jsdoc";
+import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
 

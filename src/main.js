@@ -1,7 +1,7 @@
 "use strict";
 
 import { startServer } from "./server.js";
-import { printLog } from "./utils.js";
+import { printLog } from "./logger.js";
 import { program } from "commander";
 import chokidar from "chokidar";
 import cluster from "cluster";

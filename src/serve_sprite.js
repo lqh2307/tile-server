@@ -1,13 +1,13 @@
 "use strict";
 
 import { StatusCodes } from "http-status-codes";
+import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
 import {
   getRequestHost,
   validateSprite,
   getSprite,
-  printLog,
 } from "./utils.js";
 
 function getSpriteHandler() {

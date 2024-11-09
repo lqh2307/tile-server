@@ -2,6 +2,7 @@
 
 import { loadCleanUpFile, loadSeedFile } from "./config.js";
 import fsPromise from "node:fs/promises";
+import { printLog } from "./logger.js";
 import { program } from "commander";
 import pLimit from "p-limit";
 import fs from "node:fs";
@@ -16,7 +17,6 @@ import {
   getTileBoundsFromBBox,
   removeOldCacheLocks,
   removeEmptyFolders,
-  printLog,
   getData,
 } from "./utils.js";
 
@@ -370,18 +370,18 @@ async function startTask() {
 `
   );
 
-  /* Read cleanup.json and seed.json files */
-  const [cleanUpData, seedData] = await Promise.all([
-    loadCleanUpFile(opts.dataDir),
-    loadSeedFile(opts.dataDir),
-  ]);
-
   /* Remove old cache locks */
   if (opts.removeOldCacheLocks) {
     printLog("info", `Starting remove old cache locks...`);
 
     await removeOldCacheLocks(`${opts.dataDir}/caches`);
   }
+
+  /* Read cleanup.json and seed.json files */
+  const [cleanUpData, seedData] = await Promise.all([
+    loadCleanUpFile(opts.dataDir),
+    loadSeedFile(opts.dataDir),
+  ]);
 
   /* Run clean up task */
   if (opts.cleanUp) {
@@ -401,9 +401,9 @@ async function startTask() {
             seedData.datas[id].concurrency,
             seedData.datas[id].maxTry,
             cleanUpData.datas[id].cleanUpBefore?.time ||
-              cleanUpData.datas[id].cleanUpBefore?.day ||
-              seedData.datas[id].refreshBefore?.time ||
-              seedData.datas[id].refreshBefore?.day
+            cleanUpData.datas[id].cleanUpBefore?.day ||
+            seedData.datas[id].refreshBefore?.time ||
+            seedData.datas[id].refreshBefore?.day
           );
         } catch (error) {
           printLog(
@@ -454,8 +454,8 @@ async function startTask() {
             seedData.datas[id].maxTry,
             seedData.datas[id].timeout,
             seedData.datas[id].refreshBefore?.time ||
-              seedData.datas[id].refreshBefore?.day ||
-              seedData.datas[id].refreshBefore?.md5
+            seedData.datas[id].refreshBefore?.day ||
+            seedData.datas[id].refreshBefore?.md5
           );
         } catch (error) {
           printLog(

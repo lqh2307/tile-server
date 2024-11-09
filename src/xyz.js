@@ -2,6 +2,7 @@
 
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
+import { printLog } from "./logger.js";
 import https from "node:https";
 import pLimit from "p-limit";
 import path from "node:path";
@@ -17,7 +18,6 @@ import {
   calculateMD5,
   findFolders,
   findFiles,
-  printLog,
   getData,
   delay,
   retry,
@@ -246,7 +246,7 @@ export async function getXYZInfos(sourcePath) {
     );
 
     metadata = JSON.parse(data);
-  } catch (error) {}
+  } catch (error) { }
 
   /* Try get min zoom */
   if (metadata.minzoom === undefined) {

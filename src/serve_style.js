@@ -1,8 +1,9 @@
 "use strict";
 
-import { getRequestHost, validateStyle, printLog, deepClone } from "./utils.js";
+import { getRequestHost, validateStyle, deepClone } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
+import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
 
@@ -56,9 +57,8 @@ function getStyleHandler() {
                   ? source.url.split("/")[2]
                   : source.url.split("/")[2].slice(0, queryIndex);
 
-              source.url = `${getRequestHost(req)}datas/${sourceID}.json${
-                queryIndex === -1 ? "" : source.url.slice(queryIndex)
-              }`;
+              source.url = `${getRequestHost(req)}datas/${sourceID}.json${queryIndex === -1 ? "" : source.url.slice(queryIndex)
+                }`;
             }
           }
 
@@ -76,9 +76,8 @@ function getStyleHandler() {
                       ? url.split("/")[2]
                       : url.split("/")[2].slice(0, queryIndex);
 
-                  url = `${getRequestHost(req)}datas/${sourceID}.json${
-                    queryIndex === -1 ? "" : url.slice(queryIndex)
-                  }`;
+                  url = `${getRequestHost(req)}datas/${sourceID}.json${queryIndex === -1 ? "" : url.slice(queryIndex)
+                    }`;
                 }
 
                 return url;
@@ -102,9 +101,8 @@ function getStyleHandler() {
                       ? tile.split("/")[2]
                       : tile.split("/")[2].slice(0, queryIndex);
 
-                  tile = `${getRequestHost(req)}datas/${sourceID}/{z}/{x}/{y}.${
-                    config.repo.datas[sourceID].tileJSON.format
-                  }${queryIndex === -1 ? "" : tile.slice(queryIndex)}`;
+                  tile = `${getRequestHost(req)}datas/${sourceID}/{z}/{x}/{y}.${config.repo.datas[sourceID].tileJSON.format
+                    }${queryIndex === -1 ? "" : tile.slice(queryIndex)}`;
                 }
 
                 return tile;

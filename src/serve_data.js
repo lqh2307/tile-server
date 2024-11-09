@@ -2,6 +2,7 @@
 
 import { config, loadSeedFile } from "./config.js";
 import { StatusCodes } from "http-status-codes";
+import { printLog } from "./logger.js";
 import express from "express";
 import {
   cacheXYZTileDataFile,
@@ -29,7 +30,6 @@ import {
   getRequestHost,
   gzipAsync,
   deepClone,
-  printLog,
 } from "./utils.js";
 
 function getDataTileHandler() {
@@ -74,50 +74,7 @@ function getDataTileHandler() {
           req.query.scheme === "tms" ? (1 << z) - 1 - y : y // Default of PMTiles is xyz. Flip Y to convert xyz scheme => tms scheme
         );
       } else if (item.sourceType === "xyz") {
-        if (item.sourceURL !== undefined) {
-          try {
-            dataTile = await getXYZTile(
-              item.source,
-              z,
-              x,
-              req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
-              item.tileJSON.format
-            );
-          } catch (error) {
-            if (error.message === "Tile does not exist") {
-              const url = item.sourceURL.replaceAll("{z}/{x}/{y}", tileName);
-
-              printLog(
-                "info",
-                `Getting data "${id}" - Tile "${tileName}" - From "${url}"...`
-              );
-
-              /* Get data */
-              dataTile = await getXYZTileFromURL(
-                url,
-                60000 // 1 mins
-              );
-
-              /* Cache */
-              if (item.storeCache === true) {
-                cacheXYZTileDataFile(
-                  item.source,
-                  tileName,
-                  item.tileJSON.format,
-                  dataTile.data,
-                  dataTile.etag
-                ).catch((error) =>
-                  printLog(
-                    "error",
-                    `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}`
-                  )
-                );
-              }
-            } else {
-              throw error;
-            }
-          }
-        } else {
+        try {
           dataTile = await getXYZTile(
             item.source,
             z,
@@ -125,6 +82,39 @@ function getDataTileHandler() {
             req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
             item.tileJSON.format
           );
+        } catch (error) {
+          if (item.sourceURL !== undefined) {
+            const url = item.sourceURL.replaceAll("{z}/{x}/{y}", tileName);
+
+            printLog(
+              "info",
+              `Getting data "${id}" - Tile "${tileName}" - From "${url}"...`
+            );
+
+            /* Get data */
+            dataTile = await getXYZTileFromURL(
+              url,
+              60000 // 1 mins
+            );
+
+            /* Cache */
+            if (item.storeCache === true) {
+              cacheXYZTileDataFile(
+                item.source,
+                tileName,
+                item.tileJSON.format,
+                dataTile.data,
+                dataTile.etag
+              ).catch((error) =>
+                printLog(
+                  "error",
+                  `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}`
+                )
+              );
+            }
+          } else {
+            throw error;
+          }
         }
       }
 
@@ -173,8 +163,7 @@ function getDataHandler() {
       return res.status(StatusCodes.OK).send({
         ...item.tileJSON,
         tiles: [
-          `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
-            item.tileJSON.format
+          `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format
           }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
         ],
       });
@@ -296,8 +285,7 @@ function getDataTileJSONsListHandler() {
             ...item.tileJSON,
             id: id,
             tiles: [
-              `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
-                item.tileJSON.format
+              `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format
               }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
             ],
           };

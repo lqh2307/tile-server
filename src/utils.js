@@ -4,6 +4,7 @@ import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import protobuf from "protocol-buffers";
+import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import handlebars from "handlebars";
 import https from "node:https";

@@ -83,4 +83,4 @@ VOLUME /tile-server/data
 
 EXPOSE 8080
 
-ENTRYPOINT ["./server-entrypoint.sh"]
+ENTRYPOINT ["./entrypoint.sh"]
