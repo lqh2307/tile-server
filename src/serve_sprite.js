@@ -1,14 +1,10 @@
 "use strict";
 
+import { getRequestHost, validateSprite, getSprite } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
-import {
-  getRequestHost,
-  validateSprite,
-  getSprite,
-} from "./utils.js";
 
 function getSpriteHandler() {
   return async (req, res, next) => {

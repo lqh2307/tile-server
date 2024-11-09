@@ -246,7 +246,7 @@ export async function getXYZInfos(sourcePath) {
     );
 
     metadata = JSON.parse(data);
-  } catch (error) { }
+  } catch (error) {}
 
   /* Try get min zoom */
   if (metadata.minzoom === undefined) {

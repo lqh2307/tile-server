@@ -1,6 +1,6 @@
 "use strict";
 
-import { getRequestHost, validateStyle, deepClone } from "./utils.js";
+import { getRequestHost, validateStyle, deepClone, getData } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
@@ -57,8 +57,9 @@ function getStyleHandler() {
                   ? source.url.split("/")[2]
                   : source.url.split("/")[2].slice(0, queryIndex);
 
-              source.url = `${getRequestHost(req)}datas/${sourceID}.json${queryIndex === -1 ? "" : source.url.slice(queryIndex)
-                }`;
+              source.url = `${getRequestHost(req)}datas/${sourceID}.json${
+                queryIndex === -1 ? "" : source.url.slice(queryIndex)
+              }`;
             }
           }
 
@@ -76,8 +77,9 @@ function getStyleHandler() {
                       ? url.split("/")[2]
                       : url.split("/")[2].slice(0, queryIndex);
 
-                  url = `${getRequestHost(req)}datas/${sourceID}.json${queryIndex === -1 ? "" : url.slice(queryIndex)
-                    }`;
+                  url = `${getRequestHost(req)}datas/${sourceID}.json${
+                    queryIndex === -1 ? "" : url.slice(queryIndex)
+                  }`;
                 }
 
                 return url;
@@ -101,8 +103,9 @@ function getStyleHandler() {
                       ? tile.split("/")[2]
                       : tile.split("/")[2].slice(0, queryIndex);
 
-                  tile = `${getRequestHost(req)}datas/${sourceID}/{z}/{x}/{y}.${config.repo.datas[sourceID].tileJSON.format
-                    }${queryIndex === -1 ? "" : tile.slice(queryIndex)}`;
+                  tile = `${getRequestHost(req)}datas/${sourceID}/{z}/{x}/{y}.${
+                    config.repo.datas[sourceID].tileJSON.format
+                  }${queryIndex === -1 ? "" : tile.slice(queryIndex)}`;
                 }
 
                 return tile;
@@ -240,12 +243,29 @@ export const serve_style = {
     await Promise.all(
       Object.keys(config.styles).map(async (id) => {
         try {
-          const stylePath = config.styles[id].style;
+          const item = config.styles[id];
+          let styleData;
 
-          /* Read style json file */
-          const filePath = `${config.paths.styles}/${stylePath}`;
-          const fileData = await fsPromise.readFile(filePath, "utf8");
-          const styleJSON = JSON.parse(fileData);
+          if (
+            item.style.startsWith("https://") === true ||
+            item.style.startsWith("http://") === true
+          ) {
+            /* Get style from URL */
+            const response = await getData(
+              item.style,
+              60000 // 1 mins
+            );
+
+            styleData = response.data;
+          } else {
+            /* Read style.json file */
+            styleData = await fsPromise.readFile(
+              `${config.paths.styles}/${item.style}`,
+              "utf8"
+            );
+          }
+
+          const styleJSON = JSON.parse(styleData);
 
           /* Validate style */
           await validateStyle(config, styleJSON);

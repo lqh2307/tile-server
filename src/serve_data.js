@@ -163,7 +163,8 @@ function getDataHandler() {
       return res.status(StatusCodes.OK).send({
         ...item.tileJSON,
         tiles: [
-          `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format
+          `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
+            item.tileJSON.format
           }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
         ],
       });
@@ -285,7 +286,8 @@ function getDataTileJSONsListHandler() {
             ...item.tileJSON,
             id: id,
             tiles: [
-              `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format
+              `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
+                item.tileJSON.format
               }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
             ],
           };
