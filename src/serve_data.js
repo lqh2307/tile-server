@@ -34,7 +34,7 @@ import {
 
 function getDataTileHandler() {
   return async (req, res, next) => {
-    const id = decodeURI(req.params.id);
+    const id = req.params.id;
     const item = config.repo.datas[id];
 
     /* Check data is exist? */
@@ -160,7 +160,7 @@ function getDataTileHandler() {
 
 function getDataHandler() {
   return async (req, res, next) => {
-    const id = decodeURI(req.params.id);
+    const id = req.params.id;
     const item = config.repo.datas[id];
 
     if (item === undefined) {
@@ -190,7 +190,7 @@ function getDataHandler() {
 
 function getDataTileMD5Handler() {
   return async (req, res, next) => {
-    const id = decodeURI(req.params.id);
+    const id = req.params.id;
     const item = config.repo.datas[id];
 
     /* Check data is exist? */

@@ -123,7 +123,7 @@ function serveFrontPageHandler() {
 
 function serveStyleHandler() {
   return async (req, res, next) => {
-    const id = decodeURI(req.params.id);
+    const id = req.params.id;
     const item = config.repo.styles[id];
 
     if (item === undefined) {
@@ -149,7 +149,7 @@ function serveStyleHandler() {
 
 function serveDataHandler() {
   return async (req, res, next) => {
-    const id = decodeURI(req.params.id);
+    const id = req.params.id;
     const item = config.repo.datas[id];
 
     if (item === undefined) {
@@ -176,7 +176,7 @@ function serveDataHandler() {
 
 function serveWMTSHandler() {
   return async (req, res, next) => {
-    const id = decodeURI(req.params.id);
+    const id = req.params.id;
     const item = config.repo.rendereds[id];
 
     if (item === undefined) {

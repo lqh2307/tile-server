@@ -54,7 +54,7 @@ async function processImageInWorker(data, scale, compression, tileSize, z) {
 
 function getRenderedTileHandler() {
   return async (req, res, next) => {
-    const id = decodeURI(req.params.id);
+    const id = req.params.id;
     const item = config.repo.rendereds[id];
 
     /* Check rendered is exist? */
@@ -122,7 +122,7 @@ function getRenderedTileHandler() {
 
 function getRenderedHandler() {
   return async (req, res, next) => {
-    const id = decodeURI(req.params.id);
+    const id = req.params.id;
     const item = config.repo.rendereds[id];
 
     if (item === undefined) {

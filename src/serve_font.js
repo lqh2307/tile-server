@@ -14,7 +14,7 @@ import {
 
 function getFontHandler() {
   return async (req, res, next) => {
-    const ids = decodeURI(req.params.id);
+    const ids = req.params.id;
 
     try {
       let data = await getFontsPBF(

@@ -8,7 +8,7 @@ import express from "express";
 
 function getStyleHandler() {
   return async (req, res, next) => {
-    const id = decodeURI(req.params.id);
+    const id = req.params.id;
     const item = config.repo.styles[id];
 
     if (item === undefined) {

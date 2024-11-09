@@ -12,7 +12,7 @@ import {
 
 function getSpriteHandler() {
   return async (req, res, next) => {
-    const id = decodeURI(req.params.id);
+    const id = req.params.id;
     const item = config.repo.sprites[id];
 
     if (item === undefined) {
