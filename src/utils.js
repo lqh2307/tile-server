@@ -114,11 +114,11 @@ export async function getDataTileFromURL(url, timeout) {
       }
 
       throw new Error(
-        `Failed to get data tile from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
+        `Status code: ${error.response.status} - ${error.response.statusText}`
       );
     }
 
-    throw new Error(`Failed to get data tile from "${url}": ${error}`);
+    throw error;
   }
 }
 

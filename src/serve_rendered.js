@@ -724,6 +724,8 @@ export const serve_rendered = {
               }
             } else if (protocol === "http:" || protocol === "https:") {
               try {
+                printLog("info", `Getting data tile from "${url}"...`);
+
                 const dataTile = await getDataTileFromURL(url, 60000);
 
                 /* Unzip pbf data */
@@ -741,7 +743,7 @@ export const serve_rendered = {
               } catch (error) {
                 printLog(
                   "warning",
-                  `Failed to get data from "${url}": ${error}. Serving empty tile...`
+                  `Failed to get data tile from "${url}": ${error}. Serving empty tile...`
                 );
 
                 const queryIndex = url.lastIndexOf("?");
