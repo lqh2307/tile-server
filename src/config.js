@@ -547,7 +547,7 @@ async function readCleanUpFile(dataDir) {
           additionalProperties: {
             type: "object",
             properties: {
-              bounds: {
+              bbox: {
                 type: "array",
                 items: {
                   type: "number",
