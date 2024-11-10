@@ -20,12 +20,14 @@ import cors from "cors";
  * @returns {Promise<void>}
  */
 async function loadConfigFile(dataDir) {
-  printLog("info", `Loading config file at "${dataDir}"...`);
+  printLog("info", `Loading config.json file at "${dataDir}"...`);
 
   try {
     await readConfigFile(dataDir);
   } catch (error) {
-    throw new Error(`Failed to load config file at "${dataDir}": ${error}`);
+    throw new Error(
+      `Failed to load config.json file at "${dataDir}": ${error}`
+    );
   }
 }
 

@@ -389,13 +389,19 @@ async function startTask() {
 
   /* Remove old cache locks */
   if (opts.removeOldCacheLocks) {
-    printLog("info", `Starting remove old cache locks at ${opts.dataDir}/caches...`);
+    printLog(
+      "info",
+      `Starting remove old cache locks at ${opts.dataDir}/caches...`
+    );
 
     await removeOldCacheLocks(`${opts.dataDir}/caches`);
   }
 
   /* Read cleanup.json and seed.json files */
-  printLog("info", `Loading seed and clean up files at "${opts.dataDir}"...`);
+  printLog(
+    "info",
+    `Loading seed.json and cleanup.json files at "${opts.dataDir}"...`
+  );
 
   const [cleanUpData, seedData] = await Promise.all([
     readCleanUpFile(opts.dataDir),
