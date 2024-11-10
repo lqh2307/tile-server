@@ -271,6 +271,16 @@ async function readSeedFile(dataDir) {
                 type: "string",
                 enum: ["gif", "png", "jpg", "jpeg", "webp", "pbf"],
               },
+              minzoom: {
+                type: "integer",
+                minimum: 0,
+                maximum: 22,
+              },
+              maxzoom: {
+                type: "integer",
+                minimum: 0,
+                maximum: 22,
+              },
               bounds: {
                 type: "array",
                 items: {
@@ -290,16 +300,6 @@ async function readSeedFile(dataDir) {
                 },
                 minItems: 3,
                 maxItems: 3,
-              },
-              zooms: {
-                type: "array",
-                items: {
-                  type: "integer",
-                  minimum: 0,
-                  maximum: 22,
-                },
-                minItems: 0,
-                maxItems: 23,
               },
               vector_layers: {
                 type: "array",
@@ -366,6 +366,16 @@ async function readSeedFile(dataDir) {
                   { required: ["md5"] },
                 ],
                 additionalProperties: true,
+              },
+              zooms: {
+                type: "array",
+                items: {
+                  type: "integer",
+                  minimum: 0,
+                  maximum: 22,
+                },
+                minItems: 0,
+                maxItems: 23,
               },
               timeout: {
                 type: "integer",

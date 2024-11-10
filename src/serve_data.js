@@ -745,8 +745,8 @@ export const serve_data = {
                   format: cacheSource.format,
                   bounds: deepClone(cacheSource.bounds),
                   center: deepClone(cacheSource.center),
-                  minzoom: cacheSource.zooms ?? Math.min(...cacheSource.zooms),
-                  maxzoom: cacheSource.zooms ?? Math.max(...cacheSource.zooms),
+                  minzoom: cacheSource.minzoom,
+                  maxzoom: cacheSource.maxzoom,
                   vector_layers: deepClone(cacheSource.vector_layers),
                   tilestats: deepClone(cacheSource.tilestats),
                 };
