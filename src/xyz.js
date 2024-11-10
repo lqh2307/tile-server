@@ -687,12 +687,12 @@ export async function downloadXYZTileDataFile(
       } catch (error) {
         if (error.response) {
           if (
-            response.status === StatusCodes.NO_CONTENT ||
-            response.status === StatusCodes.NOT_FOUND
+            error.response.status === StatusCodes.NO_CONTENT ||
+            error.response.status === StatusCodes.NOT_FOUND
           ) {
             printLog(
               "error",
-              `Failed to download tile data file "${tileName}" from "${url}": Status code: ${response.status} - ${response.statusText}`
+              `Failed to download tile data file "${tileName}" from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
             );
 
             return;
