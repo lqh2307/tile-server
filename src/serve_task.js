@@ -2,6 +2,7 @@
 
 import { StatusCodes } from "http-status-codes";
 import { Worker } from "node:worker_threads";
+import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
 
@@ -15,7 +16,7 @@ function startTaskHandler() {
         .send("A task is already running");
     }
 
-    currentTaskWorker = new Worker("src/task_worker.js", {
+    currentTaskWorker = new Worker("./src/task_worker.js", {
       workerData: {
         dataDir: config.paths.dir,
         removeOldCacheLocks: req.query.removeOldCacheLocks === "true",

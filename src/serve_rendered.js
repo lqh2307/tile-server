@@ -25,7 +25,7 @@ import {
 
 async function processImageInWorker(data, scale, compression, tileSize, z) {
   return new Promise((resolve, reject) => {
-    new Worker("src/process_image_worker.js", {
+    new Worker("./src/process_image_worker.js", {
       workerData: {
         data,
         scale,
@@ -133,8 +133,7 @@ function getRenderedHandler() {
       const renderedInfo = {
         ...item.tileJSON,
         tiles: [
-          `${getRequestHost(req)}styles/${id}/${
-            req.params.tileSize || 256
+          `${getRequestHost(req)}styles/${id}/${req.params.tileSize || 256
           }/{z}/{x}/{y}.png${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
         ],
       };
@@ -190,8 +189,7 @@ function getRenderedTileJSONsListHandler() {
             ...item.tileJSON,
             id: id,
             tiles: [
-              `${getRequestHost(req)}styles/${id}/{z}/{x}/{y}.png${
-                req.query.scheme === "tms" ? "?scheme=tms" : ""
+              `${getRequestHost(req)}styles/${id}/{z}/{x}/{y}.png${req.query.scheme === "tms" ? "?scheme=tms" : ""
               }`,
             ],
           };
@@ -598,22 +596,22 @@ export const serve_rendered = {
                 const dataTile =
                   sourceData.sourceType === "mbtiles"
                     ? await getMBTilesTile(
-                        sourceData.source,
-                        z,
-                        x,
-                        scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
-                      )
+                      sourceData.source,
+                      z,
+                      x,
+                      scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+                    )
                     : await getPMTilesTile(
-                        sourceData.source,
-                        z,
-                        x,
-                        scheme === "tms" ? (1 << z) - 1 - y : y // Default of PMTiles is xyz. Flip Y to convert xyz scheme => tms scheme
-                      );
+                      sourceData.source,
+                      z,
+                      x,
+                      scheme === "tms" ? (1 << z) - 1 - y : y // Default of PMTiles is xyz. Flip Y to convert xyz scheme => tms scheme
+                    );
 
                 /* Unzip pbf rendered tile */
                 if (
                   dataTile.headers["Content-Type"] ===
-                    "application/x-protobuf" &&
+                  "application/x-protobuf" &&
                   dataTile.headers["Content-Encoding"] !== undefined
                 ) {
                   dataTile.data = await unzipAsync(dataTile.data);
@@ -702,7 +700,7 @@ export const serve_rendered = {
                 /* Unzip pbf rendered tile */
                 if (
                   dataTile.headers["Content-Type"] ===
-                    "application/x-protobuf" &&
+                  "application/x-protobuf" &&
                   dataTile.headers["Content-Encoding"] !== undefined
                 ) {
                   dataTile.data = await unzipAsync(dataTile.data);
@@ -731,7 +729,7 @@ export const serve_rendered = {
                 /* Unzip pbf data */
                 if (
                   dataTile.headers["Content-Type"] ===
-                    "application/x-protobuf" &&
+                  "application/x-protobuf" &&
                   dataTile.headers["Content-Encoding"] !== undefined
                 ) {
                   dataTile.data = await unzipAsync(dataTile.data);
@@ -813,11 +811,9 @@ export const serve_rendered = {
                             : tile.split("/")[2].slice(0, queryIndex);
                         const sourceData = config.repo.datas[sourceID];
 
-                        tile = `${
-                          sourceData.sourceType
-                        }://${sourceID}/{z}/{x}/{y}.${
-                          sourceData.tileJSON.format
-                        }${queryIndex === -1 ? "" : tile.slice(queryIndex)}`;
+                        tile = `${sourceData.sourceType
+                          }://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format
+                          }${queryIndex === -1 ? "" : tile.slice(queryIndex)}`;
                       }
 
                       return tile;
@@ -843,11 +839,9 @@ export const serve_rendered = {
                           : url.split("/")[2].slice(0, queryIndex);
                       const sourceData = config.repo.datas[sourceID];
 
-                      const tile = `${
-                        sourceData.sourceType
-                      }://${sourceID}/{z}/{x}/{y}.${
-                        sourceData.tileJSON.format
-                      }${queryIndex === -1 ? "" : url.slice(queryIndex)}`;
+                      const tile = `${sourceData.sourceType
+                        }://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format
+                        }${queryIndex === -1 ? "" : url.slice(queryIndex)}`;
 
                       if (source.tiles !== undefined) {
                         if (source.tiles.includes(tile) === false) {
@@ -883,11 +877,9 @@ export const serve_rendered = {
                         : source.url.split("/")[2].slice(0, queryIndex);
                     const sourceData = config.repo.datas[sourceID];
 
-                    const tile = `${
-                      sourceData.sourceType
-                    }://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}${
-                      queryIndex === -1 ? "" : source.url.slice(queryIndex)
-                    }`;
+                    const tile = `${sourceData.sourceType
+                      }://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}${queryIndex === -1 ? "" : source.url.slice(queryIndex)
+                      }`;
 
                     if (source.tiles !== undefined) {
                       if (source.tiles.includes(tile) === false) {
@@ -928,7 +920,7 @@ export const serve_rendered = {
                 if (
                   source.attribution &&
                   rendered.tileJSON.attribution.includes(source.attribution) ===
-                    false
+                  false
                 ) {
                   rendered.tileJSON.attribution += ` | ${source.attribution}`;
                 }

@@ -5,7 +5,7 @@ import { startTask } from "./seed_and_cleanup.js";
 
 (async () => {
   try {
-    await startTask(workerData.opts);
+    await startTask(workerData);
 
     parentPort.postMessage({
       success: true,
