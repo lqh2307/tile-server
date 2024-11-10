@@ -134,7 +134,7 @@ async function startTask() {
             seedData.datas[id].concurrency,
             seedData.datas[id].maxTry,
             cleanUpData.datas[id].cleanUpBefore?.time ||
-            cleanUpData.datas[id].cleanUpBefore?.day
+              cleanUpData.datas[id].cleanUpBefore?.day
           );
         } catch (error) {
           printLog(
@@ -180,8 +180,8 @@ async function startTask() {
             seedData.datas[id].maxTry,
             seedData.datas[id].timeout,
             seedData.datas[id].refreshBefore?.time ||
-            seedData.datas[id].refreshBefore?.day ||
-            seedData.datas[id].refreshBefore?.md5
+              seedData.datas[id].refreshBefore?.day ||
+              seedData.datas[id].refreshBefore?.md5
           );
         } catch (error) {
           printLog(
