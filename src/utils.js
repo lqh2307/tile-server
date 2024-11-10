@@ -1,6 +1,5 @@
 "use strict";
 
-import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import protobuf from "protocol-buffers";
@@ -125,16 +124,50 @@ export async function getDataTileFromURL(url, timeout) {
 }
 
 /**
- * Get data from a URL
+ * Get data buffer from a URL
  * @param {string} url The URL to fetch data from
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<object>}
  */
-export async function getData(url, timeout) {
+export async function getDataBuffer(url, timeout) {
   try {
     const response = await axios.get(url, {
       timeout: timeout,
       responseType: "arraybuffer",
+      headers: {
+        "User-Agent": "Tile Server",
+      },
+      httpAgent: new http.Agent({
+        keepAlive: false,
+      }),
+      httpsAgent: new https.Agent({
+        keepAlive: false,
+      }),
+    });
+
+    return response;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(
+        `Status code: ${error.response.status} - ${error.response.statusText}`
+      );
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * Get data JSON from a URL
+ * @param {string} url The URL to fetch data from
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<object>}
+ */
+export async function getDataJSON(url, timeout) {
+  try {
+    const response = await axios.get(url, {
+      timeout: timeout,
+      responseType: "json",
       headers: {
         "User-Agent": "Tile Server",
       },
@@ -701,311 +734,6 @@ export async function getFontsPBF(ids, fileName) {
  */
 export async function getSprite(id, fileName) {
   return await fsPromise.readFile(`${config.paths.sprites}/${id}/${fileName}`);
-}
-
-/**
- * Print log to console
- * @param {"info"|"warning"|"error"} level
- * @param {string} msg
- * @returns {void}
- */
-export function printLog(level, msg) {
-  if (level === "warning") {
-    console.warn(
-      `[PID = ${process.pid}] ${new Date().toISOString()} [WARNING] ${msg}`
-    );
-  } else if (level === "error") {
-    console.error(
-      `[PID = ${process.pid}] ${new Date().toISOString()} [ERROR] ${msg}`
-    );
-  } else {
-    console.info(
-      `[PID = ${process.pid}] ${new Date().toISOString()} [INFO] ${msg}`
-    );
-  }
-}
-
-/**
- * Validate font
- * @param {string} pbfDirPath
- * @returns {Promise<void>}
- */
-export async function validateFont(pbfDirPath) {
-  const pbfFileNames = await findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
-
-  if (pbfFileNames.length === 0) {
-    throw new Error("Missing some PBF files");
-  }
-}
-
-/**
- * Validate data info (no validate json field)
- * @param {object} info
- * @returns {void}
- */
-export function validateDataInfo(info) {
-  /* Validate name */
-  if (info.name === undefined) {
-    throw new Error("Data name info is invalid");
-  }
-
-  /* Validate type */
-  if (info.type !== undefined) {
-    if (["baselayer", "overlay"].includes(info.type) === false) {
-      throw new Error("Data type info is invalid");
-    }
-  }
-
-  /* Validate format */
-  if (
-    ["jpeg", "jpg", "pbf", "png", "webp", "gif"].includes(info.format) === false
-  ) {
-    throw new Error("Data format info is invalid");
-  }
-
-  /* Validate json */
-  /*
-  if (info.format === "pbf" && info.json === undefined) {
-    throw new Error(`Data json info is invalid`);
-  }
-  */
-
-  /* Validate minzoom */
-  if (info.minzoom < 0 || info.minzoom > 22) {
-    throw new Error("Data minzoom info is invalid");
-  }
-
-  /* Validate maxzoom */
-  if (info.maxzoom < 0 || info.maxzoom > 22) {
-    throw new Error("Data maxzoom info is invalid");
-  }
-
-  /* Validate minzoom & maxzoom */
-  if (info.minzoom > info.maxzoom) {
-    throw new Error("Data zoom info is invalid");
-  }
-
-  /* Validate bounds */
-  if (info.bounds !== undefined) {
-    if (
-      info.bounds.length !== 4 ||
-      Math.abs(info.bounds[0]) > 180 ||
-      Math.abs(info.bounds[2]) > 180 ||
-      Math.abs(info.bounds[1]) > 90 ||
-      Math.abs(info.bounds[3]) > 90 ||
-      info.bounds[0] >= info.bounds[2] ||
-      info.bounds[1] >= info.bounds[3]
-    ) {
-      throw new Error("Data bounds info is invalid");
-    }
-  }
-
-  /* Validate center */
-  if (info.center !== undefined) {
-    if (
-      info.center.length !== 3 ||
-      Math.abs(info.center[0]) > 180 ||
-      Math.abs(info.center[1]) > 90 ||
-      info.center[2] < 0 ||
-      info.center[2] > 22
-    ) {
-      throw new Error("Data center info is invalid");
-    }
-  }
-}
-
-/**
- * Validate style
- * @param {object} config
- * @param {object} styleJSON
- * @returns {Promise<void>}
- */
-export async function validateStyle(config, styleJSON) {
-  /* Validate style */
-  const validationErrors = validateStyleMin(styleJSON);
-  if (validationErrors.length > 0) {
-    throw new Error(
-      validationErrors
-        .map((validationError) => `\n\t${validationError.message}`)
-        .join()
-    );
-  }
-
-  /* Validate fonts */
-  if (styleJSON.glyphs !== undefined) {
-    if (
-      styleJSON.glyphs.startsWith("fonts://") === false &&
-      styleJSON.glyphs.startsWith("https://") === false &&
-      styleJSON.glyphs.startsWith("http://") === false
-    ) {
-      throw new Error("Invalid fonts url");
-    }
-  }
-
-  /* Validate sprite */
-  if (styleJSON.sprite !== undefined) {
-    if (styleJSON.sprite.startsWith("sprites://") === true) {
-      const spriteID = styleJSON.sprite.slice(
-        10,
-        styleJSON.sprite.lastIndexOf("/")
-      );
-
-      if (config.repo.sprites[spriteID] === undefined) {
-        throw new Error(`Sprite "${spriteID}" is not found`);
-      }
-    } else if (
-      styleJSON.sprite.startsWith("https://") === false &&
-      styleJSON.sprite.startsWith("http://") === false
-    ) {
-      throw new Error("Invalid sprite url");
-    }
-  }
-
-  /* Validate sources */
-  await Promise.all(
-    Object.keys(styleJSON.sources).map(async (id) => {
-      const source = styleJSON.sources[id];
-
-      if (source.url !== undefined) {
-        if (
-          source.url.startsWith("pmtiles://") === true ||
-          source.url.startsWith("mbtiles://") === true ||
-          source.url.startsWith("xyz://") === true
-        ) {
-          const queryIndex = source.url.lastIndexOf("?");
-          const sourceID =
-            queryIndex === -1
-              ? source.url.split("/")[2]
-              : source.url.split("/")[2].slice(0, queryIndex);
-
-          if (config.repo.datas[sourceID] === undefined) {
-            throw new Error(
-              `Source "${id}" is not found data source "${sourceID}"`
-            );
-          }
-        } else if (
-          source.url.startsWith("https://") === false &&
-          source.url.startsWith("http://") === false
-        ) {
-          throw new Error(`Source "${id}" is invalid data url "${url}"`);
-        }
-      }
-
-      if (source.urls !== undefined) {
-        if (source.urls.length === 0) {
-          throw new Error(`Source "${id}" is invalid data urls`);
-        }
-
-        source.urls.forEach((url) => {
-          if (
-            url.startsWith("pmtiles://") === true ||
-            url.startsWith("mbtiles://") === true ||
-            url.startsWith("xyz://") === true
-          ) {
-            const queryIndex = url.lastIndexOf("?");
-            const sourceID =
-              queryIndex === -1
-                ? url.split("/")[2]
-                : url.split("/")[2].slice(0, queryIndex);
-
-            if (config.repo.datas[sourceID] === undefined) {
-              throw new Error(
-                `Source "${id}" is not found data source "${sourceID}"`
-              );
-            }
-          } else if (
-            url.startsWith("https://") === false &&
-            url.startsWith("http://") === false
-          ) {
-            throw new Error(`Source "${id}" is invalid data url "${url}"`);
-          }
-        });
-      }
-
-      if (source.tiles !== undefined) {
-        if (source.tiles.length === 0) {
-          throw new Error(`Source "${id}" is invalid tile urls`);
-        }
-
-        source.tiles.forEach((tile) => {
-          if (
-            tile.startsWith("pmtiles://") === true ||
-            tile.startsWith("mbtiles://") === true ||
-            tile.startsWith("xyz://") === true
-          ) {
-            const queryIndex = tile.lastIndexOf("?");
-            const sourceID =
-              queryIndex === -1
-                ? tile.split("/")[2]
-                : tile.split("/")[2].slice(0, queryIndex);
-
-            if (config.repo.datas[sourceID] === undefined) {
-              throw new Error(
-                `Source "${id}" is not found data source "${sourceID}"`
-              );
-            }
-          } else if (
-            tile.startsWith("https://") === false &&
-            tile.startsWith("http://") === false
-          ) {
-            throw new Error(`Source "${id}" is invalid tile url "${url}"`);
-          }
-        });
-      }
-    })
-  );
-}
-
-/**
- * Validate sprite
- * @param {string} spriteDirPath
- * @returns {Promise<void>}
- */
-export async function validateSprite(spriteDirPath) {
-  const [jsonSpriteFileNames, pngSpriteNames] = await Promise.all([
-    findFiles(spriteDirPath, /^sprite(@\d+x)?\.json$/, false),
-    findFiles(spriteDirPath, /^sprite(@\d+x)?\.png$/, false),
-  ]);
-
-  if (jsonSpriteFileNames.length !== pngSpriteNames.length) {
-    throw new Error("Missing some JSON or PNG files");
-  }
-
-  const fileNameWoExts = jsonSpriteFileNames.map((jsonSpriteFileName) =>
-    path.basename(jsonSpriteFileName, path.extname(jsonSpriteFileName))
-  );
-
-  await Promise.all(
-    fileNameWoExts.map(async (fileNameWoExt) => {
-      /* Validate JSON sprite */
-      const fileData = await fsPromise.readFile(
-        `${spriteDirPath}/${fileNameWoExt}.json`,
-        "utf8"
-      );
-
-      Object.values(JSON.parse(fileData)).forEach((value) => {
-        if (
-          typeof value !== "object" ||
-          "height" in value === false ||
-          "pixelRatio" in value === false ||
-          "width" in value === false ||
-          "x" in value === false ||
-          "y" in value === false
-        ) {
-          throw new Error("Invalid JSON file");
-        }
-      });
-
-      /* Validate PNG sprite */
-      const pngMetadata = await sharp(
-        `${spriteDirPath}/${fileNameWoExt}.png`
-      ).metadata();
-
-      if (pngMetadata.format !== "png") {
-        throw new Error("Invalid PNG file");
-      }
-    })
-  );
 }
 
 /**

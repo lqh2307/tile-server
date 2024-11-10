@@ -10,7 +10,21 @@ import {
   validateFont,
   getFontsPBF,
   gzipAsync,
+  findFiles,
 } from "./utils.js";
+
+/**
+ * Validate font
+ * @param {string} pbfDirPath
+ * @returns {Promise<void>}
+ */
+async function validateFont(pbfDirPath) {
+  const pbfFileNames = await findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
+
+  if (pbfFileNames.length === 0) {
+    throw new Error("Missing some PBF files");
+  }
+}
 
 function getFontHandler() {
   return async (req, res, next) => {

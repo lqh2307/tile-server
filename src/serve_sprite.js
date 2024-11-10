@@ -1,10 +1,69 @@
 "use strict";
 
-import { getRequestHost, validateSprite, getSprite } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
+import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
+import sharp from "sharp";
+import {
+  getRequestHost,
+  validateSprite,
+  getSprite,
+  findFiles,
+} from "./utils.js";
+
+/**
+ * Validate sprite
+ * @param {string} spriteDirPath Sprite dir path
+ * @returns {Promise<void>}
+ */
+async function validateSprite(spriteDirPath) {
+  const [jsonSpriteFileNames, pngSpriteNames] = await Promise.all([
+    findFiles(spriteDirPath, /^sprite(@\d+x)?\.json$/, false),
+    findFiles(spriteDirPath, /^sprite(@\d+x)?\.png$/, false),
+  ]);
+
+  if (jsonSpriteFileNames.length !== pngSpriteNames.length) {
+    throw new Error("Missing some JSON or PNG files");
+  }
+
+  const fileNameWoExts = jsonSpriteFileNames.map(
+    (jsonSpriteFileName) => jsonSpriteFileName.split(".")[0]
+  );
+
+  await Promise.all(
+    fileNameWoExts.map(async (fileNameWoExt) => {
+      /* Validate JSON sprite */
+      const fileData = await fsPromise.readFile(
+        `${spriteDirPath}/${fileNameWoExt}.json`,
+        "utf8"
+      );
+
+      Object.values(JSON.parse(fileData)).forEach((value) => {
+        if (
+          typeof value !== "object" ||
+          "height" in value === false ||
+          "pixelRatio" in value === false ||
+          "width" in value === false ||
+          "x" in value === false ||
+          "y" in value === false
+        ) {
+          throw new Error("Invalid JSON file");
+        }
+      });
+
+      /* Validate PNG sprite */
+      const pngMetadata = await sharp(
+        `${spriteDirPath}/${fileNameWoExt}.png`
+      ).metadata();
+
+      if (pngMetadata.format !== "png") {
+        throw new Error("Invalid PNG file");
+      }
+    })
+  );
+}
 
 function getSpriteHandler() {
   return async (req, res, next) => {

@@ -17,7 +17,7 @@ import {
   getTileBoundsFromBBox,
   removeOldCacheLocks,
   removeEmptyFolders,
-  getData,
+  getDataBuffer,
 } from "./utils.js";
 
 /* Setup commands */
@@ -142,7 +142,7 @@ export async function seedXYZTileDataFiles(
                     `md5/${tileName}`
                   );
 
-                  const response = await getData(md5URL, timeout);
+                  const response = await getDataBuffer(md5URL, timeout);
 
                   if (response.headers["Etag"] !== hashs[tileName]) {
                     await downloadXYZTileDataFile(

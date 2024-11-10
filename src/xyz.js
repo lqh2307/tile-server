@@ -18,7 +18,6 @@ import {
   calculateMD5,
   findFolders,
   findFiles,
-  getData,
   delay,
   retry,
 } from "./utils.js";
@@ -654,30 +653,55 @@ export async function downloadXYZTileDataFile(
 
   try {
     await retry(async () => {
-      // Get data
-      const response = await getData(url, timeout);
+      try {
+        // Get data from URL
+        const response = await axios.get(url, {
+          timeout: timeout,
+          responseType: "arraybuffer",
+          headers: {
+            "User-Agent": "Tile Server",
+          },
+          httpAgent: new http.Agent({
+            keepAlive: false,
+          }),
+          httpsAgent: new https.Agent({
+            keepAlive: false,
+          }),
+        });
 
-      if (response.status === StatusCodes.NO_CONTENT) {
-        printLog(
-          "error",
-          `Failed to download tile data file "${tileName}" from "${url}": Status code: ${response.status} - ${response.statusText}`
+        // Store data to file
+        await storeXYZTileDataFileWithLock(
+          `${sourcePath}/${tileName}.${format}`,
+          response.data,
+          300000 // 5 mins
         );
 
-        return;
+        // Store data md5 hash
+        hashs[tileName] =
+          response.headers["Etag"] === undefined
+            ? calculateMD5(response.data)
+            : response.headers["Etag"];
+      } catch (error) {
+        if (error.response) {
+          printLog(
+            "error",
+            `Failed to download tile data file "${tileName}" from "${url}": Status code: ${response.status} - ${response.statusText}`
+          );
+
+          if (
+            response.status === StatusCodes.NO_CONTENT ||
+            response.status === StatusCodes.NOT_FOUND
+          ) {
+            return;
+          } else {
+            throw new Error(
+              `Status code: ${error.response.status} - ${error.response.statusText}`
+            );
+          }
+        }
+
+        throw error;
       }
-
-      // Store data to file
-      await storeXYZTileDataFileWithLock(
-        `${sourcePath}/${tileName}.${format}`,
-        response.data,
-        300000 // 5 mins
-      );
-
-      // Store data md5 hash
-      hashs[tileName] =
-        response.headers["Etag"] === undefined
-          ? calculateMD5(response.data)
-          : response.headers["Etag"];
     }, maxTry);
   } catch (error) {
     printLog(
