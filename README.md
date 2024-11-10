@@ -190,6 +190,8 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "format": "png",
       "bounds": [96, 4, 120, 28],
       "center": [108, 16, 10],
+      "minzoom": 0,
+      "maxzoom": 15,
       "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
@@ -205,6 +207,8 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "format": "pbf",
       "bounds": [96, 4, 120, 28],
       "center": [108, 16, 10],
+      "minzoom": 0,
+      "maxzoom": 15,
       "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       "vector_layers": [
         {
