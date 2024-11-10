@@ -25,7 +25,7 @@ async function loadConfigFile(dataDir) {
   try {
     await readConfigFile(dataDir);
   } catch (error) {
-    throw new Error(`Failed to load config file at ${dataDir}: ${error}`);
+    throw new Error(`Failed to load config file at "${dataDir}": ${error}`);
   }
 }
 
