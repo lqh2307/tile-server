@@ -391,7 +391,7 @@ async function startTask() {
   if (opts.removeOldCacheLocks) {
     printLog(
       "info",
-      `Starting remove old cache locks at ${opts.dataDir}/caches...`
+      `Starting remove old cache locks at "${opts.dataDir}/caches"...`
     );
 
     await removeOldCacheLocks(`${opts.dataDir}/caches`);
