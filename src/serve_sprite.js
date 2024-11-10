@@ -1,17 +1,12 @@
 "use strict";
 
+import { getRequestHost, getSprite, findFiles } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
 import sharp from "sharp";
-import {
-  getRequestHost,
-  validateSprite,
-  getSprite,
-  findFiles,
-} from "./utils.js";
 
 /**
  * Validate sprite

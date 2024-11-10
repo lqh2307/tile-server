@@ -7,7 +7,6 @@ import express from "express";
 import {
   detectFormatAndHeaders,
   getRequestHost,
-  validateFont,
   getFontsPBF,
   gzipAsync,
   findFiles,
