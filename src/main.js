@@ -66,6 +66,33 @@ async function startClusterServer() {
       process.exit(1);
     });
 
+    printLog(
+      "info",
+      `
+
+                   _oo0oo_
+                  o8888888o
+                  88' . '88
+                  (| -_- |)
+                  0\\  =  /0
+                ___/'---'\\___
+              .' \\\\|     |// '.
+             / \\\\|||  :  |||// \\
+            / _||||| -:- |||||_ \\
+           |   | \\\\\\  -  /// |   |
+           | \\_|  ''\\---/''  |_/ |
+           \\  .-\\___ '-' ___/-.  /
+         ___'. .'  /--.--\\  '. .'___
+       .'' '< '.___\\_<|>_/___.' >' ''.
+     | | :  '- \\'.;'\\ _ /';.'/ -'  : | |
+     \\  \\ '_.   \\_ __\\ /__ _/   ._' /  /
+      '-.____'.___ \\_____/___.-'____.-'
+                   '=---='
+        Buddha bless, server immortal
+      Starting server with ${opts.numProcesses} processes
+`
+    );
+
     /* Store main pid */
     await fsPromise.writeFile(
       "server-info.json",
@@ -126,33 +153,6 @@ async function startClusterServer() {
     }
 
     /* Fork servers */
-    printLog(
-      "info",
-      `
-
-                       _oo0oo_
-                      o8888888o
-                      88' . '88
-                      (| -_- |)
-                      0\\  =  /0
-                    ___/'---'\\___
-                  .' \\\\|     |// '.
-                 / \\\\|||  :  |||// \\
-                / _||||| -:- |||||_ \\
-               |   | \\\\\\  -  /// |   |
-               | \\_|  ''\\---/''  |_/ |
-               \\  .-\\___ '-' ___/-.  /
-             ___'. .'  /--.--\\  '. .'___
-           .'' '< '.___\\_<|>_/___.' >' ''.
-         | | :  '- \\'.;'\\ _ /';.'/ -'  : | |
-         \\  \\ '_.   \\_ __\\ /__ _/   ._' /  /
-          '-.____'.___ \\_____/___.-'____.-'
-                       '=---='
-            Buddha bless, server immortal
-          Starting server with ${opts.numProcesses} processes
-`
-    );
-
     if (opts.numProcesses > 1) {
       for (let i = 0; i < opts.numProcesses; i++) {
         cluster.fork();

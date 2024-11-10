@@ -84,7 +84,7 @@ async function startTask() {
          .'' '< '.___\\_<|>_/___.' >' ''.
        | | :  '- \\'.;'\\ _ /';.'/ -'  : | |
        \\  \\ '_.   \\_ __\\ /__ _/   ._' /  /
-          '-.____'.___ \\_____/___.-'____.-'==========
+          '-.____'.___ \\_____/___.-'____.-'
                      '=---='
           Buddha bless, server immortal
         Starting seed and clean up data with ${opts.numProcesses} processes
