@@ -49,27 +49,26 @@ function startTaskHandler() {
 }
 
 function cancelTaskHandler() {
-  return (req, res, next) => {
-    if (!currentTaskWorker) {
+  return async (req, res, next) => {
+    if (currentTaskWorker === undefined) {
       return res
         .status(StatusCodes.BAD_REQUEST)
         .send("No task is currently running");
     }
 
-    currentTaskWorker.terminate().then(
-      () => {
-        res.status(StatusCodes.OK).send("Task has been cancelled");
+    try {
+      await currentTaskWorker.terminate();
 
-        currentTaskWorker = undefined;
-      },
-      (error) => {
-        printLog("error", `Failed to cancel task: ${error}`);
+      res.status(StatusCodes.OK).send("Task has been cancelled");
 
-        res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
-          .send(`Failed to cancel task: ${error.message}`);
-      }
-    );
+      currentTaskWorker = undefined;
+    } catch (error) {
+      printLog("error", `Failed to cancel task: ${error}`);
+
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send(`Failed to cancel task: ${error.message}`);
+    }
   };
 }
 
