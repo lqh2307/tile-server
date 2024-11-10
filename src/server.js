@@ -20,6 +20,8 @@ import cors from "cors";
  * @returns {Promise<void>}
  */
 async function loadConfigFile(dataDir) {
+  printLog("info", `Loading config file at "${dataDir}"...`);
+
   try {
     await readConfigFile(dataDir);
   } catch (error) {
@@ -32,6 +34,8 @@ async function loadConfigFile(dataDir) {
  * @returns {void}
  */
 function startHTTPServer() {
+  printLog("info", "Starting HTTP server...");
+
   try {
     express()
       .disable("x-powered-by")
@@ -64,6 +68,8 @@ function startHTTPServer() {
  * @returns {Promise<void>}
  */
 async function loadData() {
+  printLog("info", "Loading data...");
+
   try {
     await Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()]);
     await serve_style.add();
@@ -86,15 +92,9 @@ async function loadData() {
  */
 export async function startServer(dataDir) {
   try {
-    printLog("info", `Loading config file at ${dataDir}...`);
-
     await loadConfigFile(dataDir);
 
-    printLog("info", "Starting HTTP server...");
-
     startHTTPServer();
-
-    printLog("info", "Loading data...");
 
     loadData();
   } catch (error) {
