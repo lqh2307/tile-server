@@ -45,6 +45,7 @@ async function startClusterServer() {
     killInterval: Number(argOpts.kill_interval),
     restartInterval: Number(argOpts.restart_interval),
     dataDir: argOpts.data_dir,
+    removeOldCacheLocks: argOpts.remove_old_cache_locks,
   };
 
   /* Start server */
