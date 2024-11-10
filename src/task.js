@@ -128,15 +128,13 @@ async function startTask() {
         try {
           await cleanXYZTileDataFiles(
             `${opts.dataDir}/caches/xyzs/${id}`,
-            seedData.datas[id].format,
-            cleanUpData.datas[id].zooms || seedData.datas[id].zooms,
-            cleanUpData.datas[id].bounds || seedData.datas[id].bounds,
+            seedData.datas[id].metadata.format,
+            cleanUpData.datas[id].zooms,
+            cleanUpData.datas[id].bbox,
             seedData.datas[id].concurrency,
             seedData.datas[id].maxTry,
             cleanUpData.datas[id].cleanUpBefore?.time ||
-              cleanUpData.datas[id].cleanUpBefore?.day ||
-              seedData.datas[id].refreshBefore?.time ||
-              seedData.datas[id].refreshBefore?.day
+            cleanUpData.datas[id].cleanUpBefore?.day
           );
         } catch (error) {
           printLog(
@@ -173,22 +171,17 @@ async function startTask() {
       for (const id in seedData.datas) {
         try {
           await seedXYZTileDataFiles(
-            seedData.datas[id].name,
-            seedData.datas[id].description,
-            seedData.datas[id].url,
             `${opts.dataDir}/caches/xyzs/${id}`,
-            seedData.datas[id].format,
-            seedData.datas[id].bounds,
-            seedData.datas[id].center,
+            seedData.datas[id].metadata,
+            seedData.datas[id].url,
+            seedData.datas[id].bbox,
             seedData.datas[id].zooms,
-            seedData.datas[id].vector_layers,
-            seedData.datas[id].tilestats,
             seedData.datas[id].concurrency,
             seedData.datas[id].maxTry,
             seedData.datas[id].timeout,
             seedData.datas[id].refreshBefore?.time ||
-              seedData.datas[id].refreshBefore?.day ||
-              seedData.datas[id].refreshBefore?.md5
+            seedData.datas[id].refreshBefore?.day ||
+            seedData.datas[id].refreshBefore?.md5
           );
         } catch (error) {
           printLog(

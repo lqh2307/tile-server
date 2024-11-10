@@ -234,8 +234,7 @@ function getDataHandler() {
       return res.status(StatusCodes.OK).send({
         ...item.tileJSON,
         tiles: [
-          `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
-            item.tileJSON.format
+          `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format
           }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
         ],
       });
@@ -357,8 +356,7 @@ function getDataTileJSONsListHandler() {
             ...item.tileJSON,
             id: id,
             tiles: [
-              `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
-                item.tileJSON.format
+              `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${item.tileJSON.format
               }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
             ],
           };
@@ -739,17 +737,7 @@ export const serve_data = {
               dataInfo.tileJSON = await getXYZInfos(dataInfo.source);
             } catch (error) {
               if (item.cache !== undefined) {
-                dataInfo.tileJSON = {
-                  name: cacheSource.name,
-                  description: cacheSource.description,
-                  format: cacheSource.format,
-                  bounds: deepClone(cacheSource.bounds),
-                  center: deepClone(cacheSource.center),
-                  minzoom: cacheSource.minzoom,
-                  maxzoom: cacheSource.maxzoom,
-                  vector_layers: deepClone(cacheSource.vector_layers),
-                  tilestats: deepClone(cacheSource.tilestats),
-                };
+                dataInfo.tileJSON = deepClone(cacheSource.metadata);
               } else {
                 throw error;
               }

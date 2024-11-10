@@ -167,31 +167,34 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "url": "http://localhost:8080/styles/vietnam/style.json",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
-      },
+      }
     },
     "cambodia": {
       "url": "http://localhost:8080/styles/cambodia/style.json",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
-      },
+      }
     },
     "zurich_switzerland": {
       "url": "http://localhost:8080/styles/zurich_switzerland/style.json",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
-      },
+      }
     }
   },
   "datas": {
     "asia_vietnam_cache": {
-      "name": "asia_vietnam",
-      "description": "asia_vietnam",
+      "metadata": {
+        "name": "asia_vietnam",
+        "description": "asia_vietnam",
+        "format": "png",
+        "bounds": [96, 4, 120, 28],
+        "center": [108, 16, 10],
+        "minzoom": 0,
+        "maxzoom": 15
+      },
       "url": "http://localhost:8080/datas/asia_vietnam/{z}/{x}/{y}.png",
-      "format": "png",
-      "bounds": [96, 4, 120, 28],
-      "center": [108, 16, 10],
-      "minzoom": 0,
-      "maxzoom": 15,
+      "bbox": [96, 4, 120, 28],
       "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
@@ -201,43 +204,46 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "maxTry": 5
     },
     "asia_cambodia_cache": {
-      "name": "asia_cambodia",
-      "description": "asia_cambodia",
+      "metadata": {
+        "name": "asia_cambodia",
+        "description": "asia_cambodia",
+        "format": "pbf",
+        "bounds": [96, 4, 120, 28],
+        "center": [108, 16, 10],
+        "minzoom": 0,
+        "maxzoom": 15,
+        "vector_layers": [
+          {
+            "id": "landuse"
+          },
+          {
+            "id": "waterway"
+          }
+        ]
+      },
       "url": "http://localhost:8080/datas/asia_cambodia/{z}/{x}/{y}.pbf",
-      "format": "pbf",
-      "bounds": [96, 4, 120, 28],
-      "center": [108, 16, 10],
-      "minzoom": 0,
-      "maxzoom": 15,
+      "bbox": [96, 4, 120, 28],
       "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      "vector_layers": [
-        {
-          "id": "landuse"
-        },
-        {
-          "id": "waterway"
-        }
-      ],
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
       },
       "timeout": 60000,
       "concurrency": 100,
       "maxTry": 5
-    },
+    }
   },
   "sprites": {
     "liberty": {
       "url": "http://localhost:8080/sprites/liberty/sprite",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
-      },
+      }
     },
     "basic": {
       "url": "http://localhost:8080/sprites/basic/sprite",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
-      },
+      }
     }
   },
   "fonts": {
@@ -245,13 +251,13 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "url": "http://localhost:8080/fonts/Open Sans Regular/{range}.pbf",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
-      },
+      }
     },
     "Times New Roman": {
       "url": "http://localhost:8080/fonts/Times New Roman/{range}.pbf",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
-      },
+      }
     }
   }
 }
@@ -266,7 +272,7 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
     "vietnam": {
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
-      },
+      }
     },
     "cambodia": {
       "cleanUpBefore": {
@@ -293,30 +299,30 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       },
       "zooms": [0, 1, 2, 3, 4, 5, 9, 10],
       "bounds": [96, 4, 120, 28]
-    },
+    }
   },
   "sprites": {
     "liberty": {
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
-      },
+      }
     },
     "basic": {
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
-      },
+      }
     }
   },
   "fonts": {
     "Open Sans Regular": {
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
-      },
+      }
     },
     "Times New Roman": {
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
-      },
+      }
     }
   }
 }

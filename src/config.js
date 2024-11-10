@@ -257,93 +257,100 @@ async function readSeedFile(dataDir) {
           additionalProperties: {
             type: "object",
             properties: {
-              name: {
-                type: "string",
-              },
-              description: {
-                type: "string",
+              metadata: {
+                type: "object",
+                properties: {
+                  name: {
+                    type: "string",
+                  },
+                  description: {
+                    type: "string",
+                  },
+                  format: {
+                    type: "string",
+                    enum: ["gif", "png", "jpg", "jpeg", "webp", "pbf"],
+                  },
+                  minzoom: {
+                    type: "integer",
+                    minimum: 0,
+                    maximum: 22,
+                  },
+                  maxzoom: {
+                    type: "integer",
+                    minimum: 0,
+                    maximum: 22,
+                  },
+                  bounds: {
+                    type: "array",
+                    items: {
+                      type: "number",
+                      minimum: -180,
+                      maximum: 180,
+                    },
+                    minItems: 4,
+                    maxItems: 4,
+                  },
+                  center: {
+                    type: "array",
+                    items: {
+                      type: "number",
+                      minimum: -180,
+                      maximum: 180,
+                    },
+                    minItems: 3,
+                    maxItems: 3,
+                  },
+                  vector_layers: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: {
+                          type: "string",
+                        },
+                        description: {
+                          type: "string",
+                        },
+                        minzoom: {
+                          type: "integer",
+                          minimum: 0,
+                          maximum: 22,
+                        },
+                        maxzoom: {
+                          type: "integer",
+                          minimum: 0,
+                          maximum: 22,
+                        },
+                        fields: {
+                          type: "object",
+                          additionalProperties: {
+                            type: "string",
+                          },
+                        },
+                      },
+                      required: ["id"],
+                      additionalProperties: true,
+                    },
+                  },
+                  tilestats: {
+                    type: "object",
+                    additionalProperties: {
+                      type: "object",
+                      properties: {
+                        layerCount: {
+                          type: "integer",
+                        },
+                      },
+                      additionalProperties: true,
+                    },
+                  },
+                },
+                required: ["format"],
+                additionalProperties: true,
               },
               url: {
                 type: "string",
                 minLength: 1,
-              },
-              format: {
-                type: "string",
-                enum: ["gif", "png", "jpg", "jpeg", "webp", "pbf"],
-              },
-              minzoom: {
-                type: "integer",
-                minimum: 0,
-                maximum: 22,
-              },
-              maxzoom: {
-                type: "integer",
-                minimum: 0,
-                maximum: 22,
-              },
-              bounds: {
-                type: "array",
-                items: {
-                  type: "number",
-                  minimum: -180,
-                  maximum: 180,
-                },
-                minItems: 4,
-                maxItems: 4,
-              },
-              center: {
-                type: "array",
-                items: {
-                  type: "number",
-                  minimum: -180,
-                  maximum: 180,
-                },
-                minItems: 3,
-                maxItems: 3,
-              },
-              vector_layers: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    id: {
-                      type: "string",
-                    },
-                    description: {
-                      type: "string",
-                    },
-                    minzoom: {
-                      type: "integer",
-                      minimum: 0,
-                      maximum: 22,
-                    },
-                    maxzoom: {
-                      type: "integer",
-                      minimum: 0,
-                      maximum: 22,
-                    },
-                    fields: {
-                      type: "object",
-                      additionalProperties: {
-                        type: "string",
-                      },
-                    },
-                  },
-                  required: ["id"],
-                  additionalProperties: true,
-                },
-              },
-              tilestats: {
-                type: "object",
-                additionalProperties: {
-                  type: "object",
-                  properties: {
-                    layerCount: {
-                      type: "integer",
-                    },
-                  },
-                  additionalProperties: true,
-                },
               },
               refreshBefore: {
                 type: "object",
@@ -377,6 +384,16 @@ async function readSeedFile(dataDir) {
                 minItems: 0,
                 maxItems: 23,
               },
+              bbox: {
+                type: "array",
+                items: {
+                  type: "number",
+                  minimum: -180,
+                  maximum: 180,
+                },
+                minItems: 4,
+                maxItems: 4,
+              },
               timeout: {
                 type: "integer",
                 minimum: 0,
@@ -390,7 +407,7 @@ async function readSeedFile(dataDir) {
                 minimum: 1,
               },
             },
-            required: ["url"],
+            required: ["metadata", "url"],
             additionalProperties: true,
           },
         },
