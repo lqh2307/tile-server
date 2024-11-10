@@ -186,7 +186,7 @@ export async function seedXYZTileDataFiles(
               } else {
                 printLog(
                   "error",
-                  `Failed to download tile data file "${tileName}" from "${url}": ${error}`
+                  `Failed to seed tile data file "${tileName}": ${error}`
                 );
               }
             }
@@ -320,7 +320,7 @@ export async function cleanXYZTileDataFiles(
               } else {
                 printLog(
                   "error",
-                  `Failed to remove tile data file "${tileName}": ${error}`
+                  `Failed to clean up tile data file "${tileName}": ${error}`
                 );
               }
             }
