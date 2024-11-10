@@ -2,7 +2,7 @@
 
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
-import { loadConfigFile, config } from "./config.js";
+import { readConfigFile, config } from "./config.js";
 import { checkReadyMiddleware } from "./utils.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
@@ -15,18 +15,24 @@ import morgan from "morgan";
 import cors from "cors";
 
 /**
- * Start server
- * @param {string} dataDir
+ * Load config file
+ * @param {string} dataDir Data directory
  * @returns {Promise<void>}
  */
-export async function startServer(dataDir) {
+async function loadConfigFile(dataDir) {
   try {
-    printLog("info", "Loading config, seed, clean up files...");
+    await readConfigFile(dataDir);
+  } catch (error) {
+    throw new Error(`Failed to load config file at ${dataDir}: ${error}`);
+  }
+}
 
-    await loadConfigFile(dataDir);
-
-    printLog("info", "Starting HTTP server...");
-
+/**
+ * Start HTTP server
+ * @returns {void}
+ */
+function startHTTPServer() {
+  try {
     express()
       .disable("x-powered-by")
       .enable("trust proxy")
@@ -48,22 +54,49 @@ export async function startServer(dataDir) {
       .on("error", (error) => {
         printLog("error", `HTTP server is stopped by: ${error}`);
       });
+  } catch (error) {
+    throw new Error(`Failed to start HTTP server: ${error}`);
+  }
+}
+
+/**
+ * Load data into services
+ * @returns {Promise<void>}
+ */
+async function loadData() {
+  try {
+    await Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()]);
+    await serve_style.add();
+    await serve_rendered.add();
+
+    printLog("info", "Completed startup!");
+
+    config.startupComplete = true;
+  } catch (error) {
+    printLog("error", `Failed to load data: ${error}. Exited!`);
+
+    process.kill(Number(process.env.MAIN_PID), "SIGINT");
+  }
+}
+
+/**
+ * Start server
+ * @param {string} dataDir
+ * @returns {Promise<void>}
+ */
+export async function startServer(dataDir) {
+  try {
+    printLog("info", `Loading config file at ${dataDir}...`);
+
+    await loadConfigFile(dataDir);
+
+    printLog("info", "Starting HTTP server...");
+
+    startHTTPServer();
 
     printLog("info", "Loading data...");
 
-    Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()])
-      .then(() => serve_style.add())
-      .then(() => serve_rendered.add())
-      .then(() => {
-        printLog("info", "Completed startup!");
-
-        config.startupComplete = true;
-      })
-      .catch((error) => {
-        printLog("error", `Failed to load data: ${error}. Exited!`);
-
-        process.kill(Number(process.env.MAIN_PID), "SIGINT");
-      });
+    loadData();
   } catch (error) {
     printLog("error", `Failed to start server: ${error}. Exited!`);
 

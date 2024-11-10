@@ -1,18 +1,22 @@
 "use strict";
 
+import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import {
   getLayerNamesFromPBFTileBuffer,
-  downloadFileWithStream,
   detectFormatAndHeaders,
   removeFilesOrFolder,
   createNewTileJSON,
   calculateMD5,
-  isExistFile,
   retry,
 } from "./utils.js";
+import https from "node:https";
 import sqlite3 from "sqlite3";
 import pLimit from "p-limit";
+import http from "node:http";
+import path from "node:path";
+import axios from "axios";
+import fs from "node:fs";
 
 /**
  * Open MBTiles
@@ -423,39 +427,86 @@ export async function closeMBTiles(mbtilesSource) {
 }
 
 /**
- * Download MBTiles file
+ * Download MBTiles file with stream
  * @param {string} url The URL to download the file from
  * @param {string} filePath The path where the file will be saved
- * @param {boolean} overwrite Overwrite exist file
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function downloadMBTilesFile(
-  url,
-  filePath,
-  overwrite,
-  maxTry,
-  timeout
-) {
+export async function downloadMBTilesFile(url, filePath, maxTry, timeout) {
+  printLog("info", `Downloading MBTiles file "${filePath}" from "${url}"...`);
+
+  const tempFilePath = `${filePath}.tmp`;
+
   try {
-    if (overwrite === true || (await isExistFile(filePath)) === false) {
-      printLog(
-        "info",
-        `Downloading MBTiles file "${filePath}" from "${url}"...`
-      );
+    await retry(async () => {
+      try {
+        await fsPromise.mkdir(path.dirname(filePath), {
+          recursive: true,
+        });
 
-      await retry(async () => {
-        await downloadFileWithStream(url, filePath, timeout);
-      }, maxTry);
-    }
+        const response = await axios({
+          url,
+          responseType: "stream",
+          method: "GET",
+          timeout: timeout,
+          headers: {
+            "User-Agent": "Tile Server",
+          },
+          validateStatus: (status) => {
+            return status === StatusCodes.OK;
+          },
+          httpAgent: new http.Agent({
+            keepAlive: false,
+          }),
+          httpsAgent: new https.Agent({
+            keepAlive: false,
+          }),
+        });
+
+        const writer = fs.createWriteStream(tempFilePath);
+
+        response.data.pipe(writer);
+
+        return new Promise((resolve, reject) => {
+          writer
+            .on("finish", async () => {
+              await fsPromise.rename(tempFilePath, filePath);
+
+              resolve();
+            })
+            .on("error", async (error) => {
+              await removeFilesOrFolder(tempFilePath);
+
+              reject(error);
+            });
+        });
+      } catch (error) {
+        if (error.response) {
+          if (
+            response.status === StatusCodes.NO_CONTENT ||
+            response.status === StatusCodes.NOT_FOUND
+          ) {
+            printLog(
+              "error",
+              `Failed to download MBTiles file "${filePath}" from "${url}": Status code: ${response.status} - ${response.statusText}`
+            );
+
+            return;
+          } else {
+            throw new Error(
+              `Failed to download MBTiles file "${filePath}" from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
+            );
+          }
+        }
+
+        throw new Error(
+          `Failed to download MBTiles file "${filePath}" from "${url}": ${error}`
+        );
+      }
+    }, maxTry);
   } catch (error) {
-    printLog(
-      "error",
-      `Failed to download MBTiles file "${filePath}" from "${url}": ${error}`
-    );
-
-    // Remove error tile data file
-    await removeFilesOrFolder(filePath);
+    throw error;
   }
 }

@@ -7,7 +7,6 @@ import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import handlebars from "handlebars";
 import https from "node:https";
-import path from "node:path";
 import http from "node:http";
 import crypto from "crypto";
 import axios from "axios";
@@ -115,11 +114,11 @@ export async function getDataTileFromURL(url, timeout) {
       }
 
       throw new Error(
-        `Failed to request "${url}" with status code: ${error.response.status} - ${error.response.statusText}`
+        `Failed to get data tile from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
       );
     }
 
-    throw new Error(`Failed to request "${url}": ${error.message}`);
+    throw new Error(`Failed to get data tile from "${url}": ${error}`);
   }
 }
 
@@ -742,68 +741,6 @@ export async function getFontsPBF(ids, fileName) {
  */
 export async function getSprite(id, fileName) {
   return await fsPromise.readFile(`${config.paths.sprites}/${id}/${fileName}`);
-}
-
-/**
- * Download file with stream
- * @param {string} url The URL to download the file from
- * @param {string} filePath The path where the file will be saved
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<object>}
- */
-export async function downloadFileWithStream(url, filePath, timeout) {
-  const tempFilePath = `${filePath}.tmp`;
-
-  try {
-    await fsPromise.mkdir(path.dirname(filePath), {
-      recursive: true,
-    });
-
-    const response = await axios({
-      url,
-      responseType: "stream",
-      method: "GET",
-      timeout: timeout,
-      headers: {
-        "User-Agent": "Tile Server",
-      },
-      validateStatus: (status) => {
-        return status === StatusCodes.OK;
-      },
-      httpAgent: new http.Agent({
-        keepAlive: false,
-      }),
-      httpsAgent: new https.Agent({
-        keepAlive: false,
-      }),
-    });
-
-    const writer = fs.createWriteStream(tempFilePath);
-
-    response.data.pipe(writer);
-
-    return new Promise((resolve, reject) => {
-      writer
-        .on("finish", async () => {
-          await fsPromise.rename(tempFilePath, filePath);
-
-          resolve();
-        })
-        .on("error", async (error) => {
-          await removeFilesOrFolder(tempFilePath);
-
-          reject(error);
-        });
-    });
-  } catch (error) {
-    if (error.response) {
-      throw new Error(
-        `Failed to request "${url}" with status code: ${error.response.status} - ${error.response.statusText}`
-      );
-    }
-
-    throw new Error(`Failed to request "${url}": ${error.message}`);
-  }
 }
 
 /**

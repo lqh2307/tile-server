@@ -95,11 +95,11 @@ export async function getXYZTileFromURL(url, timeout) {
       }
 
       throw new Error(
-        `Failed to request "${url}" with status code: ${error.response.status} - ${error.response.statusText}`
+        `Failed to get data tile from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
       );
     }
 
-    throw new Error(`Failed to request "${url}": ${error.message}`);
+    throw new Error(`Failed to get data tile from "${url}": ${error}`);
   }
 }
 
@@ -661,6 +661,9 @@ export async function downloadXYZTileDataFile(
           headers: {
             "User-Agent": "Tile Server",
           },
+          validateStatus: (status) => {
+            return status === StatusCodes.OK;
+          },
           httpAgent: new http.Agent({
             keepAlive: false,
           }),
@@ -683,31 +686,30 @@ export async function downloadXYZTileDataFile(
             : response.headers["Etag"];
       } catch (error) {
         if (error.response) {
-          printLog(
-            "error",
-            `Failed to download tile data file "${tileName}" from "${url}": Status code: ${response.status} - ${response.statusText}`
-          );
-
           if (
             response.status === StatusCodes.NO_CONTENT ||
             response.status === StatusCodes.NOT_FOUND
           ) {
+            printLog(
+              "error",
+              `Failed to download tile data file "${tileName}" from "${url}": Status code: ${response.status} - ${response.statusText}`
+            );
+
             return;
           } else {
             throw new Error(
-              `Status code: ${error.response.status} - ${error.response.statusText}`
+              `Failed to download tile data file "${tileName}" from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
             );
           }
         }
 
-        throw error;
+        throw new Error(
+          `Failed to download tile data file "${tileName}" from "${url}": ${error}`
+        );
       }
     }, maxTry);
   } catch (error) {
-    printLog(
-      "error",
-      `Failed to download tile data file "${tileName}" from "${url}": ${error}`
-    );
+    printLog("error", `${error}`);
   }
 }
 
@@ -732,19 +734,22 @@ export async function removeXYZTileDataFile(
   printLog("info", `Removing tile data file "${tileName}"...`);
 
   try {
-    await retry(async () => {
-      await removeXYZTileDataFileWithLock(
-        `${sourcePath}/${tileName}.${format}`,
-        timeout
-      );
+    try {
+      await retry(async () => {
+        await removeXYZTileDataFileWithLock(
+          `${sourcePath}/${tileName}.${format}`,
+          timeout
+        );
 
-      delete hashs[tileName];
-    }, maxTry);
+        delete hashs[tileName];
+      }, maxTry);
+    } catch (error) {
+      throw new Error(
+        `Failed to remove tile data file "${tileName}": ${error}`
+      );
+    }
   } catch (error) {
-    printLog(
-      "error",
-      `Failed to remove tile data file "${tileName}": ${error}`
-    );
+    printLog("error", `${error}`);
   }
 }
 

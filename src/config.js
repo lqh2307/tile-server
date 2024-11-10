@@ -6,11 +6,11 @@ import fsPromise from "node:fs/promises";
 let config;
 
 /**
- * Load config.json file
+ * Read config.json file
  * @param {string} dataDir
  * @returns {Promise<void>}
  */
-async function loadConfigFile(dataDir) {
+async function readConfigFile(dataDir) {
   const configFilePath = `${dataDir}/config.json`;
 
   /* Validate config.json file */
@@ -201,11 +201,11 @@ async function loadConfigFile(dataDir) {
 }
 
 /**
- * Load seed.json file
+ * Read seed.json file
  * @param {string} dataDir
  * @returns {Promise<object>}
  */
-async function loadSeedFile(dataDir) {
+async function readSeedFile(dataDir) {
   const seedFilePath = `${dataDir}/seed.json`;
 
   /* Validate seed.json file */
@@ -476,11 +476,11 @@ async function loadSeedFile(dataDir) {
 }
 
 /**
- * Load cleanup.json file
+ * Read cleanup.json file
  * @param {string} dataDir
  * @returns {Promise<object>}
  */
-async function loadCleanUpFile(dataDir) {
+async function readCleanUpFile(dataDir) {
   const cleanUpFilePath = `${dataDir}/cleanup.json`;
 
   /* Validate cleanup.json file */
@@ -628,4 +628,4 @@ async function loadCleanUpFile(dataDir) {
   return JSON.parse(data);
 }
 
-export { loadConfigFile, loadSeedFile, loadCleanUpFile, config };
+export { readConfigFile, readSeedFile, readCleanUpFile, config };

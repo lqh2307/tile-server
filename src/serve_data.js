@@ -1,7 +1,7 @@
 "use strict";
 
-import { getRequestHost, gzipAsync, deepClone } from "./utils.js";
-import { config, loadSeedFile } from "./config.js";
+import { getRequestHost, gzipAsync, deepClone, isExistFile } from "./utils.js";
+import { config, readSeedFile } from "./config.js";
 import { StatusCodes } from "http-status-codes";
 import { printLog } from "./logger.js";
 import express from "express";
@@ -651,7 +651,7 @@ export const serve_data = {
   },
 
   add: async () => {
-    const seed = await loadSeedFile(config.paths.dir);
+    const seed = await readSeedFile(config.paths.dir);
 
     await Promise.all(
       Object.keys(config.datas).map(async (id) => {
@@ -668,13 +668,14 @@ export const serve_data = {
             ) {
               filePath = `${config.paths.mbtiles}/${id}/${id}.mbtiles`;
 
-              await downloadMBTilesFile(
-                item.mbtiles,
-                filePath,
-                false,
-                5,
-                3600000 // 1 hour
-              );
+              if ((await isExistFile(filePath)) === false) {
+                await downloadMBTilesFile(
+                  item.mbtiles,
+                  filePath,
+                  5,
+                  3600000 // 1 hour
+                );
+              }
 
               item.mbtiles = `${id}/${id}.mbtiles`;
             }

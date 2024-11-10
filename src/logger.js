@@ -2,8 +2,8 @@
 
 /**
  * Print log to console
- * @param {"info"|"warning"|"error"} level
- * @param {string} msg
+ * @param {"info"|"warning"|"error"} level Log level
+ * @param {string} msg Message
  * @returns {void}
  */
 export function printLog(level, msg) {

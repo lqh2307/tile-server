@@ -1,6 +1,6 @@
 "use strict";
 
-import { loadCleanUpFile, loadSeedFile } from "./config.js";
+import { readCleanUpFile, readSeedFile } from "./config.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { program } from "commander";
@@ -396,8 +396,8 @@ async function startTask() {
 
   /* Read cleanup.json and seed.json files */
   const [cleanUpData, seedData] = await Promise.all([
-    loadCleanUpFile(opts.dataDir),
-    loadSeedFile(opts.dataDir),
+    readCleanUpFile(opts.dataDir),
+    readSeedFile(opts.dataDir),
   ]);
 
   /* Run clean up task */
