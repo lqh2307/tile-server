@@ -82,9 +82,9 @@ export async function seedXYZTileDataFiles(
             const url = tileURL.replaceAll("{z}/{x}/{y}", tileName);
 
             try {
-              const stats = await fsPromise.stat(filePath);
-
               if (refreshTimestamp !== undefined) {
+                const stats = await fsPromise.stat(filePath);
+
                 if (refreshTimestamp === true) {
                   // Check md5
                   const md5URL = tileURL.replaceAll(
@@ -120,6 +120,16 @@ export async function seedXYZTileDataFiles(
                     hashs
                   );
                 }
+              } else {
+                await downloadXYZTileDataFile(
+                  url,
+                  outputFolder,
+                  tileName,
+                  metadata.format,
+                  maxTry,
+                  timeout,
+                  hashs
+                );
               }
             } catch (error) {
               if (error.code === "ENOENT") {
@@ -226,10 +236,10 @@ export async function cleanXYZTileDataFiles(
             const filePath = `${outputFolder}/${tileName}.${format}`;
 
             try {
-              const stats = await fsPromise.stat(filePath);
-
-              // Check timestamp
               if (cleanUpTimestamp !== undefined) {
+                const stats = await fsPromise.stat(filePath);
+
+                // Check timestamp
                 if (
                   stats.ctimeMs === undefined ||
                   stats.ctimeMs < cleanUpTimestamp
@@ -243,6 +253,15 @@ export async function cleanXYZTileDataFiles(
                     hashs
                   );
                 }
+              } else {
+                await removeXYZTileDataFile(
+                  outputFolder,
+                  tileName,
+                  format,
+                  maxTry,
+                  300000, // 5 mins
+                  hashs
+                );
               }
             } catch (error) {
               if (error.code !== "ENOENT") {
