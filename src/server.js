@@ -52,7 +52,7 @@ function startHTTPServer() {
       .listen(config.options.listenPort, () => {
         printLog(
           "info",
-          `HTTP server is listening on port: ${config.options.listenPort}`
+          `HTTP server is listening on port "${config.options.listenPort}"`
         );
       })
       .on("error", (error) => {
