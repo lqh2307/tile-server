@@ -1,6 +1,8 @@
 "use strict";
 
+import { removeOldCacheLocks } from "./utils.js";
 import { startServer } from "./server.js";
+import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { program } from "commander";
 import chokidar from "chokidar";
@@ -20,6 +22,10 @@ program
   )
   .option("-k, --kill_interval <num>", "Interval time to kill server", "0")
   .option("-d, --data_dir <dir>", "Data directory", "data")
+  .option(
+    "-rm, --remove_old_cache_locks",
+    "Remove old cache locks before run server"
+  )
   .version(
     JSON.parse(fs.readFileSync("package.json", "utf8")).version,
     "-v, --version"
@@ -60,7 +66,7 @@ async function startClusterServer() {
     });
 
     /* Store main pid */
-    fs.writeFileSync(
+    await fsPromise.writeFile(
       "server-info.json",
       JSON.stringify(
         {
@@ -70,6 +76,16 @@ async function startClusterServer() {
         2
       )
     );
+
+    /* Remove old cache locks */
+    if (opts.removeOldCacheLocks) {
+      printLog(
+        "info",
+        `Starting remove old cache locks at "${opts.dataDir}/caches"...`
+      );
+
+      await removeOldCacheLocks(`${opts.dataDir}/caches`);
+    }
 
     /* Setup watch config file change */
     if (opts.killInterval > 0) {
