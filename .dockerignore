@@ -4,3 +4,5 @@
 !public
 !package.json
 !entrypoint.sh
+!seed-and-cleanup-entrypoint.sh
+!server-entrypoint.sh

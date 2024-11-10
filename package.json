@@ -6,9 +6,9 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "server": "./entrypoint.sh",
-    "seed": "REMOVE_OLD_CACHE_LOCKS=YES SEED_TASK=YES CLEAN_UP_TASK=YES START_SERVER=NO ./entrypoint.sh",
-    "seed_and_server": "REMOVE_OLD_CACHE_LOCKS=YES SEED_TASK=YES CLEAN_UP_TASK=YES ./entrypoint.sh"
+    "server": "./server-entrypoint.sh",
+    "seed_and_cleanup": "./seed-and-cleanup-entrypoint.sh",
+    "seed_and_cleanup_and_server": "./entrypoint.sh"
   },
   "dependencies": {
     "@maplibre/maplibre-gl-style-spec": "21.2.0",
