@@ -9,7 +9,7 @@ import express from "express";
 let currentTaskWorker;
 
 function startTaskHandler() {
-  return (req, res) => {
+  return (req, res, next) => {
     if (currentTaskWorker !== undefined) {
       return res
         .status(StatusCodes.BAD_REQUEST)
@@ -23,36 +23,33 @@ function startTaskHandler() {
         cleanUp: req.query.cleanUp === "true",
         seed: req.query.seed === "true",
       },
-    });
+    })
+      .on("message", (message) => {
+        if (message.error) {
+          printLog("error", `Task failed: ${message.error}`);
+        }
 
-    currentTaskWorker.on("message", (message) => {
-      if (message.error) {
-        printLog("error", `Task failed: ${message.error}`);
-      }
+        currentTaskWorker = undefined;
+      })
+      .on("error", (error) => {
+        printLog("error", `Worker error: ${error}`);
 
-      currentTaskWorker = undefined;
-    });
+        currentTaskWorker = undefined;
+      })
+      .on("exit", (code) => {
+        if (code !== 0) {
+          printLog("error", `Worker stopped with exit code: ${code}`);
+        }
 
-    currentTaskWorker.on("error", (error) => {
-      printLog("error", `Worker error: ${error}`);
-
-      currentTaskWorker = undefined;
-    });
-
-    currentTaskWorker.on("exit", (code) => {
-      if (code !== 0) {
-        printLog("error", `Worker stopped with exit code: ${code}`);
-      }
-
-      currentTaskWorker = undefined;
-    });
+        currentTaskWorker = undefined;
+      });
 
     res.status(StatusCodes.OK).send("Task started successfully");
   };
 }
 
 function cancelTaskHandler() {
-  return (req, res) => {
+  return (req, res, next) => {
     if (!currentTaskWorker) {
       return res
         .status(StatusCodes.BAD_REQUEST)
@@ -112,6 +109,8 @@ export const serve_task = {
      *     responses:
      *       200:
      *         description: Task started successfully
+     *       400:
+     *         description: Bad request
      *       404:
      *         description: Not found
      *       503:
@@ -139,6 +138,8 @@ export const serve_task = {
      *     responses:
      *       200:
      *         description: Task cancelled successfully
+     *       400:
+     *         description: Bad request
      *       404:
      *         description: Not found
      *       503:
