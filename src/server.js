@@ -9,6 +9,7 @@ import { serve_sprite } from "./serve_sprite.js";
 import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
+import { serve_task } from "./serve_task.js";
 import { printLog } from "./logger.js";
 import express from "express";
 import morgan from "morgan";
@@ -51,6 +52,7 @@ function startHTTPServer() {
       .use("/sprites", checkReadyMiddleware(), serve_sprite.init())
       .use("/styles", checkReadyMiddleware(), serve_style.init())
       .use("/styles", checkReadyMiddleware(), serve_rendered.init())
+      .use("/tasks", checkReadyMiddleware(), serve_task.init())
       .listen(config.options.listenPort, () => {
         printLog(
           "info",

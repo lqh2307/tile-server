@@ -1,9 +1,9 @@
 "use strict";
 
+import { readCleanUpFile, readSeedFile } from "./config.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import pLimit from "p-limit";
-import os from "os";
 import {
   updateXYZMetadataFileWithLock,
   updateXYZMD5FileWithLock,
@@ -12,9 +12,56 @@ import {
 } from "./xyz.js";
 import {
   getTileBoundsFromBBox,
+  removeOldCacheLocks,
   removeEmptyFolders,
   getDataBuffer,
 } from "./utils.js";
+import os from "os";
+
+/**
+ * Start task
+ * @param {object} opts
+ * @returns {Promise<void>}
+ */
+export async function startTask(opts) {
+  printLog("info", "Starting seed and clean up task...");
+
+  /* Remove old cache locks */
+  if (removeOldCacheLocks) {
+    printLog(
+      "info",
+      `Starting remove old cache locks at "${opts.dataDir}/caches"...`
+    );
+
+    await removeOldCacheLocks(`${opts.dataDir}/caches`);
+  }
+
+  /* Read cleanup.json and seed.json files */
+  printLog(
+    "info",
+    `Loading seed.json and cleanup.json files at "${opts.dataDir}"...`
+  );
+
+  if (!opts.cleanUp && !opts.seed) {
+    printLog("info", `No seed or clean up task. Exited!`);
+    return;
+  }
+
+  const [cleanUpData, seedData] = await Promise.all([
+    readCleanUpFile(opts.dataDir),
+    readSeedFile(opts.dataDir),
+  ]);
+
+  /* Run clean up task */
+  if (opts.cleanUp) {
+    await runCleanUpTask(opts.dataDir, cleanUpData, seedData);
+  }
+
+  /* Run seed task */
+  if (opts.seed) {
+    await runSeedTask(opts.dataDir, seedData);
+  }
+}
 
 /**
  * Download all xyz tile data files in a specified bounding box and zoom levels
@@ -29,7 +76,7 @@ import {
  * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
  * @returns {Promise<void>}
  */
-export async function seedXYZTileDataFiles(
+async function seedXYZTileDataFiles(
   outputFolder,
   metadata,
   tileURL,
@@ -190,7 +237,7 @@ export async function seedXYZTileDataFiles(
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-export async function cleanXYZTileDataFiles(
+async function cleanXYZTileDataFiles(
   outputFolder,
   format,
   zooms = [
@@ -299,4 +346,114 @@ export async function cleanXYZTileDataFiles(
 
   // Remove parent folder if empty
   await removeEmptyFolders(outputFolder);
+}
+
+/**
+ * Run clean up task
+ * @param {string} dataDir
+ * @param {object} cleanUpData
+ * @param {object} seedData
+ * @returns {Promise<void>}
+ */
+async function runCleanUpTask(dataDir, cleanUpData, seedData) {
+  try {
+    printLog(
+      "info",
+      `Starting clean up ${Object.keys(cleanUpData.datas).length} datas...`
+    );
+
+    for (const id in cleanUpData.datas) {
+      try {
+        await cleanXYZTileDataFiles(
+          `${dataDir}/caches/xyzs/${id}`,
+          seedData.datas[id].metadata.format,
+          cleanUpData.datas[id].zooms,
+          cleanUpData.datas[id].bbox,
+          seedData.datas[id].concurrency,
+          seedData.datas[id].maxTry,
+          cleanUpData.datas[id].cleanUpBefore?.time ||
+            cleanUpData.datas[id].cleanUpBefore?.day
+        );
+      } catch (error) {
+        printLog(
+          "error",
+          `Failed to clean up data id "${id}": ${error}. Skipping...`
+        );
+      }
+    }
+
+    if (cleanUpData.restartServerAfterCleanUp === true) {
+      printLog("info", "Completed cleaning up data. Restarting server...");
+
+      await restartServer();
+    } else {
+      printLog("info", "Completed cleaning up data!");
+    }
+  } catch (error) {
+    printLog("error", `Failed to clean up data: ${error}. Exited!`);
+  }
+}
+
+/**
+ * Run seed task
+ * @param {string} dataDir
+ * @param {object} seedData
+ * @returns {Promise<void>}
+ */
+async function runSeedTask(dataDir, seedData) {
+  try {
+    printLog(
+      "info",
+      `Starting seed ${Object.keys(seedData.datas).length} datas...`
+    );
+
+    for (const id in seedData.datas) {
+      try {
+        await seedXYZTileDataFiles(
+          `${dataDir}/caches/xyzs/${id}`,
+          seedData.datas[id].metadata,
+          seedData.datas[id].url,
+          seedData.datas[id].bbox,
+          seedData.datas[id].zooms,
+          seedData.datas[id].concurrency,
+          seedData.datas[id].maxTry,
+          seedData.datas[id].timeout,
+          seedData.datas[id].refreshBefore?.time ||
+            seedData.datas[id].refreshBefore?.day ||
+            seedData.datas[id].refreshBefore?.md5
+        );
+      } catch (error) {
+        printLog(
+          "error",
+          `Failed to seed data id "${id}": ${error}. Skipping...`
+        );
+      }
+    }
+
+    if (seedData.restartServerAfterSeed === true) {
+      printLog("info", "Completed seeding data. Restarting server...");
+
+      await restartServer();
+    } else {
+      printLog("info", "Completed seeding data!");
+    }
+  } catch (error) {
+    printLog("error", `Failed to seed data: ${error}. Exited!`);
+  }
+}
+
+/**
+ * Restart server
+ * @returns {Promise<void>}
+ */
+async function restartServer() {
+  try {
+    const serverInfo = JSON.parse(
+      await fsPromise.readFile("server-info.json", "utf8")
+    );
+
+    process.kill(serverInfo.mainPID, "SIGTERM");
+  } catch (error) {
+    printLog("error", `Failed to restart server: ${error}`);
+  }
 }
