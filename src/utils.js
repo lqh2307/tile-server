@@ -566,7 +566,11 @@ export async function isExistFolder(dirPath) {
 
     return stat.isDirectory();
   } catch (error) {
-    return false;
+    if (error.code === "ENOENT") {
+      return false;
+    }
+
+    throw error;
   }
 }
 
@@ -581,7 +585,11 @@ export async function isExistFile(filePath) {
 
     return stat.isFile();
   } catch (error) {
-    return false;
+    if (error.code === "ENOENT") {
+      return false;
+    }
+
+    throw error;
   }
 }
 

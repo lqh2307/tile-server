@@ -137,6 +137,7 @@ export async function seedXYZTileDataFiles(
 
               if (refreshTimestamp !== undefined) {
                 if (refreshTimestamp === true) {
+                  // Check md5
                   const md5URL = tileURL.replaceAll(
                     "{z}/{x}/{y}",
                     `md5/${tileName}`
@@ -159,6 +160,7 @@ export async function seedXYZTileDataFiles(
                   stats.ctimeMs === undefined ||
                   stats.ctimeMs < refreshTimestamp
                 ) {
+                  // Check timestamp
                   await downloadXYZTileDataFile(
                     url,
                     outputFolder,
@@ -171,15 +173,22 @@ export async function seedXYZTileDataFiles(
                 }
               }
             } catch (error) {
-              await downloadXYZTileDataFile(
-                url,
-                outputFolder,
-                tileName,
-                format,
-                maxTry,
-                timeout,
-                hashs
-              );
+              if (error.code === "ENOENT") {
+                await downloadXYZTileDataFile(
+                  url,
+                  outputFolder,
+                  tileName,
+                  format,
+                  maxTry,
+                  timeout,
+                  hashs
+                );
+              } else {
+                printLog(
+                  "error",
+                  `Failed to download tile data file "${tileName}" from "${url}": ${error}`
+                );
+              }
             }
           })
         );
@@ -282,6 +291,7 @@ export async function cleanXYZTileDataFiles(
             try {
               const stats = await fsPromise.stat(filePath);
 
+              // Check timestamp
               if (cleanUpTimestamp !== undefined) {
                 if (
                   stats.ctimeMs === undefined ||
@@ -298,14 +308,21 @@ export async function cleanXYZTileDataFiles(
                 }
               }
             } catch (error) {
-              await removeXYZTileDataFile(
-                outputFolder,
-                tileName,
-                format,
-                maxTry,
-                300000, // 5 mins
-                hashs
-              );
+              if (error.code !== "ENOENT") {
+                await removeXYZTileDataFile(
+                  outputFolder,
+                  tileName,
+                  format,
+                  maxTry,
+                  300000, // 5 mins
+                  hashs
+                );
+              } else {
+                printLog(
+                  "error",
+                  `Failed to remove tile data file "${tileName}": ${error}`
+                );
+              }
             }
           })
         );
