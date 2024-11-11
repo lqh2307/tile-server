@@ -1,6 +1,6 @@
 "use strict";
 
-import { removeOldCacheLocks, updateServerInfoFileWithLock } from "./utils.js";
+import { removeOldCacheLocks, updateServerInfoFile } from "./utils.js";
 import { startServer } from "./server.js";
 import { printLog } from "./logger.js";
 import { program } from "commander";
@@ -94,7 +94,7 @@ async function startClusterServer(opts) {
     }
 
     /* Store main pid */
-    await updateServerInfoFileWithLock("server-info.json", {
+    await updateServerInfoFile("server-info.json", {
       mainPID: Number(process.pid),
     });
 
