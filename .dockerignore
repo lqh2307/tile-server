@@ -4,5 +4,3 @@
 !public
 !package.json
 !entrypoint.sh
-!task-entrypoint.sh
-!server-entrypoint.sh
