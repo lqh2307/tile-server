@@ -37,6 +37,18 @@ program
 /* Load args */
 const argOpts = program.opts();
 
+process.on("SIGUSR1", () => {
+  printLog("info", `Received "SIGUSR1" signal. Starting task...`);
+
+  startTaskInWorker();
+});
+
+process.on("SIGUSR2", () => {
+  printLog("info", `Received "SIGUSR2" signal. Canceling task...`);
+
+  cancelTaskInWorker();
+});
+
 /**
  * Start cluster server
  * @param {object} opts
@@ -57,18 +69,6 @@ async function startClusterServer(opts) {
       printLog("info", `Received "SIGTERM" signal. Restarting server...`);
 
       process.exit(1);
-    });
-
-    process.on("SIGUSR1", () => {
-      printLog("info", `Received "SIGUSR1" signal. Starting task...`);
-
-      startTaskInWorker();
-    });
-
-    process.on("SIGUSR2", () => {
-      printLog("info", `Received "SIGUSR2" signal. Canceling task...`);
-
-      cancelTaskInWorker();
     });
 
     printLog("info", `Starting server with ${opts.numProcesses} processes...`);
