@@ -1,6 +1,7 @@
 "use strict";
 
 import { updateServerInfoFileWithLock, checkReadyMiddleware } from "./utils.js";
+import { cancelTaskInWorker, startTaskInWorker } from "./task.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
 import { readConfigFile, config } from "./config.js";
@@ -158,6 +159,18 @@ export async function startServer(dataDir) {
     startHTTPServer();
 
     loadData();
+
+    process.on("SIGUSR1", () => {
+      printLog("info", `Received "SIGUSR1" signal. Starting task...`);
+
+      startTaskInWorker(dataDir);
+    });
+
+    process.on("SIGUSR2", () => {
+      printLog("info", `Received "SIGUSR2" signal. Canceling task...`);
+
+      cancelTaskInWorker();
+    });
   } catch (error) {
     printLog("error", `Failed to start server: ${error}. Exited!`);
 

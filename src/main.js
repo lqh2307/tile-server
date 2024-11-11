@@ -1,6 +1,5 @@
 "use strict";
 
-import { cancelTaskInWorker, startTaskInWorker } from "./task.js";
 import { startServer } from "./server.js";
 import { printLog } from "./logger.js";
 import { program } from "commander";
@@ -26,7 +25,6 @@ program
   )
   .option("-k, --kill_interval <num>", "Interval time to kill server", "0")
   .option("-d, --data_dir <dir>", "Data directory", "data")
-  .option("-no, --no_start_server", "No start server")
   .version(
     JSON.parse(fs.readFileSync("package.json", "utf8")).version,
     "-v, --version"
@@ -37,21 +35,6 @@ program
 /* Load args */
 const argOpts = program.opts();
 
-/* Setup envs & events */
-process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length); // For libuv
-
-process.on("SIGUSR1", () => {
-  printLog("info", `Received "SIGUSR1" signal. Starting task...`);
-
-  startTaskInWorker();
-});
-
-process.on("SIGUSR2", () => {
-  printLog("info", `Received "SIGUSR2" signal. Canceling task...`);
-
-  cancelTaskInWorker();
-});
-
 /**
  * Start cluster server
  * @param {object} opts
@@ -59,7 +42,9 @@ process.on("SIGUSR2", () => {
  */
 async function startClusterServer(opts) {
   if (cluster.isPrimary === true) {
-    /* Setup events */
+    /* Setup envs & events */
+    process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length); // For libuv
+
     process.on("SIGINT", () => {
       printLog("info", `Received "SIGINT" signal. Killing server...`);
 
@@ -100,12 +85,6 @@ async function startClusterServer(opts) {
     //       Starting server with ${opts.numProcesses} processes
     // `
     //     );
-
-    if (opts.noStartServer) {
-      printLog("info", `No start server. Exited!`);
-
-      return;
-    }
 
     /* Remove old cache locks */
     await removeOldCacheLocks(`${opts.dataDir}/caches`);
@@ -183,5 +162,4 @@ startClusterServer({
   killInterval: Number(argOpts.kill_interval),
   restartInterval: Number(argOpts.restart_interval),
   dataDir: argOpts.data_dir,
-  noStartServer: argOpts.no_start_server,
 });

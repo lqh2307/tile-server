@@ -1,11 +1,11 @@
 "use strict";
 
 import { parentPort, workerData } from "node:worker_threads";
-import { startTask } from "./seed_and_cleanup.js";
+import { runTask } from "./task.js";
 
 (async () => {
   try {
-    await startTask(workerData);
+    await runTask(workerData);
   } catch (error) {
     parentPort.postMessage({
       error: error,
