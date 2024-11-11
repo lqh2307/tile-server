@@ -1084,5 +1084,9 @@ export async function updateServerInfoFileWithLock(serverInfoAdds, timeout) {
  * @returns {Promise<void>}
  */
 export async function removeOldServerInfo() {
-  await removeFilesOrFolder("server-info.json");
+  const filePath = "server-info.json";
+
+  await removeFilesOrFolder(filePath);
+  await removeFilesOrFolder(`${filePath}.tmp`);
+  await removeFilesOrFolder(`${filePath}.lock`);
 }
