@@ -435,7 +435,7 @@ export const serve_rendered = {
 
   add: async () => {
     if (config.options.serveRendered === true) {
-      mlgl = await import("@maplibre/maplibre-gl-native");
+      const mlgl = await import("@maplibre/maplibre-gl-native");
 
       mlgl.on("message", (error) => {
         if (error.severity === "ERROR") {
