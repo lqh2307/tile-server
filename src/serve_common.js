@@ -1,6 +1,5 @@
 "use strict";
 
-import { checkReadyMiddleware, findFiles } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import swaggerUi from "swagger-ui-express";
 import fsPromise from "node:fs/promises";
@@ -8,6 +7,12 @@ import swaggerJsdoc from "swagger-jsdoc";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
+import {
+  checkReadyMiddleware,
+  restartServer,
+  killServer,
+  findFiles,
+} from "./utils.js";
 
 function serveSwagger() {
   return (req, res, next) => {
@@ -262,8 +267,8 @@ function serveHealthHandler() {
 function serveRestartHandler() {
   return async (req, res, next) => {
     try {
-      setTimeout(() => {
-        process.kill(Number(process.env.MAIN_PID), "SIGTERM");
+      setTimeout(async () => {
+        await restartServer();
       }, 0);
 
       return res.status(StatusCodes.OK).send("OK");
@@ -280,8 +285,8 @@ function serveRestartHandler() {
 function serveKillHandler() {
   return async (req, res, next) => {
     try {
-      setTimeout(() => {
-        process.kill(Number(process.env.MAIN_PID), "SIGINT");
+      setTimeout(async () => {
+        await killServer();
       }, 0);
 
       return res.status(StatusCodes.OK).send("OK");

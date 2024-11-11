@@ -15,6 +15,7 @@ import {
   removeOldCacheLocks,
   removeEmptyFolders,
   getDataBuffer,
+  restartServer,
 } from "./utils.js";
 import os from "os";
 
@@ -440,25 +441,5 @@ async function runSeedTask(dataDir, seedData) {
     }
   } catch (error) {
     printLog("error", `Failed to seed data: ${error}. Exited!`);
-  }
-}
-
-/**
- * Restart server
- * @returns {Promise<void>}
- */
-async function restartServer() {
-  try {
-    const serverInfo = JSON.parse(
-      await fsPromise.readFile("server-info.json", "utf8")
-    );
-
-    process.kill(serverInfo.mainPID, "SIGTERM");
-  } catch (error) {
-    if (error.code === "ESRCH" || error.code === "ENOENT") {
-      return;
-    }
-
-    printLog("error", `Failed to restart server: ${error}`);
   }
 }

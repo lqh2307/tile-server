@@ -1,9 +1,9 @@
 "use strict";
 
+import { checkReadyMiddleware, killServer, restartServer } from "./utils.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
 import { readConfigFile, config } from "./config.js";
-import { checkReadyMiddleware } from "./utils.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
 import { serve_style } from "./serve_style.js";
@@ -85,7 +85,7 @@ async function loadData() {
   } catch (error) {
     printLog("error", `Failed to load data: ${error}. Exited!`);
 
-    process.kill(Number(process.env.MAIN_PID), "SIGINT");
+    await restartServer();
   }
 }
 
@@ -104,6 +104,6 @@ export async function startServer(dataDir) {
   } catch (error) {
     printLog("error", `Failed to start server: ${error}. Exited!`);
 
-    process.kill(Number(process.env.MAIN_PID), "SIGINT");
+    await killServer();
   }
 }

@@ -1,8 +1,7 @@
 "use strict";
 
-import { removeOldCacheLocks } from "./utils.js";
+import { removeOldCacheLocks, updateServerInfoFileWithLock } from "./utils.js";
 import { startServer } from "./server.js";
-import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { program } from "commander";
 import chokidar from "chokidar";
@@ -46,7 +45,6 @@ async function startClusterServer(opts) {
   if (cluster.isPrimary === true) {
     /* Setup envs & events */
     process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length); // For libuv
-    process.env.MAIN_PID = process.pid; // Store main PID in other child processes
 
     process.on("SIGINT", () => {
       printLog("info", `Received "SIGINT" signal. Killing server...`);
@@ -96,16 +94,9 @@ async function startClusterServer(opts) {
     }
 
     /* Store main pid */
-    await fsPromise.writeFile(
-      "server-info.json",
-      JSON.stringify(
-        {
-          mainPID: Number(process.pid),
-        },
-        null,
-        2
-      )
-    );
+    await updateServerInfoFileWithLock("server-info.json", {
+      mainPID: Number(process.pid),
+    });
 
     /* Remove old cache locks */
     if (opts.removeOldCacheLocks) {
