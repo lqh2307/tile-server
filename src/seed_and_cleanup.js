@@ -13,7 +13,6 @@ import {
 } from "./xyz.js";
 import {
   getTileBoundsFromBBox,
-  removeOldCacheLocks,
   removeEmptyFolders,
   getDataBuffer,
 } from "./utils.js";
@@ -27,22 +26,6 @@ import os from "os";
 export async function startTask(opts) {
   printLog("info", "Starting seed and clean up task...");
 
-  /* Remove old cache locks */
-  if (opts.removeOldCacheLocks) {
-    printLog(
-      "info",
-      `Starting remove old cache locks at "${opts.dataDir}/caches"...`
-    );
-
-    await removeOldCacheLocks(`${opts.dataDir}/caches`);
-  }
-
-  if (!opts.cleanUp && !opts.seed) {
-    printLog("info", `No seed or clean up task. Exited!`);
-
-    return;
-  }
-
   /* Read cleanup.json and seed.json files */
   printLog(
     "info",
@@ -55,14 +38,10 @@ export async function startTask(opts) {
   ]);
 
   /* Run clean up task */
-  if (opts.cleanUp) {
-    await runCleanUpTask(opts.dataDir, cleanUpData, seedData);
-  }
+  await runCleanUpTask(opts.dataDir, cleanUpData, seedData);
 
   /* Run seed task */
-  if (opts.seed) {
-    await runSeedTask(opts.dataDir, seedData);
-  }
+  await runSeedTask(opts.dataDir, seedData);
 }
 
 /**

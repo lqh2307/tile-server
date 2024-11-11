@@ -37,6 +37,9 @@ program
 /* Load args */
 const argOpts = program.opts();
 
+/* Setup envs & events */
+process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length); // For libuv
+
 process.on("SIGUSR1", () => {
   printLog("info", `Received "SIGUSR1" signal. Starting task...`);
 
@@ -56,9 +59,7 @@ process.on("SIGUSR2", () => {
  */
 async function startClusterServer(opts) {
   if (cluster.isPrimary === true) {
-    /* Setup envs & events */
-    process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length); // For libuv
-
+    /* Setup events */
     process.on("SIGINT", () => {
       printLog("info", `Received "SIGINT" signal. Killing server...`);
 

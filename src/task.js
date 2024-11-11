@@ -13,9 +13,6 @@ export function startTaskInWorker() {
     new Worker("./src/task_worker.js", {
       workerData: {
         dataDir: config.paths.dir,
-        removeOldCacheLocks: req.query.removeOldCacheLocks === "true",
-        cleanUp: req.query.cleanUp === "true",
-        seed: req.query.seed === "true",
       },
     })
       .on("message", (message) => {
