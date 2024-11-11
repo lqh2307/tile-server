@@ -27,7 +27,7 @@ export async function startTask(opts) {
   printLog("info", "Starting seed and clean up task...");
 
   /* Remove old cache locks */
-  if (removeOldCacheLocks) {
+  if (opts.removeOldCacheLocks) {
     printLog(
       "info",
       `Starting remove old cache locks at "${opts.dataDir}/caches"...`
@@ -36,16 +36,17 @@ export async function startTask(opts) {
     await removeOldCacheLocks(`${opts.dataDir}/caches`);
   }
 
+  if (!opts.cleanUp && !opts.seed) {
+    printLog("info", `No seed or clean up task. Exited!`);
+
+    return;
+  }
+
   /* Read cleanup.json and seed.json files */
   printLog(
     "info",
     `Loading seed.json and cleanup.json files at "${opts.dataDir}"...`
   );
-
-  if (!opts.cleanUp && !opts.seed) {
-    printLog("info", `No seed or clean up task. Exited!`);
-    return;
-  }
 
   const [cleanUpData, seedData] = await Promise.all([
     readCleanUpFile(opts.dataDir),
