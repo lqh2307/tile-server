@@ -26,6 +26,7 @@ program
     "-rm, --remove_old_cache_locks",
     "Remove old cache locks before run server"
   )
+  .option("-no, --no_start_server", "No start server")
   .version(
     JSON.parse(fs.readFileSync("package.json", "utf8")).version,
     "-v, --version"
@@ -59,32 +60,40 @@ async function startClusterServer(opts) {
       process.exit(1);
     });
 
-    printLog(
-      "info",
-      `
+    printLog("info", `Starting server with ${opts.numProcesses} processes...`);
 
-                   _oo0oo_
-                  o8888888o
-                  88' . '88
-                  (| -_- |)
-                  0\\  =  /0
-                ___/'---'\\___
-              .' \\\\|     |// '.
-             / \\\\|||  :  |||// \\
-            / _||||| -:- |||||_ \\
-           |   | \\\\\\  -  /// |   |
-           | \\_|  ''\\---/''  |_/ |
-           \\  .-\\___ '-' ___/-.  /
-         ___'. .'  /--.--\\  '. .'___
-       .'' '< '.___\\_<|>_/___.' >' ''.
-     | | :  '- \\'.;'\\ _ /';.'/ -'  : | |
-     \\  \\ '_.   \\_ __\\ /__ _/   ._' /  /
-      '-.____'.___ \\_____/___.-'____.-'
-                   '=---='
-        Buddha bless, server immortal
-      Starting server with ${opts.numProcesses} processes
-`
-    );
+    //     printLog(
+    //       "info",
+    //       `
+
+    //                    _oo0oo_
+    //                   o8888888o
+    //                   88' . '88
+    //                   (| -_- |)
+    //                   0\\  =  /0
+    //                 ___/'---'\\___
+    //               .' \\\\|     |// '.
+    //              / \\\\|||  :  |||// \\
+    //             / _||||| -:- |||||_ \\
+    //            |   | \\\\\\  -  /// |   |
+    //            | \\_|  ''\\---/''  |_/ |
+    //            \\  .-\\___ '-' ___/-.  /
+    //          ___'. .'  /--.--\\  '. .'___
+    //        .'' '< '.___\\_<|>_/___.' >' ''.
+    //      | | :  '- \\'.;'\\ _ /';.'/ -'  : | |
+    //      \\  \\ '_.   \\_ __\\ /__ _/   ._' /  /
+    //       '-.____'.___ \\_____/___.-'____.-'
+    //                    '=---='
+    //         Buddha bless, server immortal
+    //       Starting server with ${opts.numProcesses} processes
+    // `
+    //     );
+
+    if (opts.noStartServer) {
+      printLog("info", `No start server. Exited!`);
+
+      return;
+    }
 
     /* Store main pid */
     await fsPromise.writeFile(
@@ -173,4 +182,5 @@ startClusterServer({
   restartInterval: Number(argOpts.restart_interval),
   dataDir: argOpts.data_dir,
   removeOldCacheLocks: argOpts.remove_old_cache_locks,
+  noStartServer: argOpts.no_start_server,
 });

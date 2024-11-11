@@ -266,6 +266,16 @@ async function readSeedFile(dataDir) {
                   description: {
                     type: "string",
                   },
+                  attribution: {
+                    type: "string",
+                  },
+                  version: {
+                    type: "string",
+                  },
+                  type: {
+                    type: "string",
+                    enum: ["baselayer", "overlay"],
+                  },
                   format: {
                     type: "string",
                     enum: ["gif", "png", "jpg", "jpeg", "webp", "pbf"],
@@ -334,15 +344,12 @@ async function readSeedFile(dataDir) {
                   },
                   tilestats: {
                     type: "object",
-                    additionalProperties: {
-                      type: "object",
-                      properties: {
-                        layerCount: {
-                          type: "integer",
-                        },
+                    properties: {
+                      layerCount: {
+                        type: "integer",
                       },
-                      additionalProperties: true,
                     },
+                    additionalProperties: true,
                   },
                 },
                 required: ["format"],
