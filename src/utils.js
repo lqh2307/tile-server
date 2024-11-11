@@ -8,6 +8,7 @@ import { config } from "./config.js";
 import handlebars from "handlebars";
 import https from "node:https";
 import http from "node:http";
+import path from "node:path";
 import crypto from "crypto";
 import axios from "axios";
 import sharp from "sharp";
