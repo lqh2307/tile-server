@@ -986,12 +986,12 @@ export function deepClone(obj) {
 }
 
 /**
- * Update XYZ service-info.json file
- * @param {string} filePath File path to store service-info.json file
+ * Update service-info.json file
  * @param {Object<string,string>} serverInfoAdds Server info object
  * @returns {Promise<void>}
  */
-export async function updateServerInfoFile(filePath, serverInfoAdds) {
+async function updateServerInfoFile(serverInfoAdds) {
+  const filePath = "server-info.json";
   const tempFilePath = `${filePath}.tmp`;
 
   try {
@@ -1031,17 +1031,13 @@ export async function updateServerInfoFile(filePath, serverInfoAdds) {
 }
 
 /**
- * Update XYZ md5.json file with lock
- * @param {string} filePath File path to store service-info.json file
+ * Update service-info.json file with lock
  * @param {Object<string,string>} serverInfoAdds Server info object
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function updateServerInfoFileWithLock(
-  filePath,
-  serverInfoAdds,
-  timeout
-) {
+export async function updateServerInfoFileWithLock(serverInfoAdds, timeout) {
+  const filePath = "server-info.json";
   const startTime = Date.now();
   const lockFilePath = `${filePath}.lock`;
   let lockFileHandle;
@@ -1050,7 +1046,7 @@ export async function updateServerInfoFileWithLock(
     try {
       lockFileHandle = await fsPromise.open(lockFilePath, "wx");
 
-      await updateServerInfoFile(filePath, serverInfoAdds);
+      await updateServerInfoFile(serverInfoAdds);
 
       await lockFileHandle.close();
 
@@ -1063,7 +1059,7 @@ export async function updateServerInfoFileWithLock(
           recursive: true,
         });
 
-        await updateServerInfoFileWithLock(filePath, serverInfoAdds, timeout);
+        await updateServerInfoFileWithLock(serverInfoAdds, timeout);
 
         return;
       } else if (error.code === "EEXIST") {
@@ -1084,41 +1080,9 @@ export async function updateServerInfoFileWithLock(
 }
 
 /**
- * Restart server
+ * Remove old service-info.json file
  * @returns {Promise<void>}
  */
-export async function restartServer() {
-  try {
-    const data = await fsPromise.readFile("server-info.json", "utf8");
-
-    const serverInfo = JSON.parse(data);
-
-    process.kill(serverInfo.mainPID, "SIGTERM");
-  } catch (error) {
-    if (error.code === "ESRCH" || error.code === "ENOENT") {
-      return;
-    }
-
-    throw error;
-  }
-}
-
-/**
- * Kill server
- * @returns {Promise<void>}
- */
-export async function killServer() {
-  try {
-    const data = await fsPromise.readFile("server-info.json", "utf8");
-
-    const serverInfo = JSON.parse(data);
-
-    process.kill(serverInfo.mainPID, "SIGINT");
-  } catch (error) {
-    if (error.code === "ESRCH" || error.code === "ENOENT") {
-      return;
-    }
-
-    throw error;
-  }
+export async function removeOldServerInfo() {
+  await removeFilesOrFolder("server-info.json");
 }

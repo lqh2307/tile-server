@@ -1,6 +1,7 @@
 "use strict";
 
-import { removeOldCacheLocks, updateServerInfoFile } from "./utils.js";
+import { removeOldCacheLocks, updateServerInfoFileWithLock } from "./utils.js";
+import { cancelTaskInWorker, startTaskInWorker } from "./task.js";
 import { startServer } from "./server.js";
 import { printLog } from "./logger.js";
 import { program } from "commander";
@@ -21,10 +22,6 @@ program
   )
   .option("-k, --kill_interval <num>", "Interval time to kill server", "0")
   .option("-d, --data_dir <dir>", "Data directory", "data")
-  .option(
-    "-rm, --remove_old_cache_locks",
-    "Remove old cache locks before run server"
-  )
   .option("-no, --no_start_server", "No start server")
   .version(
     JSON.parse(fs.readFileSync("package.json", "utf8")).version,
@@ -56,6 +53,18 @@ async function startClusterServer(opts) {
       printLog("info", `Received "SIGTERM" signal. Restarting server...`);
 
       process.exit(1);
+    });
+
+    process.on("SIGUSR1", () => {
+      printLog("info", `Received "SIGUSR1" signal. Starting task...`);
+
+      startTaskInWorker();
+    });
+
+    process.on("SIGUSR2", () => {
+      printLog("info", `Received "SIGUSR2" signal. Canceling task...`);
+
+      cancelTaskInWorker();
     });
 
     printLog("info", `Starting server with ${opts.numProcesses} processes...`);
@@ -93,20 +102,17 @@ async function startClusterServer(opts) {
       return;
     }
 
-    /* Store main pid */
-    await updateServerInfoFile("server-info.json", {
-      mainPID: Number(process.pid),
-    });
-
     /* Remove old cache locks */
-    if (opts.removeOldCacheLocks) {
-      printLog(
-        "info",
-        `Starting remove old cache locks at "${opts.dataDir}/caches"...`
-      );
+    await removeOldCacheLocks(`${opts.dataDir}/caches`);
+    await removeOldServerInfo();
 
-      await removeOldCacheLocks(`${opts.dataDir}/caches`);
-    }
+    /* Store main pid */
+    await updateServerInfoFileWithLock(
+      {
+        mainPID: process.pid,
+      },
+      60000 // 1 mins
+    );
 
     /* Setup watch config file change */
     if (opts.killInterval > 0) {
@@ -172,6 +178,5 @@ startClusterServer({
   killInterval: Number(argOpts.kill_interval),
   restartInterval: Number(argOpts.restart_interval),
   dataDir: argOpts.data_dir,
-  removeOldCacheLocks: argOpts.remove_old_cache_locks,
   noStartServer: argOpts.no_start_server,
 });

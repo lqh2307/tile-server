@@ -1,53 +1,118 @@
 "use strict";
 
-import { startTask } from "./seed_and_cleanup.js";
+import { updateServerInfoFileWithLock } from "./utils.js";
+import { Worker } from "node:worker_threads";
+import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
-import { program } from "commander";
-import fs from "node:fs";
-import os from "os";
+import { config } from "./config.js";
 
-/* Setup commands */
-program
-  .description("========== tile-server seed and clean up options ==========")
-  .usage("tile-server seed and clean up [options]")
-  .option("-d, --data_dir <dir>", "Data directory", "data")
-  .option("-c, --cleanup", "Run cleanup task to remove specified tiles")
-  .option("-s, --seed", "Run seed task to download tiles")
-  .option(
-    "-rm, --remove_old_cache_locks",
-    "Remove old cache locks before run task"
-  )
-  .version(
-    JSON.parse(fs.readFileSync("package.json", "utf8")).version,
-    "-v, --version"
-  )
-  .showHelpAfterError()
-  .parse(process.argv);
+let currentTaskWorker;
 
-/* Load args */
-const argOpts = program.opts();
+export function startTaskInWorker() {
+  if (currentTaskWorker === undefined) {
+    new Worker("./src/task_worker.js", {
+      workerData: {
+        dataDir: config.paths.dir,
+        removeOldCacheLocks: req.query.removeOldCacheLocks === "true",
+        cleanUp: req.query.cleanUp === "true",
+        seed: req.query.seed === "true",
+      },
+    })
+      .on("message", (message) => {
+        if (message.error) {
+          printLog("error", `Task failed: ${message.error}`);
+        }
 
-/* Setup envs & events */
-process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length); // For libuv
+        currentTaskWorker = undefined;
+      })
+      .on("error", (error) => {
+        printLog("error", `Task worker error: ${error}`);
 
-process.on("SIGINT", () => {
-  printLog("info", `Received "SIGINT" signal. Killing seed and clean up...`);
+        currentTaskWorker = undefined;
+      })
+      .on("exit", (code) => {
+        if (code !== 0) {
+          printLog("error", `Task worker stopped with exit code: ${code}`);
+        }
 
-  process.exit(0);
-});
+        currentTaskWorker = undefined;
+      });
+  } else {
+    printLog("warning", "A task is already running. Skipping start task...");
+  }
+}
 
-process.on("SIGTERM", () => {
-  printLog(
-    "info",
-    `Received "SIGTERM" signal. Restarting seed and clean up...`
-  );
+export function cancelTaskInWorker() {
+  if (currentTaskWorker !== undefined) {
+    currentTaskWorker
+      .terminate()
+      .then(() => {
+        currentTaskWorker = undefined;
+      })
+      .catch((error) => {
+        printLog("error", `Task worker error: ${error}`);
+      });
+  } else {
+    printLog(
+      "warning",
+      "No task is currently running. Skipping cancel task..."
+    );
+  }
+}
 
-  process.exit(1);
-});
+/**
+ * Start task
+ * @returns {Promise<void>}
+ */
+export async function startTask() {
+  const taskPID = await getTaskPID();
 
-startTask({
-  dataDir: argOpts.data_dir,
-  cleanUp: argOpts.cleanup,
-  seed: argOpts.seed,
-  removeOldCacheLocks: argOpts.remove_old_cache_locks,
-});
+  if (taskPID === undefined) {
+    await updateServerInfoFileWithLock(
+      {
+        taskPID: process.pid,
+      },
+      60000 // 1 mins
+    );
+
+    process.kill(process.pid, "SIGUSR1");
+  } else {
+    process.kill(taskPID, "SIGUSR1");
+  }
+}
+
+/**
+ * Cancel task
+ * @returns {Promise<void>}
+ */
+export async function cancelTask() {
+  const taskPID = await getTaskPID();
+
+  if (taskPID !== undefined) {
+    await updateServerInfoFileWithLock(
+      {
+        taskPID: undefined,
+      },
+      60000 // 1 mins
+    );
+
+    process.kill(taskPID, "SIGUSR2");
+  }
+}
+/**
+ * Get task PID
+ * @returns {Promise<number>}
+ */
+async function getTaskPID() {
+  try {
+    const data = await fsPromise.readFile("server-info.json", "utf8");
+
+    return JSON.parse(data).taskPID;
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return;
+    }
+
+    throw error;
+  }
+}

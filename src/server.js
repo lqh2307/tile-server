@@ -1,6 +1,6 @@
 "use strict";
 
-import { checkReadyMiddleware, killServer, restartServer } from "./utils.js";
+import { updateServerInfoFileWithLock, checkReadyMiddleware } from "./utils.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
 import { readConfigFile, config } from "./config.js";
@@ -10,10 +10,29 @@ import { serve_style } from "./serve_style.js";
 import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
 import { serve_task } from "./serve_task.js";
+import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
+
+/**
+ * Get main PID
+ * @returns {Promise<number>}
+ */
+async function getMainPID() {
+  try {
+    const data = await fsPromise.readFile("server-info.json", "utf8");
+
+    return JSON.parse(data).mainPID;
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return;
+    }
+
+    throw error;
+  }
+}
 
 /**
  * Load config file
@@ -86,6 +105,44 @@ async function loadData() {
     printLog("error", `Failed to load data: ${error}. Exited!`);
 
     await restartServer();
+  }
+}
+
+/**
+ * Restart server
+ * @returns {Promise<void>}
+ */
+export async function restartServer() {
+  const mainPID = await getMainPID();
+
+  if (mainPID !== undefined) {
+    await updateServerInfoFileWithLock(
+      {
+        mainPID: undefined,
+      },
+      60000 // 1 mins
+    );
+
+    process.kill(mainPID, "SIGTERM");
+  }
+}
+
+/**
+ * Kill server
+ * @returns {Promise<void>}
+ */
+export async function killServer() {
+  const mainPID = await getMainPID();
+
+  if (mainPID !== undefined) {
+    await updateServerInfoFileWithLock(
+      {
+        mainPID: undefined,
+      },
+      60000 // 1 mins
+    );
+
+    process.kill(mainPID, "SIGINT");
   }
 }
 

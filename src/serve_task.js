@@ -1,73 +1,46 @@
 "use strict";
 
+import { cancelTask, startTask } from "./task.js";
 import { StatusCodes } from "http-status-codes";
-import { Worker } from "node:worker_threads";
 import { printLog } from "./logger.js";
-import { config } from "./config.js";
 import express from "express";
 
-let currentTaskWorker;
-
 function startTaskHandler() {
-  return (req, res, next) => {
-    if (currentTaskWorker !== undefined) {
+  return async (req, res, next) => {
+    try {
+      setTimeout(() => {
+        startTask().catch(() =>
+          printLog("error", `Failed to start task: ${error}`)
+        );
+      }, 0);
+
+      return res.status(StatusCodes.OK).send("OK");
+    } catch (error) {
+      printLog("error", `Failed to start task": ${error}`);
+
       return res
-        .status(StatusCodes.BAD_REQUEST)
-        .send("A task is already running");
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
-
-    currentTaskWorker = new Worker("./src/task_worker.js", {
-      workerData: {
-        dataDir: config.paths.dir,
-        removeOldCacheLocks: req.query.removeOldCacheLocks === "true",
-        cleanUp: req.query.cleanUp === "true",
-        seed: req.query.seed === "true",
-      },
-    })
-      .on("message", (message) => {
-        if (message.error) {
-          printLog("error", `Task failed: ${message.error}`);
-        }
-
-        currentTaskWorker = undefined;
-      })
-      .on("error", (error) => {
-        printLog("error", `Worker error: ${error}`);
-
-        currentTaskWorker = undefined;
-      })
-      .on("exit", (code) => {
-        if (code !== 0) {
-          printLog("error", `Worker stopped with exit code: ${code}`);
-        }
-
-        currentTaskWorker = undefined;
-      });
-
-    res.status(StatusCodes.OK).send("OK");
   };
 }
 
 function cancelTaskHandler() {
   return async (req, res, next) => {
-    if (currentTaskWorker === undefined) {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .send("No task is currently running");
-    }
-
     try {
-      await currentTaskWorker.terminate();
+      setTimeout(() => {
+        cancelTask().catch(() =>
+          printLog("error", `Failed to cancel task: ${error}`)
+        );
+      }, 0);
 
-      res.status(StatusCodes.OK).send("OK");
-
-      currentTaskWorker = undefined;
+      return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
-      printLog("error", `Failed to cancel task: ${error}`);
+      printLog("error", `Failed to cancel task": ${error}`);
 
-      res
+      return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send(`Failed to cancel task: ${error.message}`);
+        .send("Internal server error");
     }
   };
 }

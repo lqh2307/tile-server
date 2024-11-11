@@ -1,6 +1,7 @@
 "use strict";
 
 import { readCleanUpFile, readSeedFile } from "./config.js";
+import { restartServer } from "./server.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import pLimit from "p-limit";
@@ -15,7 +16,6 @@ import {
   removeOldCacheLocks,
   removeEmptyFolders,
   getDataBuffer,
-  restartServer,
 } from "./utils.js";
 import os from "os";
 

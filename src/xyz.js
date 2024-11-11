@@ -287,7 +287,7 @@ export async function getXYZInfos(sourcePath) {
  * @param {Object<string,string>} metadataAdds Metadata object
  * @returns {Promise<void>}
  */
-export async function updateXYZMetadataFile(filePath, metadataAdds) {
+async function updateXYZMetadataFile(filePath, metadataAdds) {
   const tempFilePath = `${filePath}.tmp`;
 
   try {
@@ -387,7 +387,7 @@ export async function updateXYZMetadataFileWithLock(
  * @param {Object<string,string>} hashAdds Hash data object
  * @returns {Promise<void>}
  */
-export async function updateXYZMD5File(filePath, hashAdds) {
+async function updateXYZMD5File(filePath, hashAdds) {
   const tempFilePath = `${filePath}.tmp`;
 
   try {
@@ -481,7 +481,7 @@ export async function updateXYZMD5FileWithLock(filePath, hashAdds, timeout) {
  * @param {Buffer} data Tile data buffer
  * @returns {Promise<void>}
  */
-export async function createXYZTileDataFile(filePath, data) {
+async function createXYZTileDataFile(filePath, data) {
   const tempFilePath = `${filePath}.tmp`;
 
   try {
