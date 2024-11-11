@@ -267,8 +267,10 @@ function serveHealthHandler() {
 function serveRestartHandler() {
   return async (req, res, next) => {
     try {
-      setTimeout(async () => {
-        await restartServer();
+      setTimeout(() => {
+        restartServer().catch(() =>
+          printLog("error", `Failed to restart server: ${error}`)
+        );
       }, 0);
 
       return res.status(StatusCodes.OK).send("OK");
@@ -285,8 +287,10 @@ function serveRestartHandler() {
 function serveKillHandler() {
   return async (req, res, next) => {
     try {
-      setTimeout(async () => {
-        await killServer();
+      setTimeout(() => {
+        killServer().catch(() =>
+          printLog("error", `Failed to kill server: ${error}`)
+        );
       }, 0);
 
       return res.status(StatusCodes.OK).send("OK");

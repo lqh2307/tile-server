@@ -44,7 +44,7 @@ function startTaskHandler() {
         currentTaskWorker = undefined;
       });
 
-    res.status(StatusCodes.OK).send("Task started successfully");
+    res.status(StatusCodes.OK).send("OK");
   };
 }
 
@@ -59,7 +59,7 @@ function cancelTaskHandler() {
     try {
       await currentTaskWorker.terminate();
 
-      res.status(StatusCodes.OK).send("Task has been cancelled");
+      res.status(StatusCodes.OK).send("OK");
 
       currentTaskWorker = undefined;
     } catch (error) {

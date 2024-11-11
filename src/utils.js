@@ -1098,7 +1098,7 @@ export async function restartServer() {
       return;
     }
 
-    printLog("error", `Failed to restart server: ${error}`);
+    throw error;
   }
 }
 
@@ -1118,6 +1118,6 @@ export async function killServer() {
       return;
     }
 
-    printLog("error", `Failed to kill server: ${error}`);
+    throw error;
   }
 }
