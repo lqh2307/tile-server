@@ -454,6 +454,10 @@ async function restartServer() {
 
     process.kill(serverInfo.mainPID, "SIGTERM");
   } catch (error) {
+    if (error.code === "ESRCH" || error.code === "ENOENT") {
+      return;
+    }
+
     printLog("error", `Failed to restart server: ${error}`);
   }
 }

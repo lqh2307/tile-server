@@ -33,22 +33,15 @@ program
   .showHelpAfterError()
   .parse(process.argv);
 
+/* Load args */
+const argOpts = program.opts();
+
 /**
  * Start cluster server
+ * @param {object} opts
  * @returns {Promise<void>}
  */
-async function startClusterServer() {
-  /* Load args */
-  const argOpts = program.opts();
-  const opts = {
-    numProcesses: Number(argOpts.num_processes),
-    killInterval: Number(argOpts.kill_interval),
-    restartInterval: Number(argOpts.restart_interval),
-    dataDir: argOpts.data_dir,
-    removeOldCacheLocks: argOpts.remove_old_cache_locks,
-  };
-
-  /* Start server */
+async function startClusterServer(opts) {
   if (cluster.isPrimary === true) {
     /* Setup envs & events */
     process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length); // For libuv
@@ -174,4 +167,10 @@ async function startClusterServer() {
   }
 }
 
-startClusterServer();
+startClusterServer({
+  numProcesses: Number(argOpts.num_processes),
+  killInterval: Number(argOpts.kill_interval),
+  restartInterval: Number(argOpts.restart_interval),
+  dataDir: argOpts.data_dir,
+  removeOldCacheLocks: argOpts.remove_old_cache_locks,
+});
