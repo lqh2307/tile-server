@@ -1,6 +1,5 @@
 "use strict";
 
-import { removeOldCacheLocks, updateServerInfoFileWithLock } from "./utils.js";
 import { cancelTaskInWorker, startTaskInWorker } from "./task.js";
 import { startServer } from "./server.js";
 import { printLog } from "./logger.js";
@@ -9,6 +8,11 @@ import chokidar from "chokidar";
 import cluster from "cluster";
 import fs from "node:fs";
 import os from "os";
+import {
+  updateServerInfoFileWithLock,
+  removeOldCacheLocks,
+  removeOldServerInfo,
+} from "./utils.js";
 
 /* Setup commands */
 program
