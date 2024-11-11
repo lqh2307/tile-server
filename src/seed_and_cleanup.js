@@ -313,15 +313,8 @@ async function cleanXYZTileDataFiles(
                 );
               }
             } catch (error) {
-              if (error.code !== "ENOENT") {
-                await removeXYZTileDataFile(
-                  outputFolder,
-                  tileName,
-                  format,
-                  maxTry,
-                  300000, // 5 mins
-                  hashs
-                );
+              if (error.code === "ENOENT") {
+                return;
               } else {
                 printLog(
                   "error",
