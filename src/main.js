@@ -178,10 +178,10 @@ async function startClusterServer(opts) {
         cluster.fork();
       });
     } else {
-      startServer(opts);
+      startServer();
     }
   } else {
-    startServer(opts);
+    startServer();
   }
 }
 

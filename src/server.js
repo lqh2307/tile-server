@@ -133,10 +133,9 @@ async function loadData() {
 
 /**
  * Start server
- * @param {object} opts Options
  * @returns {Promise<void>}
  */
-export async function startServer(opts) {
+export async function startServer() {
   try {
     startHTTPServer();
 
