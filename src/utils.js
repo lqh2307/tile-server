@@ -422,22 +422,19 @@ export async function removeEmptyFolders(folderPath) {
 
 /**
  * Recursively removes old cache locks
- * @param {string} folderPath The root directory to removes old cache locks
+ * @param {string} dataDir The data directory
  * @returns {Promise<void>}
  */
-export async function removeOldCacheLocks(folderPath) {
-  const fileNames = await findFiles(folderPath, /^.*\.lock$/, true);
+export async function removeOldCacheLocks(dataDir) {
+  const fileNames = await findFiles(
+    dataDir,
+    /^(?!\d+\.(gif|png|jpg|jpeg|webp|pbf)$).+$/,
+    true
+  );
 
   await Promise.all(
-    fileNames.map(async (fileName) => {
-      const lockFilePath = `${folderPath}/${fileName}`;
-      const tempFilePath = `${lockFilePath.slice(
-        0,
-        lockFilePath.lastIndexOf(".")
-      )}.tmp`;
-
-      await removeFilesOrFolder(tempFilePath);
-      await removeFilesOrFolder(lockFilePath);
+    fileNames.map((fileName) => fsPromise.rm(`${dataDir}/caches/${fileName}`), {
+      force: true,
     })
   );
 }
@@ -677,18 +674,6 @@ export async function removeFilesOrFolders(fileOrFolders) {
       })
     )
   );
-}
-
-/**
- * Remove file or folder
- * @param {string} fileOrFolder File or folder path
- * @returns {Promise<void>}
- */
-export async function removeFilesOrFolder(fileOrFolder) {
-  fsPromise.rm(fileOrFolder, {
-    force: true,
-    recursive: true,
-  });
 }
 
 /**
@@ -1023,7 +1008,9 @@ export async function updateServerInfoFile(serverInfoAdds) {
         "utf8"
       );
     } else {
-      await removeFilesOrFolder(tempFilePath);
+      await fsPromise.rm(tempFilePath, {
+        force: true,
+      });
 
       throw error;
     }
@@ -1050,7 +1037,9 @@ export async function updateServerInfoFileWithLock(serverInfoAdds, timeout) {
 
       await lockFileHandle.close();
 
-      await removeFilesOrFolder(lockFilePath);
+      await fsPromise.rm(lockFilePath, {
+        force: true,
+      });
 
       return;
     } catch (error) {
@@ -1068,7 +1057,9 @@ export async function updateServerInfoFileWithLock(serverInfoAdds, timeout) {
         if (lockFileHandle !== undefined) {
           await lockFileHandle.close();
 
-          await removeFilesOrFolder(lockFilePath);
+          await fsPromise.rm(lockFilePath, {
+            force: true,
+          });
         }
 
         throw error;
@@ -1077,18 +1068,6 @@ export async function updateServerInfoFileWithLock(serverInfoAdds, timeout) {
   }
 
   throw new Error(`Timeout to access ${lockFilePath} file`);
-}
-
-/**
- * Remove old service-info.json file
- * @returns {Promise<void>}
- */
-export async function removeOldServerInfo() {
-  const filePath = "server-info.json";
-
-  await removeFilesOrFolder(filePath);
-  await removeFilesOrFolder(`${filePath}.tmp`);
-  await removeFilesOrFolder(`${filePath}.lock`);
 }
 
 /**

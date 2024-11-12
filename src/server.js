@@ -152,7 +152,7 @@ async function loadData() {
 
 /**
  * Start server
- * @param {string} dataDir
+ * @param {string} dataDir The data directory
  * @returns {Promise<void>}
  */
 export async function startServer(dataDir) {

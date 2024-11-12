@@ -12,7 +12,6 @@ import {
   getLayerNamesFromPBFTileBuffer,
   detectFormatAndHeaders,
   getTileBoundsFromBBox,
-  removeFilesOrFolder,
   createNewTileJSON,
   getBBoxFromTiles,
   calculateMD5,
@@ -321,7 +320,9 @@ async function updateXYZMetadataFile(filePath, metadataAdds) {
         "utf8"
       );
     } else {
-      await removeFilesOrFolder(tempFilePath);
+      await fsPromise.rm(tempFilePath, {
+        force: true,
+      });
 
       throw error;
     }
@@ -352,7 +353,9 @@ export async function updateXYZMetadataFileWithLock(
 
       await lockFileHandle.close();
 
-      await removeFilesOrFolder(lockFilePath);
+      await fsPromise.rm(lockFilePath, {
+        force: true,
+      });
 
       return;
     } catch (error) {
@@ -370,7 +373,9 @@ export async function updateXYZMetadataFileWithLock(
         if (lockFileHandle !== undefined) {
           await lockFileHandle.close();
 
-          await removeFilesOrFolder(lockFilePath);
+          await fsPromise.rm(lockFilePath, {
+            force: true,
+          });
         }
 
         throw error;
@@ -419,7 +424,9 @@ async function updateXYZMD5File(filePath, hashAdds) {
         "utf8"
       );
     } else {
-      await removeFilesOrFolder(tempFilePath);
+      await fsPromise.rm(tempFilePath, {
+        force: true,
+      });
 
       throw error;
     }
@@ -446,7 +453,9 @@ export async function updateXYZMD5FileWithLock(filePath, hashAdds, timeout) {
 
       await lockFileHandle.close();
 
-      await removeFilesOrFolder(lockFilePath);
+      await fsPromise.rm(lockFilePath, {
+        force: true,
+      });
 
       return;
     } catch (error) {
@@ -464,7 +473,9 @@ export async function updateXYZMD5FileWithLock(filePath, hashAdds, timeout) {
         if (lockFileHandle !== undefined) {
           await lockFileHandle.close();
 
-          await removeFilesOrFolder(lockFilePath);
+          await fsPromise.rm(lockFilePath, {
+            force: true,
+          });
         }
 
         throw error;
@@ -493,7 +504,9 @@ async function createXYZTileDataFile(filePath, data) {
 
     await fsPromise.rename(tempFilePath, filePath);
   } catch (error) {
-    await removeFilesOrFolder(tempFilePath);
+    await fsPromise.rm(tempFilePath, {
+      force: true,
+    });
 
     throw error;
   }
@@ -516,7 +529,9 @@ export async function createXYZTileDataFileWithLock(filePath, data) {
 
     await lockFileHandle.close();
 
-    await removeFilesOrFolder(lockFilePath);
+    await fsPromise.rm(lockFilePath, {
+      force: true,
+    });
 
     return true;
   } catch (error) {
@@ -532,7 +547,9 @@ export async function createXYZTileDataFileWithLock(filePath, data) {
       if (lockFileHandle !== undefined) {
         await lockFileHandle.close();
 
-        await removeFilesOrFolder(lockFilePath);
+        await fsPromise.rm(lockFilePath, {
+          force: true,
+        });
       }
 
       throw error;
@@ -560,7 +577,9 @@ export async function storeXYZTileDataFileWithLock(filePath, data, timeout) {
 
       await lockFileHandle.close();
 
-      await removeFilesOrFolder(lockFilePath);
+      await fsPromise.rm(lockFilePath, {
+        force: true,
+      });
 
       return;
     } catch (error) {
@@ -576,7 +595,9 @@ export async function storeXYZTileDataFileWithLock(filePath, data, timeout) {
         if (lockFileHandle !== undefined) {
           await lockFileHandle.close();
 
-          await removeFilesOrFolder(lockFilePath);
+          await fsPromise.rm(lockFilePath, {
+            force: true,
+          });
         }
 
         throw error;
@@ -602,11 +623,15 @@ export async function removeXYZTileDataFileWithLock(filePath, timeout) {
     try {
       lockFileHandle = await fsPromise.open(lockFilePath, "wx");
 
-      await removeFilesOrFolder(filePath);
+      await fsPromise.rm(filePath, {
+        force: true,
+      });
 
       await lockFileHandle.close();
 
-      await removeFilesOrFolder(lockFilePath);
+      await fsPromise.rm(lockFilePath, {
+        force: true,
+      });
 
       return;
     } catch (error) {
@@ -618,7 +643,9 @@ export async function removeXYZTileDataFileWithLock(filePath, timeout) {
         if (lockFileHandle !== undefined) {
           await lockFileHandle.close();
 
-          await removeFilesOrFolder(lockFilePath);
+          await fsPromise.rm(lockFilePath, {
+            force: true,
+          });
         }
 
         throw error;

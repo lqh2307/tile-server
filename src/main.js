@@ -18,12 +18,10 @@ program
   .description("========== tile-server startup options ==========")
   .usage("tile-server server [options]")
   .option("-n, --num_processes <num>", "Number of processes", "1")
-  .option(
-    "-r, --restart_interval <num>",
-    "Interval time to restart server",
-    "1000"
-  )
-  .option("-k, --kill_interval <num>", "Interval time to kill server", "0")
+  .option("-r, --restart_interval <num>", "Interval to restart server", "0")
+  .option("-k, --kill_interval <num>", "Interval to kill server", "0")
+  .option("-c, --cleanup", "Run cleanup task to remove specified tiles")
+  .option("-s, --seed", "Run seed task to download tiles")
   .option("-d, --data_dir <dir>", "Data directory", "data")
   .version(
     JSON.parse(fs.readFileSync("package.json", "utf8")).version,
@@ -69,8 +67,6 @@ async function startClusterServer(opts) {
       cancelTaskInWorker();
     });
 
-    printLog("info", `Starting server with ${opts.numProcesses} processes...`);
-
     //     printLog(
     //       "info",
     //       `
@@ -99,12 +95,16 @@ async function startClusterServer(opts) {
     //     );
 
     /* Remove old cache locks */
-    await removeOldCacheLocks(`${opts.dataDir}/caches`);
+    printLog("info", `Remove old cache locks before start server...`);
+
+    await removeOldCacheLocks(opts.dataDir);
 
     /* Store main pid */
     await updateServerInfoFile({
       mainPID: process.pid,
     });
+
+    printLog("info", `Starting server with ${opts.numProcesses} processes...`);
 
     /* Setup watch config file change */
     if (opts.killInterval > 0) {
@@ -152,7 +152,7 @@ async function startClusterServer(opts) {
       cluster.on("exit", (worker, code, signal) => {
         printLog(
           "info",
-          `Process with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
+          `PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
         );
 
         cluster.fork();
@@ -165,6 +165,7 @@ async function startClusterServer(opts) {
   }
 }
 
+/* Run start cluster server */
 startClusterServer({
   numProcesses: Number(argOpts.num_processes),
   killInterval: Number(argOpts.kill_interval),

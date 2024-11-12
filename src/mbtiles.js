@@ -5,7 +5,6 @@ import { printLog } from "./logger.js";
 import {
   getLayerNamesFromPBFTileBuffer,
   detectFormatAndHeaders,
-  removeFilesOrFolder,
   createNewTileJSON,
   calculateMD5,
   retry,
@@ -477,7 +476,9 @@ export async function downloadMBTilesFile(url, filePath, maxTry, timeout) {
               resolve();
             })
             .on("error", async (error) => {
-              await removeFilesOrFolder(tempFilePath);
+              await fsPromise.rm(tempFilePath, {
+                force: true,
+              });
 
               reject(error);
             });
