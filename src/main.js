@@ -160,10 +160,10 @@ async function startClusterServer(opts) {
         cluster.fork();
       });
     } else {
-      startServer(opts.dataDir);
+      startServer(opts);
     }
   } else {
-    startServer(opts.dataDir);
+    startServer(opts);
   }
 }
 

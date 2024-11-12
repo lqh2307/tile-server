@@ -12,6 +12,7 @@ import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
 import { serve_task } from "./serve_task.js";
 import { printLog } from "./logger.js";
+import cluster from "cluster";
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
@@ -150,16 +151,27 @@ async function loadData() {
 
 /**
  * Start server
- * @param {string} dataDir The data directory
+ * @param {object} opts Options
  * @returns {Promise<void>}
  */
-export async function startServer(dataDir) {
+export async function startServer(opts) {
   try {
-    await loadConfigFile(dataDir);
+    await loadConfigFile(opts.dataDir);
 
     startHTTPServer();
 
     loadData();
+
+    if (cluster.isPrimary === true && config.taskSchedule !== undefined) {
+      printLog(
+        "info",
+        `Schedule run seed and clean up tasks at: "${config.taskSchedule}"`
+      );
+
+      cron.schedule(config.taskSchedule, () => {
+        startTaskInWorker(opts);
+      });
+    }
   } catch (error) {
     printLog("error", `Failed to start server: ${error}. Exited!`);
 

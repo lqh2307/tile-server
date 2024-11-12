@@ -63,6 +63,7 @@ async function readConfigFile(dataDir) {
             },
             loggerFormat: {
               type: "string",
+              minLength: 1,
             },
             minPoolSize: {
               type: "integer",
@@ -71,6 +72,12 @@ async function readConfigFile(dataDir) {
             maxPoolSize: {
               type: "integer",
               minimum: 1,
+            },
+            taskSchedule: {
+              type: "string",
+              pattern:
+                "^([0-5]?\\d|\\*)\\s([0-5]?\\d|\\*)\\s([0-1]?\\d|2[0-3]|\\*)\\s([1-9]|[12]\\d|3[01]|\\*)\\s([1-9]|1[0-2]|\\*)\\s([0-7]|\\*)$|^([0-5]?\\d|\\*)\\s([0-5]?\\d|\\*)\\s([0-1]?\\d|2[0-3]|\\*)\\s([1-9]|[12]\\d|3[01]|\\*)\\s([1-9]|1[0-2]|\\*)$",
+              minLength: 1,
             },
           },
           required: [
@@ -86,7 +93,6 @@ async function readConfigFile(dataDir) {
             "serveSwagger",
             "createMetadataIndex",
             "createTilesIndex",
-            "loggerFormat",
             "minPoolSize",
             "maxPoolSize",
           ],
