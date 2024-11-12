@@ -59,25 +59,6 @@ export const serve_task = {
      *     tags:
      *       - Task
      *     summary: Start task
-     *     parameters:
-     *       - name: removeOldCacheLocks
-     *         in: query
-     *         required: false
-     *         schema:
-     *           type: boolean
-     *         description: Whether to remove old cache locks
-     *       - name: cleanUp
-     *         in: query
-     *         required: false
-     *         schema:
-     *           type: boolean
-     *         description: Whether to perform cleanup
-     *       - name: seed
-     *         in: query
-     *         required: false
-     *         schema:
-     *           type: boolean
-     *         description: Whether to perform seeding
      *     responses:
      *       200:
      *         description: Task started successfully
