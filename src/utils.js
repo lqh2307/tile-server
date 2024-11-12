@@ -428,11 +428,7 @@ export async function removeEmptyFolders(folderPath) {
 export async function removeOldCacheLocks(dataDir) {
   const cacheDir = `${dataDir}/caches`;
 
-  const fileNames = await findFiles(
-    cacheDir,
-    /^(?!\d+\.(gif|png|jpg|jpeg|webp|pbf)$).+$/,
-    true
-  );
+  const fileNames = await findFiles(cacheDir, /^.*\.(lock|tmp)$/, true);
 
   await Promise.all(
     fileNames.map((fileName) => fsPromise.rm(`${cacheDir}/${fileName}`), {
