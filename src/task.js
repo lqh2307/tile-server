@@ -79,24 +79,24 @@ async function seedXYZTileDataFiles(
   refreshBefore
 ) {
   let refreshTimestamp;
-  let log = `Downloading tile data files with:\n\tZoom levels [${zooms.join(
+  let log = `Downloading tile data files with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
-  )}]\n\tBBox [${bbox.join(", ")}]`;
+  )}]\n\tBBox: [${bbox.join(", ")}]`;
 
   if (typeof refreshBefore === "string") {
     refreshTimestamp = new Date(refreshBefore).getTime();
 
-    log += `\n\tBefore ${refreshBefore}`;
+    log += `\n\tBefore: ${refreshBefore}`;
   } else if (typeof refreshBefore === "number") {
     const now = new Date();
 
     refreshTimestamp = now.setDate(now.getDate() - refreshBefore);
 
-    log += `\n\tOld than ${refreshBefore} days`;
+    log += `\n\tOld than: ${refreshBefore} days`;
   } else if (typeof refreshBefore === "boolean") {
     refreshTimestamp = true;
 
-    log += `\n\tBefore check MD5`;
+    log += `\n\tBefore: check MD5`;
   }
 
   printLog("info", log);
@@ -238,20 +238,20 @@ async function cleanXYZTileDataFiles(
   cleanUpBefore
 ) {
   let cleanUpTimestamp;
-  let log = `Removing tile data files with:\n\tZoom levels [${zooms.join(
+  let log = `Removing tile data files with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
-  )}]\n\tBBox [${bbox.join(", ")}]`;
+  )}]\n\tBBox: [${bbox.join(", ")}]`;
 
   if (typeof cleanUpBefore === "string") {
     cleanUpTimestamp = new Date(cleanUpBefore).getTime();
 
-    log += `\n\tBefore ${cleanUpBefore}`;
+    log += `\n\tBefore: ${cleanUpBefore}`;
   } else if (typeof cleanUpBefore === "number") {
     const now = new Date();
 
     cleanUpTimestamp = now.setDate(now.getDate() - cleanUpBefore);
 
-    log += `\n\tOld than ${cleanUpBefore} days`;
+    log += `\n\tOld than: ${cleanUpBefore} days`;
   }
 
   printLog("info", log);
