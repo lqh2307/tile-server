@@ -7,7 +7,7 @@ let config;
 
 /**
  * Read config.json file
- * @param {string} dataDir
+ * @param {string} dataDir The data directory
  * @returns {Promise<void>}
  */
 async function readConfigFile(dataDir) {
@@ -203,7 +203,7 @@ async function readConfigFile(dataDir) {
 
 /**
  * Read seed.json file
- * @param {string} dataDir
+ * @param {string} dataDir The data directory
  * @returns {Promise<object>}
  */
 async function readSeedFile(dataDir) {
@@ -214,9 +214,6 @@ async function readSeedFile(dataDir) {
     {
       type: "object",
       properties: {
-        restartServerAfterSeed: {
-          type: "boolean",
-        },
         styles: {
           type: "object",
           additionalProperties: {
@@ -492,13 +489,7 @@ async function readSeedFile(dataDir) {
           },
         },
       },
-      required: [
-        "restartServerAfterSeed",
-        "styles",
-        "datas",
-        "sprites",
-        "fonts",
-      ],
+      required: ["styles", "datas", "sprites", "fonts"],
       additionalProperties: true,
     },
     seedFilePath
@@ -512,7 +503,7 @@ async function readSeedFile(dataDir) {
 
 /**
  * Read cleanup.json file
- * @param {string} dataDir
+ * @param {string} dataDir The data directory
  * @returns {Promise<object>}
  */
 async function readCleanUpFile(dataDir) {
@@ -523,9 +514,6 @@ async function readCleanUpFile(dataDir) {
     {
       type: "object",
       properties: {
-        restartServerAfterCleanUp: {
-          type: "boolean",
-        },
         styles: {
           type: "object",
           additionalProperties: {
@@ -645,13 +633,7 @@ async function readCleanUpFile(dataDir) {
           },
         },
       },
-      required: [
-        "restartServerAfterCleanUp",
-        "styles",
-        "datas",
-        "sprites",
-        "fonts",
-      ],
+      required: ["styles", "datas", "sprites", "fonts"],
       additionalProperties: true,
     },
     cleanUpFilePath

@@ -20,7 +20,10 @@ program
   .option("-n, --num_processes <num>", "Number of processes", "1")
   .option("-r, --restart_interval <num>", "Interval to restart server", "0")
   .option("-k, --kill_interval <num>", "Interval to kill server", "0")
-  .option("-t, --task", "Run seed and cleanup tasks")
+  .option(
+    "-t, --restart_server_after_task",
+    "Restart server after seed and cleanup tasks"
+  )
   .option("-d, --data_dir <dir>", "Data directory", "data")
   .version(
     JSON.parse(fs.readFileSync("package.json", "utf8")).version,
@@ -57,7 +60,7 @@ async function startClusterServer(opts) {
     process.on("SIGUSR1", () => {
       printLog("info", `Received "SIGUSR1" signal. Starting task...`);
 
-      startTaskInWorker(opts.dataDir);
+      startTaskInWorker(opts);
     });
 
     process.on("SIGUSR2", () => {
@@ -159,10 +162,6 @@ async function startClusterServer(opts) {
     } else {
       startServer(opts.dataDir);
     }
-
-    if (opts.task) {
-      startTaskInWorker(opts.dataDir);
-    }
   } else {
     startServer(opts.dataDir);
   }
@@ -174,5 +173,5 @@ startClusterServer({
   killInterval: Number(argOpts.kill_interval),
   restartInterval: Number(argOpts.restart_interval),
   dataDir: argOpts.data_dir,
-  task: argOpts.task,
+  restartServerAfterTask: argOpts.restart_server_after_task,
 });

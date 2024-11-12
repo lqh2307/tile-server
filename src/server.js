@@ -20,15 +20,13 @@ let currentTaskWorker;
 
 /**
  * Start task in worker
- * @param {string} dataDir Data directory
+ * @param {object} opts Options
  * @returns {void}
  */
-export function startTaskInWorker(dataDir) {
+export function startTaskInWorker(opts) {
   if (currentTaskWorker === undefined) {
     new Worker("./src/task_worker.js", {
-      workerData: {
-        dataDir: dataDir,
-      },
+      workerData: opts,
     })
       .on("message", (message) => {
         if (message.error) {
@@ -78,7 +76,7 @@ export function cancelTaskInWorker() {
 
 /**
  * Load config file
- * @param {string} dataDir Data directory
+ * @param {string} dataDir The data directory
  * @returns {Promise<void>}
  */
 async function loadConfigFile(dataDir) {

@@ -20,7 +20,7 @@ import os from "os";
 
 /**
  * Run task
- * @param {object} opts
+ * @param {object} opts Options
  * @returns {Promise<void>}
  */
 export async function runTask(opts) {
@@ -42,6 +42,13 @@ export async function runTask(opts) {
 
   /* Run seed task */
   await runSeedTask(opts.dataDir, seedData);
+
+  /* Restart server */
+  if (opts.restartServerAfterTask) {
+    printLog("info", "Completed seed and clean up task. Restarting server...");
+
+    await restartServer();
+  }
 }
 
 /**
@@ -324,9 +331,9 @@ async function cleanXYZTileDataFiles(
 
 /**
  * Run clean up task
- * @param {string} dataDir
- * @param {object} cleanUpData
- * @param {object} seedData
+ * @param {string} dataDir The data directory
+ * @param {object} cleanUpData Clean up object
+ * @param {object} seedData Seed object
  * @returns {Promise<void>}
  */
 async function runCleanUpTask(dataDir, cleanUpData, seedData) {
@@ -356,13 +363,7 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
       }
     }
 
-    if (cleanUpData.restartServerAfterCleanUp === true) {
-      printLog("info", "Completed cleaning up data. Restarting server...");
-
-      await restartServer();
-    } else {
-      printLog("info", "Completed cleaning up data!");
-    }
+    printLog("info", "Completed clean up data!");
   } catch (error) {
     printLog("error", `Failed to clean up data: ${error}. Exited!`);
   }
@@ -370,8 +371,8 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
 
 /**
  * Run seed task
- * @param {string} dataDir
- * @param {object} seedData
+ * @param {string} dataDir The data directory
+ * @param {object} seedData Seed object
  * @returns {Promise<void>}
  */
 async function runSeedTask(dataDir, seedData) {
@@ -404,13 +405,7 @@ async function runSeedTask(dataDir, seedData) {
       }
     }
 
-    if (seedData.restartServerAfterSeed === true) {
-      printLog("info", "Completed seeding data. Restarting server...");
-
-      await restartServer();
-    } else {
-      printLog("info", "Completed seeding data!");
-    }
+    printLog("info", "Completed seed data!");
   } catch (error) {
     printLog("error", `Failed to seed data: ${error}. Exited!`);
   }
