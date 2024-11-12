@@ -1,10 +1,12 @@
 "use strict";
 
 import { updateServerInfoFile, removeOldCacheLocks } from "./utils.js";
+import { readConfigFile, config } from "./config.js";
 import { printLog } from "./logger.js";
 import { program } from "commander";
 import chokidar from "chokidar";
 import cluster from "cluster";
+import cron from "node-cron";
 import fs from "node:fs";
 import os from "os";
 import {
@@ -41,6 +43,10 @@ const argOpts = program.opts();
  * @returns {Promise<void>}
  */
 async function startClusterServer(opts) {
+  printLog("info", `Loading config.json file at "${opts.dataDir}"...`);
+
+  await readConfigFile(opts.dataDir);
+
   if (cluster.isPrimary === true) {
     /* Setup envs & events */
     process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length); // For libuv
@@ -143,6 +149,18 @@ async function startClusterServer(opts) {
 
           process.exit(1);
         });
+    }
+
+    /* Setup cron */
+    if (config.options.taskSchedule !== undefined) {
+      printLog(
+        "info",
+        `Schedule run seed and clean up tasks at: "${config.options.taskSchedule}"`
+      );
+
+      cron.schedule(config.options.taskSchedule, () => {
+        startTaskInWorker(opts);
+      });
     }
 
     /* Fork servers */
