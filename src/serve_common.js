@@ -1,7 +1,6 @@
 "use strict";
 
-import { checkReadyMiddleware, findFiles } from "./utils.js";
-import { killServer, restartServer } from "./server.js";
+import { checkReadyMiddleware, findFiles, killServer, restartServer } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import swaggerUi from "swagger-ui-express";
 import fsPromise from "node:fs/promises";

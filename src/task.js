@@ -1,8 +1,6 @@
 "use strict";
 
 import { readCleanUpFile, readSeedFile } from "./config.js";
-import { getMainPID, restartServer } from "./server.js";
-import { Worker } from "node:worker_threads";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import pLimit from "p-limit";
@@ -16,83 +14,9 @@ import {
   getTileBoundsFromBBox,
   removeEmptyFolders,
   getDataBuffer,
+  restartServer
 } from "./utils.js";
 import os from "os";
-
-let currentTaskWorker;
-
-export function startTaskInWorker(dataDir) {
-  if (currentTaskWorker === undefined) {
-    new Worker("./src/task_worker.js", {
-      workerData: {
-        dataDir: dataDir,
-      },
-    })
-      .on("message", (message) => {
-        if (message.error) {
-          printLog("error", `Task failed: ${message.error}`);
-        }
-
-        currentTaskWorker = undefined;
-      })
-      .on("error", (error) => {
-        printLog("error", `Task worker error: ${error}`);
-
-        currentTaskWorker = undefined;
-      })
-      .on("exit", (code) => {
-        if (code !== 0) {
-          printLog("error", `Task worker stopped with exit code: ${code}`);
-        }
-
-        currentTaskWorker = undefined;
-      });
-  } else {
-    printLog("warning", "A task is already running. Skipping start task...");
-  }
-}
-
-export function cancelTaskInWorker() {
-  if (currentTaskWorker !== undefined) {
-    currentTaskWorker
-      .terminate()
-      .then(() => {
-        currentTaskWorker = undefined;
-      })
-      .catch((error) => {
-        printLog("error", `Task worker error: ${error}`);
-      });
-  } else {
-    printLog(
-      "warning",
-      "No task is currently running. Skipping cancel task..."
-    );
-  }
-}
-
-/**
- * Start task
- * @returns {Promise<void>}
- */
-export async function startTask() {
-  const taskPID = await getMainPID();
-
-  if (taskPID !== undefined) {
-    process.kill(taskPID, "SIGUSR1");
-  }
-}
-
-/**
- * Cancel task
- * @returns {Promise<void>}
- */
-export async function cancelTask() {
-  const taskPID = await getMainPID();
-
-  if (taskPID !== undefined) {
-    process.kill(taskPID, "SIGUSR2");
-  }
-}
 
 /**
  * Run task
@@ -422,7 +346,7 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
           seedData.datas[id].concurrency,
           seedData.datas[id].maxTry,
           cleanUpData.datas[id].cleanUpBefore?.time ||
-            cleanUpData.datas[id].cleanUpBefore?.day
+          cleanUpData.datas[id].cleanUpBefore?.day
         );
       } catch (error) {
         printLog(
@@ -469,8 +393,8 @@ async function runSeedTask(dataDir, seedData) {
           seedData.datas[id].maxTry,
           seedData.datas[id].timeout,
           seedData.datas[id].refreshBefore?.time ||
-            seedData.datas[id].refreshBefore?.day ||
-            seedData.datas[id].refreshBefore?.md5
+          seedData.datas[id].refreshBefore?.day ||
+          seedData.datas[id].refreshBefore?.md5
         );
       } catch (error) {
         printLog(

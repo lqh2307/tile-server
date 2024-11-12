@@ -1,6 +1,6 @@
 "use strict";
 
-import { cancelTask, startTask } from "./task.js";
+import { cancelTask, startTask } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import { printLog } from "./logger.js";
 import express from "express";

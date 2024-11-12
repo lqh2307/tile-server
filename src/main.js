@@ -1,7 +1,7 @@
 "use strict";
 
+import { cancelTaskInWorker, startServer, startTaskInWorker } from "./server.js";
 import { updateServerInfoFile, removeOldCacheLocks } from "./utils.js";
-import { startServer } from "./server.js";
 import { printLog } from "./logger.js";
 import { program } from "commander";
 import chokidar from "chokidar";
@@ -51,6 +51,18 @@ async function startClusterServer(opts) {
       printLog("info", `Received "SIGTERM" signal. Restarting server...`);
 
       process.exit(1);
+    });
+
+    process.on("SIGUSR1", () => {
+      printLog("info", `Received "SIGUSR1" signal. Starting task...`);
+
+      startTaskInWorker(opts.dataDir);
+    });
+
+    process.on("SIGUSR2", () => {
+      printLog("info", `Received "SIGUSR2" signal. Canceling task...`);
+
+      cancelTaskInWorker();
     });
 
     printLog("info", `Starting server with ${opts.numProcesses} processes...`);

@@ -1,37 +1,78 @@
 "use strict";
 
-import { updateServerInfoFile, checkReadyMiddleware } from "./utils.js";
-import { cancelTaskInWorker, startTaskInWorker } from "./task.js";
+import { checkReadyMiddleware, killServer, restartServer } from "./utils.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
 import { readConfigFile, config } from "./config.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
 import { serve_style } from "./serve_style.js";
+import { Worker } from "node:worker_threads";
 import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
 import { serve_task } from "./serve_task.js";
-import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 
+let currentTaskWorker;
+
 /**
- * Get main PID
- * @returns {Promise<number>}
+ * Start task in worker
+ * @param {string} dataDir Data directory
+ * @returns {Promise<void>}
  */
-export async function getMainPID() {
-  try {
-    const data = await fsPromise.readFile("server-info.json", "utf8");
+export function startTaskInWorker(dataDir) {
+  if (currentTaskWorker === undefined) {
+    new Worker("./src/task_worker.js", {
+      workerData: {
+        dataDir: dataDir,
+      },
+    })
+      .on("message", (message) => {
+        if (message.error) {
+          printLog("error", `Task failed: ${message.error}`);
+        }
 
-    return JSON.parse(data).mainPID;
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      return;
-    }
+        currentTaskWorker = undefined;
+      })
+      .on("error", (error) => {
+        printLog("error", `Task worker error: ${error}`);
 
-    throw error;
+        currentTaskWorker = undefined;
+      })
+      .on("exit", (code) => {
+        if (code !== 0) {
+          printLog("error", `Task worker stopped with exit code: ${code}`);
+        }
+
+        currentTaskWorker = undefined;
+      });
+  } else {
+    printLog("warning", "A task is already running. Skipping start task...");
+  }
+}
+
+/**
+ * Cancel task in worker
+ * @returns {Promise<void>}
+ */
+export function cancelTaskInWorker() {
+  if (currentTaskWorker !== undefined) {
+    currentTaskWorker
+      .terminate()
+      .then(() => {
+        currentTaskWorker = undefined;
+      })
+      .catch((error) => {
+        printLog("error", `Task worker error: ${error}`);
+      });
+  } else {
+    printLog(
+      "warning",
+      "No task is currently running. Skipping cancel task..."
+    );
   }
 }
 
@@ -110,38 +151,6 @@ async function loadData() {
 }
 
 /**
- * Restart server
- * @returns {Promise<void>}
- */
-export async function restartServer() {
-  const mainPID = await getMainPID();
-
-  if (mainPID !== undefined) {
-    await updateServerInfoFile({
-      mainPID: undefined,
-    });
-
-    process.kill(mainPID, "SIGTERM");
-  }
-}
-
-/**
- * Kill server
- * @returns {Promise<void>}
- */
-export async function killServer() {
-  const mainPID = await getMainPID();
-
-  if (mainPID !== undefined) {
-    await updateServerInfoFile({
-      mainPID: undefined,
-    });
-
-    process.kill(mainPID, "SIGINT");
-  }
-}
-
-/**
  * Start server
  * @param {string} dataDir
  * @returns {Promise<void>}
@@ -153,18 +162,6 @@ export async function startServer(dataDir) {
     startHTTPServer();
 
     loadData();
-
-    process.on("SIGUSR1", () => {
-      printLog("info", `Received "SIGUSR1" signal. Starting task...`);
-
-      startTaskInWorker(dataDir);
-    });
-
-    process.on("SIGUSR2", () => {
-      printLog("info", `Received "SIGUSR2" signal. Canceling task...`);
-
-      cancelTaskInWorker();
-    });
   } catch (error) {
     printLog("error", `Failed to start server: ${error}. Exited!`);
 

@@ -1090,3 +1090,77 @@ export async function removeOldServerInfo() {
   await removeFilesOrFolder(`${filePath}.tmp`);
   await removeFilesOrFolder(`${filePath}.lock`);
 }
+
+/**
+ * Get main PID
+ * @returns {Promise<number>}
+ */
+export async function getMainPID() {
+  try {
+    const data = await fsPromise.readFile("server-info.json", "utf8");
+
+    return JSON.parse(data).mainPID;
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return;
+    }
+
+    throw error;
+  }
+}
+
+/**
+ * Restart server
+ * @returns {Promise<void>}
+ */
+export async function restartServer() {
+  const mainPID = await getMainPID();
+
+  if (mainPID !== undefined) {
+    await updateServerInfoFile({
+      mainPID: undefined,
+    });
+
+    process.kill(mainPID, "SIGTERM");
+  }
+}
+
+/**
+ * Kill server
+ * @returns {Promise<void>}
+ */
+export async function killServer() {
+  const mainPID = await getMainPID();
+
+  if (mainPID !== undefined) {
+    await updateServerInfoFile({
+      mainPID: undefined,
+    });
+
+    process.kill(mainPID, "SIGINT");
+  }
+}
+
+/**
+ * Start task
+ * @returns {Promise<void>}
+ */
+export async function startTask() {
+  const taskPID = await getMainPID();
+
+  if (taskPID !== undefined) {
+    process.kill(taskPID, "SIGUSR1");
+  }
+}
+
+/**
+ * Cancel task
+ * @returns {Promise<void>}
+ */
+export async function cancelTask() {
+  const taskPID = await getMainPID();
+
+  if (taskPID !== undefined) {
+    process.kill(taskPID, "SIGUSR2");
+  }
+}

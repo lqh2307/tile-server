@@ -23,6 +23,7 @@ async function readConfigFile(dataDir) {
           properties: {
             listenPort: {
               type: "integer",
+              minimum: 0,
             },
             killEndpoint: {
               type: "boolean",
