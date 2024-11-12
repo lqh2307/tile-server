@@ -21,7 +21,7 @@ let currentTaskWorker;
 /**
  * Start task in worker
  * @param {string} dataDir Data directory
- * @returns {Promise<void>}
+ * @returns {void}
  */
 export function startTaskInWorker(dataDir) {
   if (currentTaskWorker === undefined) {
@@ -56,7 +56,7 @@ export function startTaskInWorker(dataDir) {
 
 /**
  * Cancel task in worker
- * @returns {Promise<void>}
+ * @returns {void}
  */
 export function cancelTaskInWorker() {
   if (currentTaskWorker !== undefined) {

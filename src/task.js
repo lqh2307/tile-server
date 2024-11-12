@@ -251,7 +251,7 @@ async function cleanXYZTileDataFiles(
 
   // Remove files
   const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
-  const limitConcurrencyDownload = pLimit(concurrency);
+  const limitConcurrencyRemove = pLimit(concurrency);
   const tilePromises = [];
   const hashs = {};
 
@@ -259,7 +259,7 @@ async function cleanXYZTileDataFiles(
     for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
       for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
         tilePromises.push(
-          limitConcurrencyDownload(async () => {
+          limitConcurrencyRemove(async () => {
             const tileName = `${z}/${x}/${y}`;
             const filePath = `${outputFolder}/${tileName}.${format}`;
 
