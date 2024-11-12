@@ -161,7 +161,6 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
 
 ```json
 {
-  "restartServerAfterSeed": true,
   "styles": {
     "vietnam": {
       "url": "http://localhost:8080/styles/vietnam/style.json",
@@ -267,7 +266,6 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
 
 ```json
 {
-  "restartServerAfterCleanUp": true,
   "styles": {
     "vietnam": {
       "cleanUpBefore": {
