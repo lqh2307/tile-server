@@ -1,6 +1,5 @@
 "use strict";
 
-import { checkReadyMiddleware, findFiles, killServer, restartServer } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import swaggerUi from "swagger-ui-express";
 import fsPromise from "node:fs/promises";
@@ -8,6 +7,12 @@ import swaggerJsdoc from "swagger-jsdoc";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
+import {
+  checkReadyMiddleware,
+  restartServer,
+  killServer,
+  findFiles,
+} from "./utils.js";
 
 function serveSwagger() {
   return (req, res, next) => {

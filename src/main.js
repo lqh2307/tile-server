@@ -1,6 +1,5 @@
 "use strict";
 
-import { cancelTaskInWorker, startServer, startTaskInWorker } from "./server.js";
 import { updateServerInfoFile, removeOldCacheLocks } from "./utils.js";
 import { printLog } from "./logger.js";
 import { program } from "commander";
@@ -8,6 +7,11 @@ import chokidar from "chokidar";
 import cluster from "cluster";
 import fs from "node:fs";
 import os from "os";
+import {
+  cancelTaskInWorker,
+  startTaskInWorker,
+  startServer,
+} from "./server.js";
 
 /* Setup commands */
 program
