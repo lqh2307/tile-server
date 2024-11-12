@@ -3,6 +3,7 @@
 import { checkReadyMiddleware, killServer, restartServer } from "./utils.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
+import { readConfigFile, config } from "./config.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
 import { serve_style } from "./serve_style.js";
@@ -11,8 +12,9 @@ import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
 import { serve_task } from "./serve_task.js";
 import { printLog } from "./logger.js";
-import { config } from "./config.js";
+import cluster from "cluster";
 import express from "express";
+import cron from "node-cron";
 import morgan from "morgan";
 import cors from "cors";
 
@@ -75,6 +77,23 @@ export function cancelTaskInWorker() {
 }
 
 /**
+ * Load config file
+ * @param {string} dataDir The data directory
+ * @returns {Promise<void>}
+ */
+async function loadConfigFile(dataDir) {
+  printLog("info", `Loading config.json file at "${dataDir}"...`);
+
+  try {
+    await readConfigFile(dataDir);
+  } catch (error) {
+    throw new Error(
+      `Failed to load config.json file at "${dataDir}": ${error}`
+    );
+  }
+}
+
+/**
  * Start HTTP server
  * @returns {void}
  */
@@ -132,12 +151,34 @@ async function loadData() {
 }
 
 /**
+ * Load cron
+ * @returns {void}
+ */
+function loadCron() {
+  if (cluster.isPrimary === true && config.options.taskSchedule !== undefined) {
+    printLog(
+      "info",
+      `Schedule run seed and clean up tasks at: "${config.options.taskSchedule}"`
+    );
+
+    cron.schedule(config.options.taskSchedule, () => {
+      startTaskInWorker(opts);
+    });
+  }
+}
+
+/**
  * Start server
+ * @param {object} opts Options
  * @returns {Promise<void>}
  */
-export async function startServer() {
+export async function startServer(opts) {
   try {
+    await loadConfigFile(opts.dataDir);
+
     startHTTPServer();
+
+    loadCron();
 
     loadData();
   } catch (error) {
