@@ -1,6 +1,6 @@
 "use strict";
 
-import { updateServerInfoFileWithLock, checkReadyMiddleware } from "./utils.js";
+import { updateServerInfoFile, checkReadyMiddleware } from "./utils.js";
 import { cancelTaskInWorker, startTaskInWorker } from "./task.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
@@ -21,7 +21,7 @@ import cors from "cors";
  * Get main PID
  * @returns {Promise<number>}
  */
-async function getMainPID() {
+export async function getMainPID() {
   try {
     const data = await fsPromise.readFile("server-info.json", "utf8");
 
@@ -117,12 +117,9 @@ export async function restartServer() {
   const mainPID = await getMainPID();
 
   if (mainPID !== undefined) {
-    await updateServerInfoFileWithLock(
-      {
-        mainPID: undefined,
-      },
-      60000 // 1 mins
-    );
+    await updateServerInfoFile({
+      mainPID: undefined,
+    });
 
     process.kill(mainPID, "SIGTERM");
   }
@@ -136,12 +133,9 @@ export async function killServer() {
   const mainPID = await getMainPID();
 
   if (mainPID !== undefined) {
-    await updateServerInfoFileWithLock(
-      {
-        mainPID: undefined,
-      },
-      60000 // 1 mins
-    );
+    await updateServerInfoFile({
+      mainPID: undefined,
+    });
 
     process.kill(mainPID, "SIGINT");
   }

@@ -1,5 +1,6 @@
 "use strict";
 
+import { updateServerInfoFile, removeOldCacheLocks } from "./utils.js";
 import { startServer } from "./server.js";
 import { printLog } from "./logger.js";
 import { program } from "commander";
@@ -7,11 +8,6 @@ import chokidar from "chokidar";
 import cluster from "cluster";
 import fs from "node:fs";
 import os from "os";
-import {
-  updateServerInfoFileWithLock,
-  removeOldCacheLocks,
-  removeOldServerInfo,
-} from "./utils.js";
 
 /* Setup commands */
 program
@@ -88,15 +84,11 @@ async function startClusterServer(opts) {
 
     /* Remove old cache locks */
     await removeOldCacheLocks(`${opts.dataDir}/caches`);
-    await removeOldServerInfo();
 
     /* Store main pid */
-    await updateServerInfoFileWithLock(
-      {
-        mainPID: process.pid,
-      },
-      60000 // 1 mins
-    );
+    await updateServerInfoFile({
+      mainPID: process.pid,
+    });
 
     /* Setup watch config file change */
     if (opts.killInterval > 0) {

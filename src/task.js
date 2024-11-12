@@ -1,9 +1,8 @@
 "use strict";
 
 import { readCleanUpFile, readSeedFile } from "./config.js";
-import { updateServerInfoFileWithLock } from "./utils.js";
+import { getMainPID, restartServer } from "./server.js";
 import { Worker } from "node:worker_threads";
-import { restartServer } from "./server.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import pLimit from "p-limit";
@@ -76,18 +75,9 @@ export function cancelTaskInWorker() {
  * @returns {Promise<void>}
  */
 export async function startTask() {
-  const taskPID = await getTaskPID();
+  const taskPID = await getMainPID();
 
-  if (taskPID === undefined) {
-    await updateServerInfoFileWithLock(
-      {
-        taskPID: process.pid,
-      },
-      60000 // 1 mins
-    );
-
-    process.kill(process.pid, "SIGUSR1");
-  } else {
+  if (taskPID !== undefined) {
     process.kill(taskPID, "SIGUSR1");
   }
 }
@@ -97,34 +87,10 @@ export async function startTask() {
  * @returns {Promise<void>}
  */
 export async function cancelTask() {
-  const taskPID = await getTaskPID();
+  const taskPID = await getMainPID();
 
   if (taskPID !== undefined) {
-    await updateServerInfoFileWithLock(
-      {
-        taskPID: undefined,
-      },
-      60000 // 1 mins
-    );
-
     process.kill(taskPID, "SIGUSR2");
-  }
-}
-/**
- * Get task PID
- * @returns {Promise<number>}
- */
-async function getTaskPID() {
-  try {
-    const data = await fsPromise.readFile("server-info.json", "utf8");
-
-    return JSON.parse(data).taskPID;
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      return;
-    }
-
-    throw error;
   }
 }
 
@@ -456,7 +422,7 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
           seedData.datas[id].concurrency,
           seedData.datas[id].maxTry,
           cleanUpData.datas[id].cleanUpBefore?.time ||
-          cleanUpData.datas[id].cleanUpBefore?.day
+            cleanUpData.datas[id].cleanUpBefore?.day
         );
       } catch (error) {
         printLog(
@@ -503,8 +469,8 @@ async function runSeedTask(dataDir, seedData) {
           seedData.datas[id].maxTry,
           seedData.datas[id].timeout,
           seedData.datas[id].refreshBefore?.time ||
-          seedData.datas[id].refreshBefore?.day ||
-          seedData.datas[id].refreshBefore?.md5
+            seedData.datas[id].refreshBefore?.day ||
+            seedData.datas[id].refreshBefore?.md5
         );
       } catch (error) {
         printLog(
@@ -525,4 +491,3 @@ async function runSeedTask(dataDir, seedData) {
     printLog("error", `Failed to seed data: ${error}. Exited!`);
   }
 }
-
