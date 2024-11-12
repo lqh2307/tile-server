@@ -99,7 +99,12 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
     "createTilesIndex": false,
     "loggerFormat": ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
     "minPoolSize": 8,
-    "maxPoolSize": 16
+    "maxPoolSize": 16,
+    "taskSchedule": "0 0 0 * * *",
+    "restartServerAfterTask": true,
+    "killInterval": 0,
+    "restartInterval": 0,
+    "process": 1
   },
   "styles": {
     "vietnam": {

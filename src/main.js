@@ -19,13 +19,6 @@ import {
 program
   .description("========== tile-server startup options ==========")
   .usage("tile-server server [options]")
-  .option("-n, --num_processes <num>", "Number of processes", "1")
-  .option("-r, --restart_interval <num>", "Interval to restart server", "0")
-  .option("-k, --kill_interval <num>", "Interval to kill server", "0")
-  .option(
-    "-t, --restart_server_after_task",
-    "Restart server after seed and cleanup tasks"
-  )
   .option("-d, --data_dir <dir>", "Data directory", "data")
   .version(
     JSON.parse(fs.readFileSync("package.json", "utf8")).version,
@@ -67,7 +60,10 @@ async function startClusterServer(opts) {
     process.on("SIGUSR1", () => {
       printLog("info", `Received "SIGUSR1" signal. Starting task...`);
 
-      startTaskInWorker(opts);
+      startTaskInWorker({
+        dataDir: opts.dataDir,
+        restartServerAfterTask: config.options.restartServerAfterTask,
+      });
     });
 
     process.on("SIGUSR2", () => {
@@ -99,7 +95,7 @@ async function startClusterServer(opts) {
     //       '-.____'.___ \\_____/___.-'____.-'
     //                    '=---='
     //         Buddha bless, server immortal
-    //       Starting server with ${opts.numProcesses} processes
+    //       Starting server with ${config.options.process} processes
     // `
     //     );
 
@@ -113,7 +109,7 @@ async function startClusterServer(opts) {
       mainPID: process.pid,
     });
 
-    printLog("info", `Starting server with ${opts.numProcesses} processes...`);
+    printLog("info", `Starting server with ${config.options.process} processes...`);
 
     /* Load config.json file */
     printLog("info", `Loading config.json file at "${opts.dataDir}"...`);
@@ -121,34 +117,34 @@ async function startClusterServer(opts) {
     await readConfigFile(opts.dataDir);
 
     /* Setup watch config file change */
-    if (opts.killInterval > 0) {
+    if (config.options.killInterval > 0) {
       printLog(
         "info",
-        `Watch config file changes interval ${opts.killInterval}ms to kill server`
+        `Watch config file changes interval ${config.options.killInterval}ms to kill server`
       );
 
       chokidar
         .watch(`${opts.dataDir}/config.json`, {
           usePolling: true,
           awaitWriteFinish: true,
-          interval: opts.killInterval,
+          interval: config.options.killInterval,
         })
         .on("change", () => {
           printLog("info", "Config file has changed. Killing server...");
 
           process.exit(0);
         });
-    } else if (opts.restartInterval > 0) {
+    } else if (config.options.restartInterval > 0) {
       printLog(
         "info",
-        `Watch config file changes interval ${opts.restartInterval}ms to restart server`
+        `Watch config file changes interval ${config.options.restartInterval}ms to restart server`
       );
 
       chokidar
         .watch(`${opts.dataDir}/config.json`, {
           usePolling: true,
           awaitWriteFinish: true,
-          interval: opts.restartInterval,
+          interval: config.options.restartInterval,
         })
         .on("change", () => {
           printLog("info", "Config file has changed. Restarting server...");
@@ -165,13 +161,16 @@ async function startClusterServer(opts) {
       );
 
       cron.schedule(config.options.taskSchedule, () => {
-        startTaskInWorker(opts);
+        startTaskInWorker({
+          dataDir: opts.dataDir,
+          restartServerAfterTask: config.options.restartServerAfterTask,
+        });
       });
     }
 
     /* Fork servers */
-    if (opts.numProcesses > 1) {
-      for (let i = 0; i < opts.numProcesses; i++) {
+    if (config.options.process > 1) {
+      for (let i = 0; i < config.options.process; i++) {
         cluster.fork();
       }
 
@@ -193,9 +192,5 @@ async function startClusterServer(opts) {
 
 /* Run start cluster server */
 startClusterServer({
-  numProcesses: Number(argOpts.num_processes),
-  killInterval: Number(argOpts.kill_interval),
-  restartInterval: Number(argOpts.restart_interval),
   dataDir: argOpts.data_dir,
-  restartServerAfterTask: argOpts.restart_server_after_task,
 });

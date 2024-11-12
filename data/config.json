@@ -14,7 +14,12 @@
     "renderedCompression": 6,
     "loggerFormat": ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
     "minPoolSize": 8,
-    "maxPoolSize": 16
+    "maxPoolSize": 16,
+    "taskSchedule": "0 0 0 * * *",
+    "restartServerAfterTask": true,
+    "killInterval": 0,
+    "restartInterval": 0,
+    "process": 1
   },
   "styles": {},
   "datas": {},
