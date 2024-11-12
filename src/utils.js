@@ -1094,10 +1094,6 @@ export async function restartServer() {
   const mainPID = await getMainPID();
 
   if (mainPID !== undefined) {
-    await updateServerInfoFile({
-      mainPID: undefined,
-    });
-
     process.kill(mainPID, "SIGTERM");
   }
 }
@@ -1110,10 +1106,6 @@ export async function killServer() {
   const mainPID = await getMainPID();
 
   if (mainPID !== undefined) {
-    await updateServerInfoFile({
-      mainPID: undefined,
-    });
-
     process.kill(mainPID, "SIGINT");
   }
 }
