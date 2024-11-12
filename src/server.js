@@ -14,6 +14,7 @@ import { serve_task } from "./serve_task.js";
 import { printLog } from "./logger.js";
 import cluster from "cluster";
 import express from "express";
+import cron from "node-cron";
 import morgan from "morgan";
 import cors from "cors";
 
@@ -150,6 +151,23 @@ async function loadData() {
 }
 
 /**
+ * Load cron
+ * @returns {void}
+ */
+function loadCron() {
+  if (cluster.isPrimary === true && config.options.taskSchedule !== undefined) {
+    printLog(
+      "info",
+      `Schedule run seed and clean up tasks at: "${config.options.taskSchedule}"`
+    );
+
+    cron.schedule(config.options.taskSchedule, () => {
+      startTaskInWorker(opts);
+    });
+  }
+}
+
+/**
  * Start server
  * @param {object} opts Options
  * @returns {Promise<void>}
@@ -162,16 +180,7 @@ export async function startServer(opts) {
 
     loadData();
 
-    if (cluster.isPrimary === true && config.taskSchedule !== undefined) {
-      printLog(
-        "info",
-        `Schedule run seed and clean up tasks at: "${config.taskSchedule}"`
-      );
-
-      cron.schedule(config.taskSchedule, () => {
-        startTaskInWorker(opts);
-      });
-    }
+    loadCron();
   } catch (error) {
     printLog("error", `Failed to start server: ${error}. Exited!`);
 
