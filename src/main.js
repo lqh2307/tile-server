@@ -109,7 +109,10 @@ async function startClusterServer(opts) {
       mainPID: process.pid,
     });
 
-    printLog("info", `Starting server with ${config.options.process} processes...`);
+    printLog(
+      "info",
+      `Starting server with ${config.options.process} processes...`
+    );
 
     /* Load config.json file */
     printLog("info", `Loading config.json file at "${opts.dataDir}"...`);
