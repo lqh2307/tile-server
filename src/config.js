@@ -226,9 +226,6 @@ async function readConfigFile(dataDir, isValidate) {
 
   config.fallbackFont = "Open Sans Regular";
   config.startupComplete = false;
-
-  /* Store config to ENV */
-  process.env.CONFIG_OBJECT = JSON.stringify(config);
 }
 
 /**
