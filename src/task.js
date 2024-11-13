@@ -33,8 +33,8 @@ export async function runTask(opts) {
   );
 
   const [cleanUpData, seedData] = await Promise.all([
-    readCleanUpFile(opts.dataDir),
-    readSeedFile(opts.dataDir),
+    readCleanUpFile(opts.dataDir, true),
+    readSeedFile(opts.dataDir, true),
   ]);
 
   /* Run clean up task */

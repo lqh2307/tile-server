@@ -933,21 +933,20 @@ export const unzipAsync = util.promisify(zlib.unzip);
 
 /**
  * Validate tileJSON
- * @param {string} schema JSON schema
- * @param {string} filePath JSON file path
+ * @param {object} schema JSON schema
+ * @param {object} jsonData JSON data
  * @returns
  */
-export async function validateJSON(schema, filePath) {
+export async function validateJSON(schema, jsonData) {
   try {
     const ajv = new Ajv({
       allErrors: true,
       useDefaults: true,
     });
 
-    const data = JSON.parse(await fsPromise.readFile(filePath, "utf8"));
     const validate = ajv.compile(schema);
 
-    if (!validate(data)) {
+    if (!validate(jsonData)) {
       throw validate.errors
         .map((error) => `\n\t${error.instancePath} ${error.message}`)
         .join();

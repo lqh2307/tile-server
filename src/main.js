@@ -39,7 +39,7 @@ async function startClusterServer(opts) {
   /* Load config.json file */
   printLog("info", `Loading config.json file at "${opts.dataDir}"...`);
 
-  await readConfigFile(opts.dataDir);
+  await readConfigFile(opts.dataDir, cluster.isPrimary);
 
   if (cluster.isPrimary === true) {
     /* Setup envs & events */
@@ -114,11 +114,6 @@ async function startClusterServer(opts) {
       `Starting server with ${config.options.process} processes...`
     );
 
-    /* Load config.json file */
-    printLog("info", `Loading config.json file at "${opts.dataDir}"...`);
-
-    await readConfigFile(opts.dataDir);
-
     /* Setup watch config file change */
     if (config.options.killInterval > 0) {
       printLog(
@@ -127,7 +122,7 @@ async function startClusterServer(opts) {
       );
 
       chokidar
-        .watch(`${opts.dataDir}/config.json`, {
+        .watch(config.paths.config, {
           usePolling: true,
           awaitWriteFinish: true,
           interval: config.options.killInterval,
@@ -144,7 +139,7 @@ async function startClusterServer(opts) {
       );
 
       chokidar
-        .watch(`${opts.dataDir}/config.json`, {
+        .watch(config.paths.config, {
           usePolling: true,
           awaitWriteFinish: true,
           interval: config.options.restartInterval,
