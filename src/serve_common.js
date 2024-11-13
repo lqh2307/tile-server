@@ -151,8 +151,7 @@ function serveInfoHandler() {
         result.font.count += 1;
 
         for (const fileName of fileNames) {
-          const filePath = `${dirPath}/${fileName}`;
-          const stat = await fsPromise.stat(filePath);
+          const stat = await fsPromise.stat(`${dirPath}/${fileName}`);
 
           result.font.size += stat.size;
         }
@@ -170,48 +169,46 @@ function serveInfoHandler() {
         result.sprite.count += 1;
 
         for (const fileName of fileNames) {
-          const filePath = `${dirPath}/${fileName}`;
-          const stat = await fsPromise.stat(filePath);
+          const stat = await fsPromise.stat(`${dirPath}/${fileName}`);
 
           result.sprite.size += stat.size;
         }
       }
 
       // Datas info
-      for (const data in config.repo.datas) {
-        if (config.repo.datas[data].sourceType === "mbtiles") {
-          const filePath = `${config.paths.mbtiles}/${config.datas[data].mbtiles}`;
-          const stat = await fsPromise.stat(filePath);
+      for (const id in config.repo.datas) {
+        const item = config.repo.datas[id];
 
-          result.data.mbtiles.count += 1;
+        if (item.sourceType === "mbtiles") {
+          const stat = await fsPromise.stat(item.path);
+
           result.data.mbtiles.size += stat.size;
-        } else if (config.repo.datas[data].sourceType === "pmtiles") {
-          result.data.pmtiles.count += 1;
-
+          result.data.mbtiles.count += 1;
+        } else if (item.sourceType === "pmtiles") {
           if (
-            config.datas[data].pmtiles.startsWith("https://") !== true &&
-            config.datas[data].pmtiles.startsWith("http://") !== true
+            item.path.startsWith("https://") !== true &&
+            item.path.startsWith("http://") !== true
           ) {
-            const filePath = `${config.paths.pmtiles}/${config.datas[data].pmtiles}`;
-            const stat = await fsPromise.stat(filePath);
+            const stat = await fsPromise.stat(item.path);
 
             result.data.pmtiles.size += stat.size;
           }
-        } else if (config.repo.datas[data].sourceType === "xyz") {
+
+          result.data.pmtiles.count += 1;
+        } else if (item.sourceType === "xyz") {
           const fileNames = await findFiles(
-            config.repo.datas[data].source,
+            item.path,
             /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/,
             true
           );
 
-          result.data.xyz.count += 1;
-
           for (const fileName of fileNames) {
-            const filePath = `${config.repo.datas[data].source}/${fileName}`;
-            const stat = await fsPromise.stat(filePath);
+            const stat = await fsPromise.stat(`${item.path}/${fileName}`);
 
             result.data.xyz.size += stat.size;
           }
+
+          result.data.xyz.count += 1;
         }
       }
 
@@ -225,12 +222,19 @@ function serveInfoHandler() {
         result.data.xyz.size;
 
       // Styles info
-      for (const style in config.repo.styles) {
-        const filePath = `${config.paths.styles}/${config.styles[style].style}`;
-        const stat = await fsPromise.stat(filePath);
+      for (const id in config.repo.styles) {
+        const item = config.repo.styles[id];
+
+        if (
+          item.path.startsWith("https://") !== true &&
+          item.path.startsWith("http://") !== true
+        ) {
+          const stat = await fsPromise.stat(item.path);
+
+          result.style.size += stat.size;
+        }
 
         result.style.count += 1;
-        result.style.size += stat.size;
       }
 
       // Rendereds info

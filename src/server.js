@@ -123,6 +123,13 @@ async function loadData() {
 
     printLog("info", "Completed startup!");
 
+    /*  */
+    config.styles = undefined;
+    config.datas = undefined;
+    config.sprites = undefined;
+    config.fonts = undefined;
+
+    /*  */
     config.startupComplete = true;
   } catch (error) {
     printLog("error", `Failed to load data: ${error}. Exited!`);

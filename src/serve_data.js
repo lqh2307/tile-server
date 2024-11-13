@@ -660,29 +660,27 @@ export const serve_data = {
           const dataInfo = {};
 
           if (item.mbtiles !== undefined) {
-            let filePath = `${config.paths.mbtiles}/${item.mbtiles}`;
-
             if (
               item.mbtiles.startsWith("https://") === true ||
               item.mbtiles.startsWith("http://") === true
             ) {
-              filePath = `${config.paths.mbtiles}/${id}/${id}.mbtiles`;
+              dataInfo.path = `${config.paths.mbtiles}/${id}/${id}.mbtiles`;
 
-              if ((await isExistFile(filePath)) === false) {
+              if ((await isExistFile(dataInfo.path)) === false) {
                 await downloadMBTilesFile(
                   item.mbtiles,
-                  filePath,
+                  dataInfo.path,
                   5,
                   3600000 // 1 hour
                 );
               }
-
-              item.mbtiles = `${id}/${id}.mbtiles`;
+            } else {
+              dataInfo.path = `${config.paths.mbtiles}/${item.mbtiles}`;
             }
 
             if (config.options.createMetadataIndex === true) {
               await createMBTilesIndex(
-                filePath,
+                dataInfo.path,
                 "metadata_unique_index",
                 "metadata",
                 ["name"]
@@ -691,7 +689,7 @@ export const serve_data = {
 
             if (config.options.createTilesIndex === true) {
               await createMBTilesIndex(
-                filePath,
+                dataInfo.path,
                 "tiles_unique_index",
                 "tiles",
                 ["zoom_level", "tile_column", "tile_row"]
@@ -699,29 +697,26 @@ export const serve_data = {
             }
 
             dataInfo.sourceType = "mbtiles";
-            dataInfo.source = await openMBTiles(filePath);
+            dataInfo.source = await openMBTiles(dataInfo.path);
             dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
           } else if (item.pmtiles !== undefined) {
-            let filePath = `${config.paths.pmtiles}/${item.pmtiles}`;
-
             if (
               item.pmtiles.startsWith("https://") === true ||
               item.pmtiles.startsWith("http://") === true
             ) {
-              filePath = item.pmtiles;
+              dataInfo.path = item.pmtiles;
+            } else {
+              dataInfo.path = `${config.paths.pmtiles}/${item.pmtiles}`;
             }
 
             dataInfo.sourceType = "pmtiles";
-            dataInfo.source = openPMTiles(filePath);
+            dataInfo.source = openPMTiles(dataInfo.path);
             dataInfo.tileJSON = await getPMTilesInfos(dataInfo.source);
           } else if (item.xyz !== undefined) {
-            dataInfo.sourceType = "xyz";
-            dataInfo.source = `${config.paths.xyzs}/${item.xyz}`;
-
             let cacheSource;
 
             if (item.cache !== undefined) {
-              dataInfo.source = `${config.paths.caches.xyzs}/${item.xyz}`;
+              dataInfo.path = `${config.paths.caches.xyzs}/${item.xyz}`;
 
               cacheSource = seed.datas[item.xyz];
 
@@ -733,7 +728,12 @@ export const serve_data = {
                 dataInfo.sourceURL = cacheSource.url;
                 dataInfo.storeCache = item.cache.store;
               }
+            } else {
+              dataInfo.path = `${config.paths.xyzs}/${item.xyz}`;
             }
+
+            dataInfo.sourceType = "xyz";
+            dataInfo.source = dataInfo.path;
 
             try {
               dataInfo.tileJSON = await getXYZInfos(dataInfo.source);

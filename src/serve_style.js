@@ -386,36 +386,35 @@ export const serve_style = {
       Object.keys(config.styles).map(async (id) => {
         try {
           const item = config.styles[id];
-          let styleJSON;
+          const styleInfo = {};
 
           if (
             item.style.startsWith("https://") === true ||
             item.style.startsWith("http://") === true
           ) {
+            styleInfo.path = item.style;
+
             /* Get style from URL */
             const response = await getDataJSON(
-              item.style,
+              styleInfo.path,
               60000 // 1 mins
             );
 
-            styleJSON = response.data;
+            styleInfo.styleJSON = response.data;
           } else {
-            /* Read style.json file */
-            const styleData = await fsPromise.readFile(
-              `${config.paths.styles}/${item.style}`,
-              "utf8"
-            );
+            styleInfo.path = `${config.paths.styles}/${item.style}`;
 
-            styleJSON = JSON.parse(styleData);
+            /* Read style.json file */
+            const styleData = await fsPromise.readFile(styleInfo.path, "utf8");
+
+            styleInfo.styleJSON = JSON.parse(styleData);
           }
 
           /* Validate style */
-          await validateStyle(styleJSON);
+          await validateStyle(styleInfo.styleJSON);
 
           /* Add to repo */
-          config.repo.styles[id] = {
-            styleJSON: styleJSON,
-          };
+          config.repo.styles[id] = styleInfo;
         } catch (error) {
           printLog(
             "error",
