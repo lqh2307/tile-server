@@ -1,6 +1,6 @@
 "use strict";
 
-import { checkReadyMiddleware, killServer, restartServer } from "./utils.js";
+import { checkReadyMiddleware, killServer } from "./utils.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
 import { serve_common } from "./serve_common.js";
@@ -127,7 +127,7 @@ async function loadData() {
   } catch (error) {
     printLog("error", `Failed to load data: ${error}. Exited!`);
 
-    await restartServer();
+    await killServer();
   }
 }
 
