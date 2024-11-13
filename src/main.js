@@ -1,14 +1,17 @@
 "use strict";
 
-import { updateServerInfoFile, removeOldCacheLocks } from "./utils.js";
 import { readConfigFile, config } from "./config.js";
 import { printLog } from "./logger.js";
 import { program } from "commander";
 import chokidar from "chokidar";
 import cluster from "cluster";
 import cron from "node-cron";
-import fs from "node:fs";
 import os from "os";
+import {
+  updateServerInfoFile,
+  removeOldCacheLocks,
+  getVersion,
+} from "./utils.js";
 import {
   cancelTaskInWorker,
   startTaskInWorker,
@@ -20,10 +23,7 @@ program
   .description("========== tile-server startup options ==========")
   .usage("tile-server server [options]")
   .option("-d, --data_dir <dir>", "Data directory", "data")
-  .version(
-    JSON.parse(fs.readFileSync("package.json", "utf8")).version,
-    "-v, --version"
-  )
+  .version(getVersion())
   .showHelpAfterError()
   .parse(process.argv);
 

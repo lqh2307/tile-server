@@ -11,6 +11,7 @@ import {
   checkReadyMiddleware,
   restartServer,
   killServer,
+  getVersion,
   findFiles,
 } from "./utils.js";
 
@@ -22,7 +23,7 @@ function serveSwagger() {
           openapi: "3.0.0",
           info: {
             title: "Tile Server API",
-            version: "0.0.1",
+            version: getVersion(),
             description: "API for tile server",
           },
         },

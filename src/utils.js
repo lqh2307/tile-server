@@ -1133,3 +1133,11 @@ export async function cancelTask() {
     process.kill(taskPID, "SIGUSR2");
   }
 }
+
+/**
+ * Get version
+ * @returns {string}
+ */
+export function getVersion() {
+  return JSON.parse(fs.readFileSync("package.json", "utf8")).version;
+}
