@@ -1,22 +1,26 @@
 "use strict";
 
 import { parentPort, workerData } from "node:worker_threads";
-import { runTask, updateTaskInfoFile } from "./task.js";
+import { restartServer } from "./utils.js";
+import { printLog } from "./logger.js";
+import { runTask } from "./task.js";
 
 (async () => {
   try {
-    /* Store start task time */
-    await updateTaskInfoFile({
-      startTask: new Date().toISOString(),
-    });
+    printLog("info", "Starting seed and clean up task...");
 
     /* Run task */
     await runTask(workerData);
 
-    /* Store done task time */
-    await updateTaskInfoFile({
-      doneTask: new Date().toISOString(),
-    });
+    /* Restart server */
+    if (workerData.restartServerAfterTask === true) {
+      printLog(
+        "info",
+        "Completed seed and clean up task. Restarting server..."
+      );
+
+      await restartServer();
+    }
   } catch (error) {
     parentPort.postMessage({
       error: error,

@@ -1,6 +1,5 @@
 "use strict";
 
-import { checkReadyMiddleware, killServer } from "./utils.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_template } from "./serve_template.js";
 import { serve_common } from "./serve_common.js";
@@ -15,16 +14,26 @@ import { config } from "./config.js";
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
+import {
+  checkReadyMiddleware,
+  updateTaskInfoFile,
+  killServer,
+} from "./utils.js";
 
 let currentTaskWorker;
 
 /**
  * Start task in worker
  * @param {object} opts Options
- * @returns {void}
+ * @returns {Promise<void>}
  */
-export function startTaskInWorker(opts) {
+export async function startTaskInWorker(opts) {
   if (currentTaskWorker === undefined) {
+    /* Store start task time */
+    await updateTaskInfoFile({
+      startTime: new Date().toISOString(),
+    });
+
     new Worker("./src/task_worker.js", {
       workerData: opts,
     })
@@ -40,12 +49,20 @@ export function startTaskInWorker(opts) {
 
         currentTaskWorker = undefined;
       })
-      .on("exit", (code) => {
-        if (code !== 0) {
-          printLog("error", `Task worker stopped with exit code: ${code}`);
+      .on("exit", async (code) => {
+        if (code === 0) {
+          currentTaskWorker = undefined;
+        } else if (code === 1) {
+          /* Store cancel task time */
+          await updateTaskInfoFile({
+            cancelTime: new Date().toISOString(),
+          });
+        } else {
+          /* Store failed task time */
+          await updateTaskInfoFile({
+            failedTime: new Date().toISOString(),
+          });
         }
-
-        currentTaskWorker = undefined;
       });
   } else {
     printLog("warning", "A task is already running. Skipping start task...");

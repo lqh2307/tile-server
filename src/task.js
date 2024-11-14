@@ -3,7 +3,6 @@
 import { readCleanUpFile, readSeedFile } from "./config.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
-import path from "node:path";
 import pLimit from "p-limit";
 import {
   updateXYZMetadataFileWithLock,
@@ -15,109 +14,8 @@ import {
   getTileBoundsFromBBox,
   removeEmptyFolders,
   getDataBuffer,
-  restartServer,
 } from "./utils.js";
 import os from "os";
-
-/**
- * Update task-info.json file
- * @param {Object<string,string>} taskInfoAdds Task info object
- * @returns {Promise<void>}
- */
-export async function updateTaskInfoFile(taskInfoAdds) {
-  const filePath = "task-info.json";
-  const tempFilePath = `${filePath}.tmp`;
-
-  try {
-    const taskInfo = JSON.parse(await fsPromise.readFile(filePath, "utf8"));
-
-    await fsPromise.writeFile(
-      tempFilePath,
-      JSON.stringify(
-        {
-          ...taskInfo,
-          ...taskInfoAdds,
-        },
-        null,
-        2
-      ),
-      "utf8"
-    );
-
-    await fsPromise.rename(tempFilePath, filePath);
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      await fsPromise.mkdir(path.dirname(filePath), {
-        recursive: true,
-      });
-
-      await fsPromise.writeFile(
-        filePath,
-        JSON.stringify(taskInfoAdds, null, 2),
-        "utf8"
-      );
-    } else {
-      await fsPromise.rm(tempFilePath, {
-        force: true,
-      });
-
-      throw error;
-    }
-  }
-}
-
-/**
- * Update task-info.json file with lock
- * @param {Object<string,string>} taskInfoAdds Task info object
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-export async function updateTaskInfoFileWithLock(taskInfoAdds, timeout) {
-  const filePath = "task-info.json";
-  const startTime = Date.now();
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      await updateTaskInfoFile(taskInfoAdds);
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        await fsPromise.mkdir(path.dirname(filePath), {
-          recursive: true,
-        });
-
-        await updateTaskInfoFileWithLock(taskInfoAdds, timeout);
-
-        return;
-      } else if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access ${lockFilePath} file`);
-}
 
 /**
  * Run task
@@ -125,8 +23,6 @@ export async function updateTaskInfoFileWithLock(taskInfoAdds, timeout) {
  * @returns {Promise<void>}
  */
 export async function runTask(opts) {
-  printLog("info", "Starting seed and clean up task...");
-
   /* Read cleanup.json and seed.json files */
   printLog(
     "info",
@@ -143,13 +39,6 @@ export async function runTask(opts) {
 
   /* Run seed task */
   await runSeedTask(opts.dataDir, seedData);
-
-  /* Restart server */
-  if (opts.restartServerAfterTask === true) {
-    printLog("info", "Completed seed and clean up task. Restarting server...");
-
-    await restartServer();
-  }
 }
 
 /**

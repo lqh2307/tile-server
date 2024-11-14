@@ -158,12 +158,12 @@ async function startClusterServer(opts) {
         `Schedule run seed and clean up tasks at: "${config.options.taskSchedule}"`
       );
 
-      cron.schedule(config.options.taskSchedule, () => {
+      cron.schedule(config.options.taskSchedule, () =>
         startTaskInWorker({
           dataDir: opts.dataDir,
           restartServerAfterTask: config.options.restartServerAfterTask,
-        });
-      });
+        })
+      );
     }
 
     /* Fork servers */
