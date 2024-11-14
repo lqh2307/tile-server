@@ -50,13 +50,13 @@ export async function startTaskInWorker(opts) {
         currentTaskWorker = undefined;
       })
       .on("exit", async (code) => {
+        currentTaskWorker = undefined;
+
         if (code === 0) {
           /* Store done task time */
           await updateTaskInfoFile({
             lastDone: new Date().toISOString(),
           });
-
-          currentTaskWorker = undefined;
         } else if (code === 1) {
           /* Store cancel task time */
           await updateTaskInfoFile({
