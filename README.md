@@ -48,9 +48,9 @@ rm -rf /var/lib/apt/lists/*;
 ```
 
 ```bash
-wget -q https://nodejs.org/download/release/v22.9.0/node-v22.9.0-linux-x64.tar.xz; \
-mkdir -p /usr/local/lib/nodejs && tar -xJf node-v22.9.0-linux-x64.tar.xz --strip-components=1 -C /usr/local/lib/nodejs; \
-rm -rf node-v22.9.0-linux-x64.tar.xz; \
+wget -q https://nodejs.org/download/release/v22.11.0/node-v22.11.0-linux-x64.tar.xz; \
+mkdir -p /usr/local/lib/nodejs && tar -xJf node-v22.11.0-linux-x64.tar.xz --strip-components=1 -C /usr/local/lib/nodejs; \
+rm -rf node-v22.11.0-linux-x64.tar.xz; \
 echo 'export PATH=/usr/local/lib/nodejs/bin:$PATH' >> ~/.bashrc; \
 source ~/.bashrc;
 ```
