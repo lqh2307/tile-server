@@ -51,6 +51,11 @@ export async function startTaskInWorker(opts) {
       })
       .on("exit", async (code) => {
         if (code === 0) {
+          /* Store done task time */
+          await updateTaskInfoFile({
+            doneTime: new Date().toISOString(),
+          });
+
           currentTaskWorker = undefined;
         } else if (code === 1) {
           /* Store cancel task time */
