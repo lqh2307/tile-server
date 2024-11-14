@@ -2,6 +2,7 @@
 
 import { cancelTask, startTask } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
+import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import express from "express";
 
@@ -37,6 +38,26 @@ function cancelTaskHandler() {
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
       printLog("error", `Failed to cancel task": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
+function getTaskInfoHandler() {
+  return async (req, res, next) => {
+    try {
+      const data = await fsPromise.readFile("task-info.json", "utf8");
+
+      const taskInfo = JSON.parse(data);
+
+      res.header("Content-Type", "application/json");
+
+      return res.status(StatusCodes.OK).send(taskInfo);
+    } catch (error) {
+      printLog("error", `Failed to get task info": ${error}`);
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -106,6 +127,38 @@ export const serve_task = {
      *         description: Internal server error
      */
     app.get("/cancel", cancelTaskHandler());
+
+    /**
+     * @swagger
+     * tags:
+     *   - name: Task
+     *     description: Task related endpoints
+     * /tasks/cancel:
+     *   get:
+     *     tags:
+     *       - Task
+     *     summary: Get task info
+     *     responses:
+     *       200:
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *       400:
+     *         description: Bad request
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/info", getTaskInfoHandler());
 
     return app;
   },

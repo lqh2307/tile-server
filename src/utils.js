@@ -968,7 +968,7 @@ export function deepClone(obj) {
 }
 
 /**
- * Update service-info.json file
+ * Update server-info.json file
  * @param {Object<string,string>} serverInfoAdds Server info object
  * @returns {Promise<void>}
  */
@@ -1015,7 +1015,7 @@ export async function updateServerInfoFile(serverInfoAdds) {
 }
 
 /**
- * Update service-info.json file with lock
+ * Update server-info.json file with lock
  * @param {Object<string,string>} serverInfoAdds Server info object
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
