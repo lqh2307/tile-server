@@ -31,7 +31,7 @@ export async function startTaskInWorker(opts) {
   if (currentTaskWorker === undefined) {
     /* Store start task time */
     await updateTaskInfoFile({
-      startTime: new Date().toISOString(),
+      lastStartTime: new Date().toISOString(),
     });
 
     new Worker("./src/task_worker.js", {
@@ -53,19 +53,19 @@ export async function startTaskInWorker(opts) {
         if (code === 0) {
           /* Store done task time */
           await updateTaskInfoFile({
-            doneTime: new Date().toISOString(),
+            lastDoneTime: new Date().toISOString(),
           });
 
           currentTaskWorker = undefined;
         } else if (code === 1) {
           /* Store cancel task time */
           await updateTaskInfoFile({
-            cancelTime: new Date().toISOString(),
+            lastCancelTime: new Date().toISOString(),
           });
         } else {
           /* Store failed task time */
           await updateTaskInfoFile({
-            failedTime: new Date().toISOString(),
+            lastFailedTime: new Date().toISOString(),
           });
         }
       });
