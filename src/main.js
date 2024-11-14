@@ -6,7 +6,6 @@ import { program } from "commander";
 import chokidar from "chokidar";
 import cluster from "cluster";
 import cron from "node-cron";
-import os from "os";
 import {
   updateServerInfoFile,
   removeOldCacheLocks,
@@ -43,7 +42,7 @@ async function startClusterServer(opts) {
 
   if (cluster.isPrimary === true) {
     /* Setup envs & events */
-    process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length); // For libuv
+    process.env.UV_THREADPOOL_SIZE = config.options.thread; // For libuv
 
     process.on("SIGINT", () => {
       printLog("info", `Received "SIGINT" signal. Killing server...`);

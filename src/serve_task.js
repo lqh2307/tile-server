@@ -49,9 +49,15 @@ function cancelTaskHandler() {
 function getTaskInfoHandler() {
   return async (req, res, next) => {
     try {
-      const data = await fsPromise.readFile("task-info.json", "utf8");
+      let taskInfo = {};
 
-      const taskInfo = JSON.parse(data);
+      try {
+        taskInfo = await fsPromise.readFile("task-info.json", "utf8");
+      } catch (error) {
+        if (error.code !== "ENOENT") {
+          throw error;
+        }
+      }
 
       res.header("Content-Type", "application/json");
 
@@ -133,7 +139,7 @@ export const serve_task = {
      * tags:
      *   - name: Task
      *     description: Task related endpoints
-     * /tasks/cancel:
+     * /tasks/info:
      *   get:
      *     tags:
      *       - Task

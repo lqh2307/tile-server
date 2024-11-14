@@ -1,5 +1,6 @@
 "use strict";
 
+import { downloadStyleFile, removeStyleFile } from "./style.js";
 import { readCleanUpFile, readSeedFile } from "./config.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
@@ -330,6 +331,32 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
   try {
     printLog(
       "info",
+      `Starting clean up ${Object.keys(cleanUpData.styles).length} styles...`
+    );
+
+    for (const id in cleanUpData.styles) {
+      try {
+        await cleanStyleFile(
+          `${dataDir}/caches/styles/${id}`,
+          cleanUpData.styles[id].cleanUpBefore?.time ||
+            cleanUpData.styles[id].cleanUpBefore?.day
+        );
+      } catch (error) {
+        printLog(
+          "error",
+          `Failed to clean up style id "${id}": ${error}. Skipping...`
+        );
+      }
+    }
+
+    printLog("info", "Completed clean up style!");
+  } catch (error) {
+    printLog("error", `Failed to clean up style: ${error}. Exited!`);
+  }
+
+  try {
+    printLog(
+      "info",
       `Starting clean up ${Object.keys(cleanUpData.datas).length} datas...`
     );
 
@@ -369,6 +396,35 @@ async function runSeedTask(dataDir, seedData) {
   try {
     printLog(
       "info",
+      `Starting seed ${Object.keys(seedData.styles).length} styles...`
+    );
+
+    for (const id in seedData.styles) {
+      try {
+        await seedStyleFile(
+          `${dataDir}/caches/styles/${id}`,
+          seedData.styles[id].url,
+          seedData.styles[id].maxTry,
+          seedData.styles[id].timeout,
+          seedData.styles[id].refreshBefore?.time ||
+            seedData.styles[id].refreshBefore?.day
+        );
+      } catch (error) {
+        printLog(
+          "error",
+          `Failed to seed style id "${id}": ${error}. Skipping...`
+        );
+      }
+    }
+
+    printLog("info", "Completed seed style!");
+  } catch (error) {
+    printLog("error", `Failed to seed style: ${error}. Exited!`);
+  }
+
+  try {
+    printLog(
+      "info",
       `Starting seed ${Object.keys(seedData.datas).length} datas...`
     );
 
@@ -399,4 +455,124 @@ async function runSeedTask(dataDir, seedData) {
   } catch (error) {
     printLog("error", `Failed to seed data: ${error}. Exited!`);
   }
+}
+
+/**
+ * Download style.json file
+ * @param {string} outputFolder Folder to store downloaded style
+ * @param {string} styleURL Style URL to download
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
+ * @param {string|number} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which file should be refreshed
+ * @returns {Promise<void>}
+ */
+async function seedStyleFile(
+  outputFolder,
+  styleURL,
+  maxTry = 5,
+  timeout = 60000,
+  refreshBefore
+) {
+  let refreshTimestamp;
+  let log = `Downloading style file with:n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}`;
+
+  if (typeof refreshBefore === "string") {
+    refreshTimestamp = new Date(refreshBefore).getTime();
+
+    log += `\n\tBefore: ${refreshBefore}`;
+  } else if (typeof refreshBefore === "number") {
+    const now = new Date();
+
+    refreshTimestamp = now.setDate(now.getDate() - refreshBefore);
+
+    log += `\n\tOld than: ${refreshBefore} days`;
+  }
+
+  printLog("info", log);
+
+  // Download file
+  const filePath = `${outputFolder}/style.json`;
+
+  try {
+    if (refreshTimestamp !== undefined) {
+      const stats = await fsPromise.stat(filePath);
+
+      if (stats.ctimeMs === undefined || stats.ctimeMs < refreshTimestamp) {
+        // Check timestamp
+        await downloadStyleFile(styleURL, filePath, maxTry, timeout);
+      }
+    } else {
+      await downloadStyleFile(styleURL, filePath, maxTry, timeout);
+    }
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      await downloadStyleFile(styleURL, filePath, maxTry, timeout);
+    } else {
+      printLog("error", `Failed to seed style file "${filePath}": ${error}`);
+    }
+  }
+
+  // Remove folder if empty
+  await removeEmptyFolders(outputFolder);
+}
+
+/**
+ * Remove style.json file
+ * @param {string} outputFolder Folder to store downloaded style
+ * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
+ * @returns {Promise<void>}
+ */
+async function cleanStyleFile(outputFolder, cleanUpBefore) {
+  let cleanUpTimestamp;
+  let log = `Removing style file with:\n\tMax tries: ${maxTry}`;
+
+  if (typeof cleanUpBefore === "string") {
+    cleanUpTimestamp = new Date(cleanUpBefore).getTime();
+
+    log += `\n\tBefore: ${cleanUpBefore}`;
+  } else if (typeof cleanUpBefore === "number") {
+    const now = new Date();
+
+    cleanUpTimestamp = now.setDate(now.getDate() - cleanUpBefore);
+
+    log += `\n\tOld than: ${cleanUpBefore} days`;
+  }
+
+  printLog("info", log);
+
+  // Remove file
+  const filePath = `${outputFolder}/style.json`;
+
+  try {
+    if (cleanUpTimestamp !== undefined) {
+      const stats = await fsPromise.stat(filePath);
+
+      // Check timestamp
+      if (stats.ctimeMs === undefined || stats.ctimeMs < cleanUpTimestamp) {
+        await removeStyleFile(
+          filePath,
+          maxTry,
+          300000 // 5 mins
+        );
+      }
+    } else {
+      await removeStyleFile(
+        filePath,
+        maxTry,
+        300000 // 5 mins
+      );
+    }
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return;
+    } else {
+      printLog(
+        "error",
+        `Failed to clean up style file "${filePath}": ${error}`
+      );
+    }
+  }
+
+  // Remove folder if empty
+  await removeEmptyFolders(outputFolder);
 }

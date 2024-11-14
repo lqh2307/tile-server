@@ -104,7 +104,8 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
     "restartServerAfterTask": true,
     "killInterval": 0,
     "restartInterval": 0,
-    "process": 1
+    "process": 1,
+    "thread": 8
   },
   "styles": {
     "vietnam": {

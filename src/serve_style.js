@@ -1,153 +1,11 @@
 "use strict";
 
-import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
-import { getRequestHost, deepClone, getDataJSON } from "./utils.js";
+import { getRequestHost, getStyle, isExistFile } from "./utils.js";
+import { downloadStyleFile, validateStyle } from "./style.js";
 import { StatusCodes } from "http-status-codes";
-import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
-
-/**
- * Validate style
- * @param {object} styleJSON Style JSON
- * @returns {Promise<void>}
- */
-async function validateStyle(styleJSON) {
-  /* Validate style */
-  const validationErrors = validateStyleMin(styleJSON);
-  if (validationErrors.length > 0) {
-    throw new Error(
-      validationErrors
-        .map((validationError) => `\n\t${validationError.message}`)
-        .join()
-    );
-  }
-
-  /* Validate fonts */
-  if (styleJSON.glyphs !== undefined) {
-    if (
-      styleJSON.glyphs.startsWith("fonts://") === false &&
-      styleJSON.glyphs.startsWith("https://") === false &&
-      styleJSON.glyphs.startsWith("http://") === false
-    ) {
-      throw new Error("Invalid fonts url");
-    }
-  }
-
-  /* Validate sprite */
-  if (styleJSON.sprite !== undefined) {
-    if (styleJSON.sprite.startsWith("sprites://") === true) {
-      const spriteID = styleJSON.sprite.slice(
-        10,
-        styleJSON.sprite.lastIndexOf("/")
-      );
-
-      if (config.repo.sprites[spriteID] === undefined) {
-        throw new Error(`Sprite "${spriteID}" is not found`);
-      }
-    } else if (
-      styleJSON.sprite.startsWith("https://") === false &&
-      styleJSON.sprite.startsWith("http://") === false
-    ) {
-      throw new Error("Invalid sprite url");
-    }
-  }
-
-  /* Validate sources */
-  await Promise.all(
-    Object.keys(styleJSON.sources).map(async (id) => {
-      const source = styleJSON.sources[id];
-
-      if (source.url !== undefined) {
-        if (
-          source.url.startsWith("pmtiles://") === true ||
-          source.url.startsWith("mbtiles://") === true ||
-          source.url.startsWith("xyz://") === true
-        ) {
-          const queryIndex = source.url.lastIndexOf("?");
-          const sourceID =
-            queryIndex === -1
-              ? source.url.split("/")[2]
-              : source.url.split("/")[2].slice(0, queryIndex);
-
-          if (config.repo.datas[sourceID] === undefined) {
-            throw new Error(
-              `Source "${id}" is not found data source "${sourceID}"`
-            );
-          }
-        } else if (
-          source.url.startsWith("https://") === false &&
-          source.url.startsWith("http://") === false
-        ) {
-          throw new Error(`Source "${id}" is invalid data url "${url}"`);
-        }
-      }
-
-      if (source.urls !== undefined) {
-        if (source.urls.length === 0) {
-          throw new Error(`Source "${id}" is invalid data urls`);
-        }
-
-        source.urls.forEach((url) => {
-          if (
-            url.startsWith("pmtiles://") === true ||
-            url.startsWith("mbtiles://") === true ||
-            url.startsWith("xyz://") === true
-          ) {
-            const queryIndex = url.lastIndexOf("?");
-            const sourceID =
-              queryIndex === -1
-                ? url.split("/")[2]
-                : url.split("/")[2].slice(0, queryIndex);
-
-            if (config.repo.datas[sourceID] === undefined) {
-              throw new Error(
-                `Source "${id}" is not found data source "${sourceID}"`
-              );
-            }
-          } else if (
-            url.startsWith("https://") === false &&
-            url.startsWith("http://") === false
-          ) {
-            throw new Error(`Source "${id}" is invalid data url "${url}"`);
-          }
-        });
-      }
-
-      if (source.tiles !== undefined) {
-        if (source.tiles.length === 0) {
-          throw new Error(`Source "${id}" is invalid tile urls`);
-        }
-
-        source.tiles.forEach((tile) => {
-          if (
-            tile.startsWith("pmtiles://") === true ||
-            tile.startsWith("mbtiles://") === true ||
-            tile.startsWith("xyz://") === true
-          ) {
-            const queryIndex = tile.lastIndexOf("?");
-            const sourceID =
-              queryIndex === -1
-                ? tile.split("/")[2]
-                : tile.split("/")[2].slice(0, queryIndex);
-
-            if (config.repo.datas[sourceID] === undefined) {
-              throw new Error(
-                `Source "${id}" is not found data source "${sourceID}"`
-              );
-            }
-          } else if (
-            tile.startsWith("https://") === false &&
-            tile.startsWith("http://") === false
-          ) {
-            throw new Error(`Source "${id}" is invalid tile url "${url}"`);
-          }
-        });
-      }
-    })
-  );
-}
 
 function getStyleHandler() {
   return async (req, res, next) => {
@@ -159,8 +17,8 @@ function getStyleHandler() {
     }
 
     try {
-      /* Clone style JSON */
-      const styleJSON = deepClone(item.styleJSON);
+      /* Get style JSON */
+      const styleJSON = await getStyle(item.path);
 
       /* Fix sprite url */
       if (styleJSON.sprite !== undefined) {
@@ -277,9 +135,12 @@ function getStylesListHandler() {
     try {
       const result = await Promise.all(
         Object.keys(config.repo.styles).map(async (id) => {
+          const item = config.repo.styles[id];
+          const styleJSON = await getStyle(item.path);
+
           return {
             id: id,
-            name: config.repo.styles[id].styleJSON.name || "Unknown",
+            name: styleJSON.name || "Unknown",
             url: `${getRequestHost(req)}styles/${id}/style.json`,
           };
         })
@@ -392,26 +253,25 @@ export const serve_style = {
             item.style.startsWith("https://") === true ||
             item.style.startsWith("http://") === true
           ) {
-            styleInfo.path = item.style;
+            styleInfo.path = `${config.paths.styles}/${id}/style.json`;
 
-            /* Get style from URL */
-            const response = await getDataJSON(
-              styleInfo.path,
-              60000 // 1 mins
-            );
-
-            styleInfo.styleJSON = response.data;
+            if ((await isExistFile(styleInfo.path)) === false) {
+              await downloadStyleFile(
+                item.style,
+                styleInfo.path,
+                5,
+                300000 // 5 mins
+              );
+            }
           } else {
             styleInfo.path = `${config.paths.styles}/${item.style}`;
-
-            /* Read style.json file */
-            const styleData = await fsPromise.readFile(styleInfo.path, "utf8");
-
-            styleInfo.styleJSON = JSON.parse(styleData);
           }
 
+          /* Read style.json file */
+          const styleJSON = await getStyle(styleInfo.path);
+
           /* Validate style */
-          await validateStyle(styleInfo.styleJSON);
+          await validateStyle(styleJSON);
 
           /* Add to repo */
           config.repo.styles[id] = styleInfo;

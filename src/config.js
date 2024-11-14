@@ -2,6 +2,7 @@
 
 import { validateJSON } from "./utils.js";
 import fsPromise from "node:fs/promises";
+import os from "os";
 
 let config;
 
@@ -95,32 +96,15 @@ async function readConfigFile(dataDir, isValidate) {
                 type: "integer",
                 minimum: 0,
               },
+              thread: {
+                type: "integer",
+                minimum: 1,
+              },
               process: {
                 type: "integer",
                 minimum: 1,
               },
             },
-            required: [
-              "listenPort",
-              "killEndpoint",
-              "restartEndpoint",
-              "configEndpoint",
-              "frontPage",
-              "serveWMTS",
-              "serveRendered",
-              "maxScaleRender",
-              "renderedCompression",
-              "serveSwagger",
-              "createMetadataIndex",
-              "createTilesIndex",
-              "restartServerAfterTask",
-              "killInterval",
-              "restartInterval",
-              "process",
-              "loggerFormat",
-              "minPoolSize",
-              "maxPoolSize",
-            ],
             additionalProperties: true,
           },
           styles: {
@@ -217,6 +201,32 @@ async function readConfigFile(dataDir, isValidate) {
     },
   };
 
+  config.options = {
+    listenPort: config.options.listenPort ?? 8080,
+    killEndpoint: config.options.killEndpoint ?? true,
+    restartEndpoint: config.options.restartEndpoint ?? true,
+    configEndpoint: config.options.configEndpoint ?? true,
+    frontPage: config.options.frontPage ?? true,
+    serveWMTS: config.options.serveWMTS ?? true,
+    serveRendered: config.options.serveRendered ?? true,
+    maxScaleRender: config.options.maxScaleRender ?? 1,
+    renderedCompression: config.options.renderedCompression ?? 1,
+    serveSwagger: config.options.serveSwagger ?? true,
+    createMetadataIndex: config.options.createMetadataIndex, // undefined
+    createTilesIndex: config.options.createTilesIndex, // undefined
+    loggerFormat:
+      config.options.loggerFormat ??
+      ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
+    minPoolSize: config.options.minPoolSize ?? os.cpus().length,
+    maxPoolSize: config.options.maxPoolSize ?? os.cpus().length * 2,
+    taskSchedule: config.options.taskSchedule, // undefined
+    restartServerAfterTask: config.options.restartServerAfterTask ?? true,
+    killInterval: config.options.killInterval, // undefined
+    restartInterval: config.options.restartInterval, // undefined
+    process: config.options.process ?? 1,
+    thread: config.options.thread ?? os.cpus().length,
+  };
+
   config.repo = Object.fromEntries(
     ["styles", "rendereds", "datas", "fonts", "sprites"].map((type) => [
       type,
@@ -266,16 +276,17 @@ async function readSeedFile(dataDir, isValidate) {
                       type: "integer",
                       minimum: 0,
                     },
-                    md5: {
-                      type: "boolean",
-                    },
                   },
-                  anyOf: [
-                    { required: ["time"] },
-                    { required: ["day"] },
-                    { required: ["md5"] },
-                  ],
+                  anyOf: [{ required: ["time"] }, { required: ["day"] }],
                   additionalProperties: true,
+                },
+                timeout: {
+                  type: "integer",
+                  minimum: 0,
+                },
+                maxTry: {
+                  type: "integer",
+                  minimum: 1,
                 },
               },
               required: ["url"],
@@ -468,16 +479,17 @@ async function readSeedFile(dataDir, isValidate) {
                       type: "integer",
                       minimum: 0,
                     },
-                    md5: {
-                      type: "boolean",
-                    },
                   },
-                  anyOf: [
-                    { required: ["time"] },
-                    { required: ["day"] },
-                    { required: ["md5"] },
-                  ],
+                  anyOf: [{ required: ["time"] }, { required: ["day"] }],
                   additionalProperties: true,
+                },
+                timeout: {
+                  type: "integer",
+                  minimum: 0,
+                },
+                maxTry: {
+                  type: "integer",
+                  minimum: 1,
                 },
               },
               required: ["url"],
@@ -504,16 +516,17 @@ async function readSeedFile(dataDir, isValidate) {
                       type: "integer",
                       minimum: 0,
                     },
-                    md5: {
-                      type: "boolean",
-                    },
                   },
-                  anyOf: [
-                    { required: ["time"] },
-                    { required: ["day"] },
-                    { required: ["md5"] },
-                  ],
+                  anyOf: [{ required: ["time"] }, { required: ["day"] }],
                   additionalProperties: true,
+                },
+                timeout: {
+                  type: "integer",
+                  minimum: 0,
+                },
+                maxTry: {
+                  type: "integer",
+                  minimum: 1,
                 },
               },
               required: ["url"],
