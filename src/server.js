@@ -53,19 +53,19 @@ export async function startTaskInWorker(opts) {
         if (code === 0) {
           /* Store done task time */
           await updateTaskInfoFile({
-            lastDoneTime: new Date().toISOString(),
+            lastDone: new Date().toISOString(),
           });
 
           currentTaskWorker = undefined;
         } else if (code === 1) {
           /* Store cancel task time */
           await updateTaskInfoFile({
-            lastCancelTime: new Date().toISOString(),
+            lastCancel: new Date().toISOString(),
           });
         } else {
           /* Store failed task time */
           await updateTaskInfoFile({
-            lastFailedTime: new Date().toISOString(),
+            lastFailed: new Date().toISOString(),
           });
         }
       });
