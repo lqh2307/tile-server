@@ -201,6 +201,13 @@ export const serve_rendered = {
        *           enum: [256, 512]
        *         required: false
        *         description: Tile size (256 or 512)
+       *       - in: query
+       *         name: scheme
+       *         schema:
+       *           type: string
+       *           enum: [xyz, tms]
+       *         required: false
+       *         description: Use xyz or tms scheme
        *     responses:
        *       200:
        *         description: List of all style rendereds
@@ -245,6 +252,14 @@ export const serve_rendered = {
        *     tags:
        *       - Rendered
        *     summary: Get all rendered tileJSONs
+       *     parameters:
+       *       - in: query
+       *         name: scheme
+       *         schema:
+       *           type: string
+       *           enum: [xyz, tms]
+       *         required: false
+       *         description: Use xyz or tms scheme
        *     responses:
        *       200:
        *         description: List of all rendered tileJSONs

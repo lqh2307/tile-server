@@ -56,102 +56,106 @@ function getStyleHandler() {
         }
       }
 
-      /* Fix sprite url */
-      if (styleJSON.sprite !== undefined) {
-        if (styleJSON.sprite.startsWith("sprites://") === true) {
-          styleJSON.sprite = styleJSON.sprite.replaceAll(
-            "sprites://",
-            `${getRequestHost(req)}sprites/`
-          );
+      if (req.query.raw === "true") {
+        /* Fix sprite url */
+        if (styleJSON.sprite !== undefined) {
+          if (styleJSON.sprite.startsWith("sprites://") === true) {
+            styleJSON.sprite = styleJSON.sprite.replaceAll(
+              "sprites://",
+              `${getRequestHost(req)}sprites/`
+            );
+          }
         }
-      }
 
-      /* Fix fonts url */
-      if (styleJSON.glyphs !== undefined) {
-        if (styleJSON.glyphs.startsWith("fonts://") === true) {
-          styleJSON.glyphs = styleJSON.glyphs.replaceAll(
-            "fonts://",
-            `${getRequestHost(req)}fonts/`
-          );
+        /* Fix fonts url */
+        if (styleJSON.glyphs !== undefined) {
+          if (styleJSON.glyphs.startsWith("fonts://") === true) {
+            styleJSON.glyphs = styleJSON.glyphs.replaceAll(
+              "fonts://",
+              `${getRequestHost(req)}fonts/`
+            );
+          }
         }
-      }
 
-      /* Fix source urls */
-      await Promise.all(
-        Object.keys(styleJSON.sources).map(async (id) => {
-          const source = styleJSON.sources[id];
+        /* Fix source urls */
+        await Promise.all(
+          Object.keys(styleJSON.sources).map(async (id) => {
+            const source = styleJSON.sources[id];
 
-          if (source.url !== undefined) {
-            if (
-              source.url.startsWith("mbtiles://") === true ||
-              source.url.startsWith("pmtiles://") === true ||
-              source.url.startsWith("xyz://") === true
-            ) {
-              const queryIndex = source.url.lastIndexOf("?");
-              const sourceID =
-                queryIndex === -1
-                  ? source.url.split("/")[2]
-                  : source.url.split("/")[2].slice(0, queryIndex);
+            if (source.url !== undefined) {
+              if (
+                source.url.startsWith("mbtiles://") === true ||
+                source.url.startsWith("pmtiles://") === true ||
+                source.url.startsWith("xyz://") === true
+              ) {
+                const queryIndex = source.url.lastIndexOf("?");
+                const sourceID =
+                  queryIndex === -1
+                    ? source.url.split("/")[2]
+                    : source.url.split("/")[2].slice(0, queryIndex);
 
-              source.url = `${getRequestHost(req)}datas/${sourceID}.json${
-                queryIndex === -1 ? "" : source.url.slice(queryIndex)
-              }`;
+                source.url = `${getRequestHost(req)}datas/${sourceID}.json${
+                  queryIndex === -1 ? "" : source.url.slice(queryIndex)
+                }`;
+              }
             }
-          }
 
-          if (source.urls !== undefined) {
-            const urls = new Set(
-              source.urls.map((url) => {
-                if (
-                  url.startsWith("pmtiles://") === true ||
-                  url.startsWith("mbtiles://") === true ||
-                  url.startsWith("xyz://") === true
-                ) {
-                  const queryIndex = url.lastIndexOf("?");
-                  const sourceID =
-                    queryIndex === -1
-                      ? url.split("/")[2]
-                      : url.split("/")[2].slice(0, queryIndex);
+            if (source.urls !== undefined) {
+              const urls = new Set(
+                source.urls.map((url) => {
+                  if (
+                    url.startsWith("pmtiles://") === true ||
+                    url.startsWith("mbtiles://") === true ||
+                    url.startsWith("xyz://") === true
+                  ) {
+                    const queryIndex = url.lastIndexOf("?");
+                    const sourceID =
+                      queryIndex === -1
+                        ? url.split("/")[2]
+                        : url.split("/")[2].slice(0, queryIndex);
 
-                  url = `${getRequestHost(req)}datas/${sourceID}.json${
-                    queryIndex === -1 ? "" : url.slice(queryIndex)
-                  }`;
-                }
+                    url = `${getRequestHost(req)}datas/${sourceID}.json${
+                      queryIndex === -1 ? "" : url.slice(queryIndex)
+                    }`;
+                  }
 
-                return url;
-              })
-            );
+                  return url;
+                })
+              );
 
-            source.urls = Array.from(urls);
-          }
+              source.urls = Array.from(urls);
+            }
 
-          if (source.tiles !== undefined) {
-            const tiles = new Set(
-              source.tiles.map((tile) => {
-                if (
-                  tile.startsWith("pmtiles://") === true ||
-                  tile.startsWith("mbtiles://") === true ||
-                  tile.startsWith("xyz://") === true
-                ) {
-                  const queryIndex = tile.lastIndexOf("?");
-                  const sourceID =
-                    queryIndex === -1
-                      ? tile.split("/")[2]
-                      : tile.split("/")[2].slice(0, queryIndex);
+            if (source.tiles !== undefined) {
+              const tiles = new Set(
+                source.tiles.map((tile) => {
+                  if (
+                    tile.startsWith("pmtiles://") === true ||
+                    tile.startsWith("mbtiles://") === true ||
+                    tile.startsWith("xyz://") === true
+                  ) {
+                    const queryIndex = tile.lastIndexOf("?");
+                    const sourceID =
+                      queryIndex === -1
+                        ? tile.split("/")[2]
+                        : tile.split("/")[2].slice(0, queryIndex);
 
-                  tile = `${getRequestHost(req)}datas/${sourceID}/{z}/{x}/{y}.${
-                    config.repo.datas[sourceID].tileJSON.format
-                  }${queryIndex === -1 ? "" : tile.slice(queryIndex)}`;
-                }
+                    tile = `${getRequestHost(
+                      req
+                    )}datas/${sourceID}/{z}/{x}/{y}.${
+                      config.repo.datas[sourceID].tileJSON.format
+                    }${queryIndex === -1 ? "" : tile.slice(queryIndex)}`;
+                  }
 
-                return tile;
-              })
-            );
+                  return tile;
+                })
+              );
 
-            source.tiles = Array.from(tiles);
-          }
-        })
-      );
+              source.tiles = Array.from(tiles);
+            }
+          })
+        );
+      }
 
       res.header("Content-Type", "application/json");
 
@@ -251,6 +255,12 @@ export const serve_style = {
      *           type: string
      *         required: true
      *         description: ID of the style
+     *       - in: query
+     *         name: raw
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Use raw
      *     responses:
      *       200:
      *         description: Style
