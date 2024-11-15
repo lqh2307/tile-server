@@ -1,11 +1,16 @@
 "use strict";
 
 import { getRequestHost, getStyle, isExistFile } from "./utils.js";
-import { downloadStyleFile, validateStyle } from "./style.js";
 import { StatusCodes } from "http-status-codes";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
+import {
+  getStyleJSONFromURL,
+  downloadStyleFile,
+  cacheStyleFile,
+  validateStyle,
+} from "./style.js";
 
 function getStyleHandler() {
   return async (req, res, next) => {
@@ -16,9 +21,39 @@ function getStyleHandler() {
       return res.status(StatusCodes.NOT_FOUND).send("Style is not found");
     }
 
+    let styleJSON;
+
     try {
       /* Get style JSON */
-      const styleJSON = await getStyle(item.path);
+      try {
+        styleJSON = await getStyle(item.path);
+      } catch (error) {
+        if (item.sourceURL !== undefined) {
+          printLog(
+            "info",
+            `Getting style "${id}" - From "${item.sourceURL}"...`
+          );
+
+          /* Get style */
+          styleJSON = await getStyleJSONFromURL(
+            url,
+            60000 // 1 mins
+          );
+
+          /* Cache */
+          if (item.storeCache === true) {
+            cacheStyleFile(item.path, JSON.stringify(styleJSON, null, 2)).catch(
+              (error) =>
+                printLog(
+                  "error",
+                  `Failed to cache style "${id}" - From "${item.sourceURL}": ${error}`
+                )
+            );
+          }
+        } else {
+          throw error;
+        }
+      }
 
       /* Fix sprite url */
       if (styleJSON.sprite !== undefined) {
@@ -264,7 +299,24 @@ export const serve_style = {
               );
             }
           } else {
-            styleInfo.path = `${config.paths.styles}/${item.style}`;
+            let cacheSource;
+
+            if (item.cache !== undefined) {
+              styleInfo.path = `${config.paths.caches.styles}/${item.style}/style.json`;
+
+              cacheSource = seed.styles[item.style];
+
+              if (cacheSource === undefined) {
+                throw new Error(`Cache style id "${item.style}" is not valid`);
+              }
+
+              if (item.cache.forward === true) {
+                styleInfo.sourceURL = cacheSource.url;
+                styleInfo.storeCache = item.cache.store;
+              }
+            } else {
+              styleInfo.path = `${config.paths.styles}/${item.style}`;
+            }
           }
 
           /* Read style.json file */

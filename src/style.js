@@ -291,6 +291,47 @@ export async function cacheStyleFile(filePath, data) {
 }
 
 /**
+ * Get style JSON from a URL
+ * @param {string} url The URL to fetch data from
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<object>}
+ */
+export async function getStyleJSONFromURL(url, timeout) {
+  try {
+    const response = await axios.get(url, {
+      timeout: timeout,
+      responseType: "json",
+      headers: {
+        "User-Agent": "Tile Server",
+      },
+      httpAgent: new http.Agent({
+        keepAlive: false,
+      }),
+      httpsAgent: new https.Agent({
+        keepAlive: false,
+      }),
+    });
+
+    return response;
+  } catch (error) {
+    if (error.response) {
+      if (
+        error.response.status === StatusCodes.NOT_FOUND ||
+        error.response.status === StatusCodes.NO_CONTENT
+      ) {
+        throw new Error("Style does not exist");
+      }
+
+      throw new Error(
+        `Failed to get style from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
+      );
+    }
+
+    throw new Error(`Failed to get style from "${url}": ${error}`);
+  }
+}
+
+/**
  * Validate style
  * @param {object} styleJSON Style JSON
  * @returns {Promise<void>}

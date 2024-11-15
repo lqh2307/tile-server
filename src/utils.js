@@ -158,40 +158,6 @@ export async function getDataBuffer(url, timeout) {
 }
 
 /**
- * Get data JSON from a URL
- * @param {string} url The URL to fetch data from
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<object>}
- */
-export async function getDataJSON(url, timeout) {
-  try {
-    const response = await axios.get(url, {
-      timeout: timeout,
-      responseType: "json",
-      headers: {
-        "User-Agent": "Tile Server",
-      },
-      httpAgent: new http.Agent({
-        keepAlive: false,
-      }),
-      httpsAgent: new https.Agent({
-        keepAlive: false,
-      }),
-    });
-
-    return response;
-  } catch (error) {
-    if (error.response) {
-      throw new Error(
-        `Status code: ${error.response.status} - ${error.response.statusText}`
-      );
-    }
-
-    throw error;
-  }
-}
-
-/**
  * Check ready middleware
  * @returns {void}
  */
