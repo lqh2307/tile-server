@@ -231,10 +231,8 @@ function serveInfoHandler() {
           result.style.size += stat.size;
         } catch (error) {
           if (
-            !(
-              item.cache !== undefined &&
-              error.message === "Style does not exist"
-            )
+            item.cache === undefined ||
+            error.message !== "Style does not exist"
           ) {
             throw error;
           }

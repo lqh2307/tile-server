@@ -56,7 +56,7 @@ function getStyleHandler() {
         }
       }
 
-      if (req.query.raw === "true") {
+      if (req.query.raw === undefined || req.query.raw !== "true") {
         /* Fix sprite url */
         if (styleJSON.sprite !== undefined) {
           if (styleJSON.sprite.startsWith("sprites://") === true) {
