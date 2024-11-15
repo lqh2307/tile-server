@@ -225,14 +225,11 @@ function serveInfoHandler() {
       for (const id in config.repo.styles) {
         const item = config.repo.styles[id];
 
-        if (
-          item.path.startsWith("https://") !== true &&
-          item.path.startsWith("http://") !== true
-        ) {
+        try {
           const stat = await fsPromise.stat(item.path);
 
           result.style.size += stat.size;
-        }
+        } catch (error) {}
 
         result.style.count += 1;
       }

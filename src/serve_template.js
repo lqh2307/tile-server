@@ -1,10 +1,15 @@
 "use strict";
 
-import { getXYZFromLonLatZ, compileTemplate, getRequestHost } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
+import {
+  getXYZFromLonLatZ,
+  compileTemplate,
+  getRequestHost,
+  getStyle,
+} from "./utils.js";
 
 function serveFrontPageHandler() {
   return async (req, res, next) => {
@@ -44,13 +49,13 @@ function serveFrontPageHandler() {
         } else {
           return Object.keys(config.repo.styles).map(async (id) => {
             const {
-              name,
-              center = [0, 0],
+              name = "Unknown",
               zoom = 0,
-            } = config.repo.styles[id].styleJSON;
+              center = [0, 0],
+            } = await getStyle(config.repo.styles[id].path);
 
             styles[id] = {
-              name: name || "Unknown",
+              name: name,
               viewer_hash: `#${zoom}/${center[1]}/${center[0]}`,
               thumbnail: "/images/placeholder.png",
             };
@@ -131,10 +136,13 @@ function serveStyleHandler() {
       return res.status(StatusCodes.NOT_FOUND).send("Style is not found");
     }
 
+    /* Get style JSON */
+    const { name = "Unknown" } = await getStyle(item.path);
+
     try {
       const compiled = await compileTemplate("viewer", {
         id: id,
-        name: item.styleJSON.name || "Unknown",
+        name: name,
       });
 
       return res.status(StatusCodes.OK).send(compiled);
