@@ -536,7 +536,7 @@ export const serve_rendered = {
             const item = config.repo.styles[id];
 
             /* Get style JSON */
-            const styleJSON = getStyle(item.path);
+            const styleJSON = await getStyle(item.path);
 
             const rendered = {
               tileJSON: createNewTileJSON({
