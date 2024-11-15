@@ -75,7 +75,6 @@ async function seedXYZTileDataFiles(
       total + (tile.x[1] - tile.x[0] + 1) * (tile.y[1] - tile.y[0] + 1),
     0
   );
-  let completedTasks = 0;
   let refreshTimestamp;
   let log = `Downloading ${totalTasks} tile data files with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
@@ -100,45 +99,32 @@ async function seedXYZTileDataFiles(
   printLog("info", log);
 
   // Download files
-  const hashs = {};
   const semaphore = new Sema(concurrency);
+  const hashs = {};
 
-  await new Promise((resolve) => {
-    for (const z in tilesSummary) {
-      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-          semaphore.acquire().then(async () => {
-            const tileName = `${z}/${x}/${y}`;
-            const filePath = `${outputFolder}/${tileName}.${metadata.format}`;
-            const url = tileURL.replaceAll("{z}/{x}/{y}", tileName);
+  for (const z in tilesSummary) {
+    for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+      for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+        await semaphore.acquire();
 
-            try {
-              if (refreshTimestamp !== undefined) {
-                const stats = await fsPromise.stat(filePath);
+        (async () => {
+          const tileName = `${z}/${x}/${y}`;
+          const filePath = `${outputFolder}/${tileName}.${metadata.format}`;
+          const url = tileURL.replaceAll("{z}/{x}/{y}", tileName);
 
-                if (refreshTimestamp === true) {
-                  const md5URL = tileURL.replaceAll(
-                    "{z}/{x}/{y}",
-                    `md5/${tileName}`
-                  );
+          try {
+            if (refreshTimestamp !== undefined) {
+              const stats = await fsPromise.stat(filePath);
 
-                  const response = await getDataBuffer(md5URL, timeout);
+              if (refreshTimestamp === true) {
+                const md5URL = tileURL.replaceAll(
+                  "{z}/{x}/{y}",
+                  `md5/${tileName}`
+                );
 
-                  if (response.headers["Etag"] !== hashs[tileName]) {
-                    await downloadXYZTileDataFile(
-                      url,
-                      outputFolder,
-                      tileName,
-                      metadata.format,
-                      maxTry,
-                      timeout,
-                      hashs
-                    );
-                  }
-                } else if (
-                  stats.ctimeMs === undefined ||
-                  stats.ctimeMs < refreshTimestamp
-                ) {
+                const response = await getDataBuffer(md5URL, timeout);
+
+                if (response.headers["Etag"] !== hashs[tileName]) {
                   await downloadXYZTileDataFile(
                     url,
                     outputFolder,
@@ -149,7 +135,10 @@ async function seedXYZTileDataFiles(
                     hashs
                   );
                 }
-              } else {
+              } else if (
+                stats.ctimeMs === undefined ||
+                stats.ctimeMs < refreshTimestamp
+              ) {
                 await downloadXYZTileDataFile(
                   url,
                   outputFolder,
@@ -160,39 +149,43 @@ async function seedXYZTileDataFiles(
                   hashs
                 );
               }
-            } catch (error) {
-              if (error.code === "ENOENT") {
-                await downloadXYZTileDataFile(
-                  url,
-                  outputFolder,
-                  tileName,
-                  metadata.format,
-                  maxTry,
-                  timeout,
-                  hashs
-                );
-              } else {
-                printLog(
-                  "error",
-                  `Failed to seed tile data file "${tileName}": ${error}`
-                );
-              }
-            } finally {
-              completedTasks++;
-
-              if (completedTasks === totalTasks) {
-                semaphore.release();
-
-                resolve();
-              } else {
-                semaphore.release();
-              }
+            } else {
+              await downloadXYZTileDataFile(
+                url,
+                outputFolder,
+                tileName,
+                metadata.format,
+                maxTry,
+                timeout,
+                hashs
+              );
             }
-          });
-        }
+          } catch (error) {
+            if (error.code === "ENOENT") {
+              await downloadXYZTileDataFile(
+                url,
+                outputFolder,
+                tileName,
+                metadata.format,
+                maxTry,
+                timeout,
+                hashs
+              );
+            } else {
+              printLog(
+                "error",
+                `Failed to seed tile data file "${tileName}": ${error}`
+              );
+            }
+          } finally {
+            semaphore.release();
+          }
+        })();
       }
     }
-  });
+  }
+
+  await semaphore.drain();
 
   // Update metadata.json file
   const metadataFilePath = `${outputFolder}/metadata.json`;
