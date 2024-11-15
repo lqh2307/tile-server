@@ -547,11 +547,11 @@ export const serve_rendered = {
             };
 
             /* Fix center */
-            if (item.styleJSON.center?.length >= 2 && item.styleJSON.zoom) {
+            if (styleJSON.center?.length >= 2 && styleJSON.zoom) {
               rendered.tileJSON.center = [
-                item.styleJSON.center[0],
-                item.styleJSON.center[1],
-                Math.floor(item.styleJSON.zoom),
+                styleJSON.center[0],
+                styleJSON.center[1],
+                Math.floor(styleJSON.zoom),
               ];
             }
 
