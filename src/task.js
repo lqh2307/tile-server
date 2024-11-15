@@ -273,17 +273,28 @@ async function cleanXYZTileDataFiles(
       for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
         await semaphore.acquire();
 
-        const tileName = `${z}/${x}/${y}`;
-        const filePath = `${outputFolder}/${tileName}.${format}`;
+        (async () => {
+          const tileName = `${z}/${x}/${y}`;
+          const filePath = `${outputFolder}/${tileName}.${format}`;
 
-        try {
-          if (cleanUpTimestamp !== undefined) {
-            const stats = await fsPromise.stat(filePath);
+          try {
+            if (cleanUpTimestamp !== undefined) {
+              const stats = await fsPromise.stat(filePath);
 
-            if (
-              stats.ctimeMs === undefined ||
-              stats.ctimeMs < cleanUpTimestamp
-            ) {
+              if (
+                stats.ctimeMs === undefined ||
+                stats.ctimeMs < cleanUpTimestamp
+              ) {
+                await removeXYZTileDataFile(
+                  outputFolder,
+                  tileName,
+                  format,
+                  maxTry,
+                  300000, // 5 mins
+                  hashs
+                );
+              }
+            } else {
               await removeXYZTileDataFile(
                 outputFolder,
                 tileName,
@@ -293,29 +304,22 @@ async function cleanXYZTileDataFiles(
                 hashs
               );
             }
-          } else {
-            await removeXYZTileDataFile(
-              outputFolder,
-              tileName,
-              format,
-              maxTry,
-              300000, // 5 mins
-              hashs
-            );
+          } catch (error) {
+            if (error.code !== "ENOENT") {
+              printLog(
+                "error",
+                `Failed to clean up tile data file "${tileName}": ${error}`
+              );
+            }
+          } finally {
+            semaphore.release();
           }
-        } catch (error) {
-          if (error.code !== "ENOENT") {
-            printLog(
-              "error",
-              `Failed to clean up tile data file "${tileName}": ${error}`
-            );
-          }
-        } finally {
-          semaphore.release();
-        }
+        })();
       }
     }
   }
+
+  await semaphore.drain();
 
   // Update md5.json file
   const md5FilePath = `${outputFolder}/md5.json`;
