@@ -245,6 +245,7 @@ async function cleanXYZTileDataFiles(
       total + (tile.x[1] - tile.x[0] + 1) * (tile.y[1] - tile.y[0] + 1),
     0
   );
+  let completedTasks = 0;
   let cleanUpTimestamp;
   let log = `Removing ${totalTasks} tile data files with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
