@@ -180,7 +180,9 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
     },
     "cambodia": {
       "metadata": {
-        "name": "cambodia"
+        "name": "cambodia",
+        "zoom": 10,
+        "center": [120, 20, 3]
       },
       "url": "http://localhost:8080/styles/cambodia/style.json",
       "refreshBefore": {

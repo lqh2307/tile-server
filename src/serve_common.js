@@ -229,7 +229,16 @@ function serveInfoHandler() {
           const stat = await fsPromise.stat(item.path);
 
           result.style.size += stat.size;
-        } catch (error) {}
+        } catch (error) {
+          if (
+            !(
+              item.cache !== undefined &&
+              error.message === "Style does not exist"
+            )
+          ) {
+            throw error;
+          }
+        }
 
         result.style.count += 1;
       }

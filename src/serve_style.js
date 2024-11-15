@@ -1,6 +1,6 @@
 "use strict";
 
-import { getRequestHost, getStyle, isExistFile } from "./utils.js";
+import { getRequestHost, isExistFile } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
@@ -10,6 +10,7 @@ import {
   downloadStyleFile,
   cacheStyleFile,
   validateStyle,
+  getStyle,
 } from "./style.js";
 
 function getStyleHandler() {
@@ -170,12 +171,9 @@ function getStylesListHandler() {
     try {
       const result = await Promise.all(
         Object.keys(config.repo.styles).map(async (id) => {
-          const item = config.repo.styles[id];
-          const styleJSON = await getStyle(item.path);
-
           return {
             id: id,
-            name: styleJSON.name || "Unknown",
+            name: config.repo.styles[id].name,
             url: `${getRequestHost(req)}styles/${id}/style.json`,
           };
         })
@@ -320,10 +318,30 @@ export const serve_style = {
           }
 
           /* Read style.json file */
-          const styleJSON = await getStyle(styleInfo.path);
+          try {
+            const styleJSON = await getStyle(styleInfo.path);
 
-          /* Validate style */
-          await validateStyle(styleJSON);
+            /* Validate style */
+            await validateStyle(styleJSON);
+
+            styleInfo.name = styleJSON.name || "Unknown";
+            styleInfo.zoom = styleJSON.zoom || 0;
+            styleInfo.center = styleJSON.center || [0, 0, 0];
+          } catch (error) {
+            if (
+              item.cache !== undefined &&
+              error.message === "Style does not exist"
+            ) {
+              styleInfo.name =
+                seed.styles[item.style].metadata.name || "Unknown";
+              styleInfo.zoom = seed.styles[item.style].metadata.zoom || 0;
+              styleInfo.center = seed.styles[item.style].metadata.center || [
+                0, 0, 0,
+              ];
+            } else {
+              throw error;
+            }
+          }
 
           /* Add to repo */
           config.repo.styles[id] = styleInfo;

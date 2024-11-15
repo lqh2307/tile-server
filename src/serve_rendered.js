@@ -5,9 +5,9 @@ import mlgl from "@maplibre/maplibre-gl-native";
 import { StatusCodes } from "http-status-codes";
 import { getPMTilesTile } from "./pmtiles.js";
 import { getMBTilesTile } from "./mbtiles.js";
-import { Worker } from "node:worker_threads";
 import { createPool } from "generic-pool";
 import { printLog } from "./logger.js";
+import { getStyle } from "./style.js";
 import { config } from "./config.js";
 import express from "express";
 import {
@@ -20,37 +20,7 @@ import {
   unzipAsync,
   renderData,
   getSprite,
-  getStyle,
 } from "./utils.js";
-
-async function processImageInWorker(data, scale, compression, tileSize, z) {
-  return new Promise((resolve, reject) => {
-    new Worker("./src/process_image_worker.js", {
-      workerData: {
-        data,
-        scale,
-        compression,
-        tileSize,
-        z,
-      },
-    })
-      .on("message", (message) => {
-        if (message.error) {
-          reject(new Error(message.error));
-        } else {
-          resolve(Buffer.from(message.data));
-        }
-      })
-      .on("error", (error) => {
-        reject(error);
-      })
-      .on("exit", (code) => {
-        if (code !== 0) {
-          reject(new Error(`Worker stopped with exit code: ${code}`));
-        }
-      });
-  });
-}
 
 function getRenderedTileHandler() {
   return async (req, res, next) => {
@@ -62,8 +32,8 @@ function getRenderedTileHandler() {
       return res.status(StatusCodes.NOT_FOUND).send("Rendered is not found");
     }
 
-    /* Check rendered tile scale */
-    const scale = Number(req.params.scale?.slice(1, -1)) || 1; // Default tile scale is 1
+    /* Get and check rendered tile scale (Default: 1). Ex: @2x -> 2 */
+    const scale = Number(req.params.scale?.slice(1, -1)) || 1;
 
     if (scale > config.options.maxScaleRender) {
       return res
@@ -71,12 +41,13 @@ function getRenderedTileHandler() {
         .send("Rendered tile scale is invalid");
     }
 
-    /* Get tile */
+    /* Get tile size (Default: 256px x 256px) */
     const z = Number(req.params.z);
     const x = Number(req.params.x);
     const y = Number(req.params.y);
-    const tileSize = Number(req.params.tileSize) || 256; // Default tile size is 256px x 256px
+    const tileSize = Number(req.params.tileSize) || 256;
 
+    /* Render tile */
     try {
       const data = await renderData(
         item,
@@ -95,14 +66,6 @@ function getRenderedTileHandler() {
         tileSize,
         z
       );
-
-      // const image = await processImageInWorker(
-      //   data,
-      //   scale,
-      //   config.options.renderedCompression,
-      //   tileSize,
-      //   z
-      // );
 
       res.header("Content-Type", `image/png`);
 
@@ -125,10 +88,12 @@ function getRenderedHandler() {
     const id = req.params.id;
     const item = config.repo.rendereds[id];
 
+    /* Check rendered is exist? */
     if (item === undefined) {
       return res.status(StatusCodes.NOT_FOUND).send("Rendered is not found");
     }
 
+    /* Get render info */
     try {
       const renderedInfo = {
         ...item.tileJSON,
@@ -161,8 +126,12 @@ function getRenderedsListHandler() {
             id: id,
             name: config.repo.rendereds[id].tileJSON.name,
             url: [
-              `${getRequestHost(req)}styles/256/${id}.json`,
-              `${getRequestHost(req)}styles/512/${id}.json`,
+              `${getRequestHost(req)}styles/256/${id}.json${
+                req.query.scheme === "tms" ? "?scheme=tms" : ""
+              }`,
+              `${getRequestHost(req)}styles/512/${id}.json${
+                req.query.scheme === "tms" ? "?scheme=tms" : ""
+              }`,
             ],
           };
         })
@@ -184,10 +153,8 @@ function getRenderedTileJSONsListHandler() {
     try {
       const result = await Promise.all(
         Object.keys(config.repo.rendereds).map(async (id) => {
-          const item = config.repo.rendereds[id];
-
           const renderedInfo = {
-            ...item.tileJSON,
+            ...config.repo.rendereds[id].tileJSON,
             id: id,
             tiles: [
               `${getRequestHost(req)}styles/${id}/{z}/{x}/{y}.png${
@@ -226,6 +193,14 @@ export const serve_rendered = {
        *     tags:
        *       - Rendered
        *     summary: Get all style rendereds
+       *     parameters:
+       *       - in: path
+       *         name: tileSize
+       *         schema:
+       *           type: integer
+       *           enum: [256, 512]
+       *         required: false
+       *         description: Tile size (256 or 512)
        *     responses:
        *       200:
        *         description: List of all style rendereds
@@ -436,6 +411,7 @@ export const serve_rendered = {
 
   add: async () => {
     if (config.options.serveRendered === true) {
+      /* mlgl events */
       mlgl.on("message", (error) => {
         if (error.severity === "ERROR") {
           printLog("error", `mlgl: ${JSON.stringify(error)}`);
@@ -444,6 +420,7 @@ export const serve_rendered = {
         }
       });
 
+      /* Create empty tiles */
       const emptyDatas = {
         gif: Buffer.from([
           0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00, 0x80,
@@ -530,18 +507,30 @@ export const serve_rendered = {
         other: Buffer.from([]),
       };
 
+      /* Register render callback */
       await Promise.all(
         Object.keys(config.repo.styles).map(async (id) => {
           try {
             const item = config.repo.styles[id];
 
-            /* Get style JSON */
-            const styleJSON = await getStyle(item.path);
+            /* Read style.json file */
+            try {
+              styleJSON = await getStyle(item.path);
+            } catch (error) {
+              if (
+                item.cache !== undefined &&
+                error.message === "Style does not exist"
+              ) {
+                return;
+              } else {
+                throw error;
+              }
+            }
 
             const rendered = {
               tileJSON: createNewTileJSON({
-                name: styleJSON.name,
-                description: styleJSON.name,
+                name: item.name,
+                description: item.name,
               }),
               renderers: [],
             };
@@ -716,11 +705,8 @@ export const serve_rendered = {
                           const protocol = parts[0];
 
                           if (protocol === "sprites:") {
-                            const id = parts[2];
-                            const fileName = parts[3];
-
                             try {
-                              const data = await getSprite(id, fileName);
+                              const data = await getSprite(parts[2], parts[3]);
 
                               callback(null, {
                                 data: data,
@@ -731,11 +717,8 @@ export const serve_rendered = {
                               });
                             }
                           } else if (protocol === "fonts:") {
-                            const ids = parts[2];
-                            const fileName = parts[3];
-
                             try {
-                              let data = await getFontsPBF(ids, fileName);
+                              let data = await getFontsPBF(parts[2], parts[3]);
 
                               /* Unzip pbf font */
                               const headers =

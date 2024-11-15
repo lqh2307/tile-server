@@ -694,15 +694,6 @@ export async function getSprite(id, fileName) {
 }
 
 /**
- * Get style
- * @param {string} filePath
- * @returns {Promise<object>}
- */
-export async function getStyle(filePath) {
-  return JSON.parse(await fsPromise.readFile(filePath));
-}
-
-/**
  * Create new tileJSON
  * @param {object} metadata
  * @returns

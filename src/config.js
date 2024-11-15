@@ -279,6 +279,21 @@ async function readSeedFile(dataDir, isValidate) {
                     name: {
                       type: "string",
                     },
+                    zoom: {
+                      type: "integer",
+                      minimum: 0,
+                      maximum: 22,
+                    },
+                    center: {
+                      type: "array",
+                      items: {
+                        type: "number",
+                        minimum: -180,
+                        maximum: 180,
+                      },
+                      minItems: 3,
+                      maxItems: 3,
+                    },
                   },
                   additionalProperties: true,
                 },

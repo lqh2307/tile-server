@@ -304,6 +304,9 @@ export async function getStyleJSONFromURL(url, timeout) {
       headers: {
         "User-Agent": "Tile Server",
       },
+      validateStatus: (status) => {
+        return status === StatusCodes.OK;
+      },
       httpAgent: new http.Agent({
         keepAlive: false,
       }),
@@ -470,4 +473,26 @@ export async function validateStyle(styleJSON) {
       }
     })
   );
+}
+
+/**
+ * Get style
+ * @param {string} filePath
+ * @returns {Promise<object>}
+ */
+export async function getStyle(filePath) {
+  try {
+    const data = await fsPromise.readFile(filePath);
+    if (!data) {
+      throw new Error("Style does not exist");
+    }
+
+    return JSON.parse(data);
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      throw new Error("Style does not exist");
+    }
+
+    throw error;
+  }
 }
