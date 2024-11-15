@@ -1,15 +1,15 @@
 "use strict";
 
+import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { StatusCodes } from "http-status-codes";
+import { delay, retry } from "./utils.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
+import { config } from "./config.js";
 import https from "node:https";
 import path from "node:path";
 import http from "node:http";
 import axios from "axios";
-import { calculateMD5, delay, retry } from "./utils.js";
-import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
-import { config } from "./config.js";
 
 /**
  * Create style data file
@@ -215,7 +215,7 @@ export async function downloadStyleFile(url, filePath, maxTry, timeout) {
 
         // Store data to file
         await storeStyleDataFileWithLock(
-          `${sourcePath}/${tileName}.${format}`,
+          filePath,
           response.data,
           300000 // 5 mins
         );
@@ -261,10 +261,7 @@ export async function removeStyleFile(filePath, maxTry, timeout) {
   try {
     try {
       await retry(async () => {
-        await removeStyleDataFileWithLock(
-          `${sourcePath}/${tileName}.${format}`,
-          timeout
-        );
+        await removeStyleDataFileWithLock(filePath, timeout);
 
         delete hashs[tileName];
       }, maxTry);
@@ -279,39 +276,14 @@ export async function removeStyleFile(filePath, maxTry, timeout) {
 }
 
 /**
- * Cache tile data file
- * @param {string} sourcePath Folder path
- * @param {string} tileName Tile name
- * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
+ * Cache style file
+ * @param {string} filePath File path
  * @param {Buffer} data Tile data buffer
- * @param {string} md5 MD5 hash string
  * @returns {Promise<void>}
  */
-export async function cacheXYZTileDataFile(
-  sourcePath,
-  tileName,
-  format,
-  data,
-  md5
-) {
-  const filePath = `${sourcePath}/${tileName}.${format}`;
-
+export async function cacheStyleFile(filePath, data) {
   try {
     if ((await createStyleDataFileWithLock(filePath, data)) === true) {
-      const md5FilePath = `${sourcePath}/md5.json`;
-
-      updateXYZMD5FileWithLock(
-        md5FilePath,
-        {
-          [tileName]: md5 === undefined ? calculateMD5(data) : md5,
-        },
-        300000 // 5 mins
-      ).catch((error) => {
-        printLog(
-          "error",
-          `Failed to update md5 for tile "${tileName}": ${error}`
-        );
-      });
     }
   } catch (error) {
     throw error;

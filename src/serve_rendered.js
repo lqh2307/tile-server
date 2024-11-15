@@ -20,7 +20,7 @@ import {
   unzipAsync,
   renderData,
   getSprite,
-  deepClone,
+  getStyle,
 } from "./utils.js";
 
 async function processImageInWorker(data, scale, compression, tileSize, z) {
@@ -530,253 +530,18 @@ export const serve_rendered = {
         other: Buffer.from([]),
       };
 
-      function createRenderer(config, ratio, styleJSON) {
-        const renderer = new mlgl.Map({
-          mode: "tile",
-          ratio: ratio,
-          request: async (req, callback) => {
-            const url = decodeURIComponent(req.url);
-            const parts = url.split("/");
-            const protocol = parts[0];
-
-            if (protocol === "sprites:") {
-              const id = parts[2];
-              const fileName = parts[3];
-
-              try {
-                const data = await getSprite(id, fileName);
-
-                callback(null, {
-                  data: data,
-                });
-              } catch (error) {
-                callback(error, {
-                  data: null,
-                });
-              }
-            } else if (protocol === "fonts:") {
-              const ids = parts[2];
-              const fileName = parts[3];
-
-              try {
-                let data = await getFontsPBF(ids, fileName);
-
-                /* Unzip pbf font */
-                const headers = detectFormatAndHeaders(data).headers;
-                if (
-                  headers["Content-Type"] === "application/x-protobuf" &&
-                  headers["Content-Encoding"] !== undefined
-                ) {
-                  data = await unzipAsync(data);
-                }
-
-                callback(null, {
-                  data: data,
-                });
-              } catch (error) {
-                callback(error, {
-                  data: null,
-                });
-              }
-            } else if (protocol === "mbtiles:" || protocol === "pmtiles:") {
-              const sourceID = parts[2];
-              const z = Number(parts[3]);
-              const x = Number(parts[4]);
-              const y = Number(parts[5].slice(0, parts[5].indexOf(".")));
-              const sourceData = config.repo.datas[sourceID];
-              let scheme = "xyz";
-
-              try {
-                const queryIndex = url.lastIndexOf("?");
-                if (queryIndex !== -1) {
-                  const query = new URLSearchParams(url.slice(queryIndex));
-
-                  scheme = query.get("scheme");
-                }
-
-                /* Get rendered tile */
-                const dataTile =
-                  sourceData.sourceType === "mbtiles"
-                    ? await getMBTilesTile(
-                        sourceData.source,
-                        z,
-                        x,
-                        scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
-                      )
-                    : await getPMTilesTile(
-                        sourceData.source,
-                        z,
-                        x,
-                        scheme === "tms" ? (1 << z) - 1 - y : y // Default of PMTiles is xyz. Flip Y to convert xyz scheme => tms scheme
-                      );
-
-                /* Unzip pbf rendered tile */
-                if (
-                  dataTile.headers["Content-Type"] ===
-                    "application/x-protobuf" &&
-                  dataTile.headers["Content-Encoding"] !== undefined
-                ) {
-                  dataTile.data = await unzipAsync(dataTile.data);
-                }
-
-                callback(null, {
-                  data: dataTile.data,
-                });
-              } catch (error) {
-                printLog(
-                  "warning",
-                  `Failed to get data "${sourceID}" - Tile "${z}/${x}/${y}": ${error}. Serving empty tile...`
-                );
-
-                callback(null, {
-                  data:
-                    emptyDatas[sourceData.tileJSON.format] || emptyDatas.other,
-                });
-              }
-            } else if (protocol === "xyz:") {
-              const sourceID = parts[2];
-              const z = Number(parts[3]);
-              const x = Number(parts[4]);
-              const y = Number(parts[5].slice(0, parts[5].indexOf(".")));
-              const tileName = `${z}/${x}/${y}`;
-              const sourceData = config.repo.datas[sourceID];
-              let scheme = "xyz";
-
-              try {
-                const queryIndex = url.lastIndexOf("?");
-                if (queryIndex !== -1) {
-                  const query = new URLSearchParams(url.slice(queryIndex));
-
-                  scheme = query.get("scheme");
-                }
-
-                /* Get rendered tile */
-                let dataTile;
-
-                try {
-                  dataTile = await getXYZTile(
-                    sourceData.source,
-                    z,
-                    x,
-                    scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
-                    sourceData.tileJSON.format
-                  );
-                } catch (error) {
-                  if (sourceData.sourceURL !== undefined) {
-                    const url = sourceData.sourceURL.replaceAll(
-                      "{z}/{x}/{y}",
-                      tileName
-                    );
-
-                    printLog(
-                      "info",
-                      `Getting data "${id}" - Tile "${tileName}" - From "${url}"...`
-                    );
-
-                    /* Get data */
-                    dataTile = await getXYZTileFromURL(
-                      url,
-                      60000 // 1 mins
-                    );
-
-                    /* Cache */
-                    if (sourceData.storeCache === true) {
-                      cacheXYZTileDataFile(
-                        sourceData.source,
-                        tileName,
-                        sourceData.tileJSON.format,
-                        dataTile.data,
-                        dataTile.etag
-                      ).catch((error) =>
-                        printLog(
-                          "error",
-                          `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}`
-                        )
-                      );
-                    }
-                  } else {
-                    throw error;
-                  }
-                }
-
-                /* Unzip pbf rendered tile */
-                if (
-                  dataTile.headers["Content-Type"] ===
-                    "application/x-protobuf" &&
-                  dataTile.headers["Content-Encoding"] !== undefined
-                ) {
-                  dataTile.data = await unzipAsync(dataTile.data);
-                }
-
-                callback(null, {
-                  data: dataTile.data,
-                });
-              } catch (error) {
-                printLog(
-                  "warning",
-                  `Failed to get data "${sourceID}" - Tile "${tileName}": ${error}. Serving empty tile...`
-                );
-
-                callback(null, {
-                  data:
-                    emptyDatas[sourceData.tileJSON.format] || emptyDatas.other,
-                });
-              }
-            } else if (protocol === "http:" || protocol === "https:") {
-              try {
-                printLog("info", `Getting data tile from "${url}"...`);
-
-                const dataTile = await getDataTileFromURL(url, 60000);
-
-                /* Unzip pbf data */
-                if (
-                  dataTile.headers["Content-Type"] ===
-                    "application/x-protobuf" &&
-                  dataTile.headers["Content-Encoding"] !== undefined
-                ) {
-                  dataTile.data = await unzipAsync(dataTile.data);
-                }
-
-                callback(null, {
-                  data: dataTile.data,
-                });
-              } catch (error) {
-                printLog(
-                  "warning",
-                  `Failed to get data tile from "${url}": ${error}. Serving empty tile...`
-                );
-
-                const queryIndex = url.lastIndexOf("?");
-                const format =
-                  queryIndex === -1
-                    ? url.slice(url.lastIndexOf(".") + 1)
-                    : url.slice(url.lastIndexOf(".") + 1, queryIndex);
-
-                callback(null, {
-                  data: emptyDatas[format] || emptyDatas.other,
-                });
-              }
-            }
-          },
-        });
-
-        renderer.load(styleJSON);
-
-        return renderer;
-      }
-
-      function destroyRenderer(renderer) {
-        renderer.release();
-      }
-
       await Promise.all(
         Object.keys(config.repo.styles).map(async (id) => {
           try {
             const item = config.repo.styles[id];
+
+            /* Get style JSON */
+            const styleJSON = getStyle(item.path);
+
             const rendered = {
               tileJSON: createNewTileJSON({
-                name: item.styleJSON.name,
-                description: item.styleJSON.name,
+                name: styleJSON.name,
+                description: styleJSON.name,
               }),
               renderers: [],
             };
@@ -789,9 +554,6 @@ export const serve_rendered = {
                 Math.floor(item.styleJSON.zoom),
               ];
             }
-
-            /* Clone style JSON */
-            const styleJSON = deepClone(item.styleJSON);
 
             await Promise.all(
               // Fix source urls
@@ -944,8 +706,271 @@ export const serve_rendered = {
               rendered.renderers.push(
                 createPool(
                   {
-                    create: () => createRenderer(config, scale + 1, styleJSON),
-                    destroy: (renderer) => destroyRenderer(renderer),
+                    create: () => {
+                      const renderer = new mlgl.Map({
+                        mode: "tile",
+                        ratio: scale + 1,
+                        request: async (req, callback) => {
+                          const url = decodeURIComponent(req.url);
+                          const parts = url.split("/");
+                          const protocol = parts[0];
+
+                          if (protocol === "sprites:") {
+                            const id = parts[2];
+                            const fileName = parts[3];
+
+                            try {
+                              const data = await getSprite(id, fileName);
+
+                              callback(null, {
+                                data: data,
+                              });
+                            } catch (error) {
+                              callback(error, {
+                                data: null,
+                              });
+                            }
+                          } else if (protocol === "fonts:") {
+                            const ids = parts[2];
+                            const fileName = parts[3];
+
+                            try {
+                              let data = await getFontsPBF(ids, fileName);
+
+                              /* Unzip pbf font */
+                              const headers =
+                                detectFormatAndHeaders(data).headers;
+                              if (
+                                headers["Content-Type"] ===
+                                  "application/x-protobuf" &&
+                                headers["Content-Encoding"] !== undefined
+                              ) {
+                                data = await unzipAsync(data);
+                              }
+
+                              callback(null, {
+                                data: data,
+                              });
+                            } catch (error) {
+                              callback(error, {
+                                data: null,
+                              });
+                            }
+                          } else if (
+                            protocol === "mbtiles:" ||
+                            protocol === "pmtiles:"
+                          ) {
+                            const sourceID = parts[2];
+                            const z = Number(parts[3]);
+                            const x = Number(parts[4]);
+                            const y = Number(
+                              parts[5].slice(0, parts[5].indexOf("."))
+                            );
+                            const sourceData = config.repo.datas[sourceID];
+                            let scheme = "xyz";
+
+                            try {
+                              const queryIndex = url.lastIndexOf("?");
+                              if (queryIndex !== -1) {
+                                const query = new URLSearchParams(
+                                  url.slice(queryIndex)
+                                );
+
+                                scheme = query.get("scheme");
+                              }
+
+                              /* Get rendered tile */
+                              const dataTile =
+                                sourceData.sourceType === "mbtiles"
+                                  ? await getMBTilesTile(
+                                      sourceData.source,
+                                      z,
+                                      x,
+                                      scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+                                    )
+                                  : await getPMTilesTile(
+                                      sourceData.source,
+                                      z,
+                                      x,
+                                      scheme === "tms" ? (1 << z) - 1 - y : y // Default of PMTiles is xyz. Flip Y to convert xyz scheme => tms scheme
+                                    );
+
+                              /* Unzip pbf rendered tile */
+                              if (
+                                dataTile.headers["Content-Type"] ===
+                                  "application/x-protobuf" &&
+                                dataTile.headers["Content-Encoding"] !==
+                                  undefined
+                              ) {
+                                dataTile.data = await unzipAsync(dataTile.data);
+                              }
+
+                              callback(null, {
+                                data: dataTile.data,
+                              });
+                            } catch (error) {
+                              printLog(
+                                "warning",
+                                `Failed to get data "${sourceID}" - Tile "${z}/${x}/${y}": ${error}. Serving empty tile...`
+                              );
+
+                              callback(null, {
+                                data:
+                                  emptyDatas[sourceData.tileJSON.format] ||
+                                  emptyDatas.other,
+                              });
+                            }
+                          } else if (protocol === "xyz:") {
+                            const sourceID = parts[2];
+                            const z = Number(parts[3]);
+                            const x = Number(parts[4]);
+                            const y = Number(
+                              parts[5].slice(0, parts[5].indexOf("."))
+                            );
+                            const tileName = `${z}/${x}/${y}`;
+                            const sourceData = config.repo.datas[sourceID];
+                            let scheme = "xyz";
+
+                            try {
+                              const queryIndex = url.lastIndexOf("?");
+                              if (queryIndex !== -1) {
+                                const query = new URLSearchParams(
+                                  url.slice(queryIndex)
+                                );
+
+                                scheme = query.get("scheme");
+                              }
+
+                              /* Get rendered tile */
+                              let dataTile;
+
+                              try {
+                                dataTile = await getXYZTile(
+                                  sourceData.source,
+                                  z,
+                                  x,
+                                  scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+                                  sourceData.tileJSON.format
+                                );
+                              } catch (error) {
+                                if (sourceData.sourceURL !== undefined) {
+                                  const url = sourceData.sourceURL.replaceAll(
+                                    "{z}/{x}/{y}",
+                                    tileName
+                                  );
+
+                                  printLog(
+                                    "info",
+                                    `Getting data "${id}" - Tile "${tileName}" - From "${url}"...`
+                                  );
+
+                                  /* Get data */
+                                  dataTile = await getXYZTileFromURL(
+                                    url,
+                                    60000 // 1 mins
+                                  );
+
+                                  /* Cache */
+                                  if (sourceData.storeCache === true) {
+                                    cacheXYZTileDataFile(
+                                      sourceData.source,
+                                      tileName,
+                                      sourceData.tileJSON.format,
+                                      dataTile.data,
+                                      dataTile.etag
+                                    ).catch((error) =>
+                                      printLog(
+                                        "error",
+                                        `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}`
+                                      )
+                                    );
+                                  }
+                                } else {
+                                  throw error;
+                                }
+                              }
+
+                              /* Unzip pbf rendered tile */
+                              if (
+                                dataTile.headers["Content-Type"] ===
+                                  "application/x-protobuf" &&
+                                dataTile.headers["Content-Encoding"] !==
+                                  undefined
+                              ) {
+                                dataTile.data = await unzipAsync(dataTile.data);
+                              }
+
+                              callback(null, {
+                                data: dataTile.data,
+                              });
+                            } catch (error) {
+                              printLog(
+                                "warning",
+                                `Failed to get data "${sourceID}" - Tile "${tileName}": ${error}. Serving empty tile...`
+                              );
+
+                              callback(null, {
+                                data:
+                                  emptyDatas[sourceData.tileJSON.format] ||
+                                  emptyDatas.other,
+                              });
+                            }
+                          } else if (
+                            protocol === "http:" ||
+                            protocol === "https:"
+                          ) {
+                            try {
+                              printLog(
+                                "info",
+                                `Getting data tile from "${url}"...`
+                              );
+
+                              const dataTile = await getDataTileFromURL(
+                                url,
+                                60000
+                              );
+
+                              /* Unzip pbf data */
+                              if (
+                                dataTile.headers["Content-Type"] ===
+                                  "application/x-protobuf" &&
+                                dataTile.headers["Content-Encoding"] !==
+                                  undefined
+                              ) {
+                                dataTile.data = await unzipAsync(dataTile.data);
+                              }
+
+                              callback(null, {
+                                data: dataTile.data,
+                              });
+                            } catch (error) {
+                              printLog(
+                                "warning",
+                                `Failed to get data tile from "${url}": ${error}. Serving empty tile...`
+                              );
+
+                              const queryIndex = url.lastIndexOf("?");
+                              const format =
+                                queryIndex === -1
+                                  ? url.slice(url.lastIndexOf(".") + 1)
+                                  : url.slice(
+                                      url.lastIndexOf(".") + 1,
+                                      queryIndex
+                                    );
+
+                              callback(null, {
+                                data: emptyDatas[format] || emptyDatas.other,
+                              });
+                            }
+                          }
+                        },
+                      });
+
+                      renderer.load(styleJSON);
+
+                      return renderer;
+                    },
+                    destroy: (renderer) => renderer.release(),
                   },
                   {
                     min: config.options.minPoolSize,
