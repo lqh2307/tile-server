@@ -117,7 +117,6 @@ export async function isMBTilesExistColumns(
  * @returns {Promise<Array<string>>}
  */
 export async function getMBTilesLayersFromTiles(mbtilesSource) {
-  const semaphore = new Sema(200);
   const layerNames = new Set();
 
   return await new Promise((resolve, reject) => {
@@ -126,11 +125,13 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
         return reject(error);
       }
 
-      if (rows !== undefined) {
-        let completedTasks = 0;
+      if (rows?.length > 0) {
+        const semaphore = new Sema(200);
 
-        rows.forEach((row) => {
-          semaphore.acquire().then(async () => {
+        for (const row of rows) {
+          await semaphore.acquire();
+
+          (async () => {
             try {
               const layers = await getLayerNamesFromPBFTileBuffer(
                 row.tile_data
@@ -140,21 +141,15 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
             } catch (error) {
               reject(error);
             } finally {
-              completedTasks++;
-
-              if (completedTasks === rows.length) {
-                semaphore.release();
-
-                resolve(Array.from(layerNames));
-              } else {
-                semaphore.release();
-              }
+              semaphore.release();
             }
-          });
-        });
-      } else {
-        resolve();
+          })();
+        }
+
+        await semaphore.drain();
       }
+
+      resolve(Array.from(layerNames));
     });
   });
 }

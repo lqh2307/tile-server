@@ -109,35 +109,32 @@ export async function getXYZTileFromURL(url, timeout) {
  */
 export async function getXYZLayersFromTiles(sourcePath) {
   const pbfFilePaths = await findFiles(sourcePath, /^\d+\.pbf$/, true);
-  const semaphore = new Sema(200);
   const layerNames = new Set();
 
-  return new Promise((resolve, reject) => {
-    let completedTasks = 0;
+  if (pbfFilePaths.length > 0) {
+    const semaphore = new Sema(200);
 
-    pbfFilePaths.forEach((pbfFilePath) => {
-      semaphore.acquire().then(async () => {
+    for (const pbfFilePath of pbfFilePaths) {
+      await semaphore.acquire();
+
+      (async () => {
         try {
           const data = await fsPromise.readFile(`${sourcePath}/${pbfFilePath}`);
           const layers = await getLayerNamesFromPBFTileBuffer(data);
 
           layers.forEach((layer) => layerNames.add(layer));
         } catch (error) {
-          reject(error);
+          throw error;
         } finally {
-          completedTasks++;
-
-          if (completedTasks === pbfFilePaths.length) {
-            semaphore.release();
-
-            resolve(Array.from(layerNames));
-          } else {
-            semaphore.release();
-          }
+          semaphore.release();
         }
-      });
-    });
-  });
+      })();
+    }
+
+    await semaphore.drain();
+  }
+
+  return Array.from(layerNames);
 }
 
 /**
