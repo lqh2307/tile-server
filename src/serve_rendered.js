@@ -512,6 +512,7 @@ export const serve_rendered = {
         Object.keys(config.repo.styles).map(async (id) => {
           try {
             const item = config.repo.styles[id];
+            let styleJSON;
 
             /* Read style.json file */
             try {
