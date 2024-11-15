@@ -245,7 +245,6 @@ async function cleanXYZTileDataFiles(
       total + (tile.x[1] - tile.x[0] + 1) * (tile.y[1] - tile.y[0] + 1),
     0
   );
-  let completedTasks = 0;
   let cleanUpTimestamp;
   let log = `Removing ${totalTasks} tile data files with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
@@ -269,66 +268,54 @@ async function cleanXYZTileDataFiles(
   const semaphore = new Sema(concurrency);
   const hashs = {};
 
-  await new Promise((resolve) => {
-    for (const z in tilesSummary) {
-      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-          semaphore.acquire().then(async () => {
-            const tileName = `${z}/${x}/${y}`;
-            const filePath = `${outputFolder}/${tileName}.${format}`;
+  for (const z in tilesSummary) {
+    for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+      for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+        await semaphore.acquire();
 
-            try {
-              if (cleanUpTimestamp !== undefined) {
-                const stats = await fsPromise.stat(filePath);
+        const tileName = `${z}/${x}/${y}`;
+        const filePath = `${outputFolder}/${tileName}.${format}`;
 
-                if (
-                  stats.ctimeMs === undefined ||
-                  stats.ctimeMs < cleanUpTimestamp
-                ) {
-                  await removeXYZTileDataFile(
-                    outputFolder,
-                    tileName,
-                    format,
-                    maxTry,
-                    300000, // 5 mins
-                    hashs
-                  );
-                }
-              } else {
-                await removeXYZTileDataFile(
-                  outputFolder,
-                  tileName,
-                  format,
-                  maxTry,
-                  300000, // 5 mins
-                  hashs
-                );
-              }
-            } catch (error) {
-              if (error.code === "ENOENT") {
-                return;
-              } else {
-                printLog(
-                  "error",
-                  `Failed to clean up tile data file "${tileName}": ${error}`
-                );
-              }
-            } finally {
-              completedTasks++;
+        try {
+          if (cleanUpTimestamp !== undefined) {
+            const stats = await fsPromise.stat(filePath);
 
-              if (completedTasks === totalTasks) {
-                semaphore.release();
-
-                resolve();
-              } else {
-                semaphore.release();
-              }
+            if (
+              stats.ctimeMs === undefined ||
+              stats.ctimeMs < cleanUpTimestamp
+            ) {
+              await removeXYZTileDataFile(
+                outputFolder,
+                tileName,
+                format,
+                maxTry,
+                300000, // 5 mins
+                hashs
+              );
             }
-          });
+          } else {
+            await removeXYZTileDataFile(
+              outputFolder,
+              tileName,
+              format,
+              maxTry,
+              300000, // 5 mins
+              hashs
+            );
+          }
+        } catch (error) {
+          if (error.code !== "ENOENT") {
+            printLog(
+              "error",
+              `Failed to clean up tile data file "${tileName}": ${error}`
+            );
+          }
+        } finally {
+          semaphore.release();
         }
       }
     }
-  });
+  }
 
   // Update md5.json file
   const md5FilePath = `${outputFolder}/md5.json`;
