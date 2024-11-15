@@ -116,6 +116,18 @@ async function readConfigFile(dataDir, isValidate) {
                   type: "string",
                   minLength: 1,
                 },
+                cache: {
+                  type: "object",
+                  properties: {
+                    forward: {
+                      type: "boolean",
+                    },
+                    store: {
+                      type: "boolean",
+                    },
+                  },
+                  additionalProperties: true,
+                },
               },
               required: ["style"],
               additionalProperties: true,
@@ -261,6 +273,15 @@ async function readSeedFile(dataDir, isValidate) {
             additionalProperties: {
               type: "object",
               properties: {
+                metadata: {
+                  type: "object",
+                  properties: {
+                    name: {
+                      type: "string",
+                    },
+                  },
+                  additionalProperties: true,
+                },
                 url: {
                   type: "string",
                   minLength: 1,

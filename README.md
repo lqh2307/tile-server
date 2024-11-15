@@ -112,7 +112,11 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "style": "vietnam/style.json"
     },
     "cambodia": {
-      "style": "cambodia/style.json"
+      "style": "cambodia/style.json",
+      "cache": {
+        "forward": true,
+        "store": false
+      }
     },
     "zurich_switzerland": {
       "style": "zurich_switzerland/style.json"
@@ -175,6 +179,9 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       }
     },
     "cambodia": {
+      "metadata": {
+        "name": "cambodia"
+      },
       "url": "http://localhost:8080/styles/cambodia/style.json",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
