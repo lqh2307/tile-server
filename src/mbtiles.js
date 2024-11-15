@@ -9,9 +9,9 @@ import {
   calculateMD5,
   retry,
 } from "./utils.js";
+import { Sema } from "async-sema";
 import https from "node:https";
 import sqlite3 from "sqlite3";
-import pLimit from "p-limit";
 import http from "node:http";
 import path from "node:path";
 import axios from "axios";
@@ -117,18 +117,20 @@ export async function isMBTilesExistColumns(
  * @returns {Promise<Array<string>>}
  */
 export async function getMBTilesLayersFromTiles(mbtilesSource) {
-  const limitConcurrencyRead = pLimit(200);
+  const semaphore = new Sema(200);
   const layerNames = new Set();
 
-  await new Promise((resolve, reject) => {
+  return await new Promise((resolve, reject) => {
     mbtilesSource.all("SELECT tile_data FROM tiles", async (error, rows) => {
       if (error) {
         return reject(error);
       }
 
       if (rows !== undefined) {
-        const promises = rows.map((row) =>
-          limitConcurrencyRead(async () => {
+        let completedTasks = 0;
+
+        rows.forEach((row) => {
+          semaphore.acquire().then(async () => {
             try {
               const layers = await getLayerNamesFromPBFTileBuffer(
                 row.tile_data
@@ -136,19 +138,25 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
 
               layers.forEach((layer) => layerNames.add(layer));
             } catch (error) {
-              return reject(error);
+              reject(error);
+            } finally {
+              completedTasks++;
+
+              if (completedTasks === rows.length) {
+                semaphore.release();
+
+                resolve(Array.from(layerNames));
+              } else {
+                semaphore.release();
+              }
             }
-          })
-        );
-
-        await Promise.all(promises);
+          });
+        });
+      } else {
+        resolve();
       }
-
-      resolve();
     });
   });
-
-  return Array.from(layerNames);
 }
 
 /**

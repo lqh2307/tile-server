@@ -4,7 +4,7 @@ import { downloadStyleFile, removeStyleFile } from "./style.js";
 import { readCleanUpFile, readSeedFile } from "./config.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
-import pLimit from "p-limit";
+import { Sema } from "async-sema";
 import {
   updateXYZMetadataFileWithLock,
   updateXYZMD5FileWithLock,
@@ -69,8 +69,15 @@ async function seedXYZTileDataFiles(
   timeout = 60000,
   refreshBefore
 ) {
+  const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
+  const totalTasks = Object.values(tilesSummary).reduce(
+    (total, tile) =>
+      total + (tile.x[1] - tile.x[0] + 1) * (tile.y[1] - tile.y[0] + 1),
+    0
+  );
+  let completedTasks = 0;
   let refreshTimestamp;
-  let log = `Downloading tile data files with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
+  let log = `Downloading ${totalTasks} tile data files with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBox: [${bbox.join(", ")}]`;
 
@@ -92,17 +99,15 @@ async function seedXYZTileDataFiles(
 
   printLog("info", log);
 
-  // Download file
-  const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
-  const limitConcurrencyDownload = pLimit(concurrency);
-  const tilePromises = [];
+  // Download files
   const hashs = {};
+  const semaphore = new Sema(concurrency);
 
-  for (const z in tilesSummary) {
-    for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-      for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-        tilePromises.push(
-          limitConcurrencyDownload(async () => {
+  await new Promise((resolve) => {
+    for (const z in tilesSummary) {
+      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+          semaphore.acquire().then(async () => {
             const tileName = `${z}/${x}/${y}`;
             const filePath = `${outputFolder}/${tileName}.${metadata.format}`;
             const url = tileURL.replaceAll("{z}/{x}/{y}", tileName);
@@ -112,7 +117,6 @@ async function seedXYZTileDataFiles(
                 const stats = await fsPromise.stat(filePath);
 
                 if (refreshTimestamp === true) {
-                  // Check md5
                   const md5URL = tileURL.replaceAll(
                     "{z}/{x}/{y}",
                     `md5/${tileName}`
@@ -135,7 +139,6 @@ async function seedXYZTileDataFiles(
                   stats.ctimeMs === undefined ||
                   stats.ctimeMs < refreshTimestamp
                 ) {
-                  // Check timestamp
                   await downloadXYZTileDataFile(
                     url,
                     outputFolder,
@@ -174,14 +177,22 @@ async function seedXYZTileDataFiles(
                   `Failed to seed tile data file "${tileName}": ${error}`
                 );
               }
+            } finally {
+              completedTasks++;
+
+              if (completedTasks === totalTasks) {
+                semaphore.release();
+
+                resolve();
+              } else {
+                semaphore.release();
+              }
             }
-          })
-        );
+          });
+        }
       }
     }
-  }
-
-  await Promise.all(tilePromises);
+  });
 
   // Update metadata.json file
   const metadataFilePath = `${outputFolder}/metadata.json`;
@@ -228,8 +239,14 @@ async function cleanXYZTileDataFiles(
   maxTry = 5,
   cleanUpBefore
 ) {
+  const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
+  const totalTasks = Object.values(tilesSummary).reduce(
+    (total, tile) =>
+      total + (tile.x[1] - tile.x[0] + 1) * (tile.y[1] - tile.y[0] + 1),
+    0
+  );
   let cleanUpTimestamp;
-  let log = `Removing tile data files with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Removing ${totalTasks} tile data files with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBox: [${bbox.join(", ")}]`;
 
@@ -248,16 +265,14 @@ async function cleanXYZTileDataFiles(
   printLog("info", log);
 
   // Remove files
-  const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
-  const limitConcurrencyRemove = pLimit(concurrency);
-  const tilePromises = [];
+  const semaphore = new Sema(concurrency);
   const hashs = {};
 
-  for (const z in tilesSummary) {
-    for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-      for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-        tilePromises.push(
-          limitConcurrencyRemove(async () => {
+  await new Promise((resolve) => {
+    for (const z in tilesSummary) {
+      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+          semaphore.acquire().then(async () => {
             const tileName = `${z}/${x}/${y}`;
             const filePath = `${outputFolder}/${tileName}.${format}`;
 
@@ -265,7 +280,6 @@ async function cleanXYZTileDataFiles(
               if (cleanUpTimestamp !== undefined) {
                 const stats = await fsPromise.stat(filePath);
 
-                // Check timestamp
                 if (
                   stats.ctimeMs === undefined ||
                   stats.ctimeMs < cleanUpTimestamp
@@ -298,14 +312,22 @@ async function cleanXYZTileDataFiles(
                   `Failed to clean up tile data file "${tileName}": ${error}`
                 );
               }
+            } finally {
+              completedTasks++;
+
+              if (completedTasks === totalTasks) {
+                semaphore.release();
+
+                resolve();
+              } else {
+                semaphore.release();
+              }
             }
-          })
-        );
+          });
+        }
       }
     }
-  }
-
-  await Promise.all(tilePromises);
+  });
 
   // Update md5.json file
   const md5FilePath = `${outputFolder}/md5.json`;

@@ -3,8 +3,8 @@
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
+import { Sema } from "async-sema";
 import https from "node:https";
-import pLimit from "p-limit";
 import path from "node:path";
 import http from "node:http";
 import axios from "axios";
@@ -109,26 +109,35 @@ export async function getXYZTileFromURL(url, timeout) {
  */
 export async function getXYZLayersFromTiles(sourcePath) {
   const pbfFilePaths = await findFiles(sourcePath, /^\d+\.pbf$/, true);
-  const limitConcurrencyRead = pLimit(200);
+  const semaphore = new Sema(200);
   const layerNames = new Set();
 
-  await Promise.all(
-    pbfFilePaths.map((pbfFilePath) =>
-      limitConcurrencyRead(async () => {
+  return new Promise((resolve, reject) => {
+    let completedTasks = 0;
+
+    pbfFilePaths.forEach((pbfFilePath) => {
+      semaphore.acquire().then(async () => {
         try {
           const data = await fsPromise.readFile(`${sourcePath}/${pbfFilePath}`);
-
           const layers = await getLayerNamesFromPBFTileBuffer(data);
 
           layers.forEach((layer) => layerNames.add(layer));
         } catch (error) {
-          throw error;
-        }
-      })
-    )
-  );
+          reject(error);
+        } finally {
+          completedTasks++;
 
-  return Array.from(layerNames);
+          if (completedTasks === pbfFilePaths.length) {
+            semaphore.release();
+
+            resolve(Array.from(layerNames));
+          } else {
+            semaphore.release();
+          }
+        }
+      });
+    });
+  });
 }
 
 /**
