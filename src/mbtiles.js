@@ -418,7 +418,7 @@ export async function getMBTilesInfos(mbtilesSource) {
 
               break;
             case "type":
-              metadata.name = row.value;
+              metadata.type = row.value;
 
               break;
           }
