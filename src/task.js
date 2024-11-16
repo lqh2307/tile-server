@@ -4,7 +4,7 @@ import { downloadStyleFile, removeStyleFile } from "./style.js";
 import { readCleanUpFile, readSeedFile } from "./config.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
-import { Sema } from "async-sema";
+import { Mutex } from "async-mutex";
 import {
   updateXYZMetadataFileWithLock,
   updateXYZMD5FileWithLock,
@@ -70,7 +70,7 @@ async function seedXYZTileDataFiles(
   refreshBefore
 ) {
   const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
-  const totalTasks = Object.values(tilesSummary).reduce(
+  let totalTasks = Object.values(tilesSummary).reduce(
     (total, tile) =>
       total + (tile.x[1] - tile.x[0] + 1) * (tile.y[1] - tile.y[0] + 1),
     0
@@ -102,14 +102,25 @@ async function seedXYZTileDataFiles(
   const hashs = {};
 
   if (totalTasks > 0) {
-    const semaphore = new Sema(concurrency);
+    let activeTasks = 0;
+    const mutex = new Mutex();
 
     for (const z in tilesSummary) {
       for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
         for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-          await semaphore.acquire();
+          /* Wait slot for a task */
+          while (activeTasks >= concurrency && totalTasks > 0) {
+            await delay(50);
+          }
 
+          /* Run a task */
           (async () => {
+            await mutex.runExclusive(async () => {
+              activeTasks++;
+
+              totalTasks--;
+            });
+
             const tileName = `${z}/${x}/${y}`;
             const filePath = `${outputFolder}/${tileName}.${metadata.format}`;
             const url = tileURL.replaceAll("{z}/{x}/{y}", tileName);
@@ -180,14 +191,19 @@ async function seedXYZTileDataFiles(
                 );
               }
             } finally {
-              semaphore.release();
+              await mutex.runExclusive(() => {
+                activeTasks--;
+              });
             }
           })();
         }
       }
     }
 
-    await semaphore.drain();
+    /* Wait all tasks done */
+    while (activeTasks > 0) {
+      await delay(50);
+    }
   }
 
   // Update metadata.json file
@@ -236,7 +252,7 @@ async function cleanXYZTileDataFiles(
   cleanUpBefore
 ) {
   const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
-  const totalTasks = Object.values(tilesSummary).reduce(
+  let totalTasks = Object.values(tilesSummary).reduce(
     (total, tile) =>
       total + (tile.x[1] - tile.x[0] + 1) * (tile.y[1] - tile.y[0] + 1),
     0
@@ -264,14 +280,25 @@ async function cleanXYZTileDataFiles(
   const hashs = {};
 
   if (totalTasks > 0) {
-    const semaphore = new Sema(concurrency);
+    let activeTasks = 0;
+    const mutex = new Mutex();
 
     for (const z in tilesSummary) {
       for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
         for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-          await semaphore.acquire();
+          /* Wait slot for a task */
+          while (activeTasks >= concurrency && totalTasks > 0) {
+            await delay(50);
+          }
 
+          /* Run a task */
           (async () => {
+            await mutex.runExclusive(async () => {
+              activeTasks++;
+
+              totalTasks--;
+            });
+
             const tileName = `${z}/${x}/${y}`;
             const filePath = `${outputFolder}/${tileName}.${format}`;
 
@@ -310,14 +337,19 @@ async function cleanXYZTileDataFiles(
                 );
               }
             } finally {
-              semaphore.release();
+              await mutex.runExclusive(() => {
+                activeTasks--;
+              });
             }
           })();
         }
       }
     }
 
-    await semaphore.drain();
+    /* Wait all tasks done */
+    while (activeTasks > 0) {
+      await delay(50);
+    }
   }
 
   // Update md5.json file

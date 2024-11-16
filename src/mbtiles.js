@@ -2,6 +2,7 @@
 
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
+import { Mutex } from "async-mutex";
 import {
   getLayerNamesFromPBFTileBuffer,
   detectFormatAndHeaders,
@@ -9,7 +10,6 @@ import {
   calculateMD5,
   retry,
 } from "./utils.js";
-import { Sema } from "async-sema";
 import https from "node:https";
 import sqlite3 from "sqlite3";
 import http from "node:http";
@@ -117,36 +117,54 @@ export async function isMBTilesExistColumns(
  * @returns {Promise<Array<string>>}
  */
 export async function getMBTilesLayersFromTiles(mbtilesSource) {
-  const layerNames = new Set();
-
   return await new Promise((resolve, reject) => {
     mbtilesSource.all("SELECT tile_data FROM tiles", async (error, rows) => {
       if (error) {
         return reject(error);
       }
 
-      if (rows?.length > 0) {
-        const semaphore = new Sema(200);
+      if (rows !== undefined) {
+        const layerNames = new Set();
+        let totalTasks = rows.length;
 
-        for (const row of rows) {
-          await semaphore.acquire();
+        if (totalTasks > 0) {
+          let activeTasks = 0;
+          const mutex = new Mutex();
 
-          (async () => {
-            try {
-              const layers = await getLayerNamesFromPBFTileBuffer(
-                row.tile_data
-              );
-
-              layers.forEach((layer) => layerNames.add(layer));
-            } catch (error) {
-              reject(error);
-            } finally {
-              semaphore.release();
+          for (const row of rows) {
+            /* Wait slot for a task */
+            while (activeTasks >= concurrency && totalTasks > 0) {
+              await delay(50);
             }
-          })();
-        }
 
-        await semaphore.drain();
+            (async () => {
+              await mutex.runExclusive(async () => {
+                activeTasks++;
+
+                totalTasks--;
+              });
+
+              try {
+                const layers = await getLayerNamesFromPBFTileBuffer(
+                  row.tile_data
+                );
+
+                layers.forEach((layer) => layerNames.add(layer));
+              } catch (error) {
+                reject(error);
+              } finally {
+                await mutex.runExclusive(() => {
+                  activeTasks--;
+                });
+              }
+            })();
+          }
+
+          /* Wait all tasks done */
+          while (activeTasks > 0) {
+            await delay(50);
+          }
+        }
       }
 
       resolve(Array.from(layerNames));

@@ -3,7 +3,7 @@
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
-import { Sema } from "async-sema";
+import { Mutex } from "async-mutex";
 import https from "node:https";
 import path from "node:path";
 import http from "node:http";
@@ -110,14 +110,25 @@ export async function getXYZTileFromURL(url, timeout) {
 export async function getXYZLayersFromTiles(sourcePath) {
   const pbfFilePaths = await findFiles(sourcePath, /^\d+\.pbf$/, true);
   const layerNames = new Set();
+  let totalTasks = pbfFilePaths.length;
 
-  if (pbfFilePaths.length > 0) {
-    const semaphore = new Sema(200);
+  if (totalTasks > 0) {
+    let activeTasks = 0;
+    const mutex = new Mutex();
 
     for (const pbfFilePath of pbfFilePaths) {
-      await semaphore.acquire();
+      /* Wait slot for a task */
+      while (activeTasks >= concurrency && totalTasks > 0) {
+        await delay(50);
+      }
 
       (async () => {
+        await mutex.runExclusive(async () => {
+          activeTasks++;
+
+          totalTasks--;
+        });
+
         try {
           const data = await fsPromise.readFile(`${sourcePath}/${pbfFilePath}`);
           const layers = await getLayerNamesFromPBFTileBuffer(data);
@@ -126,12 +137,17 @@ export async function getXYZLayersFromTiles(sourcePath) {
         } catch (error) {
           throw error;
         } finally {
-          semaphore.release();
+          await mutex.runExclusive(() => {
+            activeTasks--;
+          });
         }
       })();
     }
 
-    await semaphore.drain();
+    /* Wait all tasks done */
+    while (activeTasks > 0) {
+      await delay(50);
+    }
   }
 
   return Array.from(layerNames);
