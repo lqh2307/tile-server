@@ -103,22 +103,28 @@ async function seedXYZTileDataFiles(
   let activeTasks = 0;
   const mutex = new Mutex();
 
+  async function updateActiveTasks(mutex, action) {
+    return await mutex.runExclusive(async () => {
+      return action();
+    });
+  }
+
   for (const z in tilesSummary) {
     for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
       for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
         /* Wait slot for a task */
-        while (activeTasks >= concurrency) {
-          await delay(50);
-        }
+        await updateActiveTasks(mutex, async () => {
+          while (activeTasks >= concurrency) {
+            await delay(50);
+          }
+
+          activeTasks++;
+
+          totalTasks--;
+        });
 
         /* Run a task */
         (async () => {
-          await mutex.runExclusive(async () => {
-            activeTasks++;
-
-            totalTasks--;
-          });
-
           const tileName = `${z}/${x}/${y}`;
           const filePath = `${outputFolder}/${tileName}.${metadata.format}`;
           const url = tileURL.replaceAll("{z}/{x}/{y}", tileName);
@@ -189,7 +195,7 @@ async function seedXYZTileDataFiles(
               );
             }
           } finally {
-            await mutex.runExclusive(() => {
+            await updateActiveTasks(mutex, () => {
               activeTasks--;
             });
           }
@@ -278,22 +284,28 @@ async function cleanXYZTileDataFiles(
   let activeTasks = 0;
   const mutex = new Mutex();
 
+  async function updateActiveTasks(mutex, action) {
+    return await mutex.runExclusive(async () => {
+      return action();
+    });
+  }
+
   for (const z in tilesSummary) {
     for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
       for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
         /* Wait slot for a task */
-        while (activeTasks >= concurrency) {
-          await delay(50);
-        }
+        await updateActiveTasks(mutex, async () => {
+          while (activeTasks >= concurrency) {
+            await delay(50);
+          }
+
+          activeTasks++;
+
+          totalTasks--;
+        });
 
         /* Run a task */
         (async () => {
-          await mutex.runExclusive(async () => {
-            activeTasks++;
-
-            totalTasks--;
-          });
-
           const tileName = `${z}/${x}/${y}`;
           const filePath = `${outputFolder}/${tileName}.${format}`;
 
@@ -332,7 +344,7 @@ async function cleanXYZTileDataFiles(
               );
             }
           } finally {
-            await mutex.runExclusive(() => {
+            await updateActiveTasks(mutex, () => {
               activeTasks--;
             });
           }
