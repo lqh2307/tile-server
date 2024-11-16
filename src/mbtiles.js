@@ -9,6 +9,7 @@ import {
   createNewTileJSON,
   calculateMD5,
   retry,
+  delay,
 } from "./utils.js";
 import https from "node:https";
 import sqlite3 from "sqlite3";
@@ -129,20 +130,26 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
         let activeTasks = 0;
         const mutex = new Mutex();
 
+        async function updateActiveTasks(mutex, action) {
+          return await mutex.runExclusive(async () => {
+            return action();
+          });
+        }
+
         for (const row of rows) {
           /* Wait slot for a task */
-          while (activeTasks >= concurrency) {
-            await delay(50);
-          }
+          await updateActiveTasks(mutex, async () => {
+            while (activeTasks >= 200) {
+              await delay(50);
+            }
+
+            activeTasks++;
+
+            totalTasks--;
+          });
 
           /* Run a task */
           (async () => {
-            await mutex.runExclusive(async () => {
-              activeTasks++;
-
-              totalTasks--;
-            });
-
             try {
               const layers = await getLayerNamesFromPBFTileBuffer(
                 row.tile_data
@@ -152,7 +159,7 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
             } catch (error) {
               reject(error);
             } finally {
-              await mutex.runExclusive(() => {
+              await updateActiveTasks(mutex, () => {
                 activeTasks--;
               });
             }

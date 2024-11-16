@@ -114,20 +114,26 @@ export async function getXYZLayersFromTiles(sourcePath) {
   let activeTasks = 0;
   const mutex = new Mutex();
 
+  async function updateActiveTasks(mutex, action) {
+    return await mutex.runExclusive(async () => {
+      return action();
+    });
+  }
+
   for (const pbfFilePath of pbfFilePaths) {
     /* Wait slot for a task */
-    while (activeTasks >= concurrency) {
-      await delay(50);
-    }
+    await updateActiveTasks(mutex, async () => {
+      while (activeTasks >= 200) {
+        await delay(50);
+      }
+
+      activeTasks++;
+
+      totalTasks--;
+    });
 
     /* Run a task */
     (async () => {
-      await mutex.runExclusive(async () => {
-        activeTasks++;
-
-        totalTasks--;
-      });
-
       try {
         const data = await fsPromise.readFile(`${sourcePath}/${pbfFilePath}`);
         const layers = await getLayerNamesFromPBFTileBuffer(data);
@@ -136,7 +142,7 @@ export async function getXYZLayersFromTiles(sourcePath) {
       } catch (error) {
         throw error;
       } finally {
-        await mutex.runExclusive(() => {
+        await updateActiveTasks(mutex, () => {
           activeTasks--;
         });
       }
