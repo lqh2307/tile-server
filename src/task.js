@@ -112,45 +112,30 @@ async function seedXYZTileDataFiles(
         }
 
         /* Run a task */
-        if (totalTasks > 0) {
-          (async () => {
-            await mutex.runExclusive(async () => {
-              activeTasks++;
+        (async () => {
+          await mutex.runExclusive(async () => {
+            activeTasks++;
 
-              totalTasks--;
-            });
+            totalTasks--;
+          });
 
-            const tileName = `${z}/${x}/${y}`;
-            const filePath = `${outputFolder}/${tileName}.${metadata.format}`;
-            const url = tileURL.replaceAll("{z}/{x}/{y}", tileName);
+          const tileName = `${z}/${x}/${y}`;
+          const filePath = `${outputFolder}/${tileName}.${metadata.format}`;
+          const url = tileURL.replaceAll("{z}/{x}/{y}", tileName);
 
-            try {
-              if (refreshTimestamp !== undefined) {
-                const stats = await fsPromise.stat(filePath);
+          try {
+            if (refreshTimestamp !== undefined) {
+              const stats = await fsPromise.stat(filePath);
 
-                if (refreshTimestamp === true) {
-                  const md5URL = tileURL.replaceAll(
-                    "{z}/{x}/{y}",
-                    `md5/${tileName}`
-                  );
+              if (refreshTimestamp === true) {
+                const md5URL = tileURL.replaceAll(
+                  "{z}/{x}/{y}",
+                  `md5/${tileName}`
+                );
 
-                  const response = await getDataBuffer(md5URL, timeout);
+                const response = await getDataBuffer(md5URL, timeout);
 
-                  if (response.headers["Etag"] !== hashs[tileName]) {
-                    await downloadXYZTileDataFile(
-                      url,
-                      outputFolder,
-                      tileName,
-                      metadata.format,
-                      maxTry,
-                      timeout,
-                      hashs
-                    );
-                  }
-                } else if (
-                  stats.ctimeMs === undefined ||
-                  stats.ctimeMs < refreshTimestamp
-                ) {
+                if (response.headers["Etag"] !== hashs[tileName]) {
                   await downloadXYZTileDataFile(
                     url,
                     outputFolder,
@@ -161,7 +146,10 @@ async function seedXYZTileDataFiles(
                     hashs
                   );
                 }
-              } else {
+              } else if (
+                stats.ctimeMs === undefined ||
+                stats.ctimeMs < refreshTimestamp
+              ) {
                 await downloadXYZTileDataFile(
                   url,
                   outputFolder,
@@ -172,30 +160,40 @@ async function seedXYZTileDataFiles(
                   hashs
                 );
               }
-            } catch (error) {
-              if (error.code === "ENOENT") {
-                await downloadXYZTileDataFile(
-                  url,
-                  outputFolder,
-                  tileName,
-                  metadata.format,
-                  maxTry,
-                  timeout,
-                  hashs
-                );
-              } else {
-                printLog(
-                  "error",
-                  `Failed to seed tile data file "${tileName}": ${error}`
-                );
-              }
-            } finally {
-              await mutex.runExclusive(() => {
-                activeTasks--;
-              });
+            } else {
+              await downloadXYZTileDataFile(
+                url,
+                outputFolder,
+                tileName,
+                metadata.format,
+                maxTry,
+                timeout,
+                hashs
+              );
             }
-          })();
-        }
+          } catch (error) {
+            if (error.code === "ENOENT") {
+              await downloadXYZTileDataFile(
+                url,
+                outputFolder,
+                tileName,
+                metadata.format,
+                maxTry,
+                timeout,
+                hashs
+              );
+            } else {
+              printLog(
+                "error",
+                `Failed to seed tile data file "${tileName}": ${error}`
+              );
+            }
+          } finally {
+            await mutex.runExclusive(() => {
+              activeTasks--;
+            });
+          }
+        })();
       }
     }
   }
@@ -289,35 +287,24 @@ async function cleanXYZTileDataFiles(
         }
 
         /* Run a task */
-        if (totalTasks > 0) {
-          (async () => {
-            await mutex.runExclusive(async () => {
-              activeTasks++;
+        (async () => {
+          await mutex.runExclusive(async () => {
+            activeTasks++;
 
-              totalTasks--;
-            });
+            totalTasks--;
+          });
 
-            const tileName = `${z}/${x}/${y}`;
-            const filePath = `${outputFolder}/${tileName}.${format}`;
+          const tileName = `${z}/${x}/${y}`;
+          const filePath = `${outputFolder}/${tileName}.${format}`;
 
-            try {
-              if (cleanUpTimestamp !== undefined) {
-                const stats = await fsPromise.stat(filePath);
+          try {
+            if (cleanUpTimestamp !== undefined) {
+              const stats = await fsPromise.stat(filePath);
 
-                if (
-                  stats.ctimeMs === undefined ||
-                  stats.ctimeMs < cleanUpTimestamp
-                ) {
-                  await removeXYZTileDataFile(
-                    outputFolder,
-                    tileName,
-                    format,
-                    maxTry,
-                    300000, // 5 mins
-                    hashs
-                  );
-                }
-              } else {
+              if (
+                stats.ctimeMs === undefined ||
+                stats.ctimeMs < cleanUpTimestamp
+              ) {
                 await removeXYZTileDataFile(
                   outputFolder,
                   tileName,
@@ -327,20 +314,29 @@ async function cleanXYZTileDataFiles(
                   hashs
                 );
               }
-            } catch (error) {
-              if (error.code !== "ENOENT") {
-                printLog(
-                  "error",
-                  `Failed to clean up tile data file "${tileName}": ${error}`
-                );
-              }
-            } finally {
-              await mutex.runExclusive(() => {
-                activeTasks--;
-              });
+            } else {
+              await removeXYZTileDataFile(
+                outputFolder,
+                tileName,
+                format,
+                maxTry,
+                300000, // 5 mins
+                hashs
+              );
             }
-          })();
-        }
+          } catch (error) {
+            if (error.code !== "ENOENT") {
+              printLog(
+                "error",
+                `Failed to clean up tile data file "${tileName}": ${error}`
+              );
+            }
+          } finally {
+            await mutex.runExclusive(() => {
+              activeTasks--;
+            });
+          }
+        })();
       }
     }
   }

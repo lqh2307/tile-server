@@ -136,29 +136,27 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
           }
 
           /* Run a task */
-          if (totalTasks > 0) {
-            (async () => {
-              await mutex.runExclusive(async () => {
-                activeTasks++;
+          (async () => {
+            await mutex.runExclusive(async () => {
+              activeTasks++;
 
-                totalTasks--;
+              totalTasks--;
+            });
+
+            try {
+              const layers = await getLayerNamesFromPBFTileBuffer(
+                row.tile_data
+              );
+
+              layers.forEach((layer) => layerNames.add(layer));
+            } catch (error) {
+              reject(error);
+            } finally {
+              await mutex.runExclusive(() => {
+                activeTasks--;
               });
-
-              try {
-                const layers = await getLayerNamesFromPBFTileBuffer(
-                  row.tile_data
-                );
-
-                layers.forEach((layer) => layerNames.add(layer));
-              } catch (error) {
-                reject(error);
-              } finally {
-                await mutex.runExclusive(() => {
-                  activeTasks--;
-                });
-              }
-            })();
-          }
+            }
+          })();
         }
 
         /* Wait all tasks done */

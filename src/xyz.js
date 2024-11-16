@@ -121,28 +121,26 @@ export async function getXYZLayersFromTiles(sourcePath) {
     }
 
     /* Run a task */
-    if (totalTasks > 0) {
-      (async () => {
-        await mutex.runExclusive(async () => {
-          activeTasks++;
+    (async () => {
+      await mutex.runExclusive(async () => {
+        activeTasks++;
 
-          totalTasks--;
+        totalTasks--;
+      });
+
+      try {
+        const data = await fsPromise.readFile(`${sourcePath}/${pbfFilePath}`);
+        const layers = await getLayerNamesFromPBFTileBuffer(data);
+
+        layers.forEach((layer) => layerNames.add(layer));
+      } catch (error) {
+        throw error;
+      } finally {
+        await mutex.runExclusive(() => {
+          activeTasks--;
         });
-
-        try {
-          const data = await fsPromise.readFile(`${sourcePath}/${pbfFilePath}`);
-          const layers = await getLayerNamesFromPBFTileBuffer(data);
-
-          layers.forEach((layer) => layerNames.add(layer));
-        } catch (error) {
-          throw error;
-        } finally {
-          await mutex.runExclusive(() => {
-            activeTasks--;
-          });
-        }
-      })();
-    }
+      }
+    })();
   }
 
   /* Wait all tasks done */
