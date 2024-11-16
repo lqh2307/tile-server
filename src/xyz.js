@@ -12,7 +12,6 @@ import {
   getLayerNamesFromPBFTileBuffer,
   detectFormatAndHeaders,
   getTileBoundsFromBBox,
-  createNewTileJSON,
   getBBoxFromTiles,
   calculateMD5,
   findFolders,
@@ -260,7 +259,14 @@ export async function getXYZZoomLevelFromTiles(
  * @returns {Promise<object>}
  */
 export async function getXYZInfos(sourcePath) {
-  let metadata = {};
+  const metadata = {
+    tilejson: "2.2.0",
+    name: "Unknown",
+    description: "Unknown",
+    attribution: "<b>Viettel HighTech</b>",
+    version: "1.0.0",
+    type: "overlay",
+  };
 
   /* Get metadatas */
   try {
@@ -269,41 +275,61 @@ export async function getXYZInfos(sourcePath) {
       "utf8"
     );
 
-    metadata = JSON.parse(data);
+    Object.assign(metadata, JSON.parse(data));
   } catch (error) {}
 
   /* Try get min zoom */
   if (metadata.minzoom === undefined) {
-    metadata.minzoom = await getXYZZoomLevelFromTiles(sourcePath, "minzoom");
+    try {
+      metadata.minzoom = await getXYZZoomLevelFromTiles(sourcePath, "minzoom");
+    } catch (error) {
+      metadata.minzoom = 0;
+    }
   }
 
   /* Try get max zoom */
   if (metadata.maxzoom === undefined) {
-    metadata.maxzoom = await getXYZZoomLevelFromTiles(sourcePath, "maxzoom");
+    try {
+      metadata.maxzoom = await getXYZZoomLevelFromTiles(sourcePath, "maxzoom");
+    } catch (error) {
+      metadata.maxzoom = 22;
+    }
   }
 
   /* Try get tile format */
   if (metadata.format === undefined) {
-    metadata.format = await getXYZFormatFromTiles(sourcePath);
+    try {
+      metadata.format = await getXYZFormatFromTiles(sourcePath);
+    } catch (error) {
+      metadata.format = "png";
+    }
   }
 
   /* Try get bounds */
   if (metadata.bounds === undefined) {
-    metadata.bounds = await getXYZBBoxFromTiles(sourcePath, "xyz");
+    try {
+      metadata.bounds = await getXYZBBoxFromTiles(sourcePath, "xyz");
+    } catch (error) {
+      metadata.bounds = [-180, -85.051129, 180, 85.051129];
+    }
   }
 
   /* Add vector_layers */
   if (metadata.format === "pbf" && metadata.vector_layers === undefined) {
-    const layers = await getXYZLayersFromTiles(sourcePath);
+    try {
+      const layers = await getXYZLayersFromTiles(sourcePath);
 
-    metadata.vector_layers = layers.map((layer) => {
-      return {
-        id: layer,
-      };
-    });
+      metadata.vector_layers = layers.map((layer) => {
+        return {
+          id: layer,
+        };
+      });
+    } catch (error) {
+      metadata.vector_layers = [];
+    }
   }
 
-  return createNewTileJSON(metadata);
+  return metadata;
 }
 
 /**

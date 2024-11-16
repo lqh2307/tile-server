@@ -1,12 +1,8 @@
 "use strict";
 
+import { detectFormatAndHeaders, calculateMD5 } from "./utils.js";
 import { PMTiles, FetchSource } from "pmtiles";
 import fs from "node:fs";
-import {
-  detectFormatAndHeaders,
-  createNewTileJSON,
-  calculateMD5,
-} from "./utils.js";
 
 /**
  * Private class for PMTiles
@@ -60,10 +56,21 @@ export function openPMTiles(filePath) {
  * @returns {Promise<object>}
  */
 export async function getPMTilesInfos(pmtilesSource) {
-  const [header, metadata] = await Promise.all([
-    pmtilesSource.getHeader(),
-    pmtilesSource.getMetadata(),
-  ]);
+  const header = await pmtilesSource.getHeader();
+
+  const metadata = {
+    tilejson: "2.2.0",
+    name: "Unknown",
+    description: "Unknown",
+    attribution: "<b>Viettel HighTech</b>",
+    version: "1.0.0",
+    type: "overlay",
+    format: "png",
+    bounds: [-180, -85.051129, 180, 85.051129],
+    minzoom: 0,
+    maxzoom: 22,
+    ...(await pmtilesSource.getMetadata()),
+  };
 
   if (header.tileType === 1) {
     metadata.format = "pbf";
@@ -111,7 +118,7 @@ export async function getPMTilesInfos(pmtilesSource) {
     ];
   }
 
-  return createNewTileJSON(metadata);
+  return metadata;
 }
 
 /**

@@ -6,7 +6,6 @@ import { Mutex } from "async-mutex";
 import {
   getLayerNamesFromPBFTileBuffer,
   detectFormatAndHeaders,
-  createNewTileJSON,
   calculateMD5,
   retry,
   delay,
@@ -355,7 +354,15 @@ export async function getMBTilesFormatFromTiles(mbtilesSource) {
  * @returns {Promise<object>}
  */
 export async function getMBTilesInfos(mbtilesSource) {
-  const metadata = {};
+  const metadata = {
+    tilejson: "2.2.0",
+    name: "Unknown",
+    description: "Unknown",
+    attribution: "<b>Viettel HighTech</b>",
+    version: "1.0.0",
+    type: "overlay",
+    bounds: [-180, -85.051129, 180, 85.051129],
+  };
 
   /* Get metadatas */
   await new Promise((resolve, reject) => {
@@ -401,37 +408,62 @@ export async function getMBTilesInfos(mbtilesSource) {
 
   /* Try get min zoom */
   if (metadata.minzoom === undefined) {
-    metadata.minzoom = await getMBTilesZoomLevelFromTiles(
-      mbtilesSource,
-      "minzoom"
-    );
+    try {
+      metadata.minzoom = await getMBTilesZoomLevelFromTiles(
+        mbtilesSource,
+        "minzoom"
+      );
+    } catch (error) {
+      metadata.minzoom = 0;
+    }
   }
 
   /* Try get max zoom */
   if (metadata.maxzoom === undefined) {
-    metadata.maxzoom = await getMBTilesZoomLevelFromTiles(
-      mbtilesSource,
-      "maxzoom"
-    );
+    try {
+      metadata.maxzoom = await getMBTilesZoomLevelFromTiles(
+        mbtilesSource,
+        "maxzoom"
+      );
+    } catch (error) {
+      metadata.maxzoom = 22;
+    }
   }
 
   /* Try get tile format */
   if (metadata.format === undefined) {
-    metadata.format = await getMBTilesFormatFromTiles(mbtilesSource);
+    try {
+      metadata.format = await getMBTilesFormatFromTiles(mbtilesSource);
+    } catch (error) {
+      metadata.format = "png";
+    }
+  }
+
+  /* Calculate center */
+  if (metadata.center === undefined) {
+    metadata.center = [
+      (metadata.bounds[0] + metadata.bounds[2]) / 2,
+      (metadata.bounds[1] + metadata.bounds[3]) / 2,
+      Math.floor((metadata.minzoom + metadata.maxzoom) / 2),
+    ];
   }
 
   /* Add vector_layers */
   if (metadata.format === "pbf" && metadata.vector_layers === undefined) {
-    const layers = await getMBTilesLayersFromTiles(mbtilesSource);
+    try {
+      const layers = await getMBTilesLayersFromTiles(mbtilesSource);
 
-    metadata.vector_layers = layers.map((layer) => {
-      return {
-        id: layer,
-      };
-    });
+      metadata.vector_layers = layers.map((layer) => {
+        return {
+          id: layer,
+        };
+      });
+    } catch (error) {
+      metadata.vector_layers = [];
+    }
   }
 
-  return createNewTileJSON(metadata);
+  return metadata;
 }
 
 /**

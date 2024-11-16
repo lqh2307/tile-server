@@ -14,7 +14,6 @@ import sharp from "sharp";
 import {
   detectFormatAndHeaders,
   getDataTileFromURL,
-  createNewTileJSON,
   getLonLatFromXYZ,
   getRequestHost,
   getFontsPBF,
@@ -634,10 +633,18 @@ export const serve_rendered = {
             }
 
             const rendered = {
-              tileJSON: createNewTileJSON({
-                name: item.name,
-                description: item.name,
-              }),
+              tileJSON: {
+                tilejson: "2.2.0",
+                name: item.name || "Unknown",
+                description: item.name || "Unknown",
+                attribution: "<b>Viettel HighTech</b>",
+                version: "1.0.0",
+                type: "overlay",
+                format: "png",
+                bounds: [-180, -85.051129, 180, 85.051129],
+                minzoom: 0,
+                maxzoom: 22,
+              },
               renderers: [],
             };
 
