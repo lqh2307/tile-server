@@ -118,6 +118,15 @@ export async function getPMTilesInfos(pmtilesSource) {
     ];
   }
 
+  /* Calculate center */
+  if (metadata.center === undefined) {
+    metadata.center = [
+      (metadata.bounds[0] + metadata.bounds[2]) / 2,
+      (metadata.bounds[1] + metadata.bounds[3]) / 2,
+      Math.floor((metadata.minzoom + metadata.maxzoom) / 2),
+    ];
+  }
+
   return metadata;
 }
 
