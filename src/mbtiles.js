@@ -382,11 +382,21 @@ export async function getMBTilesInfos(mbtilesSource) {
 
               break;
             case "minzoom":
+              metadata[row.name] = Number(row.value);
+
+              break;
             case "maxzoom":
               metadata[row.name] = Number(row.value);
 
               break;
             case "center":
+              metadata[row.name] = row.value
+                .split(",")
+                .map((elm) => Number(elm));
+
+              break;
+            case "format":
+              metadata[row.name] = row.value;
             case "bounds":
               metadata[row.name] = row.value
                 .split(",")
@@ -394,9 +404,21 @@ export async function getMBTilesInfos(mbtilesSource) {
 
               break;
             case "name":
+              metadata.name = row.value;
+
+              break;
             case "description":
+              metadata.description = row.value;
+
+              break;
             case "attribution":
+              metadata.attribution = row.value;
+
+              break;
             case "version":
+              metadata.version = row.value;
+
+              break;
             case "type":
               metadata.name = row.value;
 
