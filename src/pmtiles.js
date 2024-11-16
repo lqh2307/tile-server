@@ -65,10 +65,6 @@ export async function getPMTilesInfos(pmtilesSource) {
     attribution: "<b>Viettel HighTech</b>",
     version: "1.0.0",
     type: "overlay",
-    format: "png",
-    bounds: [-180, -85.051129, 180, 85.051129],
-    minzoom: 0,
-    maxzoom: 22,
     ...(await pmtilesSource.getMetadata()),
   };
 
@@ -82,14 +78,20 @@ export async function getPMTilesInfos(pmtilesSource) {
     metadata.format = "webp";
   } else if (header.tileType === 5) {
     metadata.format = "avif";
+  } else {
+    metadata.format = "png";
   }
 
   if (header.minZoom !== undefined) {
     metadata.minzoom = Number(header.minZoom);
+  } else {
+    metadata.minzoom = 0;
   }
 
   if (header.maxZoom !== undefined) {
     metadata.maxzoom = Number(header.maxZoom);
+  } else {
+    metadata.maxzoom = 22;
   }
 
   if (
@@ -104,6 +106,8 @@ export async function getPMTilesInfos(pmtilesSource) {
       Number(header.maxLon),
       Number(header.maxLat),
     ];
+  } else {
+    metadata.bounds = [-180, -85.051129, 180, 85.051129];
   }
 
   if (
@@ -116,10 +120,8 @@ export async function getPMTilesInfos(pmtilesSource) {
       Number(header.centerLat),
       Number(header.centerZoom),
     ];
-  }
-
-  /* Calculate center */
-  if (metadata.center === undefined) {
+  } else {
+    /* Calculate center */
     metadata.center = [
       (metadata.bounds[0] + metadata.bounds[2]) / 2,
       (metadata.bounds[1] + metadata.bounds[3]) / 2,
