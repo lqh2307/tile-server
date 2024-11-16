@@ -131,7 +131,7 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
 
         for (const row of rows) {
           /* Wait slot for a task */
-          while (activeTasks >= concurrency && totalTasks > 0) {
+          while (activeTasks >= concurrency) {
             await delay(50);
           }
 

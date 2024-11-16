@@ -116,7 +116,7 @@ export async function getXYZLayersFromTiles(sourcePath) {
 
   for (const pbfFilePath of pbfFilePaths) {
     /* Wait slot for a task */
-    while (activeTasks >= concurrency && totalTasks > 0) {
+    while (activeTasks >= concurrency) {
       await delay(50);
     }
 
