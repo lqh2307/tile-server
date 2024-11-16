@@ -579,6 +579,98 @@ export async function getSprite(id, fileName) {
 }
 
 /**
+ * Create new tileJSON
+ * @param {object} metadata
+ * @returns
+ */
+export function createNewTileJSON(metadata) {
+  // Default
+  const data = {
+    tilejson: "2.2.0",
+    name: "Unknown",
+    description: "Unknown",
+    attribution: "<b>Viettel HighTech</b>",
+    version: "1.0.0",
+    type: "overlay",
+    format: "png",
+    bounds: [-180, -85.051129, 180, 85.051129],
+    minzoom: 0,
+    maxzoom: 22,
+  };
+
+  // Overwrite
+  if (metadata !== undefined) {
+    if (metadata.name !== undefined) {
+      data.name = metadata.name;
+    }
+
+    if (metadata.description !== undefined) {
+      data.description = metadata.description;
+    }
+
+    if (metadata.attribution !== undefined) {
+      data.attribution = metadata.attribution;
+    }
+
+    if (metadata.type !== undefined) {
+      data.type = metadata.type;
+    }
+
+    if (metadata.format !== undefined) {
+      data.format = metadata.format;
+    }
+
+    if (metadata.version !== undefined) {
+      data.version = metadata.version;
+    }
+
+    if (metadata.tiles !== undefined) {
+      data.tiles = [...metadata.tiles];
+    }
+
+    if (metadata.bounds !== undefined) {
+      data.bounds = [...metadata.bounds];
+    }
+
+    if (metadata.center !== undefined) {
+      data.center = [...metadata.center];
+    }
+
+    if (metadata.minzoom !== undefined) {
+      data.minzoom = metadata.minzoom;
+    }
+
+    if (metadata.maxzoom !== undefined) {
+      data.maxzoom = metadata.maxzoom;
+    }
+
+    if (metadata.vector_layers !== undefined) {
+      data.vector_layers = deepClone(metadata.vector_layers);
+    }
+
+    if (metadata.tilestats !== undefined) {
+      data.tilestats = deepClone(metadata.tilestats);
+    }
+  }
+
+  // Calculate center
+  if (data.center === undefined) {
+    data.center = [
+      (data.bounds[0] + data.bounds[2]) / 2,
+      (data.bounds[1] + data.bounds[3]) / 2,
+      Math.floor((data.minzoom + data.maxzoom) / 2),
+    ];
+  }
+
+  // Add vector_layers
+  if (data.format === "pbf" && data.vector_layers === undefined) {
+    data.vector_layers = [];
+  }
+
+  return data;
+}
+
+/**
  * Return either a format as an extension: png, pbf, jpg, webp, gif and
  * headers - Content-Type and Content-Encoding - for a response containing this kind of image
  * @param {Buffer} buffer input

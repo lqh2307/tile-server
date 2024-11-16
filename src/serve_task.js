@@ -49,15 +49,7 @@ function cancelTaskHandler() {
 function getTaskInfoHandler() {
   return async (req, res, next) => {
     try {
-      let taskInfo = {};
-
-      try {
-        taskInfo = await fsPromise.readFile("server-info.json", "utf8");
-      } catch (error) {
-        if (error.code !== "ENOENT") {
-          throw error;
-        }
-      }
+      const taskInfo = await fsPromise.readFile("server-info.json", "utf8");
 
       res.header("Content-Type", "application/json");
 

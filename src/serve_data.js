@@ -1,6 +1,5 @@
 "use strict";
 
-import { getRequestHost, gzipAsync, deepClone, isExistFile } from "./utils.js";
 import { config, readSeedFile } from "./config.js";
 import { StatusCodes } from "http-status-codes";
 import { printLog } from "./logger.js";
@@ -26,6 +25,12 @@ import {
   getPMTilesTile,
   openPMTiles,
 } from "./pmtiles.js";
+import {
+  createNewTileJSON,
+  getRequestHost,
+  isExistFile,
+  gzipAsync,
+} from "./utils.js";
 
 /**
  * Validate data info (no validate json field)
@@ -735,14 +740,10 @@ export const serve_data = {
             dataInfo.sourceType = "xyz";
             dataInfo.source = dataInfo.path;
 
-            try {
+            if (item.cache !== undefined) {
+              dataInfo.tileJSON = createNewTileJSON(cacheSource.metadata);
+            } else {
               dataInfo.tileJSON = await getXYZInfos(dataInfo.source);
-            } catch (error) {
-              if (item.cache !== undefined) {
-                dataInfo.tileJSON = deepClone(cacheSource.metadata);
-              } else {
-                throw error;
-              }
             }
           }
 
