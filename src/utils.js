@@ -5,13 +5,11 @@ import fsPromise from "node:fs/promises";
 import protobuf from "protocol-buffers";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
-import handlebars from "handlebars";
 import https from "node:https";
 import http from "node:http";
 import path from "node:path";
 import crypto from "crypto";
 import axios from "axios";
-import sharp from "sharp";
 import fs from "node:fs";
 import zlib from "zlib";
 import util from "util";
@@ -401,119 +399,6 @@ export async function removeOldCacheLocks(dataDir) {
       force: true,
     })
   );
-}
-
-/**
- * Compile template
- * @param {string} template
- * @param {object} data
- * @returns {Promise<string>}
- */
-export async function compileTemplate(template, data) {
-  const fileData = await fsPromise.readFile(
-    `public/templates/${template}.tmpl`,
-    "utf8"
-  );
-
-  return handlebars.compile(fileData)(data);
-}
-
-/**
- * Render data
- * @param {object} item
- * @param {number} scale
- * @param {256|512} tileSize
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {number} z Zoom level
- * @param {"xyz"|"tms"} scheme
- * @returns {Promise<Buffer>}
- */
-export async function renderData(
-  item,
-  scale,
-  tileSize,
-  x,
-  y,
-  z,
-  scheme = "xyz"
-) {
-  const params = {
-    zoom: z,
-    center: getLonLatFromXYZ(x, y, z, "center", scheme),
-    width: tileSize,
-    height: tileSize,
-  };
-
-  if (tileSize === 256) {
-    if (z !== 0) {
-      params.zoom = z - 1;
-    } else {
-      // HACK1: This hack allows tile-server to support zoom level 0 - 256px tiles, which would actually be zoom -1 in maplibre-gl-native
-      params.width = 512;
-      params.height = 512;
-      // END HACK1
-    }
-  }
-
-  const renderer = await item.renderers[scale - 1].acquire();
-
-  return new Promise((resolve, reject) => {
-    renderer.render(params, (error, data) => {
-      item.renderers[scale - 1].release(renderer);
-
-      if (error) {
-        return reject(error);
-      }
-
-      resolve(data);
-    });
-  });
-}
-
-/**
- * Render image
- * @param {object} data
- * @param {number} scale
- * @param {number} compression
- * @param {256|512} tileSize
- * @param {number} z Zoom level
- * @returns {Promise<Buffer>}
- */
-export async function processImage(data, scale, compression, tileSize, z) {
-  if (z === 0 && tileSize === 256) {
-    // HACK2: This hack allows tile-server to support zoom level 0 - 256px tiles, which would actually be zoom -1 in maplibre-gl-native
-    return await sharp(data, {
-      raw: {
-        premultiplied: true,
-        width: 512 * scale,
-        height: 512 * scale,
-        channels: 4,
-      },
-    })
-      .resize({
-        width: 256 * scale,
-        height: 256 * scale,
-      })
-      .png({
-        compressionLevel: compression,
-      })
-      .toBuffer();
-    // END HACK2
-  } else {
-    return await sharp(data, {
-      raw: {
-        premultiplied: true,
-        width: tileSize * scale,
-        height: tileSize * scale,
-        channels: 4,
-      },
-    })
-      .png({
-        compressionLevel: compression,
-      })
-      .toBuffer();
-  }
 }
 
 /**

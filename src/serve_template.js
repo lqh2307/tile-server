@@ -1,10 +1,27 @@
 "use strict";
 
-import { getXYZFromLonLatZ, compileTemplate, getRequestHost } from "./utils.js";
+import { getXYZFromLonLatZ, getRequestHost } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
+import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
+import handlebars from "handlebars";
 import express from "express";
+
+/**
+ * Compile template
+ * @param {string} template
+ * @param {object} data
+ * @returns {Promise<string>}
+ */
+async function compileTemplate(template, data) {
+  const fileData = await fsPromise.readFile(
+    `public/templates/${template}.tmpl`,
+    "utf8"
+  );
+
+  return handlebars.compile(fileData)(data);
+}
 
 function serveFrontPageHandler() {
   return async (req, res, next) => {
