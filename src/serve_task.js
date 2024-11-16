@@ -52,7 +52,7 @@ function getTaskInfoHandler() {
       let taskInfo = {};
 
       try {
-        taskInfo = await fsPromise.readFile("task-info.json", "utf8");
+        taskInfo = await fsPromise.readFile("server-info.json", "utf8");
       } catch (error) {
         if (error.code !== "ENOENT") {
           throw error;

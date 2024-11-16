@@ -16,7 +16,7 @@ import morgan from "morgan";
 import cors from "cors";
 import {
   checkReadyMiddleware,
-  updateTaskInfoFile,
+  updateServerInfoFile,
   killServer,
 } from "./utils.js";
 
@@ -30,8 +30,8 @@ let currentTaskWorker;
 export async function startTaskInWorker(opts) {
   if (currentTaskWorker === undefined) {
     /* Store start task time */
-    await updateTaskInfoFile({
-      lastStartTime: new Date().toISOString(),
+    await updateServerInfoFile({
+      lastTaskStart: new Date().toISOString(),
     });
 
     new Worker("./src/task_worker.js", {
@@ -54,18 +54,18 @@ export async function startTaskInWorker(opts) {
 
         if (code === 0) {
           /* Store done task time */
-          await updateTaskInfoFile({
-            lastDone: new Date().toISOString(),
+          await updateServerInfoFile({
+            lastTaskDone: new Date().toISOString(),
           });
         } else if (code === 1) {
           /* Store cancel task time */
-          await updateTaskInfoFile({
-            lastCancel: new Date().toISOString(),
+          await updateServerInfoFile({
+            lastTaskCancel: new Date().toISOString(),
           });
         } else {
           /* Store failed task time */
-          await updateTaskInfoFile({
-            lastFailed: new Date().toISOString(),
+          await updateServerInfoFile({
+            lastTaskFailed: new Date().toISOString(),
           });
         }
       });
@@ -139,11 +139,10 @@ async function loadData() {
   printLog("info", "Loading data...");
 
   try {
+    /*  */
     await Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()]);
     await serve_style.add();
     await serve_rendered.add();
-
-    printLog("info", "Completed startup!");
 
     /*  */
     config.styles = undefined;
@@ -153,6 +152,8 @@ async function loadData() {
 
     /*  */
     config.startupComplete = true;
+
+    printLog("info", "Completed startup!");
   } catch (error) {
     printLog("error", `Failed to load data: ${error}. Exited!`);
 

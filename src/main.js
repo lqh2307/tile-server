@@ -99,7 +99,7 @@ async function startClusterServer(opts) {
     //     );
 
     /* Remove old cache locks */
-    printLog("info", `Remove old cache locks before start server...`);
+    printLog("info", `Removing old cache locks before start server...`);
 
     await removeOldCacheLocks(opts.dataDir);
 
