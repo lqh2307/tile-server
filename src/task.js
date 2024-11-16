@@ -100,20 +100,19 @@ async function seedXYZTileDataFiles(
 
   // Download files
   const hashs = {};
+  let activeTasks = 0;
+  const mutex = new Mutex();
 
-  if (totalTasks > 0) {
-    let activeTasks = 0;
-    const mutex = new Mutex();
+  for (const z in tilesSummary) {
+    for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+      for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+        /* Wait slot for a task */
+        while (activeTasks >= concurrency && totalTasks > 0) {
+          await delay(50);
+        }
 
-    for (const z in tilesSummary) {
-      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-          /* Wait slot for a task */
-          while (activeTasks >= concurrency && totalTasks > 0) {
-            await delay(50);
-          }
-
-          /* Run a task */
+        /* Run a task */
+        if (totalTasks > 0) {
           (async () => {
             await mutex.runExclusive(async () => {
               activeTasks++;
@@ -199,11 +198,11 @@ async function seedXYZTileDataFiles(
         }
       }
     }
+  }
 
-    /* Wait all tasks done */
-    while (activeTasks > 0) {
-      await delay(50);
-    }
+  /* Wait all tasks done */
+  while (activeTasks > 0) {
+    await delay(50);
   }
 
   // Update metadata.json file
@@ -278,20 +277,19 @@ async function cleanXYZTileDataFiles(
 
   // Remove files
   const hashs = {};
+  let activeTasks = 0;
+  const mutex = new Mutex();
 
-  if (totalTasks > 0) {
-    let activeTasks = 0;
-    const mutex = new Mutex();
+  for (const z in tilesSummary) {
+    for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+      for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+        /* Wait slot for a task */
+        while (activeTasks >= concurrency && totalTasks > 0) {
+          await delay(50);
+        }
 
-    for (const z in tilesSummary) {
-      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-          /* Wait slot for a task */
-          while (activeTasks >= concurrency && totalTasks > 0) {
-            await delay(50);
-          }
-
-          /* Run a task */
+        /* Run a task */
+        if (totalTasks > 0) {
           (async () => {
             await mutex.runExclusive(async () => {
               activeTasks++;
@@ -345,11 +343,11 @@ async function cleanXYZTileDataFiles(
         }
       }
     }
+  }
 
-    /* Wait all tasks done */
-    while (activeTasks > 0) {
-      await delay(50);
-    }
+  /* Wait all tasks done */
+  while (activeTasks > 0) {
+    await delay(50);
   }
 
   // Update md5.json file

@@ -126,17 +126,17 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
       if (rows !== undefined) {
         const layerNames = new Set();
         let totalTasks = rows.length;
+        let activeTasks = 0;
+        const mutex = new Mutex();
 
-        if (totalTasks > 0) {
-          let activeTasks = 0;
-          const mutex = new Mutex();
+        for (const row of rows) {
+          /* Wait slot for a task */
+          while (activeTasks >= concurrency && totalTasks > 0) {
+            await delay(50);
+          }
 
-          for (const row of rows) {
-            /* Wait slot for a task */
-            while (activeTasks >= concurrency && totalTasks > 0) {
-              await delay(50);
-            }
-
+          /* Run a task */
+          if (totalTasks > 0) {
             (async () => {
               await mutex.runExclusive(async () => {
                 activeTasks++;
@@ -159,11 +159,11 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
               }
             })();
           }
+        }
 
-          /* Wait all tasks done */
-          while (activeTasks > 0) {
-            await delay(50);
-          }
+        /* Wait all tasks done */
+        while (activeTasks > 0) {
+          await delay(50);
         }
       }
 

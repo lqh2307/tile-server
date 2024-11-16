@@ -109,19 +109,19 @@ export async function getXYZTileFromURL(url, timeout) {
  */
 export async function getXYZLayersFromTiles(sourcePath) {
   const pbfFilePaths = await findFiles(sourcePath, /^\d+\.pbf$/, true);
-  const layerNames = new Set();
   let totalTasks = pbfFilePaths.length;
+  const layerNames = new Set();
+  let activeTasks = 0;
+  const mutex = new Mutex();
 
-  if (totalTasks > 0) {
-    let activeTasks = 0;
-    const mutex = new Mutex();
+  for (const pbfFilePath of pbfFilePaths) {
+    /* Wait slot for a task */
+    while (activeTasks >= concurrency && totalTasks > 0) {
+      await delay(50);
+    }
 
-    for (const pbfFilePath of pbfFilePaths) {
-      /* Wait slot for a task */
-      while (activeTasks >= concurrency && totalTasks > 0) {
-        await delay(50);
-      }
-
+    /* Run a task */
+    if (totalTasks > 0) {
       (async () => {
         await mutex.runExclusive(async () => {
           activeTasks++;
@@ -143,11 +143,11 @@ export async function getXYZLayersFromTiles(sourcePath) {
         }
       })();
     }
+  }
 
-    /* Wait all tasks done */
-    while (activeTasks > 0) {
-      await delay(50);
-    }
+  /* Wait all tasks done */
+  while (activeTasks > 0) {
+    await delay(50);
   }
 
   return Array.from(layerNames);
