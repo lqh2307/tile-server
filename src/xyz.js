@@ -122,11 +122,11 @@ export async function getXYZLayersFromTiles(sourcePath) {
 
   for (const pbfFilePath of pbfFilePaths) {
     /* Wait slot for a task */
-    await updateActiveTasks(mutex, async () => {
-      while (activeTasks >= 200) {
-        await delay(50);
-      }
+    while (activeTasks >= 200) {
+      await delay(50);
+    }
 
+    await mutex.runExclusive(() => {
       activeTasks++;
 
       totalTasks--;

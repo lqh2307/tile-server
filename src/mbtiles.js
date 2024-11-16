@@ -138,11 +138,11 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
 
         for (const row of rows) {
           /* Wait slot for a task */
-          await updateActiveTasks(mutex, async () => {
-            while (activeTasks >= 200) {
-              await delay(50);
-            }
+          while (activeTasks >= 200) {
+            await delay(50);
+          }
 
+          await mutex.runExclusive(() => {
             activeTasks++;
 
             totalTasks--;

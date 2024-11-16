@@ -114,11 +114,11 @@ async function seedXYZTileDataFiles(
     for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
       for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
         /* Wait slot for a task */
-        await updateActiveTasks(mutex, async () => {
-          while (activeTasks >= concurrency) {
-            await delay(50);
-          }
+        while (activeTasks >= concurrency) {
+          await delay(50);
+        }
 
+        await mutex.runExclusive(() => {
           activeTasks++;
 
           totalTasks--;
@@ -295,11 +295,11 @@ async function cleanXYZTileDataFiles(
     for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
       for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
         /* Wait slot for a task */
-        await updateActiveTasks(mutex, async () => {
-          while (activeTasks >= concurrency) {
-            await delay(50);
-          }
+        while (activeTasks >= concurrency) {
+          await delay(50);
+        }
 
+        await mutex.runExclusive(() => {
           activeTasks++;
 
           totalTasks--;
