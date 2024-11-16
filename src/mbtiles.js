@@ -393,8 +393,12 @@ export async function getMBTilesInfos(mbtilesSource) {
                 .map((elm) => Number(elm));
 
               break;
-            default:
-              metadata[row.name] = row.value;
+            case "name":
+            case "description":
+            case "attribution":
+            case "version":
+            case "type":
+              metadata.name = row.value;
 
               break;
           }
