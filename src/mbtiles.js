@@ -361,7 +361,6 @@ export async function getMBTilesInfos(mbtilesSource) {
     attribution: "<b>Viettel HighTech</b>",
     version: "1.0.0",
     type: "overlay",
-    bounds: [-180, -85.051129, 180, 85.051129],
   };
 
   /* Get metadatas */
@@ -437,6 +436,11 @@ export async function getMBTilesInfos(mbtilesSource) {
     } catch (error) {
       metadata.format = "png";
     }
+  }
+
+  /* Try get bounds */
+  if (metadata.bounds === undefined) {
+    metadata.bounds = [-180, -85.051129, 180, 85.051129];
   }
 
   /* Calculate center */
