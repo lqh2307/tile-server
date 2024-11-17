@@ -502,10 +502,9 @@ export function getRequestHost(req) {
  * @param {object} metadata
  * @returns
  */
-export function createNewTileJSON(metadata) {
+export function createMetadata(metadata) {
   // Default
   const data = {
-    tilejson: "2.2.0",
     name: "Unknown",
     description: "Unknown",
     attribution: "<b>Viettel HighTech</b>",
@@ -719,7 +718,7 @@ export function deepClone(obj) {
  * @returns {Promise<void>}
  */
 export async function updateServerInfoFile(serverInfoAdds) {
-  const filePath = "server-info.json";
+  const filePath = `${process.env.DATA_DIR}/server-info.json`;
   const tempFilePath = `${filePath}.tmp`;
 
   try {

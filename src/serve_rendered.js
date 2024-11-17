@@ -17,6 +17,7 @@ import {
   detectFormatAndHeaders,
   getDataTileFromURL,
   getLonLatFromXYZ,
+  createMetadata,
   getRequestHost,
   unzipAsync,
 } from "./utils.js";
@@ -184,18 +185,17 @@ function getRenderedHandler() {
 
     /* Get render info */
     try {
-      const renderedInfo = {
+      res.header("Content-Type", "application/json");
+
+      return res.status(StatusCodes.OK).send({
         ...item.tileJSON,
+        tilejson: "2.2.0",
         tiles: [
           `${getRequestHost(req)}styles/${id}/${
             req.params.tileSize || 256
           }/{z}/{x}/{y}.png${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
         ],
-      };
-
-      res.header("Content-Type", "application/json");
-
-      return res.status(StatusCodes.OK).send(renderedInfo);
+      });
     } catch (error) {
       printLog("error", `Failed to get rendered "${id}": ${error}`);
 
@@ -242,17 +242,16 @@ function getRenderedTileJSONsListHandler() {
     try {
       const result = await Promise.all(
         Object.keys(config.repo.rendereds).map(async (id) => {
-          const renderedInfo = {
+          return {
             ...config.repo.rendereds[id].tileJSON,
             id: id,
+            tilejson: "2.2.0",
             tiles: [
               `${getRequestHost(req)}styles/${id}/{z}/{x}/{y}.png${
                 req.query.scheme === "tms" ? "?scheme=tms" : ""
               }`,
             ],
           };
-
-          return renderedInfo;
         })
       );
 
@@ -633,18 +632,10 @@ export const serve_rendered = {
             }
 
             const rendered = {
-              tileJSON: {
-                tilejson: "2.2.0",
-                name: item.name || "Unknown",
-                description: item.name || "Unknown",
-                attribution: "<b>Viettel HighTech</b>",
-                version: "1.0.0",
-                type: "overlay",
-                format: "png",
-                bounds: [-180, -85.051129, 180, 85.051129],
-                minzoom: 0,
-                maxzoom: 22,
-              },
+              tileJSON: createMetadata({
+                name: item.name,
+                description: item.name,
+              }),
               renderers: [],
             };
 

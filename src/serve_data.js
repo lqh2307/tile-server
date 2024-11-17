@@ -27,7 +27,7 @@ import {
   openPMTiles,
 } from "./pmtiles.js";
 import {
-  createNewTileJSON,
+  createMetadata,
   getRequestHost,
   isExistFile,
   gzipAsync,
@@ -239,6 +239,7 @@ function getDataHandler() {
 
       return res.status(StatusCodes.OK).send({
         ...item.tileJSON,
+        tilejson: "2.2.0",
         tiles: [
           `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
             item.tileJSON.format
@@ -361,6 +362,7 @@ function getDataTileJSONsListHandler() {
 
           return {
             ...item.tileJSON,
+            tilejson: "2.2.0",
             id: id,
             tiles: [
               `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
@@ -742,7 +744,7 @@ export const serve_data = {
             dataInfo.source = dataInfo.path;
 
             if (item.cache !== undefined) {
-              dataInfo.tileJSON = createNewTileJSON(cacheSource.metadata);
+              dataInfo.tileJSON = createMetadata(cacheSource.metadata);
             } else {
               dataInfo.tileJSON = await getXYZInfos(dataInfo.source);
             }

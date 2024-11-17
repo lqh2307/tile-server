@@ -9,7 +9,10 @@ import cron from "node-cron";
 import {
   updateServerInfoFile,
   removeOldCacheLocks,
+  restartServer,
   getVersion,
+  killServer,
+  startTask,
 } from "./utils.js";
 import {
   cancelTaskInWorker,
@@ -50,13 +53,30 @@ async function startClusterServer(opts) {
     process.on("SIGINT", () => {
       printLog("info", `Received "SIGINT" signal. Killing server...`);
 
-      process.exit(0);
+      /* Store killed server time */
+      updateServerInfoFile({
+        lastServerKilled: new Date().toISOString(),
+      })
+        .then(() => process.exit(0))
+        .catch(() =>
+          printLog("error", `Failed to store killed server time: ${error}`)
+        );
     });
 
     process.on("SIGTERM", () => {
       printLog("info", `Received "SIGTERM" signal. Restarting server...`);
 
-      process.exit(1);
+      /* Store restarted server time */
+      updateServerInfoFile({
+        lastServerRestarted: new Date().toISOString(),
+      })
+        .catch(() =>
+          printLog("error", `Failed to store restarted server time: ${error}`)
+        )
+        .then(() => process.exit(1))
+        .catch(() =>
+          printLog("error", `Failed to store restarted server time: ${error}`)
+        );
     });
 
     process.on("SIGUSR1", () => {
@@ -72,33 +92,6 @@ async function startClusterServer(opts) {
 
       cancelTaskInWorker();
     });
-
-    //     printLog(
-    //       "info",
-    //       `
-
-    //                    _oo0oo_
-    //                   o8888888o
-    //                   88' . '88
-    //                   (| -_- |)
-    //                   0\\  =  /0
-    //                 ___/'---'\\___
-    //               .' \\\\|     |// '.
-    //              / \\\\|||  :  |||// \\
-    //             / _||||| -:- |||||_ \\
-    //            |   | \\\\\\  -  /// |   |
-    //            | \\_|  ''\\---/''  |_/ |
-    //            \\  .-\\___ '-' ___/-.  /
-    //          ___'. .'  /--.--\\  '. .'___
-    //        .'' '< '.___\\_<|>_/___.' >' ''.
-    //      | | :  '- \\'.;'\\ _ /';.'/ -'  : | |
-    //      \\  \\ '_.   \\_ __\\ /__ _/   ._' /  /
-    //       '-.____'.___ \\_____/___.-'____.-'
-    //                    '=---='
-    //         Buddha bless, server immortal
-    //       Starting server with ${config.options.process} processes
-    // `
-    //     );
 
     /* Remove old cache locks */
     printLog("info", `Removing old cache locks before start server...`);
@@ -131,7 +124,9 @@ async function startClusterServer(opts) {
         .on("change", () => {
           printLog("info", "Config file has changed. Killing server...");
 
-          process.exit(0);
+          killServer().catch(() =>
+            printLog("error", `Failed to kill server: ${error}`)
+          );
         });
     } else if (config.options.restartInterval > 0) {
       printLog(
@@ -148,7 +143,9 @@ async function startClusterServer(opts) {
         .on("change", () => {
           printLog("info", "Config file has changed. Restarting server...");
 
-          process.exit(1);
+          restartServer().catch(() =>
+            printLog("error", `Failed to restart server: ${error}`)
+          );
         });
     }
 
@@ -160,9 +157,9 @@ async function startClusterServer(opts) {
       );
 
       cron.schedule(config.options.taskSchedule, () =>
-        startTaskInWorker({
-          restartServerAfterTask: config.options.restartServerAfterTask,
-        })
+        startTask().catch(() =>
+          printLog("error", `Failed to start task: ${error}`)
+        )
       );
     }
 

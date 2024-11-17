@@ -19,7 +19,9 @@ import { runTask } from "./task.js";
         "Completed seed and clean up task. Restarting server..."
       );
 
-      await restartServer();
+      restartServer().catch(() =>
+        printLog("error", `Failed to restart server: ${error}`)
+      );
     }
   } catch (error) {
     parentPort.postMessage({

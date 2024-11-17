@@ -25,14 +25,16 @@ let currentTaskWorker;
 /**
  * Start task in worker
  * @param {object} opts Options
- * @returns {Promise<void>}
+ * @returns {void}
  */
-export async function startTaskInWorker(opts) {
+export function startTaskInWorker(opts) {
   if (currentTaskWorker === undefined) {
-    /* Store start task time */
-    await updateServerInfoFile({
-      lastTaskStart: new Date().toISOString(),
-    });
+    /* Store started task time */
+    updateServerInfoFile({
+      lastTaskStarted: new Date().toISOString(),
+    }).catch(() =>
+      printLog("error", `Failed to store started task time: ${error}`)
+    );
 
     new Worker("./src/task_worker.js", {
       workerData: opts,
@@ -49,24 +51,30 @@ export async function startTaskInWorker(opts) {
 
         currentTaskWorker = undefined;
       })
-      .on("exit", async (code) => {
+      .on("exit", (code) => {
         currentTaskWorker = undefined;
 
         if (code === 0) {
           /* Store done task time */
-          await updateServerInfoFile({
+          updateServerInfoFile({
             lastTaskDone: new Date().toISOString(),
-          });
+          }).catch(() =>
+            printLog("error", `Failed to store done task time: ${error}`)
+          );
         } else if (code === 1) {
-          /* Store cancel task time */
-          await updateServerInfoFile({
-            lastTaskCancel: new Date().toISOString(),
-          });
+          /* Store canceled task time */
+          updateServerInfoFile({
+            lastTaskCanceled: new Date().toISOString(),
+          }).catch(() =>
+            printLog("error", `Failed to store canceled task time: ${error}`)
+          );
         } else {
           /* Store failed task time */
-          await updateServerInfoFile({
+          updateServerInfoFile({
             lastTaskFailed: new Date().toISOString(),
-          });
+          }).catch(() =>
+            printLog("error", `Failed to store failed task time: ${error}`)
+          );
         }
       });
   } else {
@@ -157,7 +165,9 @@ async function loadData() {
   } catch (error) {
     printLog("error", `Failed to load data: ${error}. Exited!`);
 
-    await killServer();
+    killServer().catch(() =>
+      printLog("error", `Failed to kill server: ${error}`)
+    );
   }
 }
 
@@ -173,6 +183,8 @@ export async function startServer() {
   } catch (error) {
     printLog("error", `Failed to start server: ${error}. Exited!`);
 
-    await killServer();
+    killServer().catch(() =>
+      printLog("error", `Failed to kill server: ${error}`)
+    );
   }
 }

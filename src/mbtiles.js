@@ -396,7 +396,6 @@ export async function getMBTilesFormatFromTiles(mbtilesSource) {
  */
 export async function getMBTilesInfos(mbtilesSource) {
   const metadata = {
-    tilejson: "2.2.0",
     name: "Unknown",
     description: "Unknown",
     attribution: "<b>Viettel HighTech</b>",
