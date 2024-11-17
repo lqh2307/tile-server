@@ -766,7 +766,7 @@ export async function updateServerInfoFile(serverInfoAdds) {
  * @returns {Promise<void>}
  */
 export async function updateServerInfoFileWithLock(serverInfoAdds, timeout) {
-  const filePath = "server-info.json";
+  const filePath = `${process.env.DATA_DIR}/server-info.json`;
   const startTime = Date.now();
   const lockFilePath = `${filePath}.lock`;
   let lockFileHandle;
@@ -818,7 +818,10 @@ export async function updateServerInfoFileWithLock(serverInfoAdds, timeout) {
  */
 export async function getMainPID() {
   try {
-    const data = await fsPromise.readFile("server-info.json", "utf8");
+    const data = await fsPromise.readFile(
+      `${process.env.DATA_DIR}/server-info.json`,
+      "utf8"
+    );
 
     return JSON.parse(data).mainPID;
   } catch (error) {
