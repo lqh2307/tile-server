@@ -121,7 +121,7 @@ async function startClusterServer(opts) {
       );
 
       chokidar
-        .watch(config.paths.config, {
+        .watch(`${config.dataDir}/config.json`, {
           usePolling: true,
           awaitWriteFinish: true,
           interval: config.options.killInterval,
@@ -138,7 +138,7 @@ async function startClusterServer(opts) {
       );
 
       chokidar
-        .watch(config.paths.config, {
+        .watch(`${config.dataDir}/config.json`, {
           usePolling: true,
           awaitWriteFinish: true,
           interval: config.options.restartInterval,

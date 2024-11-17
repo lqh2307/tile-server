@@ -40,7 +40,7 @@ export async function getFonts(ids, fileName) {
         }
 
         return await fsPromise.readFile(
-          `${config.paths.fonts}/${font}/${fileName}`
+          `${config.dataDir}/fonts/${font}/${fileName}`
         );
       } catch (error) {
         printLog(

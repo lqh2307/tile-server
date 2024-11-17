@@ -64,5 +64,7 @@ export async function validateSprite(spriteDirPath) {
  * @returns {Promise<Buffer>}
  */
 export async function getSprite(id, fileName) {
-  return await fsPromise.readFile(`${config.paths.sprites}/${id}/${fileName}`);
+  return await fsPromise.readFile(
+    `${config.dataDir}/sprites/${id}/${fileName}`
+  );
 }

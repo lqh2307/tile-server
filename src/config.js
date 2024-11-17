@@ -192,27 +192,6 @@ async function readConfigFile(dataDir, isValidate) {
   }
 
   /* Fix object */
-  config.paths = {
-    dir: dataDir,
-    config: `${dataDir}/config.json`,
-    seed: `${dataDir}/seed.json`,
-    cleanUp: `${dataDir}/cleanup.json`,
-    fonts: `${dataDir}/fonts`,
-    styles: `${dataDir}/styles`,
-    sprites: `${dataDir}/sprites`,
-    mbtiles: `${dataDir}/mbtiles`,
-    pmtiles: `${dataDir}/pmtiles`,
-    xyzs: `${dataDir}/xyzs`,
-    caches: {
-      fonts: `${dataDir}/caches/fonts`,
-      styles: `${dataDir}/caches/styles`,
-      sprites: `${dataDir}/caches/sprites`,
-      mbtiles: `${dataDir}/caches/mbtiles`,
-      pmtiles: `${dataDir}/caches/pmtiles`,
-      xyzs: `${dataDir}/caches/xyzs`,
-    },
-  };
-
   config.options = {
     listenPort: config.options.listenPort ?? 8080,
     killEndpoint: config.options.killEndpoint ?? true,
@@ -246,6 +225,7 @@ async function readConfigFile(dataDir, isValidate) {
     ])
   );
 
+  config.dataDir = dataDir;
   config.startupComplete = false;
 }
 

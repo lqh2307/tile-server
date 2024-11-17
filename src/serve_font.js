@@ -157,7 +157,7 @@ export const serve_font = {
       Object.keys(config.fonts).map(async (id) => {
         try {
           /* Validate font */
-          const dirPath = `${config.paths.fonts}/${id}`;
+          const dirPath = `${config.dataDir}/fonts/${id}`;
 
           await validateFont(dirPath);
 

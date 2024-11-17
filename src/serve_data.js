@@ -656,7 +656,7 @@ export const serve_data = {
   },
 
   add: async () => {
-    const seed = await readSeedFile(config.paths.dir, true);
+    const seed = await readSeedFile(config.dataDir, true);
 
     await Promise.all(
       Object.keys(config.datas).map(async (id) => {
@@ -669,7 +669,7 @@ export const serve_data = {
               item.mbtiles.startsWith("https://") === true ||
               item.mbtiles.startsWith("http://") === true
             ) {
-              dataInfo.path = `${config.paths.mbtiles}/${id}/${id}.mbtiles`;
+              dataInfo.path = `${config.dataDir}/mbtiles/${id}/${id}.mbtiles`;
 
               if ((await isExistFile(dataInfo.path)) === false) {
                 await downloadMBTilesFile(
@@ -680,7 +680,7 @@ export const serve_data = {
                 );
               }
             } else {
-              dataInfo.path = `${config.paths.mbtiles}/${item.mbtiles}`;
+              dataInfo.path = `${config.dataDir}/mbtiles/${item.mbtiles}`;
             }
 
             if (config.options.createMetadataIndex === true) {
@@ -711,7 +711,7 @@ export const serve_data = {
             ) {
               dataInfo.path = item.pmtiles;
             } else {
-              dataInfo.path = `${config.paths.pmtiles}/${item.pmtiles}`;
+              dataInfo.path = `${config.dataDir}/pmtiles/${item.pmtiles}`;
             }
 
             dataInfo.sourceType = "pmtiles";
@@ -721,7 +721,7 @@ export const serve_data = {
             let cacheSource;
 
             if (item.cache !== undefined) {
-              dataInfo.path = `${config.paths.caches.xyzs}/${item.xyz}`;
+              dataInfo.path = `${config.dataDir}/caches/xyzs/${item.xyz}`;
 
               cacheSource = seed.datas[item.xyz];
 
@@ -734,7 +734,7 @@ export const serve_data = {
                 dataInfo.storeCache = item.cache.store;
               }
             } else {
-              dataInfo.path = `${config.paths.xyzs}/${item.xyz}`;
+              dataInfo.path = `${config.dataDir}/xyzs/${item.xyz}`;
             }
 
             dataInfo.sourceType = "xyz";
