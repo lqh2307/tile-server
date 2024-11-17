@@ -100,8 +100,8 @@ async function startClusterServer(opts) {
 
     /* Store main pid */
     await updateServerInfoFile({
-      lastServerStarted: new Date().toISOString(),
       mainPID: process.pid,
+      lastServerStarted: new Date().toISOString(),
     });
 
     printLog(

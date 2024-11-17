@@ -6,5 +6,3 @@ yarn.lock
 .vscode/
 
 /datatest/
-
-server-info.json
