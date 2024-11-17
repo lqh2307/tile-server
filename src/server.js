@@ -36,7 +36,7 @@ export function startTaskInWorker(opts) {
       printLog("error", `Failed to store started task time: ${error}`)
     );
 
-    new Worker("./src/task_worker.js", {
+    currentTaskWorker = new Worker("./src/task_worker.js", {
       workerData: opts,
     })
       .on("message", (message) => {
