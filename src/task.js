@@ -1,7 +1,6 @@
 "use strict";
 
 import { downloadStyleFile, removeStyleFile } from "./style.js";
-import { cleanStyleFile } from "./cleanup.js";
 import { readSeedFile } from "./seed.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
