@@ -41,7 +41,7 @@ export function startTaskInWorker(opts) {
     })
       .on("message", (message) => {
         if (message.error) {
-          printLog("error", `Task failed: ${message.error}`);
+          printLog("error", `Task worker error: ${message.error}`);
         }
 
         currentTaskWorker = undefined;
@@ -90,11 +90,11 @@ export function cancelTaskInWorker() {
   if (currentTaskWorker !== undefined) {
     currentTaskWorker
       .terminate()
-      .then(() => {
-        currentTaskWorker = undefined;
-      })
       .catch((error) => {
         printLog("error", `Task worker error: ${error}`);
+      })
+      .finally(() => {
+        currentTaskWorker = undefined;
       });
   } else {
     printLog(

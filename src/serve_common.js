@@ -15,6 +15,10 @@ import {
   findFiles,
 } from "./utils.js";
 
+/**
+ * Serve swagger handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function serveSwagger() {
   return (req, res, next) => {
     swaggerUi.setup(
@@ -33,6 +37,10 @@ function serveSwagger() {
   };
 }
 
+/**
+ * Get config.json content handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function serveConfigHandler() {
   return async (req, res, next) => {
     try {
@@ -53,6 +61,10 @@ function serveConfigHandler() {
   };
 }
 
+/**
+ * Get seed.json content handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function serveSeedHandler() {
   return async (req, res, next) => {
     try {
@@ -73,6 +85,10 @@ function serveSeedHandler() {
   };
 }
 
+/**
+ * Get cleanup.json content handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function serveCleanUpHandler() {
   return async (req, res, next) => {
     try {
@@ -93,6 +109,10 @@ function serveCleanUpHandler() {
   };
 }
 
+/**
+ * Get all data summary handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function serveSummaryHandler() {
   return async (req, res, next) => {
     try {
@@ -253,6 +273,10 @@ function serveSummaryHandler() {
   };
 }
 
+/**
+ * Get server info content handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function serveInfoHandler() {
   return async (req, res, next) => {
     try {
@@ -274,6 +298,10 @@ function serveInfoHandler() {
   };
 }
 
+/**
+ * Get health of server handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function serveHealthHandler() {
   return async (req, res, next) => {
     try {
@@ -288,6 +316,10 @@ function serveHealthHandler() {
   };
 }
 
+/**
+ * Restart server handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function serveRestartHandler() {
   return async (req, res, next) => {
     try {
@@ -308,6 +340,10 @@ function serveRestartHandler() {
   };
 }
 
+/**
+ * Kill server handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function serveKillHandler() {
   return async (req, res, next) => {
     try {

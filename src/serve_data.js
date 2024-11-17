@@ -109,6 +109,10 @@ function validateDataInfo(info) {
   }
 }
 
+/**
+ * Get data tile handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function getDataTileHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
@@ -225,6 +229,10 @@ function getDataTileHandler() {
   };
 }
 
+/**
+ * Get data tileJSON handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function getDataHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
@@ -256,6 +264,10 @@ function getDataHandler() {
   };
 }
 
+/**
+ * Get data tile MD5 handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function getDataTileMD5Handler() {
   return async (req, res, next) => {
     const id = req.params.id;
@@ -329,6 +341,10 @@ function getDataTileMD5Handler() {
   };
 }
 
+/**
+ * Get data tile list handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function getDatasListHandler() {
   return async (req, res, next) => {
     try {
@@ -353,6 +369,10 @@ function getDatasListHandler() {
   };
 }
 
+/**
+ * Get data tileJSON list handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function getDataTileJSONsListHandler() {
   return async (req, res, next) => {
     try {

@@ -5,6 +5,10 @@ import { StatusCodes } from "http-status-codes";
 import { printLog } from "./logger.js";
 import express from "express";
 
+/**
+ * Start task handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function startTaskHandler() {
   return async (req, res, next) => {
     try {
@@ -25,6 +29,10 @@ function startTaskHandler() {
   };
 }
 
+/**
+ * Cancel task handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function cancelTaskHandler() {
   return async (req, res, next) => {
     try {

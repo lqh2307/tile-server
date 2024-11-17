@@ -23,6 +23,10 @@ async function compileTemplate(template, data) {
   return handlebars.compile(fileData)(data);
 }
 
+/**
+ * Serve front page handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function serveFrontPageHandler() {
   return async (req, res, next) => {
     const styles = {};
@@ -135,6 +139,10 @@ function serveFrontPageHandler() {
   };
 }
 
+/**
+ * Serve style handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function serveStyleHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
@@ -161,6 +169,10 @@ function serveStyleHandler() {
   };
 }
 
+/**
+ * Serve data handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function serveDataHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
@@ -188,6 +200,10 @@ function serveDataHandler() {
   };
 }
 
+/**
+ * Serve WMTS handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function serveWMTSHandler() {
   return async (req, res, next) => {
     const id = req.params.id;

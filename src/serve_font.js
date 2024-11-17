@@ -7,6 +7,10 @@ import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
 
+/**
+ * Get font handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function getFontHandler() {
   return async (req, res, next) => {
     const ids = req.params.id;
@@ -38,6 +42,10 @@ function getFontHandler() {
   };
 }
 
+/**
+ * Get font list handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function getFontsListHandler() {
   return async (req, res, next) => {
     try {

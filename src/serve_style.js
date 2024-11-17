@@ -13,6 +13,10 @@ import {
   getStyle,
 } from "./style.js";
 
+/**
+ * Get styleJSON handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function getStyleHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
@@ -170,6 +174,10 @@ function getStyleHandler() {
   };
 }
 
+/**
+ * Get style list handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function getStylesListHandler() {
   return async (req, res, next) => {
     try {

@@ -112,6 +112,10 @@ async function processImage(data, scale, compression, tileSize, z) {
   }
 }
 
+/**
+ * Get rendered tile handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function getRenderedTileHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
@@ -173,6 +177,10 @@ function getRenderedTileHandler() {
   };
 }
 
+/**
+ * Get rendered tileJSON handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function getRenderedHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
@@ -206,6 +214,10 @@ function getRenderedHandler() {
   };
 }
 
+/**
+ * Get rendered list handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function getRenderedsListHandler() {
   return async (req, res, next) => {
     try {
@@ -237,6 +249,10 @@ function getRenderedsListHandler() {
   };
 }
 
+/**
+ * Get rendered tileJSON list handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function getRenderedTileJSONsListHandler() {
   return async (req, res, next) => {
     try {

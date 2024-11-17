@@ -7,6 +7,10 @@ import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
 
+/**
+ * Get sprite handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function getSpriteHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
@@ -39,6 +43,10 @@ function getSpriteHandler() {
   };
 }
 
+/**
+ * Get sprite list handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
 function getSpritesListHandler() {
   return async (req, res, next) => {
     try {

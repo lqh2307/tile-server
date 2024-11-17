@@ -57,10 +57,10 @@ async function startClusterServer(opts) {
       updateServerInfoFile({
         lastServerKilled: new Date().toISOString(),
       })
-        .then(() => process.exit(0))
         .catch(() =>
           printLog("error", `Failed to store killed server time: ${error}`)
-        );
+        )
+        .finally(() => process.exit(0));
     });
 
     process.on("SIGTERM", () => {
@@ -73,10 +73,10 @@ async function startClusterServer(opts) {
         .catch(() =>
           printLog("error", `Failed to store restarted server time: ${error}`)
         )
-        .then(() => process.exit(1))
         .catch(() =>
           printLog("error", `Failed to store restarted server time: ${error}`)
-        );
+        )
+        .finally(() => process.exit(1));
     });
 
     process.on("SIGUSR1", () => {
