@@ -26,22 +26,24 @@ import os from "os";
  * @returns {Promise<void>}
  */
 export async function runTask(opts) {
+  const dataDir = process.env.DATA_DIR;
+
   /* Read cleanup.json and seed.json files */
   printLog(
     "info",
-    `Loading seed.json and cleanup.json files at "${opts.dataDir}"...`
+    `Loading seed.json and cleanup.json files at "${dataDir}"...`
   );
 
   const [cleanUpData, seedData] = await Promise.all([
-    readCleanUpFile(opts.dataDir, true),
-    readSeedFile(opts.dataDir, true),
+    readCleanUpFile(dataDir, true),
+    readSeedFile(dataDir, true),
   ]);
 
   /* Run clean up task */
-  await runCleanUpTask(opts.dataDir, cleanUpData, seedData);
+  await runCleanUpTask(dataDir, cleanUpData, seedData);
 
   /* Run seed task */
-  await runSeedTask(opts.dataDir, seedData);
+  await runSeedTask(dataDir, seedData);
 }
 
 /**

@@ -35,15 +35,17 @@ const argOpts = program.opts();
  * @returns {Promise<void>}
  */
 async function startClusterServer(opts) {
-  /* Load config.json file */
-  printLog("info", `Loading config.json file at "${opts.dataDir}"...`);
+  const dataDir = opts.dataDir;
 
-  await readConfigFile(opts.dataDir, cluster.isPrimary);
+  /* Load config.json file */
+  printLog("info", `Loading config.json file at "${dataDir}"...`);
+
+  await readConfigFile(dataDir, cluster.isPrimary);
 
   if (cluster.isPrimary === true) {
     /* Setup envs & events */
     process.env.UV_THREADPOOL_SIZE = config.options.thread; // For libuv
-    process.env.DATA_DIR = opts.dataDir; // Store data dir
+    process.env.DATA_DIR = dataDir; // Store data directory
 
     process.on("SIGINT", () => {
       printLog("info", `Received "SIGINT" signal. Killing server...`);
@@ -61,7 +63,6 @@ async function startClusterServer(opts) {
       printLog("info", `Received "SIGUSR1" signal. Starting task...`);
 
       startTaskInWorker({
-        dataDir: opts.dataDir,
         restartServerAfterTask: config.options.restartServerAfterTask,
       });
     });
@@ -102,7 +103,7 @@ async function startClusterServer(opts) {
     /* Remove old cache locks */
     printLog("info", `Removing old cache locks before start server...`);
 
-    await removeOldCacheLocks(opts.dataDir);
+    await removeOldCacheLocks(dataDir);
 
     /* Store main pid */
     await updateServerInfoFile({
@@ -122,7 +123,7 @@ async function startClusterServer(opts) {
       );
 
       chokidar
-        .watch(`${process.env.DATA_DIR}/config.json`, {
+        .watch(`${dataDir}/config.json`, {
           usePolling: true,
           awaitWriteFinish: true,
           interval: config.options.killInterval,
@@ -139,7 +140,7 @@ async function startClusterServer(opts) {
       );
 
       chokidar
-        .watch(`${process.env.DATA_DIR}/config.json`, {
+        .watch(`${dataDir}/config.json`, {
           usePolling: true,
           awaitWriteFinish: true,
           interval: config.options.restartInterval,
@@ -160,7 +161,6 @@ async function startClusterServer(opts) {
 
       cron.schedule(config.options.taskSchedule, () =>
         startTaskInWorker({
-          dataDir: opts.dataDir,
           restartServerAfterTask: config.options.restartServerAfterTask,
         })
       );
