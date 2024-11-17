@@ -312,47 +312,6 @@ export async function retry(fn, maxTry, after = 0) {
 /**
  * Recursively removes empty folders in a directory
  * @param {string} folderPath The root directory to check for empty folders
- * @returns {Promise<void>}
- */
-export async function removeEmptyFolders(folderPath) {
-  const entries = await fsPromise.readdir(folderPath, {
-    withFileTypes: true,
-  });
-
-  let hasMatchingFile = false;
-
-  await Promise.all(
-    entries.map(async (entry) => {
-      const fullPath = `${folderPath}/${entry.name}`;
-
-      if (entry.isFile() === true && regex.test(entry.name) === true) {
-        hasMatchingFile = true;
-      } else if (entry.isDirectory() === true) {
-        await removeEmptyFolders(fullPath, regex);
-
-        const stillExists = await fsPromise
-          .access(fullPath)
-          .then(() => true)
-          .catch(() => false);
-
-        if (stillExists === true) {
-          hasMatchingFile = true;
-        }
-      }
-    })
-  );
-
-  if (hasMatchingFile === false) {
-    await fsPromise.rm(folderPath, {
-      recursive: true,
-      force: true,
-    });
-  }
-}
-
-/**
- * Recursively removes empty folders in a directory
- * @param {string} folderPath The root directory to check for empty folders
  * @param {RegExp} regex The regex to match files
  * @returns {Promise<void>}
  */
