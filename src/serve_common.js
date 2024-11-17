@@ -93,19 +93,11 @@ function serveCleanUpHandler() {
   };
 }
 
-function serveInfoHandler() {
+function serveSummaryHandler() {
   return async (req, res, next) => {
     try {
-      // Read package.json file
-      const packageJSON = JSON.parse(
-        await fsPromise.readFile("package.json", "utf8")
-      );
-
       // Init info
       const result = {
-        name: packageJSON.name,
-        version: packageJSON.version,
-        description: packageJSON.description,
         font: {
           count: 0,
           size: 0,
@@ -261,6 +253,27 @@ function serveInfoHandler() {
   };
 }
 
+function serveInfoHandler() {
+  return async (req, res, next) => {
+    try {
+      const taskInfo = await fsPromise.readFile(
+        `${process.env.DATA_DIR}/server-info.json`,
+        "utf8"
+      );
+
+      res.header("Content-Type", "application/json");
+
+      return res.status(StatusCodes.OK).send(taskInfo);
+    } catch (error) {
+      printLog("error", `Failed to get server info": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
 function serveHealthHandler() {
   return async (req, res, next) => {
     try {
@@ -340,6 +353,8 @@ export const serve_common = {
      *           application/json:
      *             schema:
      *               type: object
+     *       400:
+     *         description: Bad request
      *       404:
      *         description: Not found
      *       503:
@@ -353,6 +368,37 @@ export const serve_common = {
      *         description: Internal server error
      */
     app.get("/info", checkReadyMiddleware(), serveInfoHandler());
+
+    /**
+     * @swagger
+     * tags:
+     *   - name: Common
+     *     description: Common related endpoints
+     * /summary:
+     *   get:
+     *     tags:
+     *       - Common
+     *     summary: Get summary
+     *     responses:
+     *       200:
+     *         description: Summary
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/summary", checkReadyMiddleware(), serveSummaryHandler());
 
     /**
      * @swagger
