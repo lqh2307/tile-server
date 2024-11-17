@@ -1,7 +1,8 @@
 "use strict";
 
 import { downloadStyleFile, removeStyleFile } from "./style.js";
-import { readCleanUpFile, readSeedFile } from "./config.js";
+import { cleanStyleFile } from "./cleanup.js";
+import { readSeedFile } from "./seed.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";

@@ -172,7 +172,7 @@ export const serve_sprite = {
       Object.keys(config.sprites).map(async (id) => {
         try {
           /* Validate sprite */
-          const dirPath = `${config.dataDir}/sprites/${id}`;
+          const dirPath = `${process.env.DATA_DIR}/sprites/${id}`;
 
           await validateSprite(dirPath);
 

@@ -4,7 +4,6 @@ import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import protobuf from "protocol-buffers";
 import { printLog } from "./logger.js";
-import { config } from "./config.js";
 import https from "node:https";
 import http from "node:http";
 import path from "node:path";
@@ -118,7 +117,7 @@ export async function getDataBuffer(url, timeout) {
 export function checkReadyMiddleware() {
   return async (req, res, next) => {
     try {
-      if (config.startupComplete === false) {
+      if (process.env.STARTING_UP === undefined) {
         return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
       }
 

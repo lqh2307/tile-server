@@ -296,7 +296,7 @@ export const serve_style = {
             item.style.startsWith("https://") === true ||
             item.style.startsWith("http://") === true
           ) {
-            styleInfo.path = `${config.dataDir}/styles/${id}/style.json`;
+            styleInfo.path = `${process.env.DATA_DIR}/styles/${id}/style.json`;
 
             if ((await isExistFile(styleInfo.path)) === false) {
               await downloadStyleFile(
@@ -310,7 +310,7 @@ export const serve_style = {
             let cacheSource;
 
             if (item.cache !== undefined) {
-              styleInfo.path = `${config.dataDir}/caches/styles/${item.style}/style.json`;
+              styleInfo.path = `${process.env.DATA_DIR}/caches/styles/${item.style}/style.json`;
 
               cacheSource = seed.styles[item.style];
 
@@ -323,7 +323,7 @@ export const serve_style = {
                 styleInfo.storeCache = item.cache.store;
               }
             } else {
-              styleInfo.path = `${config.dataDir}/styles/${item.style}`;
+              styleInfo.path = `${process.env.DATA_DIR}/styles/${item.style}`;
             }
           }
 

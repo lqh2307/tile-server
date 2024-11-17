@@ -37,7 +37,7 @@ function serveConfigHandler() {
   return async (req, res, next) => {
     try {
       const configJSON = JSON.parse(
-        await fsPromise.readFile(`${config.dataDir}/config.json`, "utf8")
+        await fsPromise.readFile(`${process.env.DATA_DIR}/config.json`, "utf8")
       );
 
       res.header("Content-Type", "application/json");
@@ -57,7 +57,7 @@ function serveSeedHandler() {
   return async (req, res, next) => {
     try {
       const seedJSON = JSON.parse(
-        await fsPromise.readFile(`${config.dataDir}/seed.json`, "utf8")
+        await fsPromise.readFile(`${process.env.DATA_DIR}/seed.json`, "utf8")
       );
 
       res.header("Content-Type", "application/json");
@@ -77,7 +77,7 @@ function serveCleanUpHandler() {
   return async (req, res, next) => {
     try {
       const cleanUpJSON = JSON.parse(
-        await fsPromise.readFile(`${config.dataDir}/cleanup.json`, "utf8")
+        await fsPromise.readFile(`${process.env.DATA_DIR}/cleanup.json`, "utf8")
       );
 
       res.header("Content-Type", "application/json");
@@ -141,7 +141,7 @@ function serveInfoHandler() {
 
       // Fonts info
       for (const font in config.repo.fonts) {
-        const dirPath = `${config.dataDir}/fonts/${font}`;
+        const dirPath = `${process.env.DATA_DIR}/fonts/${font}`;
         const fileNames = await findFiles(
           dirPath,
           /^\d{1,5}-\d{1,5}\.pbf$/,
@@ -159,7 +159,7 @@ function serveInfoHandler() {
 
       // Sprites info
       for (const sprite in config.repo.sprites) {
-        const dirPath = `${config.dataDir}/sprites/${sprite}`;
+        const dirPath = `${process.env.DATA_DIR}/sprites/${sprite}`;
         const fileNames = await findFiles(
           dirPath,
           /^sprite(@\d+x)?\.(json|png)$/,

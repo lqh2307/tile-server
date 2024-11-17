@@ -43,6 +43,7 @@ async function startClusterServer(opts) {
   if (cluster.isPrimary === true) {
     /* Setup envs & events */
     process.env.UV_THREADPOOL_SIZE = config.options.thread; // For libuv
+    process.env.DATA_DIR = opts.dataDir; // Store data dir
 
     process.on("SIGINT", () => {
       printLog("info", `Received "SIGINT" signal. Killing server...`);
@@ -121,7 +122,7 @@ async function startClusterServer(opts) {
       );
 
       chokidar
-        .watch(`${config.dataDir}/config.json`, {
+        .watch(`${process.env.DATA_DIR}/config.json`, {
           usePolling: true,
           awaitWriteFinish: true,
           interval: config.options.killInterval,
@@ -138,7 +139,7 @@ async function startClusterServer(opts) {
       );
 
       chokidar
-        .watch(`${config.dataDir}/config.json`, {
+        .watch(`${process.env.DATA_DIR}/config.json`, {
           usePolling: true,
           awaitWriteFinish: true,
           interval: config.options.restartInterval,

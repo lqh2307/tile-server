@@ -2,7 +2,6 @@
 
 import fsPromise from "node:fs/promises";
 import { findFiles } from "./utils.js";
-import { config } from "./config.js";
 import sharp from "sharp";
 
 /**
@@ -65,6 +64,6 @@ export async function validateSprite(spriteDirPath) {
  */
 export async function getSprite(id, fileName) {
   return await fsPromise.readFile(
-    `${config.dataDir}/sprites/${id}/${fileName}`
+    `${process.env.DATA_DIR}/sprites/${id}/${fileName}`
   );
 }

@@ -139,19 +139,19 @@ async function loadData() {
   printLog("info", "Loading data...");
 
   try {
-    /*  */
+    /* Load data */
     await Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()]);
     await serve_style.add();
     await serve_rendered.add();
 
-    /*  */
+    /* Clean */
     config.styles = undefined;
     config.datas = undefined;
     config.sprites = undefined;
     config.fonts = undefined;
 
-    /*  */
-    config.startupComplete = true;
+    /* Update STARTING_UP ENV */
+    process.env.STARTING_UP = "false";
 
     printLog("info", "Completed startup!");
   } catch (error) {
