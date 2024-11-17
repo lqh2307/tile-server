@@ -31,7 +31,7 @@ export async function runTask(opts) {
   /* Read cleanup.json and seed.json files */
   printLog(
     "info",
-    `Loading seed.json and cleanup.json files at "${dataDir}"...`
+    `Loading "seed.json" and "cleanup.json" files at "${dataDir}"...`
   );
 
   const [cleanUpData, seedData] = await Promise.all([
@@ -80,7 +80,7 @@ async function seedXYZTileDataFiles(
     0
   );
   let refreshTimestamp;
-  let log = `Downloading ${totalTasks} tile data files with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
+  let log = `Seeding ${totalTasks} tile data files with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBox: [${bbox.join(", ")}]`;
 
@@ -101,6 +101,17 @@ async function seedXYZTileDataFiles(
   }
 
   printLog("info", log);
+
+  // Update metadata.json file
+  const metadataFilePath = `${outputFolder}/metadata.json`;
+
+  printLog("info", `Updating metadata to "${metadataFilePath}"...`);
+
+  await updateXYZMetadataFileWithLock(
+    metadataFilePath,
+    metadata,
+    300000 // 5 mins
+  );
 
   // Download files
   const hashs = {};
@@ -213,17 +224,10 @@ async function seedXYZTileDataFiles(
     await delay(50);
   }
 
-  // Update metadata.json file
-  const metadataFilePath = `${outputFolder}/metadata.json`;
-
-  await updateXYZMetadataFileWithLock(
-    metadataFilePath,
-    metadata,
-    300000 // 5 mins
-  );
-
   // Update md5.json file
   const md5FilePath = `${outputFolder}/md5.json`;
+
+  printLog("info", `Updating md5 to "${md5FilePath}"...`);
 
   await updateXYZMD5FileWithLock(
     md5FilePath,
@@ -231,8 +235,11 @@ async function seedXYZTileDataFiles(
     300000 // 5 mins
   );
 
-  // Remove folders if empty
-  await removeEmptyFolders(outputFolder);
+  // Remove parent folders if empty
+  await removeEmptyFolders(
+    outputFolder,
+    /^.*\.(json|gif|png|jpg|jpeg|webp|pbf)$/
+  );
 }
 
 /**
@@ -265,7 +272,7 @@ async function cleanXYZTileDataFiles(
     0
   );
   let cleanUpTimestamp;
-  let log = `Removing ${totalTasks} tile data files with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${totalTasks} tile data files with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBox: [${bbox.join(", ")}]`;
 
@@ -365,14 +372,19 @@ async function cleanXYZTileDataFiles(
   // Update md5.json file
   const md5FilePath = `${outputFolder}/md5.json`;
 
+  printLog("info", `Updating md5 to "${md5FilePath}"...`);
+
   await updateXYZMD5FileWithLock(
     md5FilePath,
     hashs,
     300000 // 5 mins
   );
 
-  // Remove parent folder if empty
-  await removeEmptyFolders(outputFolder);
+  // Remove parent folders if empty
+  await removeEmptyFolders(
+    outputFolder,
+    /^.*\.(json|gif|png|jpg|jpeg|webp|pbf)$/
+  );
 }
 
 /**
@@ -529,7 +541,7 @@ async function seedStyleFile(
   refreshBefore
 ) {
   let refreshTimestamp;
-  let log = `Downloading style file with:n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}`;
+  let log = `Seeding style file with:n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}`;
 
   if (typeof refreshBefore === "string") {
     refreshTimestamp = new Date(refreshBefore).getTime();
@@ -567,8 +579,8 @@ async function seedStyleFile(
     }
   }
 
-  // Remove folder if empty
-  await removeEmptyFolders(outputFolder);
+  // Remove parent folders if empty
+  await removeEmptyFolders(outputFolder, /^.*\.json$/);
 }
 
 /**
@@ -579,7 +591,7 @@ async function seedStyleFile(
  */
 async function cleanStyleFile(outputFolder, cleanUpBefore) {
   let cleanUpTimestamp;
-  let log = `Removing style file with:\n\tMax tries: ${maxTry}`;
+  let log = `Cleaning up style file with:\n\tMax tries: ${maxTry}`;
 
   if (typeof cleanUpBefore === "string") {
     cleanUpTimestamp = new Date(cleanUpBefore).getTime();
@@ -628,6 +640,6 @@ async function cleanStyleFile(outputFolder, cleanUpBefore) {
     }
   }
 
-  // Remove folder if empty
-  await removeEmptyFolders(outputFolder);
+  // Remove parent folders if empty
+  await removeEmptyFolders(outputFolder, /^.*\.json$/);
 }
