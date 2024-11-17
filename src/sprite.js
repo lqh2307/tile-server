@@ -1,7 +1,7 @@
 "use strict";
 
-import { getSprite, findFiles } from "./utils.js";
 import fsPromise from "node:fs/promises";
+import { findFiles } from "./utils.js";
 import { config } from "./config.js";
 import sharp from "sharp";
 
