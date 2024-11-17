@@ -246,7 +246,6 @@ async function readConfigFile(dataDir, isValidate) {
     ])
   );
 
-  config.fallbackFont = "Open Sans Regular";
   config.startupComplete = false;
 }
 

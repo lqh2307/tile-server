@@ -15,53 +15,9 @@ import zlib from "zlib";
 import util from "util";
 import Ajv from "ajv";
 
-const glyphsProto = protobuf(fs.readFileSync("public/protos/glyphs.proto"));
 const vectorTileProto = protobuf(
   fs.readFileSync("public/protos/vector_tile.proto")
 );
-
-/**
- * Combine any number of glyph (SDF) PBFs
- * Returns a re-encoded PBF with the combined
- * font faces, composited using array order
- * to determine glyph priority
- * @param {array} buffers An array of SDF PBFs
- * @param {string} fontstack
- */
-function combinePBFFonts(buffers, fontstack) {
-  let result;
-  const coverage = {};
-
-  for (const buffer of buffers) {
-    const decoded = glyphsProto.glyphs.decode(buffer);
-    const glyphs = decoded.stacks[0].glyphs;
-
-    if (result === undefined) {
-      for (const glyph of glyphs) {
-        coverage[glyph.id] = true;
-      }
-
-      result = decoded;
-    } else {
-      for (const glyph of glyphs) {
-        if (!coverage[glyph.id]) {
-          result.stacks[0].glyphs.push(glyph);
-          coverage[glyph.id] = true;
-        }
-      }
-
-      result.stacks[0].name += ", " + decoded.stacks[0].name;
-    }
-  }
-
-  if (fontstack !== undefined) {
-    result.stacks[0].name = fontstack;
-  }
-
-  result.stacks[0].glyphs.sort((a, b) => a.id - b.id);
-
-  return glyphsProto.glyphs.encode(result);
-}
 
 /**
  * Extracts layer names from a vector tile PBF buffer
@@ -532,50 +488,6 @@ export async function removeFilesOrFolders(fileOrFolders) {
  */
 export function getRequestHost(req) {
   return `${req.protocol}://${req.headers.host}/`;
-}
-
-/**
- * Get fonts pbf
- * @param {string} ids
- * @param {string} fileName
- * @returns {Promise<Buffer>}
- */
-export async function getFontsPBF(ids, fileName) {
-  const data = await Promise.all(
-    ids.split(",").map(async (font) => {
-      try {
-        /* Check font is exist? */
-        if (config.repo.fonts[font] === undefined) {
-          throw new Error("Font is not found");
-        }
-
-        return await fsPromise.readFile(
-          `${config.paths.fonts}/${font}/${fileName}`
-        );
-      } catch (error) {
-        printLog(
-          "warning",
-          `Failed to get font "${font}": ${error}. Using fallback font "${config.fallbackFont}"...`
-        );
-
-        return await fsPromise.readFile(
-          `public/resources/fonts/${config.fallbackFont}/${fileName}`
-        );
-      }
-    })
-  );
-
-  return combinePBFFonts(data);
-}
-
-/**
- * Get sprite
- * @param {string} id
- * @param {string} fileName
- * @returns {Promise<Buffer>}
- */
-export async function getSprite(id, fileName) {
-  return await fsPromise.readFile(`${config.paths.sprites}/${id}/${fileName}`);
 }
 
 /**

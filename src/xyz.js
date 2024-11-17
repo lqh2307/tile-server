@@ -188,7 +188,7 @@ export async function getXYZFormatFromTiles(sourcePath) {
 /**
  * Get XYZ bounding box from tiles
  * @param {string} sourcePath Folder path
- * @returns {Promise<Array<number>>}
+ * @returns {Promise<Array<number>>} Bounding box in format [minLon, minLat, maxLon, maxLat]
  */
 export async function getXYZBBoxFromTiles(sourcePath) {
   const zFolders = await findFolders(sourcePath, /^\d+$/, false);

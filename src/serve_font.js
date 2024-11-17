@@ -1,36 +1,18 @@
 "use strict";
 
+import { detectFormatAndHeaders, getRequestHost, gzipAsync } from "./utils.js";
+import { getFonts, validateFont } from "./font.js";
 import { StatusCodes } from "http-status-codes";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
-import {
-  detectFormatAndHeaders,
-  getRequestHost,
-  getFontsPBF,
-  gzipAsync,
-  findFiles,
-} from "./utils.js";
-
-/**
- * Validate font
- * @param {string} pbfDirPath
- * @returns {Promise<void>}
- */
-async function validateFont(pbfDirPath) {
-  const pbfFileNames = await findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
-
-  if (pbfFileNames.length === 0) {
-    throw new Error("Missing some PBF files");
-  }
-}
 
 function getFontHandler() {
   return async (req, res, next) => {
     const ids = req.params.id;
 
     try {
-      let data = await getFontsPBF(
+      let data = await getFonts(
         ids,
         req.url.slice(req.url.lastIndexOf("/") + 1)
       );

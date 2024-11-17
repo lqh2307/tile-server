@@ -6,9 +6,11 @@ import { StatusCodes } from "http-status-codes";
 import { getPMTilesTile } from "./pmtiles.js";
 import { getMBTilesTile } from "./mbtiles.js";
 import { createPool } from "generic-pool";
+import { getSprite } from "./sprite.js";
 import { printLog } from "./logger.js";
 import { getStyle } from "./style.js";
 import { config } from "./config.js";
+import { getFonts } from "./font.js";
 import express from "express";
 import sharp from "sharp";
 import {
@@ -16,9 +18,7 @@ import {
   getDataTileFromURL,
   getLonLatFromXYZ,
   getRequestHost,
-  getFontsPBF,
   unzipAsync,
-  getSprite,
 } from "./utils.js";
 
 /**
@@ -831,7 +831,7 @@ export const serve_rendered = {
                             }
                           } else if (protocol === "fonts:") {
                             try {
-                              let data = await getFontsPBF(parts[2], parts[3]);
+                              let data = await getFonts(parts[2], parts[3]);
 
                               /* Unzip pbf font */
                               const headers =

@@ -3,19 +3,20 @@
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
-import {
-  getLayerNamesFromPBFTileBuffer,
-  detectFormatAndHeaders,
-  calculateMD5,
-  retry,
-  delay,
-} from "./utils.js";
 import https from "node:https";
 import sqlite3 from "sqlite3";
 import http from "node:http";
 import path from "node:path";
 import axios from "axios";
 import fs from "node:fs";
+import {
+  getLayerNamesFromPBFTileBuffer,
+  detectFormatAndHeaders,
+  getBBoxFromTiles,
+  calculateMD5,
+  retry,
+  delay,
+} from "./utils.js";
 
 /**
  * Open MBTiles
@@ -173,6 +174,46 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
 
       resolve(Array.from(layerNames));
     });
+  });
+}
+
+/**
+ * Get MBTiles bounding box from tiles
+ * @param {object} mbtilesSource The MBTiles source object
+ * @returns {Promise<Array<number>>} Bounding box in format [minLon, minLat, maxLon, maxLat]
+ */
+export async function getMBTilesBBoxFromTiles(mbtilesSource) {
+  return new Promise((resolve, reject) => {
+    mbtilesSource.all(
+      `SELECT zoom_level, MIN(tile_column) AS xMin, MAX(tile_column) AS xMax, MIN(tile_row) AS yMin, MAX(tile_row) AS yMax FROM tiles GROUP BY zoom_level`,
+      (error, rows) => {
+        if (error) {
+          return reject(error);
+        }
+
+        if (rows !== undefined) {
+          const boundsArr = rows.map((row) =>
+            getBBoxFromTiles(
+              row.xMin,
+              row.yMin,
+              row.xMax,
+              row.yMax,
+              row.zoom_level,
+              "tms"
+            )
+          );
+
+          resolve([
+            Math.min(...boundsArr.map((bbox) => bbox[0])),
+            Math.min(...boundsArr.map((bbox) => bbox[1])),
+            Math.max(...boundsArr.map((bbox) => bbox[2])),
+            Math.max(...boundsArr.map((bbox) => bbox[3])),
+          ]);
+        } else {
+          resolve();
+        }
+      }
+    );
   });
 }
 
@@ -464,7 +505,11 @@ export async function getMBTilesInfos(mbtilesSource) {
 
   /* Try get bounds */
   if (metadata.bounds === undefined) {
-    metadata.bounds = [-180, -85.051129, 180, 85.051129];
+    try {
+      metadata.bounds = await getMBTilesBBoxFromTiles(mbtilesSource);
+    } catch (error) {
+      metadata.bounds = [-180, -85.051129, 180, 85.051129];
+    }
   }
 
   /* Calculate center */
