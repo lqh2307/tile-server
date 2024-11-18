@@ -315,7 +315,7 @@ export async function getStyleJSONFromURL(url, timeout) {
       }),
     });
 
-    return response;
+    return response.data;
   } catch (error) {
     if (error.response) {
       if (
