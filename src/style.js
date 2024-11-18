@@ -262,8 +262,6 @@ export async function removeStyleFile(filePath, maxTry, timeout) {
     try {
       await retry(async () => {
         await removeStyleDataFileWithLock(filePath, timeout);
-
-        delete hashs[tileName];
       }, maxTry);
     } catch (error) {
       throw new Error(

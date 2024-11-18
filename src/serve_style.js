@@ -1,496 +1,378 @@
 "use strict";
 
-import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
+import { getRequestHost, isExistFile } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
-import { delay, retry } from "./utils.js";
-import fsPromise from "node:fs/promises";
+import { readSeedFile } from "./seed.js";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
-import https from "node:https";
-import path from "node:path";
-import http from "node:http";
-import axios from "axios";
+import express from "express";
+import {
+  getStyleJSONFromURL,
+  downloadStyleFile,
+  cacheStyleFile,
+  validateStyle,
+  getStyle,
+} from "./style.js";
 
 /**
- * Create style data file
- * @param {string} filePath File path to store style file
- * @param {Buffer} data Data buffer
- * @returns {Promise<void>}
+ * Get styleJSON handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
  */
-async function createStyleDataFile(filePath, data) {
-  const tempFilePath = `${filePath}.tmp`;
+function getStyleHandler() {
+  return async (req, res, next) => {
+    const id = req.params.id;
+    const item = config.repo.styles[id];
 
-  try {
-    await fsPromise.mkdir(path.dirname(filePath), {
-      recursive: true,
-    });
-
-    await fsPromise.writeFile(tempFilePath, data);
-
-    await fsPromise.rename(tempFilePath, filePath);
-  } catch (error) {
-    await fsPromise.rm(tempFilePath, {
-      force: true,
-    });
-
-    throw error;
-  }
-}
-
-/**
- * Create style data file with lock
- * @param {string} filePath File path to store style file
- * @param {Buffer} data Data buffer
- * @returns {Promise<boolean>}
- */
-export async function createStyleDataFileWithLock(filePath, data) {
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  try {
-    lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-    await createStyleDataFile(filePath, data);
-
-    await lockFileHandle.close();
-
-    await fsPromise.rm(lockFilePath, {
-      force: true,
-    });
-
-    return true;
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      await fsPromise.mkdir(path.dirname(filePath), {
-        recursive: true,
-      });
-
-      return await createStyleDataFileWithLock(filePath, data);
-    } else if (error.code === "EEXIST") {
-      return false;
-    } else {
-      if (lockFileHandle !== undefined) {
-        await lockFileHandle.close();
-
-        await fsPromise.rm(lockFilePath, {
-          force: true,
-        });
-      }
-
-      throw error;
+    if (item === undefined) {
+      return res.status(StatusCodes.NOT_FOUND).send("Style is not found");
     }
-  }
-}
 
-/**
- * Store style data file with lock
- * @param {string} filePath File path to store style file
- * @param {Buffer} data Data buffer
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-export async function storeStyleDataFileWithLock(filePath, data, timeout) {
-  const startTime = Date.now();
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
+    let styleJSON;
 
-  while (Date.now() - startTime <= timeout) {
     try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      await createStyleDataFile(filePath, data);
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        await fsPromise.mkdir(path.dirname(filePath), {
-          recursive: true,
-        });
-
-        return await storeStyleDataFileWithLock(filePath, data, timeout);
-      } else if (error.code === "EEXIST") {
-        await delay(100);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access ${lockFilePath} file`);
-}
-
-/**
- * Remove style data file with lock
- * @param {string} filePath File path to remove style data file
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-export async function removeStyleDataFileWithLock(filePath, timeout) {
-  const startTime = Date.now();
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      await fsPromise.rm(filePath, {
-        force: true,
-      });
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        return;
-      } else if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access ${lockFilePath} file`);
-}
-
-/**
- * Download style file
- * @param {string} url The URL to download the file from
- * @param {string} filePath File path
- * @param {number} maxTry Number of retry attempts on failure
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-export async function downloadStyleFile(url, filePath, maxTry, timeout) {
-  printLog("info", `Downloading style file "${filePath}" from "${url}"...`);
-
-  try {
-    await retry(async () => {
+      /* Get style JSON */
       try {
-        // Get data from URL
-        const response = await axios.get(url, {
-          timeout: timeout,
-          responseType: "arraybuffer",
-          headers: {
-            "User-Agent": "Tile Server",
-          },
-          validateStatus: (status) => {
-            return status === StatusCodes.OK;
-          },
-          httpAgent: new http.Agent({
-            keepAlive: false,
-          }),
-          httpsAgent: new https.Agent({
-            keepAlive: false,
-          }),
-        });
-
-        // Store data to file
-        await storeStyleDataFileWithLock(
-          filePath,
-          response.data,
-          300000 // 5 mins
-        );
+        styleJSON = await getStyle(item.path);
       } catch (error) {
-        if (error.response) {
-          if (
-            error.response.status === StatusCodes.NO_CONTENT ||
-            error.response.status === StatusCodes.NOT_FOUND
-          ) {
-            printLog(
-              "error",
-              `Failed to download style file "${filePath}" from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
-            );
+        if (item.sourceURL !== undefined) {
+          printLog(
+            "info",
+            `Getting style "${id}" - From "${item.sourceURL}"...`
+          );
 
-            return;
-          } else {
-            throw new Error(
-              `Failed to download style file "${filePath}" from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
+          /* Get style */
+          styleJSON = await getStyleJSONFromURL(
+            item.sourceURL,
+            60000 // 1 mins
+          );
+
+          /* Cache */
+          if (item.storeCache === true) {
+            cacheStyleFile(item.path, JSON.stringify(styleJSON, null, 2)).catch(
+              (error) =>
+                printLog(
+                  "error",
+                  `Failed to cache style "${id}" - From "${item.sourceURL}": ${error}`
+                )
+            );
+          }
+        } else {
+          throw error;
+        }
+      }
+
+      if (req.query.raw !== "true") {
+        /* Fix sprite url */
+        if (styleJSON.sprite !== undefined) {
+          if (styleJSON.sprite.startsWith("sprites://") === true) {
+            styleJSON.sprite = styleJSON.sprite.replaceAll(
+              "sprites://",
+              `${getRequestHost(req)}sprites/`
             );
           }
         }
 
-        throw new Error(
-          `Failed to download style file "${filePath}" from "${url}": ${error}`
+        /* Fix fonts url */
+        if (styleJSON.glyphs !== undefined) {
+          if (styleJSON.glyphs.startsWith("fonts://") === true) {
+            styleJSON.glyphs = styleJSON.glyphs.replaceAll(
+              "fonts://",
+              `${getRequestHost(req)}fonts/`
+            );
+          }
+        }
+
+        /* Fix source urls */
+        await Promise.all(
+          Object.keys(styleJSON.sources).map(async (id) => {
+            const source = styleJSON.sources[id];
+
+            if (source.url !== undefined) {
+              if (
+                source.url.startsWith("mbtiles://") === true ||
+                source.url.startsWith("pmtiles://") === true ||
+                source.url.startsWith("xyz://") === true
+              ) {
+                const queryIndex = source.url.lastIndexOf("?");
+                const sourceID =
+                  queryIndex === -1
+                    ? source.url.split("/")[2]
+                    : source.url.split("/")[2].slice(0, queryIndex);
+
+                source.url = `${getRequestHost(req)}datas/${sourceID}.json${
+                  queryIndex === -1 ? "" : source.url.slice(queryIndex)
+                }`;
+              }
+            }
+
+            if (source.urls !== undefined) {
+              const urls = new Set(
+                source.urls.map((url) => {
+                  if (
+                    url.startsWith("pmtiles://") === true ||
+                    url.startsWith("mbtiles://") === true ||
+                    url.startsWith("xyz://") === true
+                  ) {
+                    const queryIndex = url.lastIndexOf("?");
+                    const sourceID =
+                      queryIndex === -1
+                        ? url.split("/")[2]
+                        : url.split("/")[2].slice(0, queryIndex);
+
+                    url = `${getRequestHost(req)}datas/${sourceID}.json${
+                      queryIndex === -1 ? "" : url.slice(queryIndex)
+                    }`;
+                  }
+
+                  return url;
+                })
+              );
+
+              source.urls = Array.from(urls);
+            }
+
+            if (source.tiles !== undefined) {
+              const tiles = new Set(
+                source.tiles.map((tile) => {
+                  if (
+                    tile.startsWith("pmtiles://") === true ||
+                    tile.startsWith("mbtiles://") === true ||
+                    tile.startsWith("xyz://") === true
+                  ) {
+                    const queryIndex = tile.lastIndexOf("?");
+                    const sourceID =
+                      queryIndex === -1
+                        ? tile.split("/")[2]
+                        : tile.split("/")[2].slice(0, queryIndex);
+
+                    tile = `${getRequestHost(
+                      req
+                    )}datas/${sourceID}/{z}/{x}/{y}.${
+                      config.repo.datas[sourceID].tileJSON.format
+                    }${queryIndex === -1 ? "" : tile.slice(queryIndex)}`;
+                  }
+
+                  return tile;
+                })
+              );
+
+              source.tiles = Array.from(tiles);
+            }
+          })
         );
       }
-    }, maxTry);
-  } catch (error) {
-    printLog("error", `${error}`);
-  }
-}
 
-/**
- * Remove style file
- * @param {string} filePath File path
- * @param {number} maxTry Number of retry attempts on failure
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-export async function removeStyleFile(filePath, maxTry, timeout) {
-  printLog("info", `Removing style file "${filePath}"...`);
+      res.header("Content-Type", "application/json");
 
-  try {
-    try {
-      await retry(async () => {
-        await removeStyleDataFileWithLock(filePath, timeout);
-      }, maxTry);
+      return res.status(StatusCodes.OK).send(styleJSON);
     } catch (error) {
-      throw new Error(
-        `Failed to remove tile data file "${tileName}": ${error}`
+      printLog("error", `Failed to get style "${id}": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
+/**
+ * Get style list handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
+function getStylesListHandler() {
+  return async (req, res, next) => {
+    try {
+      const result = await Promise.all(
+        Object.keys(config.repo.styles).map(async (id) => {
+          return {
+            id: id,
+            name: config.repo.styles[id].name,
+            url: `${getRequestHost(req)}styles/${id}/style.json`,
+          };
+        })
       );
+
+      return res.status(StatusCodes.OK).send(result);
+    } catch (error) {
+      printLog("error", `Failed to get styles": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
     }
-  } catch (error) {
-    printLog("error", `${error}`);
-  }
+  };
 }
 
-/**
- * Cache style file
- * @param {string} filePath File path
- * @param {Buffer} data Tile data buffer
- * @returns {Promise<void>}
- */
-export async function cacheStyleFile(filePath, data) {
-  try {
-    if ((await createStyleDataFileWithLock(filePath, data)) === true) {
-    }
-  } catch (error) {
-    throw error;
-  }
-}
+export const serve_style = {
+  init: () => {
+    const app = express();
 
-/**
- * Get style JSON from a URL
- * @param {string} url The URL to fetch data from
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<object>}
- */
-export async function getStyleJSONFromURL(url, timeout) {
-  try {
-    const response = await axios.get(url, {
-      timeout: timeout,
-      responseType: "json",
-      headers: {
-        "User-Agent": "Tile Server",
-      },
-      validateStatus: (status) => {
-        return status === StatusCodes.OK;
-      },
-      httpAgent: new http.Agent({
-        keepAlive: false,
-      }),
-      httpsAgent: new https.Agent({
-        keepAlive: false,
-      }),
-    });
+    /**
+     * @swagger
+     * tags:
+     *   - name: Style
+     *     description: Style related endpoints
+     * /styles/styles.json:
+     *   get:
+     *     tags:
+     *       - Style
+     *     summary: Get all styles
+     *     responses:
+     *       200:
+     *         description: List of all styles
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: array
+     *               items:
+     *                 type: object
+     *                 properties:
+     *                   id:
+     *                     type: string
+     *                   name:
+     *                     type: string
+     *                   url:
+     *                     type: string
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/styles.json", getStylesListHandler());
 
-    return response.data;
-  } catch (error) {
-    if (error.response) {
-      if (
-        error.response.status === StatusCodes.NOT_FOUND ||
-        error.response.status === StatusCodes.NO_CONTENT
-      ) {
-        throw new Error("Style does not exist");
-      }
+    /**
+     * @swagger
+     * tags:
+     *   - name: Style
+     *     description: Style related endpoints
+     * /styles/{id}/style.json:
+     *   get:
+     *     tags:
+     *       - Style
+     *     summary: Get style
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         schema:
+     *           type: string
+     *         required: true
+     *         description: ID of the style
+     *       - in: query
+     *         name: raw
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Use raw
+     *     responses:
+     *       200:
+     *         description: Style
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/:id/style.json", getStyleHandler());
 
-      throw new Error(
-        `Failed to get style from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
-      );
-    }
+    return app;
+  },
 
-    throw new Error(`Failed to get style from "${url}": ${error}`);
-  }
-}
+  add: async () => {
+    const seed = await readSeedFile(process.env.DATA_DIR, true);
 
-/**
- * Validate style
- * @param {object} styleJSON Style JSON
- * @returns {Promise<void>}
- */
-export async function validateStyle(styleJSON) {
-  /* Validate style */
-  const validationErrors = validateStyleMin(styleJSON);
-  if (validationErrors.length > 0) {
-    throw new Error(
-      validationErrors
-        .map((validationError) => `\n\t${validationError.message}`)
-        .join()
+    await Promise.all(
+      Object.keys(config.styles).map(async (id) => {
+        try {
+          const item = config.styles[id];
+          const styleInfo = {};
+
+          if (
+            item.style.startsWith("https://") === true ||
+            item.style.startsWith("http://") === true
+          ) {
+            styleInfo.path = `${process.env.DATA_DIR}/styles/${id}/style.json`;
+
+            if ((await isExistFile(styleInfo.path)) === false) {
+              await downloadStyleFile(
+                item.style,
+                styleInfo.path,
+                5,
+                300000 // 5 mins
+              );
+            }
+          } else {
+            let cacheSource;
+
+            if (item.cache !== undefined) {
+              styleInfo.path = `${process.env.DATA_DIR}/caches/styles/${item.style}/style.json`;
+
+              cacheSource = seed.styles[item.style];
+
+              if (cacheSource === undefined) {
+                throw new Error(`Cache style id "${item.style}" is not valid`);
+              }
+
+              if (item.cache.forward === true) {
+                styleInfo.sourceURL = cacheSource.url;
+                styleInfo.storeCache = item.cache.store;
+              }
+            } else {
+              styleInfo.path = `${process.env.DATA_DIR}/styles/${item.style}`;
+            }
+          }
+
+          /* Read style.json file */
+          try {
+            const styleJSON = await getStyle(styleInfo.path);
+
+            /* Validate style */
+            await validateStyle(styleJSON);
+
+            styleInfo.name = styleJSON.name || "Unknown";
+            styleInfo.zoom = styleJSON.zoom || 0;
+            styleInfo.center = styleJSON.center || [0, 0, 0];
+          } catch (error) {
+            if (
+              item.cache !== undefined &&
+              error.message === "Style does not exist"
+            ) {
+              styleInfo.name =
+                seed.styles[item.style].metadata.name || "Unknown";
+              styleInfo.zoom = seed.styles[item.style].metadata.zoom || 0;
+              styleInfo.center = seed.styles[item.style].metadata.center || [
+                0, 0, 0,
+              ];
+            } else {
+              throw error;
+            }
+          }
+
+          /* Add to repo */
+          config.repo.styles[id] = styleInfo;
+        } catch (error) {
+          printLog(
+            "error",
+            `Failed to load style "${id}": ${error}. Skipping...`
+          );
+        }
+      })
     );
-  }
-
-  /* Validate fonts */
-  if (styleJSON.glyphs !== undefined) {
-    if (
-      styleJSON.glyphs.startsWith("fonts://") === false &&
-      styleJSON.glyphs.startsWith("https://") === false &&
-      styleJSON.glyphs.startsWith("http://") === false
-    ) {
-      throw new Error("Invalid fonts url");
-    }
-  }
-
-  /* Validate sprite */
-  if (styleJSON.sprite !== undefined) {
-    if (styleJSON.sprite.startsWith("sprites://") === true) {
-      const spriteID = styleJSON.sprite.slice(
-        10,
-        styleJSON.sprite.lastIndexOf("/")
-      );
-
-      if (config.repo.sprites[spriteID] === undefined) {
-        throw new Error(`Sprite "${spriteID}" is not found`);
-      }
-    } else if (
-      styleJSON.sprite.startsWith("https://") === false &&
-      styleJSON.sprite.startsWith("http://") === false
-    ) {
-      throw new Error("Invalid sprite url");
-    }
-  }
-
-  /* Validate sources */
-  await Promise.all(
-    Object.keys(styleJSON.sources).map(async (id) => {
-      const source = styleJSON.sources[id];
-
-      if (source.url !== undefined) {
-        if (
-          source.url.startsWith("pmtiles://") === true ||
-          source.url.startsWith("mbtiles://") === true ||
-          source.url.startsWith("xyz://") === true
-        ) {
-          const queryIndex = source.url.lastIndexOf("?");
-          const sourceID =
-            queryIndex === -1
-              ? source.url.split("/")[2]
-              : source.url.split("/")[2].slice(0, queryIndex);
-
-          if (config.repo.datas[sourceID] === undefined) {
-            throw new Error(
-              `Source "${id}" is not found data source "${sourceID}"`
-            );
-          }
-        } else if (
-          source.url.startsWith("https://") === false &&
-          source.url.startsWith("http://") === false
-        ) {
-          throw new Error(`Source "${id}" is invalid data url "${url}"`);
-        }
-      }
-
-      if (source.urls !== undefined) {
-        if (source.urls.length === 0) {
-          throw new Error(`Source "${id}" is invalid data urls`);
-        }
-
-        source.urls.forEach((url) => {
-          if (
-            url.startsWith("pmtiles://") === true ||
-            url.startsWith("mbtiles://") === true ||
-            url.startsWith("xyz://") === true
-          ) {
-            const queryIndex = url.lastIndexOf("?");
-            const sourceID =
-              queryIndex === -1
-                ? url.split("/")[2]
-                : url.split("/")[2].slice(0, queryIndex);
-
-            if (config.repo.datas[sourceID] === undefined) {
-              throw new Error(
-                `Source "${id}" is not found data source "${sourceID}"`
-              );
-            }
-          } else if (
-            url.startsWith("https://") === false &&
-            url.startsWith("http://") === false
-          ) {
-            throw new Error(`Source "${id}" is invalid data url "${url}"`);
-          }
-        });
-      }
-
-      if (source.tiles !== undefined) {
-        if (source.tiles.length === 0) {
-          throw new Error(`Source "${id}" is invalid tile urls`);
-        }
-
-        source.tiles.forEach((tile) => {
-          if (
-            tile.startsWith("pmtiles://") === true ||
-            tile.startsWith("mbtiles://") === true ||
-            tile.startsWith("xyz://") === true
-          ) {
-            const queryIndex = tile.lastIndexOf("?");
-            const sourceID =
-              queryIndex === -1
-                ? tile.split("/")[2]
-                : tile.split("/")[2].slice(0, queryIndex);
-
-            if (config.repo.datas[sourceID] === undefined) {
-              throw new Error(
-                `Source "${id}" is not found data source "${sourceID}"`
-              );
-            }
-          } else if (
-            tile.startsWith("https://") === false &&
-            tile.startsWith("http://") === false
-          ) {
-            throw new Error(`Source "${id}" is invalid tile url "${url}"`);
-          }
-        });
-      }
-    })
-  );
-}
-
-/**
- * Get style
- * @param {string} filePath
- * @returns {Promise<object>}
- */
-export async function getStyle(filePath) {
-  try {
-    const data = await fsPromise.readFile(filePath);
-    if (!data) {
-      throw new Error("Style does not exist");
-    }
-
-    return JSON.parse(data);
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      throw new Error("Style does not exist");
-    }
-
-    throw error;
-  }
-}
+  },
+};
