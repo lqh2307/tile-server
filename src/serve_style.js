@@ -2,6 +2,7 @@
 
 import { getRequestHost, isExistFile } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
+import { readSeedFile } from "./seed.js";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
@@ -294,6 +295,8 @@ export const serve_style = {
   },
 
   add: async () => {
+    const seed = await readSeedFile(process.env.DATA_DIR, true);
+
     await Promise.all(
       Object.keys(config.styles).map(async (id) => {
         try {
