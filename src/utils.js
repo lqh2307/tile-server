@@ -717,7 +717,7 @@ export function deepClone(obj) {
  * @param {Object<string,string>} serverInfoAdds Server info object
  * @returns {Promise<void>}
  */
-export async function updateServerInfoFile(serverInfoAdds) {
+export async function updateServerInfoFile(serverInfoAdds = {}) {
   const filePath = `${process.env.DATA_DIR}/server-info.json`;
   const tempFilePath = `${filePath}.tmp`;
 
@@ -765,7 +765,10 @@ export async function updateServerInfoFile(serverInfoAdds) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function updateServerInfoFileWithLock(serverInfoAdds, timeout) {
+export async function updateServerInfoFileWithLock(
+  serverInfoAdds = {},
+  timeout
+) {
   const filePath = `${process.env.DATA_DIR}/server-info.json`;
   const startTime = Date.now();
   const lockFilePath = `${filePath}.lock`;

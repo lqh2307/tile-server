@@ -185,7 +185,8 @@ function getDataTileHandler() {
                 tileName,
                 item.tileJSON.format,
                 dataTile.data,
-                dataTile.etag
+                dataTile.etag,
+                dataTile.storeMD5
               ).catch((error) =>
                 printLog(
                   "error",
@@ -755,6 +756,7 @@ export const serve_data = {
               if (item.cache.forward === true) {
                 dataInfo.sourceURL = cacheSource.url;
                 dataInfo.storeCache = item.cache.store;
+                dataInfo.storeMD5 = item.cache.storeMD5;
               }
             } else {
               dataInfo.path = `${process.env.DATA_DIR}/xyzs/${item.xyz}`;

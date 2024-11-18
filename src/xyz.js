@@ -346,7 +346,7 @@ export async function getXYZInfos(sourcePath) {
  * @param {Object<string,string>} metadataAdds Metadata object
  * @returns {Promise<void>}
  */
-async function updateXYZMetadataFile(filePath, metadataAdds) {
+async function updateXYZMetadataFile(filePath, metadataAdds = {}) {
   const tempFilePath = `${filePath}.tmp`;
 
   try {
@@ -398,7 +398,7 @@ async function updateXYZMetadataFile(filePath, metadataAdds) {
  */
 export async function updateXYZMetadataFileWithLock(
   filePath,
-  metadataAdds,
+  metadataAdds = {},
   timeout
 ) {
   const startTime = Date.now();
@@ -452,7 +452,7 @@ export async function updateXYZMetadataFileWithLock(
  * @param {Object<string,string>} hashAdds Hash data object
  * @returns {Promise<void>}
  */
-async function updateXYZMD5File(filePath, hashAdds) {
+async function updateXYZMD5File(filePath, hashAdds = {}) {
   const tempFilePath = `${filePath}.tmp`;
 
   try {
@@ -500,7 +500,11 @@ async function updateXYZMD5File(filePath, hashAdds) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function updateXYZMD5FileWithLock(filePath, hashAdds, timeout) {
+export async function updateXYZMD5FileWithLock(
+  filePath,
+  hashAdds = {},
+  timeout
+) {
   const startTime = Date.now();
   const lockFilePath = `${filePath}.lock`;
   let lockFileHandle;
@@ -767,10 +771,12 @@ export async function downloadXYZTileDataFile(
         );
 
         // Store data md5 hash
-        hashs[tileName] =
-          response.headers["Etag"] === undefined
-            ? calculateMD5(response.data)
-            : response.headers["Etag"];
+        if (hashs !== undefined) {
+          hashs[tileName] =
+            response.headers["Etag"] === undefined
+              ? calculateMD5(response.data)
+              : response.headers["Etag"];
+        }
       } catch (error) {
         if (error.response) {
           if (
@@ -828,7 +834,9 @@ export async function removeXYZTileDataFile(
           timeout
         );
 
-        delete hashs[tileName];
+        if (hashs !== undefined) {
+          delete hashs[tileName];
+        }
       }, maxTry);
     } catch (error) {
       throw new Error(
@@ -847,6 +855,7 @@ export async function removeXYZTileDataFile(
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {Buffer} data Tile data buffer
  * @param {string} md5 MD5 hash string
+ * @param {boolean} storeMD5 Is store MD5 hashed?
  * @returns {Promise<void>}
  */
 export async function cacheXYZTileDataFile(
@@ -854,26 +863,29 @@ export async function cacheXYZTileDataFile(
   tileName,
   format,
   data,
-  md5
+  md5,
+  storeMD5
 ) {
   const filePath = `${sourcePath}/${tileName}.${format}`;
 
   try {
     if ((await createXYZTileDataFileWithLock(filePath, data)) === true) {
-      const md5FilePath = `${sourcePath}/md5.json`;
+      if (storeMD5 === true) {
+        const md5FilePath = `${sourcePath}/md5.json`;
 
-      updateXYZMD5FileWithLock(
-        md5FilePath,
-        {
-          [tileName]: md5 === undefined ? calculateMD5(data) : md5,
-        },
-        300000 // 5 mins
-      ).catch((error) => {
-        printLog(
-          "error",
-          `Failed to update md5 for tile "${tileName}": ${error}`
-        );
-      });
+        updateXYZMD5FileWithLock(
+          md5FilePath,
+          {
+            [tileName]: md5 === undefined ? calculateMD5(data) : md5,
+          },
+          300000 // 5 mins
+        ).catch((error) => {
+          printLog(
+            "error",
+            `Failed to update md5 for tile "${tileName}": ${error}`
+          );
+        });
+      }
     }
   } catch (error) {
     throw error;

@@ -982,7 +982,8 @@ export const serve_rendered = {
                                       tileName,
                                       sourceData.tileJSON.format,
                                       dataTile.data,
-                                      dataTile.etag
+                                      dataTile.etag,
+                                      dataTile.storeMD5
                                     ).catch((error) =>
                                       printLog(
                                         "error",

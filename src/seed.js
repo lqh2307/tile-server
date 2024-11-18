@@ -243,6 +243,9 @@ export async function readSeedFile(dataDir, isValidate) {
                   type: "integer",
                   minimum: 1,
                 },
+                storeMD5: {
+                  type: "boolean",
+                },
               },
               required: ["metadata", "url"],
               additionalProperties: true,

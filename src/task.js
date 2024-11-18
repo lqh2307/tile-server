@@ -56,6 +56,7 @@ export async function runTask(opts) {
  * @param {number} concurrency Concurrency download
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
+ * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
  * @returns {Promise<void>}
  */
@@ -71,6 +72,7 @@ async function seedXYZTileDataFiles(
   concurrency = os.cpus().length,
   maxTry = 5,
   timeout = 60000,
+  storeMD5 = false,
   refreshBefore
 ) {
   const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
@@ -114,7 +116,7 @@ async function seedXYZTileDataFiles(
   );
 
   // Download files
-  const hashs = {};
+  const hashs = storeMD5 === true ? {} : undefined;
   let activeTasks = 0;
   const mutex = new Mutex();
 
@@ -250,6 +252,7 @@ async function seedXYZTileDataFiles(
  * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {number} concurrency Concurrency download
  * @param {number} maxTry Number of retry attempts on failure
+ * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
@@ -263,6 +266,7 @@ async function cleanXYZTileDataFiles(
   bbox = [-180, -85.051129, 180, 85.051129],
   concurrency = os.cpus().length,
   maxTry = 5,
+  storeMD5 = false,
   cleanUpBefore
 ) {
   const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
@@ -291,7 +295,7 @@ async function cleanXYZTileDataFiles(
   printLog("info", log);
 
   // Remove files
-  const hashs = {};
+  const hashs = storeMD5 === true ? {} : undefined;
   let activeTasks = 0;
   const mutex = new Mutex();
 
@@ -436,6 +440,7 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
           cleanUpData.datas[id].bbox,
           seedData.datas[id].concurrency,
           seedData.datas[id].maxTry,
+          seedData.datas[id].storeMD5,
           cleanUpData.datas[id].cleanUpBefore?.time ||
             cleanUpData.datas[id].cleanUpBefore?.day
         );
@@ -506,6 +511,7 @@ async function runSeedTask(dataDir, seedData) {
           seedData.datas[id].concurrency,
           seedData.datas[id].maxTry,
           seedData.datas[id].timeout,
+          seedData.datas[id].storeMD5,
           seedData.datas[id].refreshBefore?.time ||
             seedData.datas[id].refreshBefore?.day ||
             seedData.datas[id].refreshBefore?.md5
