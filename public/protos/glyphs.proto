@@ -1,7 +1,5 @@
 // Protocol Version 1
 
-package llmr.glyphs;
-
 option optimize_for = LITE_RUNTIME;
 
 // Stores a glyph with metrics and optional SDF bitmap information

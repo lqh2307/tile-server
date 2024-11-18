@@ -1,5 +1,7 @@
 // Protocol Version 1
 
+option optimize_for = LITE_RUNTIME;
+
 message tile {
   enum GeomType {
     Unknown = 0;
