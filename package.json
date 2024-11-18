@@ -4,6 +4,7 @@
   "main": "src/main.js",
   "version": "0.0.1",
   "license": "MIT",
+  "author": "Huy Le <lqh23072000@gmail.com>",
   "type": "module",
   "scripts": {
     "server": "./entrypoint.sh"

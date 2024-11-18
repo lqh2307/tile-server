@@ -118,7 +118,7 @@ async function seedXYZTileDataFiles(
   let activeTasks = 0;
   const mutex = new Mutex();
 
-  async function updateActiveTasks(mutex, action) {
+  async function updateActiveTasks(action) {
     return await mutex.runExclusive(async () => {
       return action();
     });
@@ -210,7 +210,7 @@ async function seedXYZTileDataFiles(
               );
             }
           } finally {
-            await updateActiveTasks(mutex, () => {
+            await updateActiveTasks(() => {
               activeTasks--;
             });
           }
@@ -295,7 +295,7 @@ async function cleanXYZTileDataFiles(
   let activeTasks = 0;
   const mutex = new Mutex();
 
-  async function updateActiveTasks(mutex, action) {
+  async function updateActiveTasks(action) {
     return await mutex.runExclusive(async () => {
       return action();
     });
@@ -355,7 +355,7 @@ async function cleanXYZTileDataFiles(
               );
             }
           } finally {
-            await updateActiveTasks(mutex, () => {
+            await updateActiveTasks(() => {
               activeTasks--;
             });
           }

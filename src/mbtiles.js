@@ -130,7 +130,7 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
         let activeTasks = 0;
         const mutex = new Mutex();
 
-        async function updateActiveTasks(mutex, action) {
+        async function updateActiveTasks(action) {
           return await mutex.runExclusive(async () => {
             return action();
           });
@@ -159,7 +159,7 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
             } catch (error) {
               reject(error);
             } finally {
-              await updateActiveTasks(mutex, () => {
+              await updateActiveTasks(() => {
                 activeTasks--;
               });
             }
