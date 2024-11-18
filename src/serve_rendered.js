@@ -648,6 +648,9 @@ export const serve_rendered = {
                 item.sourceURL !== undefined &&
                 error.message === "Style does not exist"
               ) {
+                /* Add to repo */
+                config.repo.rendereds[id] = rendered;
+
                 return;
               } else {
                 throw error;
