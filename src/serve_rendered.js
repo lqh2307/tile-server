@@ -631,22 +631,6 @@ export const serve_rendered = {
         Object.keys(config.repo.styles).map(async (id) => {
           try {
             const item = config.repo.styles[id];
-            let styleJSON;
-
-            /* Read style.json file */
-            try {
-              styleJSON = await getStyle(item.path);
-            } catch (error) {
-              if (
-                item.cache !== undefined &&
-                error.message === "Style does not exist"
-              ) {
-                return;
-              } else {
-                throw error;
-              }
-            }
-
             const rendered = {
               tileJSON: createMetadata({
                 name: item.name,
@@ -654,6 +638,21 @@ export const serve_rendered = {
               }),
               renderers: [],
             };
+            let styleJSON;
+
+            /* Read style.json file */
+            try {
+              styleJSON = await getStyle(item.path);
+            } catch (error) {
+              if (
+                item.sourceURL !== undefined &&
+                error.message === "Style does not exist"
+              ) {
+                return;
+              } else {
+                throw error;
+              }
+            }
 
             /* Fix center */
             if (styleJSON.center?.length >= 2 && styleJSON.zoom) {

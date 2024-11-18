@@ -42,7 +42,7 @@ function getStyleHandler() {
 
           /* Get style */
           styleJSON = await getStyleJSONFromURL(
-            url,
+            item.sourceURL,
             60000 // 1 mins
           );
 
