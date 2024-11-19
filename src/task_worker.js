@@ -19,7 +19,7 @@ import { runTask } from "./task.js";
         "Completed seed and clean up task. Restarting server..."
       );
 
-      restartServer().catch(() =>
+      restartServer().catch((error) =>
         printLog("error", `Failed to restart server: ${error}`)
       );
     }

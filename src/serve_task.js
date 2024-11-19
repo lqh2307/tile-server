@@ -13,7 +13,7 @@ function startTaskHandler() {
   return async (req, res, next) => {
     try {
       setTimeout(() => {
-        startTask().catch(() =>
+        startTask().catch((error) =>
           printLog("error", `Failed to start task: ${error}`)
         );
       }, 0);
@@ -37,7 +37,7 @@ function cancelTaskHandler() {
   return async (req, res, next) => {
     try {
       setTimeout(() => {
-        cancelTask().catch(() =>
+        cancelTask().catch((error) =>
           printLog("error", `Failed to cancel task: ${error}`)
         );
       }, 0);

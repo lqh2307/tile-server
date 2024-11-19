@@ -57,7 +57,7 @@ async function startClusterServer(opts) {
       updateServerInfoFile({
         lastServerKilled: new Date().toISOString(),
       })
-        .catch(() =>
+        .catch((error) =>
           printLog("error", `Failed to store killed server time: ${error}`)
         )
         .finally(() => process.exit(0));
@@ -70,10 +70,7 @@ async function startClusterServer(opts) {
       updateServerInfoFile({
         lastServerRestarted: new Date().toISOString(),
       })
-        .catch(() =>
-          printLog("error", `Failed to store restarted server time: ${error}`)
-        )
-        .catch(() =>
+        .catch((error) =>
           printLog("error", `Failed to store restarted server time: ${error}`)
         )
         .finally(() => process.exit(1));
@@ -125,7 +122,7 @@ async function startClusterServer(opts) {
         .on("change", () => {
           printLog("info", "Config file has changed. Killing server...");
 
-          killServer().catch(() =>
+          killServer().catch((error) =>
             printLog("error", `Failed to kill server: ${error}`)
           );
         });
@@ -144,7 +141,7 @@ async function startClusterServer(opts) {
         .on("change", () => {
           printLog("info", "Config file has changed. Restarting server...");
 
-          restartServer().catch(() =>
+          restartServer().catch((error) =>
             printLog("error", `Failed to restart server: ${error}`)
           );
         });
@@ -158,7 +155,7 @@ async function startClusterServer(opts) {
       );
 
       cron.schedule(config.options.taskSchedule, () =>
-        startTask().catch(() =>
+        startTask().catch((error) =>
           printLog("error", `Failed to start task: ${error}`)
         )
       );

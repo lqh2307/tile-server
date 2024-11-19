@@ -32,7 +32,7 @@ export function startTaskInWorker(opts) {
     /* Store started task time */
     updateServerInfoFile({
       lastTaskStarted: new Date().toISOString(),
-    }).catch(() =>
+    }).catch((error) =>
       printLog("error", `Failed to store started task time: ${error}`)
     );
 
@@ -58,21 +58,21 @@ export function startTaskInWorker(opts) {
           /* Store done task time */
           updateServerInfoFile({
             lastTaskDone: new Date().toISOString(),
-          }).catch(() =>
+          }).catch((error) =>
             printLog("error", `Failed to store done task time: ${error}`)
           );
         } else if (code === 1) {
           /* Store canceled task time */
           updateServerInfoFile({
             lastTaskCanceled: new Date().toISOString(),
-          }).catch(() =>
+          }).catch((error) =>
             printLog("error", `Failed to store canceled task time: ${error}`)
           );
         } else {
           /* Store failed task time */
           updateServerInfoFile({
             lastTaskFailed: new Date().toISOString(),
-          }).catch(() =>
+          }).catch((error) =>
             printLog("error", `Failed to store failed task time: ${error}`)
           );
         }
@@ -165,7 +165,7 @@ async function loadData() {
   } catch (error) {
     printLog("error", `Failed to load data: ${error}. Exited!`);
 
-    killServer().catch(() =>
+    killServer().catch((error) =>
       printLog("error", `Failed to kill server: ${error}`)
     );
   }
@@ -183,7 +183,7 @@ export async function startServer() {
   } catch (error) {
     printLog("error", `Failed to start server: ${error}. Exited!`);
 
-    killServer().catch(() =>
+    killServer().catch((error) =>
       printLog("error", `Failed to kill server: ${error}`)
     );
   }

@@ -547,7 +547,7 @@ async function seedStyleFile(
   refreshBefore
 ) {
   let refreshTimestamp;
-  let log = `Seeding style file with:n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}`;
+  let log = `Seeding style file with:\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}`;
 
   if (typeof refreshBefore === "string") {
     refreshTimestamp = new Date(refreshBefore).getTime();

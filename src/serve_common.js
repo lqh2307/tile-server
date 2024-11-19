@@ -324,7 +324,7 @@ function serveRestartHandler() {
   return async (req, res, next) => {
     try {
       setTimeout(() => {
-        restartServer().catch(() =>
+        restartServer().catch((error) =>
           printLog("error", `Failed to restart server: ${error}`)
         );
       }, 0);
@@ -348,7 +348,7 @@ function serveKillHandler() {
   return async (req, res, next) => {
     try {
       setTimeout(() => {
-        killServer().catch(() =>
+        killServer().catch((error) =>
           printLog("error", `Failed to kill server: ${error}`)
         );
       }, 0);
