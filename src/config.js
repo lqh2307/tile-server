@@ -85,12 +85,6 @@ async function readConfigFile(dataDir, isValidate) {
                   "^([0-5]?\\d|\\*)\\s([0-5]?\\d|\\*)\\s([0-1]?\\d|2[0-3]|\\*)\\s([1-9]|[12]\\d|3[01]|\\*)\\s([1-9]|1[0-2]|\\*)\\s([0-7]|\\*)$|^([0-5]?\\d|\\*)\\s([0-5]?\\d|\\*)\\s([0-1]?\\d|2[0-3]|\\*)\\s([1-9]|[12]\\d|3[01]|\\*)\\s([1-9]|1[0-2]|\\*)$",
                 minLength: 1,
               },
-              mongoDBURI: {
-                type: "string",
-                pattern:
-                  "^mongodb(?:\\+srv)?:\\/\\/[a-zA-Z0-9._%+-]+(?::[a-zA-Z0-9._%+-]+)?@[a-zA-Z0-9._-]+(?:\\.[a-zA-Z]{2,})+:[0-9]{1,5}(?:\\/[a-zA-Z0-9._%+-]+)?(?:\\?[^\\s]+)?$",
-                minLength: 1,
-              },
               restartServerAfterTask: {
                 type: "boolean",
               },
@@ -217,7 +211,6 @@ async function readConfigFile(dataDir, isValidate) {
     minPoolSize: config.options.minPoolSize ?? os.cpus().length,
     maxPoolSize: config.options.maxPoolSize ?? os.cpus().length * 2,
     taskSchedule: config.options.taskSchedule, // undefined
-    mongoDBURI: config.options.mongoDBURI, // undefined
     restartServerAfterTask: config.options.restartServerAfterTask ?? true,
     killInterval: config.options.killInterval, // undefined
     restartInterval: config.options.restartInterval, // undefined
