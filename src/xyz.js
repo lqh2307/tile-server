@@ -689,9 +689,7 @@ export async function downloadXYZTileDataFile(
               z,
               x,
               y,
-              response.headers["Etag"] === undefined
-                ? calculateMD5(response.data)
-                : response.headers["Etag"]
+              response.headers["Etag"] ?? calculateMD5(response.data)
             );
           }
         }
@@ -817,7 +815,7 @@ export async function cacheXYZTileDataFile(
           z,
           x,
           y,
-          hash === undefined ? calculateMD5(data) : hash,
+          hash ?? calculateMD5(data),
           300000 // 5 mins
         ).catch((error) => {
           printLog(
