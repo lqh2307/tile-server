@@ -910,7 +910,6 @@ export const serve_common = {
       /**
        * @swagger
        * tags:
-       * tags:
        *   - name: Common
        *     description: Common related endpoints
        * /styles/{id}/:

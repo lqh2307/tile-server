@@ -159,10 +159,11 @@ async function seedXYZTileDataFiles(
                 );
 
                 const response = await getDataBuffer(md5URL, timeout);
+
                 let oldMD5;
 
                 try {
-                  oldMD5 = getXYZTileMD5(`${outputFolder}/md5.sqlite`, z, x, y);
+                  oldMD5 = getXYZTileMD5(outputFolder, z, x, y);
                 } catch (error) {
                   if (error.message === "Tile MD5 does not exist") {
                     await downloadXYZTileDataFile(

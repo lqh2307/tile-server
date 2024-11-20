@@ -685,7 +685,7 @@ export async function downloadXYZTileDataFile(
           // Store data md5 hash
           if (storeMD5 === true) {
             updateXYZTileMD5(
-              `${sourcePath}/md5.sqlite`,
+              sourcePath,
               z,
               x,
               y,
@@ -757,7 +757,7 @@ export async function removeXYZTileDataFile(
         );
 
         if (storeMD5 === true) {
-          deleteXYZTileMD5(`${sourcePath}/md5.sqlite`, z, x, y);
+          deleteXYZTileMD5(sourcePath, z, x, y);
         }
       }, maxTry);
     } catch (error) {
@@ -810,18 +810,14 @@ export async function cacheXYZTileDataFile(
       )) === true
     ) {
       if (storeMD5 === true) {
-        updateXYZTileMD5(
-          `${sourcePath}/md5.sqlite`,
-          z,
-          x,
-          y,
-          hash ?? calculateMD5(data)
-        ).catch((error) => {
-          printLog(
-            "error",
-            `Failed to update md5 for tile "${tileName}": ${error}`
-          );
-        });
+        updateXYZTileMD5(sourcePath, z, x, y, hash ?? calculateMD5(data)).catch(
+          (error) => {
+            printLog(
+              "error",
+              `Failed to update md5 for tile "${tileName}": ${error}`
+            );
+          }
+        );
       }
     }
   }

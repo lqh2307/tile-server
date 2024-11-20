@@ -81,14 +81,14 @@ export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
 
 /**
  * Connect to XYZ tile MD5 database with WAL mode
- * @param {string} filePath
+ * @param {string} sourcePath Folder path
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<sqlite3.Database>}
  */
-async function connectToXYZTileMD5DB(filePath, timeout) {
+async function connectToXYZTileMD5DB(sourcePath, timeout) {
   try {
     const db = await open({
-      filename: filePath,
+      filename: `${sourcePath}/md5.sqlite`,
       driver: sqlite3.Database,
     });
 
@@ -110,11 +110,11 @@ async function connectToXYZTileMD5DB(filePath, timeout) {
     return db;
   } catch (error) {
     if (error.code === "ENOENT") {
-      await fsPromise.mkdir(path.dirname(filePath), {
+      await fsPromise.mkdir(sourcePath, {
         recursive: true,
       });
 
-      return await connectToXYZTileMD5DB(filePath, timeout);
+      return await connectToXYZTileMD5DB(sourcePath, timeout);
     }
 
     throw error;
@@ -123,7 +123,7 @@ async function connectToXYZTileMD5DB(filePath, timeout) {
 
 /**
  * Update XYZ tile MD5
- * @param {string} filePath
+ * @param {string} sourcePath Folder path
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -166,7 +166,7 @@ export async function updateXYZTileMD5(filePath, z, x, y, hash) {
 
 /**
  * Delete XYZ tile MD5
- * @param {string} filePath
+ * @param {string} sourcePath Folder path
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -193,7 +193,7 @@ export async function deleteXYZTileMD5(filePath, z, x, y) {
 
 /**
  * Get XYZ tile MD5
- * @param {string} filePath
+ * @param {string} sourcePath Folder path
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
