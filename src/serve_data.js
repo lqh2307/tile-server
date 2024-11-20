@@ -763,8 +763,8 @@ export const serve_data = {
               if (item.cache.forward === true) {
                 dataInfo.sourceURL = cacheSource.url;
                 dataInfo.storeCache = item.cache.store;
-                dataInfo.storeMD5 = item.cache.storeMD5;
-                dataInfo.storeTransparent = item.cache.storeTransparent;
+                dataInfo.storeMD5 = cacheSource.storeMD5;
+                dataInfo.storeTransparent = cacheSource.storeTransparent;
               }
             } else {
               dataInfo.path = `${process.env.DATA_DIR}/xyzs/${item.xyz}`;
