@@ -6,13 +6,13 @@ import { StatusCodes } from "http-status-codes";
 import { getPMTilesTile } from "./pmtiles.js";
 import { getMBTilesTile } from "./mbtiles.js";
 import { createPool } from "generic-pool";
+import { processImage } from "./image.js";
 import { getSprite } from "./sprite.js";
 import { printLog } from "./logger.js";
 import { getStyle } from "./style.js";
 import { config } from "./config.js";
 import { getFonts } from "./font.js";
 import express from "express";
-import sharp from "sharp";
 import {
   detectFormatAndHeaders,
   getDataTileFromURL,
@@ -65,51 +65,6 @@ async function renderData(item, scale, tileSize, x, y, z, scheme = "xyz") {
       resolve(data);
     });
   });
-}
-
-/**
- * Render image
- * @param {object} data
- * @param {number} scale
- * @param {number} compression
- * @param {256|512} tileSize
- * @param {number} z Zoom level
- * @returns {Promise<Buffer>}
- */
-async function processImage(data, scale, compression, tileSize, z) {
-  if (z === 0 && tileSize === 256) {
-    // HACK2: This hack allows tile-server to support zoom level 0 - 256px tiles, which would actually be zoom -1 in maplibre-gl-native
-    return await sharp(data, {
-      raw: {
-        premultiplied: true,
-        width: 512 * scale,
-        height: 512 * scale,
-        channels: 4,
-      },
-    })
-      .resize({
-        width: 256 * scale,
-        height: 256 * scale,
-      })
-      .png({
-        compressionLevel: compression,
-      })
-      .toBuffer();
-    // END HACK2
-  } else {
-    return await sharp(data, {
-      raw: {
-        premultiplied: true,
-        width: tileSize * scale,
-        height: tileSize * scale,
-        channels: 4,
-      },
-    })
-      .png({
-        compressionLevel: compression,
-      })
-      .toBuffer();
-  }
 }
 
 /**
@@ -983,7 +938,8 @@ export const serve_rendered = {
                                       sourceData.tileJSON.format,
                                       dataTile.data,
                                       dataTile.etag,
-                                      dataTile.storeMD5
+                                      sourceData.storeMD5,
+                                      sourceData.storeTransparent
                                     ).catch((error) =>
                                       printLog(
                                         "error",

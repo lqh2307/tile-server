@@ -57,6 +57,7 @@ export async function runTask(opts) {
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
  * @param {boolean} storeMD5 Is store MD5 hashed?
+ * @param {boolean} storeTransparent Is store transparent?
  * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
  * @returns {Promise<void>}
  */
@@ -73,6 +74,7 @@ async function seedXYZTileDataFiles(
   maxTry = 5,
   timeout = 60000,
   storeMD5 = false,
+  storeTransparent = false,
   refreshBefore
 ) {
   const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
@@ -166,7 +168,8 @@ async function seedXYZTileDataFiles(
                     metadata.format,
                     maxTry,
                     timeout,
-                    hashs
+                    hashs,
+                    storeTransparent
                   );
                 }
               } else if (
@@ -180,7 +183,8 @@ async function seedXYZTileDataFiles(
                   metadata.format,
                   maxTry,
                   timeout,
-                  hashs
+                  hashs,
+                  storeTransparent
                 );
               }
             } else {
@@ -191,7 +195,8 @@ async function seedXYZTileDataFiles(
                 metadata.format,
                 maxTry,
                 timeout,
-                hashs
+                hashs,
+                storeTransparent
               );
             }
           } catch (error) {
@@ -203,7 +208,8 @@ async function seedXYZTileDataFiles(
                 metadata.format,
                 maxTry,
                 timeout,
-                hashs
+                hashs,
+                storeTransparent
               );
             } else {
               printLog(
@@ -512,6 +518,7 @@ async function runSeedTask(dataDir, seedData) {
           seedData.datas[id].maxTry,
           seedData.datas[id].timeout,
           seedData.datas[id].storeMD5,
+          seedData.datas[id].storeTransparent,
           seedData.datas[id].refreshBefore?.time ||
             seedData.datas[id].refreshBefore?.day ||
             seedData.datas[id].refreshBefore?.md5

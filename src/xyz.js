@@ -1,5 +1,6 @@
 "use strict";
 
+import { isFullTransparentPNGImage } from "./image.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
@@ -729,6 +730,7 @@ export async function removeXYZTileDataFileWithLock(filePath, timeout) {
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
  * @param {object} hashs Hash data object
+ * @param {boolean} storeTransparent Is store transparent?
  * @returns {Promise<void>}
  */
 export async function downloadXYZTileDataFile(
@@ -738,7 +740,8 @@ export async function downloadXYZTileDataFile(
   format,
   maxTry,
   timeout,
-  hashs
+  hashs,
+  storeTransparent
 ) {
   printLog("info", `Downloading tile data file "${tileName}" from "${url}"...`);
 
@@ -764,18 +767,26 @@ export async function downloadXYZTileDataFile(
         });
 
         // Store data to file
-        await storeXYZTileDataFileWithLock(
-          `${sourcePath}/${tileName}.${format}`,
-          response.data,
-          300000 // 5 mins
-        );
+        if (
+          storeTransparent === false &&
+          format === "png" &&
+          (await isFullTransparentPNGImage(response.data)) === true
+        ) {
+          return;
+        } else {
+          await storeXYZTileDataFileWithLock(
+            `${sourcePath}/${tileName}.${format}`,
+            response.data,
+            300000 // 5 mins
+          );
 
-        // Store data md5 hash
-        if (hashs !== undefined) {
-          hashs[tileName] =
-            response.headers["Etag"] === undefined
-              ? calculateMD5(response.data)
-              : response.headers["Etag"];
+          // Store data md5 hash
+          if (hashs !== undefined) {
+            hashs[tileName] =
+              response.headers["Etag"] === undefined
+                ? calculateMD5(response.data)
+                : response.headers["Etag"];
+          }
         }
       } catch (error) {
         if (error.response) {
@@ -856,6 +867,7 @@ export async function removeXYZTileDataFile(
  * @param {Buffer} data Tile data buffer
  * @param {string} md5 MD5 hash string
  * @param {boolean} storeMD5 Is store MD5 hashed?
+ * @param {boolean} storeTransparent Is store transparent?
  * @returns {Promise<void>}
  */
 export async function cacheXYZTileDataFile(
@@ -864,27 +876,37 @@ export async function cacheXYZTileDataFile(
   format,
   data,
   md5,
-  storeMD5
+  storeMD5,
+  storeTransparent
 ) {
-  const filePath = `${sourcePath}/${tileName}.${format}`;
-
   try {
-    if ((await createXYZTileDataFileWithLock(filePath, data)) === true) {
-      if (storeMD5 === true) {
-        const md5FilePath = `${sourcePath}/md5.json`;
-
-        updateXYZMD5FileWithLock(
-          md5FilePath,
-          {
-            [tileName]: md5 === undefined ? calculateMD5(data) : md5,
-          },
-          300000 // 5 mins
-        ).catch((error) => {
-          printLog(
-            "error",
-            `Failed to update md5 for tile "${tileName}": ${error}`
-          );
-        });
+    if (
+      storeTransparent === false &&
+      format === "png" &&
+      (await isFullTransparentPNGImage(data)) === true
+    ) {
+      return;
+    } else {
+      if (
+        (await createXYZTileDataFileWithLock(
+          `${sourcePath}/${tileName}.${format}`,
+          data
+        )) === true
+      ) {
+        if (storeMD5 === true) {
+          updateXYZMD5FileWithLock(
+            `${sourcePath}/md5.json`,
+            {
+              [tileName]: md5 === undefined ? calculateMD5(data) : md5,
+            },
+            300000 // 5 mins
+          ).catch((error) => {
+            printLog(
+              "error",
+              `Failed to update md5 for tile "${tileName}": ${error}`
+            );
+          });
+        }
       }
     }
   } catch (error) {

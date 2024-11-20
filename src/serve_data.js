@@ -186,7 +186,8 @@ function getDataTileHandler() {
                 item.tileJSON.format,
                 dataTile.data,
                 dataTile.etag,
-                dataTile.storeMD5
+                item.storeMD5,
+                item.storeTransparent
               ).catch((error) =>
                 printLog(
                   "error",

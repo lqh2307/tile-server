@@ -246,6 +246,9 @@ export async function readSeedFile(dataDir, isValidate) {
                 storeMD5: {
                   type: "boolean",
                 },
+                storeTransparent: {
+                  type: "boolean",
+                },
               },
               required: ["metadata", "url"],
               additionalProperties: true,
