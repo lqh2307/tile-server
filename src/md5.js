@@ -1,10 +1,8 @@
 "use strict";
 
 import { isMBTilesExistColumns } from "./mbtiles.js";
-import fsPromise from "node:fs/promises";
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
-import path from "node:path";
 import crypto from "crypto";
 
 /**
@@ -80,48 +78,6 @@ export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
 }
 
 /**
- * Connect to XYZ tile MD5 database with WAL mode
- * @param {string} sourcePath Folder path
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<sqlite3.Database>}
- */
-async function connectToXYZTileMD5DB(sourcePath, timeout) {
-  try {
-    const db = await open({
-      filename: `${sourcePath}/md5.sqlite`,
-      driver: sqlite3.Database,
-    });
-
-    await db.exec("PRAGMA journal_mode=WAL;");
-    await db.exec(`PRAGMA busy_timeout=${timeout};`);
-
-    await db.exec(
-      `
-      CREATE TABLE IF NOT EXISTS md5s (
-        z INTEGER NOT NULL,
-        x INTEGER NOT NULL,
-        y INTEGER NOT NULL,
-        hash TEXT NOT NULL,
-        PRIMARY KEY (z, x, y)
-      );
-      `
-    );
-
-    return db;
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      await fsPromise.mkdir(sourcePath, {
-        recursive: true,
-      });
-
-      return await connectToXYZTileMD5DB(sourcePath, timeout);
-    }
-
-    throw error;
-  }
-}
-
-/**
  * Update XYZ tile MD5
  * @param {string} sourcePath Folder path
  * @param {number} z Zoom level
@@ -130,13 +86,28 @@ async function connectToXYZTileMD5DB(sourcePath, timeout) {
  * @param {string} hash
  * @returns {Promise<void>}
  */
-export async function updateXYZTileMD5(filePath, z, x, y, hash) {
+export async function updateXYZTileMD5(sourcePath, z, x, y, hash) {
   let db;
 
   try {
-    db = await connectToXYZTileMD5DB(
-      filePath,
-      300000 // 5 mins
+    db = await open({
+      filename: `${sourcePath}/md5.sqlite`,
+      driver: sqlite3.Database,
+    });
+
+    await db.exec("PRAGMA journal_mode=WAL;");
+    await db.exec(`PRAGMA busy_timeout=300000;`);
+
+    await db.exec(
+      `
+        CREATE TABLE IF NOT EXISTS md5s (
+          z INTEGER NOT NULL,
+          x INTEGER NOT NULL,
+          y INTEGER NOT NULL,
+          hash TEXT NOT NULL,
+          PRIMARY KEY (z, x, y)
+        );
+        `
     );
 
     await db.run(
@@ -172,13 +143,28 @@ export async function updateXYZTileMD5(filePath, z, x, y, hash) {
  * @param {number} y Y tile index
  * @returns {Promise<void>}
  */
-export async function deleteXYZTileMD5(filePath, z, x, y) {
+export async function deleteXYZTileMD5(sourcePath, z, x, y) {
   let db;
 
   try {
-    db = await connectToXYZTileMD5DB(
-      filePath,
-      300000 // 5 mins
+    db = await open({
+      filename: `${sourcePath}/md5.sqlite`,
+      driver: sqlite3.Database,
+    });
+
+    await db.exec("PRAGMA journal_mode=WAL;");
+    await db.exec(`PRAGMA busy_timeout=300000;`);
+
+    await db.exec(
+      `
+      CREATE TABLE IF NOT EXISTS md5s (
+        z INTEGER NOT NULL,
+        x INTEGER NOT NULL,
+        y INTEGER NOT NULL,
+        hash TEXT NOT NULL,
+        PRIMARY KEY (z, x, y)
+      );
+      `
     );
 
     await db.run(`DELETE FROM md5s WHERE z = ? AND x = ? AND y = ?`, z, x, y);
@@ -199,14 +185,17 @@ export async function deleteXYZTileMD5(filePath, z, x, y) {
  * @param {number} y Y tile index
  * @returns {Promise<string>}
  */
-export async function getXYZTileMD5(filePath, z, x, y) {
+export async function getXYZTileMD5(sourcePath, z, x, y) {
   let db;
 
   try {
-    db = await connectToXYZTileMD5DB(
-      filePath,
-      300000 // 5 mins
-    );
+    db = await open({
+      filename: `${sourcePath}/md5.sqlite`,
+      driver: sqlite3.Database,
+    });
+
+    await db.exec("PRAGMA journal_mode=WAL;");
+    await db.exec(`PRAGMA busy_timeout=300000;`);
 
     const row = await db.get(
       `SELECT hash FROM md5s WHERE z = ? AND x = ? AND y = ?`,
@@ -221,6 +210,10 @@ export async function getXYZTileMD5(filePath, z, x, y) {
 
     return row.hash;
   } catch (error) {
+    if (error.code === "SQLITE_CANTOPEN") {
+      throw new Error("Tile MD5 does not exist");
+    }
+
     throw error;
   } finally {
     if (db !== undefined) {
