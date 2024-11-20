@@ -1,5 +1,8 @@
 "use strict";
 
+import { getMBTilesTileMD5, getPMTilesTileMD5, getXYZTileMD5 } from "./md5.js";
+import { getPMTilesInfos, getPMTilesTile, openPMTiles } from "./pmtiles.js";
+import { checkReadyMiddleware } from "./middleware.js";
 import { StatusCodes } from "http-status-codes";
 import { readSeedFile } from "./seed.js";
 import { printLog } from "./logger.js";
@@ -8,24 +11,16 @@ import express from "express";
 import {
   cacheXYZTileDataFile,
   getXYZTileFromURL,
-  getXYZTileMD5,
   getXYZInfos,
   getXYZTile,
 } from "./xyz.js";
 import {
   downloadMBTilesFile,
   createMBTilesIndex,
-  getMBTilesTileMD5,
   getMBTilesInfos,
   getMBTilesTile,
   openMBTiles,
 } from "./mbtiles.js";
-import {
-  getPMTilesTileMD5,
-  getPMTilesInfos,
-  getPMTilesTile,
-  openPMTiles,
-} from "./pmtiles.js";
 import {
   createMetadata,
   getRequestHost,
@@ -451,7 +446,7 @@ export const serve_data = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/datas.json", getDatasListHandler());
+    app.get("/datas.json", checkReadyMiddleware(), getDatasListHandler());
 
     /**
      * @swagger
@@ -482,7 +477,11 @@ export const serve_data = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/tilejsons.json", getDataTileJSONsListHandler());
+    app.get(
+      "/tilejsons.json",
+      checkReadyMiddleware(),
+      getDataTileJSONsListHandler()
+    );
 
     /**
      * @swagger
@@ -520,7 +519,7 @@ export const serve_data = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/:id.json", getDataHandler());
+    app.get("/:id.json", checkReadyMiddleware(), getDataHandler());
 
     /**
      * @swagger
@@ -598,6 +597,7 @@ export const serve_data = {
      */
     app.get(
       `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp|gif)`,
+      checkReadyMiddleware(),
       getDataTileHandler()
     );
 
@@ -677,6 +677,7 @@ export const serve_data = {
      */
     app.get(
       `/:id/md5/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp|gif)`,
+      checkReadyMiddleware(),
       getDataTileMD5Handler()
     );
 

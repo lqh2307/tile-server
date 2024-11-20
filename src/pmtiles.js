@@ -1,6 +1,6 @@
 "use strict";
 
-import { detectFormatAndHeaders, calculateMD5 } from "./utils.js";
+import { detectFormatAndHeaders } from "./utils.js";
 import { PMTiles, FetchSource } from "pmtiles";
 import fs from "node:fs";
 
@@ -151,21 +151,4 @@ export async function getPMTilesTile(pmtilesSource, z, x, y) {
     data: data,
     headers: detectFormatAndHeaders(data).headers,
   };
-}
-
-/**
- * Get PMTiles tile MD5
- * @param {object} pmtilesSource
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @returns {Promise<string>}
- */
-export async function getPMTilesTileMD5(pmtilesSource, z, x, y) {
-  const zxyTile = await pmtilesSource.getZxy(z, x, y);
-  if (!zxyTile?.data) {
-    throw new Error("Tile MD5 does not exist");
-  }
-
-  resolve(calculateMD5(Buffer.from(zxyTile.data)));
 }

@@ -2,6 +2,7 @@
 
 import { cacheXYZTileDataFile, getXYZTileFromURL, getXYZTile } from "./xyz.js";
 import { createEmptyData, processImage, renderData } from "./image.js";
+import { checkReadyMiddleware } from "./middleware.js";
 import mlgl from "@maplibre/maplibre-gl-native";
 import { StatusCodes } from "http-status-codes";
 import { getPMTilesTile } from "./pmtiles.js";
@@ -253,7 +254,11 @@ export const serve_rendered = {
        *       500:
        *         description: Internal server error
        */
-      app.get("/rendereds.json", getRenderedsListHandler());
+      app.get(
+        "/rendereds.json",
+        checkReadyMiddleware(),
+        getRenderedsListHandler()
+      );
 
       /**
        * @swagger
@@ -292,7 +297,11 @@ export const serve_rendered = {
        *       500:
        *         description: Internal server error
        */
-      app.get("/tilejsons.json", getRenderedTileJSONsListHandler());
+      app.get(
+        "/tilejsons.json",
+        checkReadyMiddleware(),
+        getRenderedTileJSONsListHandler()
+      );
 
       /**
        * @swagger
@@ -351,7 +360,11 @@ export const serve_rendered = {
        *       500:
        *         description: Internal server error
        */
-      app.get("/(:tileSize(256|512)/)?:id.json", getRenderedHandler());
+      app.get(
+        "/(:tileSize(256|512)/)?:id.json",
+        checkReadyMiddleware(),
+        getRenderedHandler()
+      );
 
       /**
        * @swagger
@@ -430,6 +443,7 @@ export const serve_rendered = {
        */
       app.get(
         `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(@\\d+x)?.png`,
+        checkReadyMiddleware(),
         getRenderedTileHandler()
       );
     }

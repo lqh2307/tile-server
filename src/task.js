@@ -1,6 +1,7 @@
 "use strict";
 
 import { downloadStyleFile, removeStyleFile } from "./style.js";
+import { updateXYZMD5FileWithLock } from "./md5.js";
 import { readCleanUpFile } from "./cleanup.js";
 import { readSeedFile } from "./seed.js";
 import fsPromise from "node:fs/promises";
@@ -8,7 +9,6 @@ import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
 import {
   updateXYZMetadataFileWithLock,
-  updateXYZMD5FileWithLock,
   downloadXYZTileDataFile,
   removeXYZTileDataFile,
 } from "./xyz.js";

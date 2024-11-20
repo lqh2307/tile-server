@@ -1,6 +1,7 @@
 "use strict";
 
 import { getSprite, validateSprite } from "./sprite.js";
+import { checkReadyMiddleware } from "./middleware.js";
 import { StatusCodes } from "http-status-codes";
 import { getRequestHost } from "./utils.js";
 import { printLog } from "./logger.js";
@@ -115,7 +116,7 @@ export const serve_sprite = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/sprites.json", getSpritesListHandler());
+    app.get("/sprites.json", checkReadyMiddleware(), getSpritesListHandler());
 
     /**
      * @swagger
@@ -170,7 +171,11 @@ export const serve_sprite = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/:id/sprite:scale(@\\d+x)?.:format(json|png)", getSpriteHandler());
+    app.get(
+      "/:id/sprite:scale(@\\d+x)?.:format(json|png)",
+      checkReadyMiddleware(),
+      getSpriteHandler()
+    );
 
     return app;
   },

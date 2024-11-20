@@ -13,7 +13,6 @@ import {
   getLayerNamesFromPBFTileBuffer,
   detectFormatAndHeaders,
   getBBoxFromTiles,
-  calculateMD5,
   retry,
   delay,
 } from "./utils.js";
@@ -290,52 +289,6 @@ export async function getMBTilesTile(mbtilesSource, z, x, y) {
       }
     );
   });
-}
-
-/**
- * Get MBTiles tile MD5
- * @param {object} mbtilesSource
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @returns {Promise<string>}
- */
-export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
-  if (await isMBTilesExistColumns(mbtilesSource, "tiles", ["md5"])) {
-    return new Promise((resolve, reject) => {
-      mbtilesSource.get(
-        `SELECT md5 FROM tiles WHERE zoom_level = ${z} AND tile_column = ${x} AND tile_row = ${y}`,
-        (error, row) => {
-          if (error) {
-            return reject(error);
-          }
-
-          if (!row?.md5) {
-            return reject(new Error("Tile MD5 does not exist"));
-          }
-
-          resolve(row.md5);
-        }
-      );
-    });
-  } else {
-    return new Promise((resolve, reject) => {
-      mbtilesSource.get(
-        `SELECT tile_data FROM tiles WHERE zoom_level = ${z} AND tile_column = ${x} AND tile_row = ${y}`,
-        (error, row) => {
-          if (error) {
-            return reject(error);
-          }
-
-          if (!row?.tile_data) {
-            return reject(new Error("Tile MD5 does not exist"));
-          }
-
-          resolve(calculateMD5(Buffer.from(row.tile_data)));
-        }
-      );
-    });
-  }
 }
 
 /**

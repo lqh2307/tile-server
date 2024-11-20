@@ -1,5 +1,6 @@
 "use strict";
 
+import { calculateMD5, updateXYZMD5FileWithLock } from "./md5.js";
 import { isFullTransparentPNGImage } from "./image.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
@@ -14,7 +15,6 @@ import {
   detectFormatAndHeaders,
   getTileBoundsFromBBox,
   getBBoxFromTiles,
-  calculateMD5,
   findFolders,
   findFiles,
   delay,
@@ -495,63 +495,6 @@ async function updateXYZMD5File(filePath, hashAdds = {}) {
 }
 
 /**
- * Update XYZ md5.json file with lock
- * @param {string} filePath File path to store md5.json file
- * @param {Object<string,string>} hashAdds Hash data object
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-export async function updateXYZMD5FileWithLock(
-  filePath,
-  hashAdds = {},
-  timeout
-) {
-  const startTime = Date.now();
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      await updateXYZMD5File(filePath, hashAdds);
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        await fsPromise.mkdir(path.dirname(filePath), {
-          recursive: true,
-        });
-
-        await updateXYZMD5FileWithLock(filePath, hashAdds, timeout);
-
-        return;
-      } else if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access ${lockFilePath} file`);
-}
-
-/**
  * Create XYZ tile data file
  * @param {string} filePath File path to store tile data file
  * @param {Buffer} data Tile data buffer
@@ -933,46 +876,4 @@ export function getXYZTileFromBBox(bbox, zooms) {
   }
 
   return tiles;
-}
-
-/**
- * Get XYZ tile MD5
- * @param {string} sourcePath Folder path
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
- * @returns {Promise<string>}
- */
-export async function getXYZTileMD5(sourcePath, z, x, y, format) {
-  try {
-    const data = await fsPromise.readFile(`${sourcePath}/md5.json`);
-
-    const hashs = JSON.parse(data);
-
-    if (hashs[`${z}/${x}/${y}`] === undefined) {
-      throw new Error("Tile MD5 does not exist");
-    }
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      try {
-        let data = await fsPromise.readFile(
-          `${sourcePath}/${z}/${x}/${y}.${format}`
-        );
-        if (!data) {
-          throw new Error("Tile MD5 does not exist");
-        }
-
-        return calculateMD5(Buffer.from(data));
-      } catch (error) {
-        if (error.code === "ENOENT") {
-          throw new Error("Tile MD5 does not exist");
-        }
-
-        throw error;
-      }
-    }
-
-    throw error;
-  }
 }

@@ -1,6 +1,7 @@
 "use strict";
 
 import { getRequestHost, isExistFile } from "./utils.js";
+import { checkReadyMiddleware } from "./middleware.js";
 import { StatusCodes } from "http-status-codes";
 import { readSeedFile } from "./seed.js";
 import { printLog } from "./logger.js";
@@ -252,7 +253,7 @@ export const serve_style = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/styles.json", getStylesListHandler());
+    app.get("/styles.json", checkReadyMiddleware(), getStylesListHandler());
 
     /**
      * @swagger
@@ -296,7 +297,7 @@ export const serve_style = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/:id/style.json", getStyleHandler());
+    app.get("/:id/style.json", checkReadyMiddleware(), getStyleHandler());
 
     return app;
   },

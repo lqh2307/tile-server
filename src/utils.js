@@ -7,7 +7,6 @@ import { printLog } from "./logger.js";
 import https from "node:https";
 import http from "node:http";
 import path from "node:path";
-import crypto from "crypto";
 import axios from "axios";
 import fs from "node:fs";
 import zlib from "zlib";
@@ -108,28 +107,6 @@ export async function getDataBuffer(url, timeout) {
 
     throw error;
   }
-}
-
-/**
- * Check ready middleware
- * @returns {void}
- */
-export function checkReadyMiddleware() {
-  return async (req, res, next) => {
-    try {
-      if (process.env.STARTING_UP === undefined) {
-        return res.status(StatusCodes.SERVICE_UNAVAILABLE).send("Starting...");
-      }
-
-      next();
-    } catch (error) {
-      printLog("error", `Failed to check ready server: ${error}`);
-
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send("Internal server error");
-    }
-  };
 }
 
 /**
@@ -655,15 +632,6 @@ export function detectFormatAndHeaders(buffer) {
     format,
     headers,
   };
-}
-
-/**
- * Calculate MD5 hash of a buffer
- * @param {Buffer} buffer The buffer data of the file
- * @returns {string} The MD5 hash
- */
-export function calculateMD5(buffer) {
-  return crypto.createHash("md5").update(buffer).digest("hex");
 }
 
 /**

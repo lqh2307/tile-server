@@ -1,7 +1,7 @@
 "use strict";
 
+import { updateServerInfoFile, killServer } from "./utils.js";
 import { serve_rendered } from "./serve_rendered.js";
-import { serve_template } from "./serve_template.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
 import { serve_style } from "./serve_style.js";
@@ -14,11 +14,6 @@ import { config } from "./config.js";
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
-import {
-  checkReadyMiddleware,
-  updateServerInfoFile,
-  killServer,
-} from "./utils.js";
 
 let currentTaskWorker;
 
@@ -118,13 +113,12 @@ function startHTTPServer() {
       .use(cors())
       .use(morgan(`[PID = ${process.pid}] ${config.options.loggerFormat}`))
       .use("/", serve_common.init())
-      .use("/", checkReadyMiddleware(), serve_template.init())
-      .use("/datas", checkReadyMiddleware(), serve_data.init())
-      .use("/fonts", checkReadyMiddleware(), serve_font.init())
-      .use("/sprites", checkReadyMiddleware(), serve_sprite.init())
-      .use("/styles", checkReadyMiddleware(), serve_style.init())
-      .use("/styles", checkReadyMiddleware(), serve_rendered.init())
-      .use("/tasks", checkReadyMiddleware(), serve_task.init())
+      .use("/datas", serve_data.init())
+      .use("/fonts", serve_font.init())
+      .use("/sprites", serve_sprite.init())
+      .use("/styles", serve_style.init())
+      .use("/styles", serve_rendered.init())
+      .use("/tasks", serve_task.init())
       .listen(config.options.listenPort, () => {
         printLog(
           "info",
