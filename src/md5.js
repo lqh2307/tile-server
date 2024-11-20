@@ -155,20 +155,12 @@ export async function deleteXYZTileMD5(sourcePath, z, x, y) {
     await db.exec("PRAGMA journal_mode=WAL;");
     await db.exec(`PRAGMA busy_timeout=300000;`);
 
-    await db.exec(
-      `
-      CREATE TABLE IF NOT EXISTS md5s (
-        z INTEGER NOT NULL,
-        x INTEGER NOT NULL,
-        y INTEGER NOT NULL,
-        hash TEXT NOT NULL,
-        PRIMARY KEY (z, x, y)
-      );
-      `
-    );
-
     await db.run(`DELETE FROM md5s WHERE z = ? AND x = ? AND y = ?`, z, x, y);
   } catch (error) {
+    if (error.code === "SQLITE_CANTOPEN") {
+      return;
+    }
+
     throw error;
   } finally {
     if (db !== undefined) {
