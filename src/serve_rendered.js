@@ -822,7 +822,9 @@ export const serve_rendered = {
                                   if (sourceData.storeCache === true) {
                                     cacheXYZTileDataFile(
                                       sourceData.source,
-                                      tileName,
+                                      z,
+                                      x,
+                                      y,
                                       sourceData.tileJSON.format,
                                       dataTile.data,
                                       dataTile.etag,

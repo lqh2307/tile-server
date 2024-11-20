@@ -1,6 +1,6 @@
 "use strict";
 
-import { calculateMD5, updateXYZMD5FileWithLock } from "./md5.js";
+import { deleteXYZTileMD5, calculateMD5, updateXYZTileMD5 } from "./md5.js";
 import { isFullTransparentPNGImage } from "./image.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
@@ -448,53 +448,6 @@ export async function updateXYZMetadataFileWithLock(
 }
 
 /**
- * Update XYZ md5.json file
- * @param {string} filePath File path to store md5.json file
- * @param {Object<string,string>} hashAdds Hash data object
- * @returns {Promise<void>}
- */
-async function updateXYZMD5File(filePath, hashAdds = {}) {
-  const tempFilePath = `${filePath}.tmp`;
-
-  try {
-    const hashs = JSON.parse(await fsPromise.readFile(filePath, "utf8"));
-
-    await fsPromise.writeFile(
-      tempFilePath,
-      JSON.stringify(
-        {
-          ...hashs,
-          ...hashAdds,
-        },
-        null,
-        2
-      ),
-      "utf8"
-    );
-
-    await fsPromise.rename(tempFilePath, filePath);
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      await fsPromise.mkdir(path.dirname(filePath), {
-        recursive: true,
-      });
-
-      await fsPromise.writeFile(
-        filePath,
-        JSON.stringify(hashAdds, null, 2),
-        "utf8"
-      );
-    } else {
-      await fsPromise.rm(tempFilePath, {
-        force: true,
-      });
-
-      throw error;
-    }
-  }
-}
-
-/**
  * Create XYZ tile data file
  * @param {string} filePath File path to store tile data file
  * @param {Buffer} data Tile data buffer
@@ -668,24 +621,30 @@ export async function removeXYZTileDataFileWithLock(filePath, timeout) {
  * Download XYZ tile data file
  * @param {string} url The URL to download the file from
  * @param {string} sourcePath Folder path
- * @param {string} tileName Tile name
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
- * @param {object} hashs Hash data object
+ * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {boolean} storeTransparent Is store transparent?
  * @returns {Promise<void>}
  */
 export async function downloadXYZTileDataFile(
   url,
   sourcePath,
-  tileName,
+  z,
+  x,
+  y,
   format,
   maxTry,
   timeout,
-  hashs,
+  storeMD5,
   storeTransparent
 ) {
+  const tileName = `${z}/${x}/${y}`;
+
   printLog("info", `Downloading tile data file "${tileName}" from "${url}"...`);
 
   try {
@@ -724,11 +683,16 @@ export async function downloadXYZTileDataFile(
           );
 
           // Store data md5 hash
-          if (hashs !== undefined) {
-            hashs[tileName] =
+          if (storeMD5 === true) {
+            updateXYZTileMD5(
+              `${sourcePath}/md5.sqlite`,
+              z,
+              x,
+              y,
               response.headers["Etag"] === undefined
                 ? calculateMD5(response.data)
-                : response.headers["Etag"];
+                : response.headers["Etag"]
+            );
           }
         }
       } catch (error) {
@@ -763,21 +727,27 @@ export async function downloadXYZTileDataFile(
 /**
  * Remove XYZ tile data file
  * @param {string} sourcePath Folder path
- * @param {string} tileName Tile name
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
- * @param {object} hashs Hash data object
+ * @param {boolean} storeMD5 Is store MD5 hashed?
  * @returns {Promise<void>}
  */
 export async function removeXYZTileDataFile(
   sourcePath,
-  tileName,
+  z,
+  x,
+  y,
   format,
   maxTry,
   timeout,
-  hashs
+  storeMD5
 ) {
+  const tileName = `${z}/${x}/${y}`;
+
   printLog("info", `Removing tile data file "${tileName}"...`);
 
   try {
@@ -788,8 +758,8 @@ export async function removeXYZTileDataFile(
           timeout
         );
 
-        if (hashs !== undefined) {
-          delete hashs[tileName];
+        if (storeMD5 === true) {
+          deleteXYZTileMD5(`${sourcePath}/md5.sqlite`, z, x, y);
         }
       }, maxTry);
     } catch (error) {
@@ -805,55 +775,58 @@ export async function removeXYZTileDataFile(
 /**
  * Cache tile data file
  * @param {string} sourcePath Folder path
- * @param {string} tileName Tile name
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {Buffer} data Tile data buffer
- * @param {string} md5 MD5 hash string
+ * @param {string} hash MD5 hash string
  * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {boolean} storeTransparent Is store transparent?
  * @returns {Promise<void>}
  */
 export async function cacheXYZTileDataFile(
   sourcePath,
-  tileName,
+  z,
+  x,
+  y,
   format,
   data,
-  md5,
+  hash,
   storeMD5,
   storeTransparent
 ) {
-  try {
+  const tileName = `${z}/${x}/${y}`;
+
+  if (
+    storeTransparent === false &&
+    format === "png" &&
+    (await isFullTransparentPNGImage(data)) === true
+  ) {
+    return;
+  } else {
     if (
-      storeTransparent === false &&
-      format === "png" &&
-      (await isFullTransparentPNGImage(data)) === true
+      (await createXYZTileDataFileWithLock(
+        `${sourcePath}/${tileName}.${format}`,
+        data
+      )) === true
     ) {
-      return;
-    } else {
-      if (
-        (await createXYZTileDataFileWithLock(
-          `${sourcePath}/${tileName}.${format}`,
-          data
-        )) === true
-      ) {
-        if (storeMD5 === true) {
-          updateXYZMD5FileWithLock(
-            `${sourcePath}/md5.json`,
-            {
-              [tileName]: md5 === undefined ? calculateMD5(data) : md5,
-            },
-            300000 // 5 mins
-          ).catch((error) => {
-            printLog(
-              "error",
-              `Failed to update md5 for tile "${tileName}": ${error}`
-            );
-          });
-        }
+      if (storeMD5 === true) {
+        updateXYZTileMD5(
+          `${sourcePath}/md5.sqlite`,
+          z,
+          x,
+          y,
+          hash === undefined ? calculateMD5(data) : hash,
+          300000 // 5 mins
+        ).catch((error) => {
+          printLog(
+            "error",
+            `Failed to update md5 for tile "${tileName}": ${error}`
+          );
+        });
       }
     }
-  } catch (error) {
-    throw error;
   }
 }
 

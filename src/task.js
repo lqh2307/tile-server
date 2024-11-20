@@ -1,9 +1,9 @@
 "use strict";
 
 import { downloadStyleFile, removeStyleFile } from "./style.js";
-import { updateXYZMD5FileWithLock } from "./md5.js";
 import { readCleanUpFile } from "./cleanup.js";
 import { readSeedFile } from "./seed.js";
+import { getXYZTileMD5 } from "./md5.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
@@ -91,7 +91,7 @@ async function seedXYZTileDataFiles(
   if (typeof refreshBefore === "string") {
     refreshTimestamp = new Date(refreshBefore).getTime();
 
-    log += `\n\tBefore: ${refreshBefore}`;
+    log += `\n\tRefresh before: ${refreshBefore}`;
   } else if (typeof refreshBefore === "number") {
     const now = new Date();
 
@@ -101,7 +101,7 @@ async function seedXYZTileDataFiles(
   } else if (typeof refreshBefore === "boolean") {
     refreshTimestamp = true;
 
-    log += `\n\tBefore: check MD5`;
+    log += `\n\tRefresh before: check MD5`;
   }
 
   printLog("info", log);
@@ -118,7 +118,6 @@ async function seedXYZTileDataFiles(
   );
 
   // Download files
-  const hashs = storeMD5 === true ? {} : undefined;
   let activeTasks = 0;
   const mutex = new Mutex();
 
@@ -145,12 +144,13 @@ async function seedXYZTileDataFiles(
         /* Run a task */
         (async () => {
           const tileName = `${z}/${x}/${y}`;
-          const filePath = `${outputFolder}/${tileName}.${metadata.format}`;
           const url = tileURL.replaceAll("{z}/{x}/{y}", tileName);
 
           try {
             if (refreshTimestamp !== undefined) {
-              const stats = await fsPromise.stat(filePath);
+              const stats = await fsPromise.stat(
+                `${outputFolder}/${tileName}.${metadata.format}`
+              );
 
               if (refreshTimestamp === true) {
                 const md5URL = tileURL.replaceAll(
@@ -159,16 +159,38 @@ async function seedXYZTileDataFiles(
                 );
 
                 const response = await getDataBuffer(md5URL, timeout);
+                let oldMD5;
 
-                if (response.headers["Etag"] !== hashs[tileName]) {
+                try {
+                  oldMD5 = getXYZTileMD5(`${outputFolder}/md5.sqlite`, z, x, y);
+                } catch (error) {
+                  if (error.message === "Tile MD5 does not exist") {
+                    await downloadXYZTileDataFile(
+                      url,
+                      outputFolder,
+                      z,
+                      x,
+                      y,
+                      metadata.format,
+                      maxTry,
+                      timeout,
+                      storeMD5,
+                      storeTransparent
+                    );
+                  }
+                }
+
+                if (response.headers["Etag"] !== oldMD5) {
                   await downloadXYZTileDataFile(
                     url,
                     outputFolder,
-                    tileName,
+                    z,
+                    x,
+                    y,
                     metadata.format,
                     maxTry,
                     timeout,
-                    hashs,
+                    storeMD5,
                     storeTransparent
                   );
                 }
@@ -179,11 +201,13 @@ async function seedXYZTileDataFiles(
                 await downloadXYZTileDataFile(
                   url,
                   outputFolder,
-                  tileName,
+                  z,
+                  x,
+                  y,
                   metadata.format,
                   maxTry,
                   timeout,
-                  hashs,
+                  storeMD5,
                   storeTransparent
                 );
               }
@@ -191,11 +215,13 @@ async function seedXYZTileDataFiles(
               await downloadXYZTileDataFile(
                 url,
                 outputFolder,
-                tileName,
+                z,
+                x,
+                y,
                 metadata.format,
                 maxTry,
                 timeout,
-                hashs,
+                storeMD5,
                 storeTransparent
               );
             }
@@ -204,11 +230,13 @@ async function seedXYZTileDataFiles(
               await downloadXYZTileDataFile(
                 url,
                 outputFolder,
-                tileName,
+                z,
+                x,
+                y,
                 metadata.format,
                 maxTry,
                 timeout,
-                hashs,
+                storeMD5,
                 storeTransparent
               );
             } else {
@@ -232,21 +260,10 @@ async function seedXYZTileDataFiles(
     await delay(50);
   }
 
-  // Update md5.json file
-  const md5FilePath = `${outputFolder}/md5.json`;
-
-  printLog("info", `Updating md5 to "${md5FilePath}"...`);
-
-  await updateXYZMD5FileWithLock(
-    md5FilePath,
-    hashs,
-    300000 // 5 mins
-  );
-
   // Remove parent folders if empty
   await removeEmptyFolders(
     outputFolder,
-    /^.*\.(json|gif|png|jpg|jpeg|webp|pbf)$/
+    /^.*\.(sqlite|json|gif|png|jpg|jpeg|webp|pbf)$/
   );
 }
 
@@ -289,7 +306,7 @@ async function cleanXYZTileDataFiles(
   if (typeof cleanUpBefore === "string") {
     cleanUpTimestamp = new Date(cleanUpBefore).getTime();
 
-    log += `\n\tBefore: ${cleanUpBefore}`;
+    log += `\n\tClean up before: ${cleanUpBefore}`;
   } else if (typeof cleanUpBefore === "number") {
     const now = new Date();
 
@@ -301,7 +318,6 @@ async function cleanXYZTileDataFiles(
   printLog("info", log);
 
   // Remove files
-  const hashs = storeMD5 === true ? {} : undefined;
   let activeTasks = 0;
   const mutex = new Mutex();
 
@@ -328,11 +344,12 @@ async function cleanXYZTileDataFiles(
         /* Run a task */
         (async () => {
           const tileName = `${z}/${x}/${y}`;
-          const filePath = `${outputFolder}/${tileName}.${format}`;
 
           try {
             if (cleanUpTimestamp !== undefined) {
-              const stats = await fsPromise.stat(filePath);
+              const stats = await fsPromise.stat(
+                `${outputFolder}/${tileName}.${format}`
+              );
 
               if (
                 stats.ctimeMs === undefined ||
@@ -340,21 +357,25 @@ async function cleanXYZTileDataFiles(
               ) {
                 await removeXYZTileDataFile(
                   outputFolder,
-                  tileName,
+                  z,
+                  x,
+                  y,
                   format,
                   maxTry,
                   300000, // 5 mins
-                  hashs
+                  storeMD5
                 );
               }
             } else {
               await removeXYZTileDataFile(
                 outputFolder,
-                tileName,
+                z,
+                x,
+                y,
                 format,
                 maxTry,
                 300000, // 5 mins
-                hashs
+                storeMD5
               );
             }
           } catch (error) {
@@ -379,21 +400,10 @@ async function cleanXYZTileDataFiles(
     await delay(50);
   }
 
-  // Update md5.json file
-  const md5FilePath = `${outputFolder}/md5.json`;
-
-  printLog("info", `Updating md5 to "${md5FilePath}"...`);
-
-  await updateXYZMD5FileWithLock(
-    md5FilePath,
-    hashs,
-    300000 // 5 mins
-  );
-
   // Remove parent folders if empty
   await removeEmptyFolders(
     outputFolder,
-    /^.*\.(json|gif|png|jpg|jpeg|webp|pbf)$/
+    /^.*\.(sqlite|json|gif|png|jpg|jpeg|webp|pbf)$/
   );
 }
 
@@ -559,7 +569,7 @@ async function seedStyleFile(
   if (typeof refreshBefore === "string") {
     refreshTimestamp = new Date(refreshBefore).getTime();
 
-    log += `\n\tBefore: ${refreshBefore}`;
+    log += `\n\tRefresh before: ${refreshBefore}`;
   } else if (typeof refreshBefore === "number") {
     const now = new Date();
 
@@ -609,7 +619,7 @@ async function cleanStyleFile(outputFolder, cleanUpBefore) {
   if (typeof cleanUpBefore === "string") {
     cleanUpTimestamp = new Date(cleanUpBefore).getTime();
 
-    log += `\n\tBefore: ${cleanUpBefore}`;
+    log += `\n\tClean up before: ${cleanUpBefore}`;
   } else if (typeof cleanUpBefore === "number") {
     const now = new Date();
 

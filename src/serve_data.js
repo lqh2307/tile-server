@@ -180,7 +180,9 @@ function getDataTileHandler() {
             if (item.storeCache === true) {
               cacheXYZTileDataFile(
                 item.source,
-                tileName,
+                z,
+                x,
+                y,
                 item.tileJSON.format,
                 dataTile.data,
                 dataTile.etag,
