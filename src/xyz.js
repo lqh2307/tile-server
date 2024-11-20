@@ -815,8 +815,7 @@ export async function cacheXYZTileDataFile(
           z,
           x,
           y,
-          hash ?? calculateMD5(data),
-          300000 // 5 mins
+          hash ?? calculateMD5(data)
         ).catch((error) => {
           printLog(
             "error",
