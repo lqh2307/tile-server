@@ -164,7 +164,10 @@ function getDataTileHandler() {
             item.tileJSON.format
           );
         } catch (error) {
-          if (item.sourceURL !== undefined) {
+          if (
+            error.message === "Tile does not exist" &&
+            item.sourceURL !== undefined
+          ) {
             const url = item.sourceURL.replaceAll("{z}/{x}/{y}", tileName);
 
             printLog(
@@ -751,13 +754,14 @@ export const serve_data = {
               cacheSource = seed.datas[item.xyz];
 
               if (cacheSource === undefined) {
-                throw new Error(`Cache data id "${item.xyz}" is not valid`);
+                throw new Error(`Cache data id "${item.xyz}" is invalid`);
               }
 
               if (item.cache.forward === true) {
                 dataInfo.sourceURL = cacheSource.url;
                 dataInfo.storeCache = item.cache.store;
                 dataInfo.storeMD5 = item.cache.storeMD5;
+                dataInfo.storeTransparent = item.cache.storeTransparent;
               }
             } else {
               dataInfo.path = `${process.env.DATA_DIR}/xyzs/${item.xyz}`;

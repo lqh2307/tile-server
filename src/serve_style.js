@@ -23,18 +23,22 @@ function getStyleHandler() {
     const id = req.params.id;
     const item = config.repo.styles[id];
 
+    /* Check style is used? */
     if (item === undefined) {
       return res.status(StatusCodes.NOT_FOUND).send("Style is not found");
     }
 
-    let styleJSON;
-
+    /* Get style JSON */
     try {
-      /* Get style JSON */
+      let styleJSON;
+
       try {
         styleJSON = await getStyle(item.path);
       } catch (error) {
-        if (item.sourceURL !== undefined) {
+        if (
+          error.message === "Style does not exist" &&
+          item.sourceURL !== undefined
+        ) {
           printLog(
             "info",
             `Getting style "${id}" - From "${item.sourceURL}"...`
@@ -87,6 +91,7 @@ function getStyleHandler() {
           Object.keys(styleJSON.sources).map(async (id) => {
             const source = styleJSON.sources[id];
 
+            // Fix tileJSON URL
             if (source.url !== undefined) {
               if (
                 source.url.startsWith("mbtiles://") === true ||
@@ -105,6 +110,7 @@ function getStyleHandler() {
               }
             }
 
+            // Fix tileJSON URLs
             if (source.urls !== undefined) {
               const urls = new Set(
                 source.urls.map((url) => {
@@ -131,6 +137,7 @@ function getStyleHandler() {
               source.urls = Array.from(urls);
             }
 
+            // Fix tile URL
             if (source.tiles !== undefined) {
               const tiles = new Set(
                 source.tiles.map((tile) => {
@@ -326,7 +333,7 @@ export const serve_style = {
               cacheSource = seed.styles[item.style];
 
               if (cacheSource === undefined) {
-                throw new Error(`Cache style id "${item.style}" is not valid`);
+                throw new Error(`Cache style id "${item.style}" is invalid`);
               }
 
               if (item.cache.forward === true) {
@@ -345,6 +352,7 @@ export const serve_style = {
             /* Validate style */
             await validateStyle(styleJSON);
 
+            /* Store style info */
             styleInfo.name = styleJSON.name || "Unknown";
             styleInfo.zoom = styleJSON.zoom || 0;
             styleInfo.center = styleJSON.center || [0, 0, 0];
