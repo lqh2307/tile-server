@@ -702,7 +702,7 @@ export const serve_common = {
        * tags:
        *   - name: Common
        *     description: Common related endpoints
-       * /restart:
+       * /config:
        *   get:
        *     tags:
        *       - Common
@@ -733,7 +733,7 @@ export const serve_common = {
        * tags:
        *   - name: Common
        *     description: Common related endpoints
-       * /restart:
+       * /seed:
        *   get:
        *     tags:
        *       - Common
@@ -764,7 +764,7 @@ export const serve_common = {
        * tags:
        *   - name: Common
        *     description: Common related endpoints
-       * /restart:
+       * /cleanup:
        *   get:
        *     tags:
        *       - Common
