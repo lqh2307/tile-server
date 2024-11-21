@@ -511,8 +511,8 @@ export async function getStyle(filePath) {
   } catch (error) {
     if (error.code === "ENOENT") {
       throw new Error("Style does not exist");
+    } else {
+      throw error;
     }
-
-    throw error;
   }
 }

@@ -24,8 +24,10 @@ import {
  * @returns {Promise<object>}
  */
 export async function openMBTiles(filePath, mode = sqlite3.OPEN_READONLY) {
+  const hasCreateMode = mode & sqlite3.OPEN_CREATE;
+
   // Create folder
-  if (mode & sqlite3.OPEN_CREATE) {
+  if (hasCreateMode) {
     await fsPromise.mkdir(path.dirname(filePath), {
       recursive: true,
     });
@@ -35,6 +37,63 @@ export async function openMBTiles(filePath, mode = sqlite3.OPEN_READONLY) {
     const mbtilesSource = new sqlite3.Database(filePath, mode, (error) => {
       if (error) {
         return reject(error);
+      }
+
+      if (hasCreateMode) {
+        mbtilesSource.serialize(() => {
+          mbtilesSource.run(
+            `
+            CREATE TABLE IF NOT EXISTS
+              metadata (
+                name TEXT NOT NULL,
+                value TEXT NOT NULL,
+                PRIMARY KEY (name)
+              );
+            `,
+            (error) => {
+              if (error) {
+                return reject(error);
+              }
+            }
+          );
+
+          mbtilesSource.run(
+            `
+            CREATE TABLE IF NOT EXISTS
+              tiles (
+                zoom_level INTEGER NOT NULL,
+                tile_column INTEGER NOT NULL,
+                tile_row INTEGER NOT NULL,
+                tile_data BLOB NOT NULL,
+                created INTEGER,
+                PRIMARY KEY (zoom_level, tile_column, tile_row)
+              );
+            `,
+            (error) => {
+              if (error) {
+                return reject(error);
+              }
+            }
+          );
+
+          mbtilesSource.run(
+            `
+            CREATE TABLE IF NOT EXISTS
+              md5s (
+                z INTEGER NOT NULL,
+                x INTEGER NOT NULL,
+                y INTEGER NOT NULL,
+                hash TEXT,
+                PRIMARY KEY (z, x, y)
+              );
+            `,
+            (error) => {
+              if (error) {
+                return reject(error);
+              }
+            }
+          );
+        });
       }
 
       resolve(mbtilesSource);

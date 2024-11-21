@@ -70,9 +70,9 @@ export async function getDataTileFromURL(url, timeout) {
       throw new Error(
         `Status code: ${error.response.status} - ${error.response.statusText}`
       );
+    } else {
+      throw error;
     }
-
-    throw error;
   }
 }
 
@@ -104,9 +104,9 @@ export async function getDataBuffer(url, timeout) {
       throw new Error(
         `Status code: ${error.response.status} - ${error.response.statusText}`
       );
+    } else {
+      throw error;
     }
-
-    throw error;
   }
 }
 
@@ -364,9 +364,9 @@ export async function isExistFolder(dirPath) {
   } catch (error) {
     if (error.code === "ENOENT") {
       return false;
+    } else {
+      throw error;
     }
-
-    throw error;
   }
 }
 
@@ -383,9 +383,9 @@ export async function isExistFile(filePath) {
   } catch (error) {
     if (error.code === "ENOENT") {
       return false;
+    } else {
+      throw error;
     }
-
-    throw error;
   }
 }
 
@@ -817,9 +817,9 @@ export async function getMainPID() {
   } catch (error) {
     if (error.code === "ENOENT") {
       return;
+    } else {
+      throw error;
     }
-
-    throw error;
   }
 }
 

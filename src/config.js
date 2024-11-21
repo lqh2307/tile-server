@@ -61,12 +61,6 @@ async function readConfigFile(dataDir, isValidate) {
               serveSwagger: {
                 type: "boolean",
               },
-              createMetadataIndex: {
-                type: "boolean",
-              },
-              createTilesIndex: {
-                type: "boolean",
-              },
               loggerFormat: {
                 type: "string",
                 minLength: 1,
@@ -203,8 +197,6 @@ async function readConfigFile(dataDir, isValidate) {
     maxScaleRender: config.options.maxScaleRender ?? 1,
     renderedCompression: config.options.renderedCompression ?? 1,
     serveSwagger: config.options.serveSwagger ?? true,
-    createMetadataIndex: config.options.createMetadataIndex, // undefined
-    createTilesIndex: config.options.createTilesIndex, // undefined
     loggerFormat:
       config.options.loggerFormat ??
       ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",

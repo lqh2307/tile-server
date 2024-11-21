@@ -8,8 +8,6 @@
     "serveWMTS": true,
     "serveRendered": true,
     "serveSwagger": true,
-    "createMetadataIndex": false,
-    "createTilesIndex": false,
     "maxScaleRender": 2,
     "renderedCompression": 6,
     "loggerFormat": ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",

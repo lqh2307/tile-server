@@ -16,7 +16,6 @@ import {
 } from "./xyz.js";
 import {
   downloadMBTilesFile,
-  createMBTilesIndex,
   getMBTilesInfos,
   getMBTilesTile,
   openMBTiles,
@@ -715,26 +714,11 @@ export const serve_data = {
               dataInfo.path = `${process.env.DATA_DIR}/mbtiles/${item.mbtiles}`;
             }
 
-            if (config.options.createMetadataIndex === true) {
-              await createMBTilesIndex(
-                dataInfo.path,
-                "metadata_unique_index",
-                "metadata",
-                ["name"]
-              );
-            }
-
-            if (config.options.createTilesIndex === true) {
-              await createMBTilesIndex(
-                dataInfo.path,
-                "tiles_unique_index",
-                "tiles",
-                ["zoom_level", "tile_column", "tile_row"]
-              );
-            }
-
             dataInfo.sourceType = "mbtiles";
-            dataInfo.source = await openMBTiles(dataInfo.path);
+            dataInfo.source = await openMBTiles(
+              dataInfo.path,
+              sqlite3.OPEN_READONLY
+            );
             dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
           } else if (item.pmtiles !== undefined) {
             if (

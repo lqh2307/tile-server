@@ -94,8 +94,10 @@ export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
  * @returns {Promise<sqlite3.Database>}
  */
 async function connectToXYZMD5DB(xyzSource, mode = sqlite3.OPEN_READONLY) {
+  const hasCreateMode = mode & sqlite3.OPEN_CREATE;
+
   // Create folder
-  if (mode & sqlite3.OPEN_CREATE) {
+  if (hasCreateMode) {
     await fsPromise.mkdir(xyzSource, {
       recursive: true,
     });
@@ -117,23 +119,25 @@ async function connectToXYZMD5DB(xyzSource, mode = sqlite3.OPEN_READONLY) {
             }
           });
 
-          db.run(
-            `
-          CREATE TABLE IF NOT EXISTS
-            md5s (
-              z INTEGER NOT NULL,
-              x INTEGER NOT NULL,
-              y INTEGER NOT NULL,
-              hash TEXT NOT NULL,
-              PRIMARY KEY (z, x, y)
-            );
-          `,
-            (error) => {
-              if (error) {
-                return reject(error);
+          if (hasCreateMode) {
+            db.run(
+              `
+            CREATE TABLE IF NOT EXISTS
+              md5s (
+                z INTEGER NOT NULL,
+                x INTEGER NOT NULL,
+                y INTEGER NOT NULL,
+                hash TEXT,
+                PRIMARY KEY (z, x, y)
+              );
+            `,
+              (error) => {
+                if (error) {
+                  return reject(error);
+                }
               }
-            }
-          );
+            );
+          }
 
           resolve(db);
         });
@@ -366,7 +370,7 @@ export async function deleteXYZTileMD5(xyzSource, z, x, y, timeout) {
 export async function getXYZTileMD5(sourcePath, z, x, y, format, timeout) {
   const startTime = Date.now();
 
-  const db = await connectToXYZMD5DB(xyzSource);
+  const db = await connectToXYZMD5DB(xyzSource, sqlite3.OPEN_READONLY);
 
   try {
     while (Date.now() - startTime <= timeout) {

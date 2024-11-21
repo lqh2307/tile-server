@@ -95,8 +95,6 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
     "maxScaleRender": 1,
     "renderedCompression": 6,
     "serveSwagger": true,
-    "createMetadataIndex": false,
-    "createTilesIndex": false,
     "loggerFormat": ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
     "minPoolSize": 8,
     "maxPoolSize": 16,

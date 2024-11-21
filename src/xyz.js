@@ -48,9 +48,9 @@ export async function getXYZTile(sourcePath, z, x, y, format) {
   } catch (error) {
     if (error.code === "ENOENT") {
       throw new Error("Tile does not exist");
+    } else {
+      throw error;
     }
-
-    throw error;
   }
 }
 
