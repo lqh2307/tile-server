@@ -298,11 +298,11 @@ export async function updateXYZTileMD5(
       if (error.code === "SQLITE_BUSY") {
         await delay(100);
       } else {
+        if (db !== undefined) {
+          await closeXYZMD5DB(db);
+        }
+
         throw error;
-      }
-    } finally {
-      if (db !== undefined) {
-        await closeXYZMD5DB(db);
       }
     }
   }
@@ -333,11 +333,11 @@ export async function deleteXYZTileMD5(xyzSource, z, x, y, timeout) {
       } else if (error.code === "SQLITE_BUSY") {
         await delay(100);
       } else {
+        if (db !== undefined) {
+          await closeXYZMD5DB(db);
+        }
+
         throw error;
-      }
-    } finally {
-      if (db !== undefined) {
-        await closeXYZMD5DB(db);
       }
     }
   }
@@ -370,11 +370,11 @@ export async function getXYZTileMD5(sourcePath, z, x, y, format, timeout) {
         } else if (error.code === "SQLITE_BUSY") {
           await delay(100);
         } else {
+          if (db !== undefined) {
+            await closeXYZMD5DB(db);
+          }
+
           throw error;
-        }
-      } finally {
-        if (db !== undefined) {
-          await closeXYZMD5DB(db);
         }
       }
     }
