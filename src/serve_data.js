@@ -8,6 +8,7 @@ import { readSeedFile } from "./seed.js";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
+import sqlite3 from "sqlite3";
 import {
   cacheXYZTileDataFile,
   getXYZTileFromURL,
