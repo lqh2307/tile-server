@@ -1,6 +1,6 @@
 "use strict";
 
-import { calculateMD5, delay } from "./utils";
+import { calculateMD5, delay } from "./utils.js";
 import fsPromise from "node:fs/promises";
 import sqlite3 from "sqlite3";
 
