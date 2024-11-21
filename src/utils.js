@@ -7,6 +7,7 @@ import { printLog } from "./logger.js";
 import https from "node:https";
 import http from "node:http";
 import path from "node:path";
+import crypto from "crypto";
 import axios from "axios";
 import fs from "node:fs";
 import zlib from "zlib";
@@ -257,6 +258,15 @@ export function delay(ms) {
   if (ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
+}
+
+/**
+ * Calculate MD5 hash of a buffer
+ * @param {Buffer} buffer The data buffer
+ * @returns {string} The MD5 hash
+ */
+export function calculateMD5(buffer) {
+  return crypto.createHash("md5").update(buffer).digest("hex");
 }
 
 /**

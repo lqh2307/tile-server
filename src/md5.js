@@ -1,17 +1,8 @@
 "use strict";
 
+import { calculateMD5, delay } from "./utils";
 import fsPromise from "node:fs/promises";
 import sqlite3 from "sqlite3";
-import crypto from "crypto";
-
-/**
- * Calculate MD5 hash of a buffer
- * @param {Buffer} buffer The data buffer
- * @returns {string} The MD5 hash
- */
-export function calculateMD5(buffer) {
-  return crypto.createHash("md5").update(buffer).digest("hex");
-}
 
 /**
  * Get PMTiles tile MD5
