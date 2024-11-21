@@ -250,6 +250,27 @@ export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
 }
 
 /**
+ * Get XYZ tile from bounding box for specific zoom levels intersecting a bounding box
+ * @param {Array<number>} bbox [west, south, east, north] in EPSG:4326
+ * @param {Array<number>} zooms Array of specific zoom levels
+ * @returns {Array<string>} Array values as z/x/y
+ */
+export function getXYZTileFromBBox(bbox, zooms) {
+  const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
+  const tiles = [];
+
+  for (const z in tilesSummary) {
+    for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+      for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+        tiles.push(`/${z}/${x}/${y}`);
+      }
+    }
+  }
+
+  return tiles;
+}
+
+/**
  * Delay function to wait for a specified time
  * @param {number} ms Time to wait in milliseconds
  * @returns {Promise<void>}
