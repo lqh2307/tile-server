@@ -712,15 +712,43 @@ export const serve_data = {
                 );
               }
             } else {
-              dataInfo.path = `${process.env.DATA_DIR}/mbtiles/${item.mbtiles}`;
+              let cacheSource;
+
+              if (item.cache !== undefined) {
+                dataInfo.path = `${process.env.DATA_DIR}/caches/mbtiles/${item.mbtiles}/${item.mbtiles}.mbtiles`;
+
+                cacheSource = seed.datas[item.mbtiles];
+
+                if (cacheSource === undefined) {
+                  throw new Error(
+                    `Cache mbtiles data id "${item.mbtiles}" is invalid`
+                  );
+                }
+
+                if (item.cache.forward === true) {
+                  dataInfo.sourceURL = cacheSource.url;
+                  dataInfo.storeCache = item.cache.store;
+                }
+              } else {
+                dataInfo.path = `${process.env.DATA_DIR}/mbtiles/${item.mbtiles}`;
+              }
             }
 
             dataInfo.sourceType = "mbtiles";
-            dataInfo.source = await openMBTiles(
-              dataInfo.path,
-              sqlite3.OPEN_READONLY
-            );
-            dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
+
+            if (item.cache !== undefined) {
+              dataInfo.source = await openMBTiles(
+                dataInfo.path,
+                sqlite3.OPEN_READONLY | sqlite3.OPEN_CREATE
+              );
+              dataInfo.tileJSON = createMetadata(cacheSource.metadata);
+            } else {
+              dataInfo.source = await openMBTiles(
+                dataInfo.path,
+                sqlite3.OPEN_READONLY
+              );
+              dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
+            }
           } else if (item.pmtiles !== undefined) {
             if (
               item.pmtiles.startsWith("https://") === true ||
@@ -743,7 +771,7 @@ export const serve_data = {
               cacheSource = seed.datas[item.xyz];
 
               if (cacheSource === undefined) {
-                throw new Error(`Cache data id "${item.xyz}" is invalid`);
+                throw new Error(`Cache xyz data id "${item.xyz}" is invalid`);
               }
 
               if (item.cache.forward === true) {
@@ -757,11 +785,12 @@ export const serve_data = {
             }
 
             dataInfo.sourceType = "xyz";
-            dataInfo.source = dataInfo.path;
 
             if (item.cache !== undefined) {
+              dataInfo.source = dataInfo.path;
               dataInfo.tileJSON = createMetadata(cacheSource.metadata);
             } else {
+              dataInfo.source = dataInfo.path;
               dataInfo.tileJSON = await getXYZInfos(dataInfo.source);
             }
           }
@@ -771,6 +800,33 @@ export const serve_data = {
 
           /* Add to repo */
           config.repo.datas[id] = dataInfo;
+
+          /* Read style.json file */
+          try {
+            const styleJSON = await getStyle(styleInfo.path);
+
+            /* Validate style */
+            await validateStyle(styleJSON);
+
+            /* Store style info */
+            styleInfo.name = styleJSON.name || "Unknown";
+            styleInfo.zoom = styleJSON.zoom || 0;
+            styleInfo.center = styleJSON.center || [0, 0, 0];
+          } catch (error) {
+            if (
+              item.cache !== undefined &&
+              error.message === "Style does not exist"
+            ) {
+              styleInfo.name =
+                seed.styles[item.style].metadata.name || "Unknown";
+              styleInfo.zoom = seed.styles[item.style].metadata.zoom || 0;
+              styleInfo.center = seed.styles[item.style].metadata.center || [
+                0, 0, 0,
+              ];
+            } else {
+              throw error;
+            }
+          }
         } catch (error) {
           printLog(
             "error",
