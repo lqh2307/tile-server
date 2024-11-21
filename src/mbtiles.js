@@ -20,10 +20,16 @@ import {
 /**
  * Open MBTiles
  * @param {string} filePath MBTiles file path
- * @param {"sqlite3.OPEN_READONLY"|"sqlite3.OPEN_READWRITE"} mode Open mode
+ * @param {number} mode SQLite mode (e.g: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE | sqlite3.OPEN_READONLY)
  * @returns {Promise<object>}
  */
 export async function openMBTiles(filePath, mode = sqlite3.OPEN_READONLY) {
+  if (mode & sqlite3.OPEN_CREATE) {
+    await fsPromise.mkdir(path.dirname(filePath), {
+      recursive: true,
+    });
+  }
+
   return new Promise((resolve, reject) => {
     const mbtilesSource = new sqlite3.Database(filePath, mode, (error) => {
       if (error) {
@@ -230,33 +236,39 @@ export async function createMBTilesIndex(
   tableName,
   columnNames
 ) {
-  const mbtilesSource = await openMBTiles(
-    mbtilesFilePath,
-    sqlite3.OPEN_READWRITE
-  );
+  let mbtilesSource;
 
-  if (
-    (await isMBTilesExistIndex(mbtilesSource, tableName, columnNames)) === true
-  ) {
-    return;
-  }
+  try {
+    mbtilesSource = await openMBTiles(mbtilesFilePath, sqlite3.OPEN_READWRITE);
 
-  return new Promise((resolve, reject) => {
-    mbtilesSource.run(
-      `CREATE UNIQUE INDEX ${indexName} ON ${tableName} (${columnNames.join(
-        ", "
-      )})`,
-      (error) => {
-        if (error) {
-          return reject(error);
+    if (
+      (await isMBTilesExistIndex(mbtilesSource, tableName, columnNames)) ===
+      true
+    ) {
+      return;
+    }
+
+    return new Promise((resolve, reject) => {
+      mbtilesSource.run(
+        `CREATE UNIQUE INDEX ${indexName} ON ${tableName} (${columnNames.join(
+          ", "
+        )})`,
+        (error) => {
+          if (error) {
+            return reject(error);
+          }
+
+          resolve();
         }
-
-        resolve();
-      }
-    );
-  }).finally(() => {
-    mbtilesSource.close();
-  });
+      );
+    });
+  } catch (error) {
+    throw error;
+  } finally {
+    if (mbtilesSource !== undefined) {
+      mbtilesSource.close();
+    }
+  }
 }
 
 /**

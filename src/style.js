@@ -65,7 +65,17 @@ export async function createStyleDataFileWithLock(filePath, data) {
         recursive: true,
       });
 
-      return await createStyleDataFileWithLock(filePath, data);
+      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
+
+      await createStyleDataFile(filePath, data);
+
+      await lockFileHandle.close();
+
+      await fsPromise.rm(lockFilePath, {
+        force: true,
+      });
+
+      return true;
     } else if (error.code === "EEXIST") {
       return false;
     } else {
@@ -113,7 +123,17 @@ export async function storeStyleDataFileWithLock(filePath, data, timeout) {
           recursive: true,
         });
 
-        return await storeStyleDataFileWithLock(filePath, data, timeout);
+        lockFileHandle = await fsPromise.open(lockFilePath, "wx");
+
+        await createStyleDataFile(filePath, data);
+
+        await lockFileHandle.close();
+
+        await fsPromise.rm(lockFilePath, {
+          force: true,
+        });
+
+        return;
       } else if (error.code === "EEXIST") {
         await delay(100);
       } else {

@@ -1,6 +1,5 @@
 "use strict";
 
-import { getMBTilesTileMD5, getPMTilesTileMD5, getXYZTileMD5 } from "./md5.js";
 import { getPMTilesInfos, getPMTilesTile, openPMTiles } from "./pmtiles.js";
 import { checkReadyMiddleware } from "./middleware.js";
 import { StatusCodes } from "http-status-codes";
@@ -27,6 +26,12 @@ import {
   isExistFile,
   gzipAsync,
 } from "./utils.js";
+import {
+  getMBTilesTileMD5,
+  getPMTilesTileMD5,
+  getXYZTileMD5,
+  calculateMD5,
+} from "./md5.js";
 
 /**
  * Validate data info (no validate json field)
@@ -297,12 +302,29 @@ function getDataTileMD5Handler() {
       let md5;
 
       if (item.sourceType === "mbtiles") {
-        md5 = await getMBTilesTileMD5(
-          item.source,
-          z,
-          x,
-          req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
-        );
+        try {
+          md5 = await getMBTilesTileMD5(
+            item.source,
+            z,
+            x,
+            req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+          );
+        } catch (error) {
+          if (error.message === "Tile MD5 does not exist") {
+            // Calculate MD5 from data
+            try {
+              md5 = calculateMD5(await getMBTilesTile(item.source, z, x, y));
+            } catch (error) {
+              if (error.message === "Tile does not exist") {
+                throw new Error("Tile MD5 does not exist");
+              } else {
+                throw error;
+              }
+            }
+          } else {
+            throw error;
+          }
+        }
       } else if (item.sourceType === "pmtiles") {
         md5 = await getPMTilesTileMD5(
           item.source,
@@ -311,13 +333,30 @@ function getDataTileMD5Handler() {
           req.query.scheme === "tms" ? (1 << z) - 1 - y : y // Default of PMTiles is xyz. Flip Y to convert xyz scheme => tms scheme
         );
       } else if (item.sourceType === "xyz") {
-        md5 = await getXYZTileMD5(
-          item.source,
-          z,
-          x,
-          req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
-          req.params.format
-        );
+        try {
+          md5 = await getXYZTileMD5(
+            item.source,
+            z,
+            x,
+            req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+            req.params.format
+          );
+        } catch (error) {
+          if (error.message === "Tile MD5 does not exist") {
+            // Calculate MD5 from data
+            try {
+              md5 = calculateMD5(await getXYZTile(item.source, z, x, y));
+            } catch (error) {
+              if (error.message === "Tile does not exist") {
+                throw new Error("Tile MD5 does not exist");
+              } else {
+                throw error;
+              }
+            }
+          } else {
+            throw error;
+          }
+        }
       }
 
       /* Add MD5 to header */

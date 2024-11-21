@@ -425,9 +425,7 @@ export async function updateXYZMetadataFileWithLock(
           recursive: true,
         });
 
-        await updateXYZMetadataFileWithLock(filePath, metadataAdds, timeout);
-
-        return;
+        continue;
       } else if (error.code === "EEXIST") {
         await delay(50);
       } else {
@@ -501,7 +499,17 @@ export async function createXYZTileDataFileWithLock(filePath, data) {
         recursive: true,
       });
 
-      return await createXYZTileDataFileWithLock(filePath, data);
+      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
+
+      await createXYZTileDataFile(filePath, data);
+
+      await lockFileHandle.close();
+
+      await fsPromise.rm(lockFilePath, {
+        force: true,
+      });
+
+      return true;
     } else if (error.code === "EEXIST") {
       return false;
     } else {
@@ -549,7 +557,7 @@ export async function storeXYZTileDataFileWithLock(filePath, data, timeout) {
           recursive: true,
         });
 
-        return await storeXYZTileDataFileWithLock(filePath, data, timeout);
+        continue;
       } else if (error.code === "EEXIST") {
         await delay(100);
       } else {

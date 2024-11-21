@@ -761,7 +761,15 @@ export async function updateServerInfoFileWithLock(
           recursive: true,
         });
 
-        await updateServerInfoFileWithLock(serverInfoAdds, timeout);
+        lockFileHandle = await fsPromise.open(lockFilePath, "wx");
+
+        await updateServerInfoFile(serverInfoAdds);
+
+        await lockFileHandle.close();
+
+        await fsPromise.rm(lockFilePath, {
+          force: true,
+        });
 
         return;
       } else if (error.code === "EEXIST") {
