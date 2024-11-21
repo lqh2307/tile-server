@@ -117,6 +117,12 @@ async function connectToXYZMD5DB(xyzSource, mode = sqlite3.OPEN_READONLY) {
             }
           });
 
+          db.run("PRAGMA busy_timeout=300000;", (error) => {
+            if (error) {
+              return reject(error);
+            }
+          });
+
           db.run(
             `
           CREATE TABLE IF NOT EXISTS
