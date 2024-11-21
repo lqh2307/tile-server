@@ -800,33 +800,6 @@ export const serve_data = {
 
           /* Add to repo */
           config.repo.datas[id] = dataInfo;
-
-          /* Read style.json file */
-          try {
-            const styleJSON = await getStyle(styleInfo.path);
-
-            /* Validate style */
-            await validateStyle(styleJSON);
-
-            /* Store style info */
-            styleInfo.name = styleJSON.name || "Unknown";
-            styleInfo.zoom = styleJSON.zoom || 0;
-            styleInfo.center = styleJSON.center || [0, 0, 0];
-          } catch (error) {
-            if (
-              item.cache !== undefined &&
-              error.message === "Style does not exist"
-            ) {
-              styleInfo.name =
-                seed.styles[item.style].metadata.name || "Unknown";
-              styleInfo.zoom = seed.styles[item.style].metadata.zoom || 0;
-              styleInfo.center = seed.styles[item.style].metadata.center || [
-                0, 0, 0,
-              ];
-            } else {
-              throw error;
-            }
-          }
         } catch (error) {
           printLog(
             "error",
