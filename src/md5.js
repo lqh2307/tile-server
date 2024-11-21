@@ -6,7 +6,7 @@ import crypto from "crypto";
 
 /**
  * Calculate MD5 hash of a buffer
- * @param {Buffer} buffer The buffer data of the file
+ * @param {Buffer} buffer The data buffer
  * @returns {string} The MD5 hash
  */
 export function calculateMD5(buffer) {
@@ -39,43 +39,80 @@ export async function getPMTilesTileMD5(pmtilesSource, z, x, y) {
  * @returns {Promise<string>}
  */
 export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
-  return new Promise((resolve, reject) => {
-    mbtilesSource.get(
-      `SELECT hash FROM md5s WHERE z = ? AND x = ? AND y = ?`,
-      z,
-      x,
-      y,
-      (error, row) => {
-        if (error) {
-          return reject(error);
-        }
+  try {
+    return new Promise((resolve, reject) => {
+      mbtilesSource.get(
+        `
+        SELECT
+          hash
+        FROM
+          md5s
+        WHERE
+          z = ? AND x = ? AND y = ?;
+        `,
+        z,
+        x,
+        y,
+        (error, row) => {
+          if (error) {
+            return reject(error);
+          }
 
-        if (!row?.tile_data) {
-          return reject(new Error("Tile MD5 does not exist"));
-        }
+          if (!row?.tile_data) {
+            return reject(new Error("Tile MD5 does not exist"));
+          }
 
-        resolve();
-      }
-    );
-  });
+          resolve();
+        }
+      );
+    });
+  } catch (error) {
+    return new Promise((resolve, reject) => {
+      mbtilesSource.get(
+        `
+        SELECT
+          tile_data
+        FROM
+          tiles
+        WHERE
+          zoom_level = ? AND tile_column = ? AND tile_row = ?;
+        `,
+        z,
+        x,
+        y,
+        (error, row) => {
+          if (error) {
+            return reject(error);
+          }
+
+          if (!row?.tile_data) {
+            return reject(new Error("Tile MD5 does not exist"));
+          }
+
+          resolve(calculateMD5(Buffer.from(row.tile_data)));
+        }
+      );
+    });
+  }
 }
 
 /**
- * Connect to SQLite database
- * @param {string} sourcePath Folder path
+ * Connect to XYZ MD5 SQLite database
+ * @param {string} xyzSource
  * @param {number} mode SQLite mode (e.g: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE | sqlite3.OPEN_READONLY)
  * @returns {Promise<sqlite3.Database>}
  */
-async function connectToMD5Database(sourcePath, mode = sqlite3.OPEN_READONLY) {
+async function connectToXYZMD5DB(xyzSource, mode = sqlite3.OPEN_READONLY) {
+  // Create folder
   if (mode & sqlite3.OPEN_CREATE) {
-    await fsPromise.mkdir(sourcePath, {
+    await fsPromise.mkdir(xyzSource, {
       recursive: true,
     });
   }
 
   return new Promise((resolve, reject) => {
     const db = new sqlite3.Database(
-      `${sourcePath}/md5.sqlite`,
+      `${xyzSource}/md5.sqlite`,
       mode,
       (error) => {
         if (error) {
@@ -97,13 +134,14 @@ async function connectToMD5Database(sourcePath, mode = sqlite3.OPEN_READONLY) {
 
           db.run(
             `
-          CREATE TABLE IF NOT EXISTS md5s (
-            z INTEGER NOT NULL,
-            x INTEGER NOT NULL,
-            y INTEGER NOT NULL,
-            hash TEXT NOT NULL,
-            PRIMARY KEY (z, x, y)
-          );
+          CREATE TABLE IF NOT EXISTS
+            md5s (
+              z INTEGER NOT NULL,
+              x INTEGER NOT NULL,
+              y INTEGER NOT NULL,
+              hash TEXT NOT NULL,
+              PRIMARY KEY (z, x, y)
+            );
           `,
             (error) => {
               if (error) {
@@ -120,7 +158,7 @@ async function connectToMD5Database(sourcePath, mode = sqlite3.OPEN_READONLY) {
 }
 
 /**
- * Upsert MD5 tile hash for a tile
+ * Upsert MD5 hash for a tile
  * @param {sqlite3.Database} db SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
@@ -128,7 +166,7 @@ async function connectToMD5Database(sourcePath, mode = sqlite3.OPEN_READONLY) {
  * @param {string} hash MD5 hash value
  * @returns {Promise<void>}
  */
-async function upsertMD5Tile(db, z, x, y, hash) {
+async function upsertXYZMD5(db, z, x, y, hash) {
   return new Promise((resolve, reject) => {
     db.run(
       `
@@ -157,17 +195,24 @@ async function upsertMD5Tile(db, z, x, y, hash) {
 }
 
 /**
- * Get XYZ tile MD5
+ * Get MD5 hash of tile
  * @param {sqlite3.Database} db SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @returns {Promise<string>} Returns the MD5 hash as a string
  */
-async function getMD5Tile(db, z, x, y) {
+async function getXYZMD5(db, z, x, y) {
   return new Promise((resolve, reject) => {
     db.get(
-      `SELECT hash FROM md5s WHERE z = ? AND x = ? AND y = ?`,
+      `
+      SELECT
+        hash
+      FROM
+        md5s
+      WHERE
+        z = ? AND x = ? AND y = ?;
+      `,
       z,
       x,
       y,
@@ -187,17 +232,22 @@ async function getMD5Tile(db, z, x, y) {
 }
 
 /**
- * Delete MD5 tile hash for a tile
+ * Delete MD5 hash of tile
  * @param {sqlite3.Database} db SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @returns {Promise<void>}
  */
-async function deleteMD5Tile(db, z, x, y) {
+async function deleteXYZMD5(db, z, x, y) {
   return new Promise((resolve, reject) => {
     db.run(
-      `DELETE FROM md5s WHERE z = ? AND x = ? AND y = ?`,
+      `
+      DELETE FROM
+        md5s
+      WHERE
+        z = ? AND x = ? AND y = ?;
+      `,
       z,
       x,
       y,
@@ -213,11 +263,11 @@ async function deleteMD5Tile(db, z, x, y) {
 }
 
 /**
- * Close the the MD5 database connection
+ * Close the XYZ MD5 SQLite database
  * @param {sqlite3.Database} db SQLite database instance
  * @returns {Promise<void>}
  */
-async function closeMD5Database(db) {
+async function closeXYZMD5DB(db) {
   return new Promise((resolve, reject) => {
     db.close((error) => {
       if (error) {
@@ -231,47 +281,48 @@ async function closeMD5Database(db) {
 
 /**
  * Update XYZ tile MD5
- * @param {string} sourcePath Folder path
+ * @param {string} xyzSource
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
+ * @param {Buffer} buffer The data buffer
  * @param {string} hash MD5 hash value
  * @returns {Promise<void>}
  */
-export async function updateXYZTileMD5(sourcePath, z, x, y, hash) {
+export async function updateXYZTileMD5(xyzSource, z, x, y, buffer, hash) {
   let db;
 
   try {
-    db = await connectToMD5Database(
-      sourcePath,
+    db = await connectToXYZMD5DB(
+      xyzSource,
       sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE
     );
 
-    await upsertMD5Tile(db, z, x, y, hash);
+    await upsertXYZMD5(db, z, x, y, hash ?? calculateMD5(buffer));
   } catch (error) {
     throw error;
   } finally {
     if (db !== undefined) {
-      await closeMD5Database(db);
+      await closeXYZMD5DB(db);
     }
   }
 }
 
 /**
  * Delete XYZ tile MD5
- * @param {string} sourcePath Folder path
+ * @param {string} xyzSource
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @returns {Promise<void>}
  */
-export async function deleteXYZTileMD5(sourcePath, z, x, y) {
+export async function deleteXYZTileMD5(xyzSource, z, x, y) {
   let db;
 
   try {
-    db = await connectToMD5Database(sourcePath, sqlite3.OPEN_READWRITE);
+    db = await connectToXYZMD5DB(xyzSource, sqlite3.OPEN_READWRITE);
 
-    await deleteMD5Tile(db, z, x, y);
+    await deleteXYZMD5(db, z, x, y);
   } catch (error) {
     if (error.code === "SQLITE_CANTOPEN") {
       return;
@@ -280,7 +331,7 @@ export async function deleteXYZTileMD5(sourcePath, z, x, y) {
     throw error;
   } finally {
     if (db !== undefined) {
-      await closeMD5Database(db);
+      await closeXYZMD5DB(db);
     }
   }
 }
@@ -294,21 +345,40 @@ export async function deleteXYZTileMD5(sourcePath, z, x, y) {
  * @returns {Promise<string>}
  */
 export async function getXYZTileMD5(sourcePath, z, x, y) {
-  let db;
-
   try {
-    db = await connectToMD5Database(sourcePath);
+    let db;
 
-    return getMD5Tile(db, z, x, y);
-  } catch (error) {
-    if (error.code === "SQLITE_CANTOPEN") {
-      throw new Error("Tile MD5 does not exist");
+    try {
+      db = await connectToXYZMD5DB(sourcePath);
+
+      return getXYZMD5(db, z, x, y);
+    } catch (error) {
+      if (error.code === "SQLITE_CANTOPEN") {
+        throw new Error("Tile MD5 does not exist");
+      }
+
+      throw error;
+    } finally {
+      if (db !== undefined) {
+        await closeXYZMD5DB(db);
+      }
     }
+  } catch (error) {
+    try {
+      let data = await fsPromise.readFile(
+        `${sourcePath}/${z}/${x}/${y}.${format}`
+      );
+      if (!data) {
+        throw new Error("Tile MD5 does not exist");
+      }
 
-    throw error;
-  } finally {
-    if (db !== undefined) {
-      await closeMD5Database(db);
+      return calculateMD5(Buffer.from(data));
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        throw new Error("Tile MD5 does not exist");
+      }
+
+      throw error;
     }
   }
 }

@@ -1,6 +1,6 @@
 "use strict";
 
-import { deleteXYZTileMD5, calculateMD5, updateXYZTileMD5 } from "./md5.js";
+import { deleteXYZTileMD5, updateXYZTileMD5 } from "./md5.js";
 import { isFullTransparentPNGImage } from "./image.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
@@ -31,10 +31,10 @@ import {
  * @returns {Promise<object>}
  */
 export async function getXYZTile(sourcePath, z, x, y, format) {
-  const filePath = `${sourcePath}/${z}/${x}/${y}.${format}`;
-
   try {
-    let data = await fsPromise.readFile(filePath);
+    let data = await fsPromise.readFile(
+      `${sourcePath}/${z}/${x}/${y}.${format}`
+    );
     if (!data) {
       throw new Error("Tile does not exist");
     }
@@ -697,7 +697,13 @@ export async function downloadXYZTileDataFile(
               z,
               x,
               y,
-              response.headers["Etag"] ?? calculateMD5(response.data)
+              response.data,
+              response.headers["Etag"]
+            ).catch((error) =>
+              printLog(
+                "error",
+                `Failed to update md5 for tile "${tileName}": ${error}`
+              )
             );
           }
         }
@@ -818,13 +824,11 @@ export async function cacheXYZTileDataFile(
       )) === true
     ) {
       if (storeMD5 === true) {
-        updateXYZTileMD5(sourcePath, z, x, y, hash ?? calculateMD5(data)).catch(
-          (error) => {
-            printLog(
-              "error",
-              `Failed to update md5 for tile "${tileName}": ${error}`
-            );
-          }
+        updateXYZTileMD5(sourcePath, z, x, y, data, hash).catch((error) =>
+          printLog(
+            "error",
+            `Failed to update md5 for tile "${tileName}": ${error}`
+          )
         );
       }
     }

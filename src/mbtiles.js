@@ -24,6 +24,7 @@ import {
  * @returns {Promise<object>}
  */
 export async function openMBTiles(filePath, mode = sqlite3.OPEN_READONLY) {
+  // Create folder
   if (mode & sqlite3.OPEN_CREATE) {
     await fsPromise.mkdir(path.dirname(filePath), {
       recursive: true,
@@ -54,7 +55,7 @@ export async function isMBTilesExistIndex(
   columnNames
 ) {
   const indexes = await new Promise((resolve, reject) => {
-    mbtilesSource.all(`PRAGMA index_list (${tableName})`, (error, indexes) => {
+    mbtilesSource.all(`PRAGMA index_list (${tableName});`, (error, indexes) => {
       if (error) {
         return reject(error);
       }
@@ -66,7 +67,7 @@ export async function isMBTilesExistIndex(
   for (const index of indexes || {}) {
     const columns = await new Promise((resolve, reject) => {
       mbtilesSource.all(
-        `PRAGMA index_info (${index.name})`,
+        `PRAGMA index_info (${index.name});`,
         (error, columns) => {
           if (error) {
             return reject(error);
@@ -101,7 +102,7 @@ export async function isMBTilesExistColumns(
   columnNames
 ) {
   const columns = await new Promise((resolve, reject) => {
-    mbtilesSource.all(`PRAGMA table_info (${tableName})`, (error, columns) => {
+    mbtilesSource.all(`PRAGMA table_info (${tableName});`, (error, columns) => {
       if (error) {
         return reject(error);
       }
@@ -124,7 +125,7 @@ export async function isMBTilesExistColumns(
  */
 export async function getMBTilesLayersFromTiles(mbtilesSource) {
   return await new Promise((resolve, reject) => {
-    mbtilesSource.all("SELECT tile_data FROM tiles", async (error, rows) => {
+    mbtilesSource.all("SELECT tile_data FROM tiles;", async (error, rows) => {
       if (error) {
         return reject(error);
       }
@@ -190,7 +191,14 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
 export async function getMBTilesBBoxFromTiles(mbtilesSource) {
   return new Promise((resolve, reject) => {
     mbtilesSource.all(
-      `SELECT zoom_level, MIN(tile_column) AS xMin, MAX(tile_column) AS xMax, MIN(tile_row) AS yMin, MAX(tile_row) AS yMax FROM tiles GROUP BY zoom_level`,
+      `
+      SELECT
+        zoom_level, MIN(tile_column) AS xMin, MAX(tile_column) AS xMax, MIN(tile_row) AS yMin, MAX(tile_row) AS yMax
+      FROM
+        tiles
+      GROUP BY
+        zoom_level;
+      `,
       (error, rows) => {
         if (error) {
           return reject(error);
@@ -252,7 +260,7 @@ export async function createMBTilesIndex(
       mbtilesSource.run(
         `CREATE UNIQUE INDEX ${indexName} ON ${tableName} (${columnNames.join(
           ", "
-        )})`,
+        )});`,
         (error) => {
           if (error) {
             return reject(error);
@@ -282,7 +290,17 @@ export async function createMBTilesIndex(
 export async function getMBTilesTile(mbtilesSource, z, x, y) {
   return new Promise((resolve, reject) => {
     mbtilesSource.get(
-      `SELECT tile_data FROM tiles WHERE zoom_level = ${z} AND tile_column = ${x} AND tile_row = ${y}`,
+      `
+      SELECT
+        tile_data
+      FROM
+        tiles
+      WHERE
+        zoom_level = ? AND tile_column = ? AND tile_row = ?;
+      `,
+      z,
+      x,
+      y,
       (error, row) => {
         if (error) {
           return reject(error);
@@ -316,8 +334,8 @@ export async function getMBTilesZoomLevelFromTiles(
   return await new Promise((resolve, reject) => {
     mbtilesSource.get(
       zoomType === "minzoom"
-        ? "SELECT MIN(zoom_level) AS zoom FROM tiles"
-        : "SELECT MAX(zoom_level) AS zoom FROM tiles",
+        ? "SELECT MIN(zoom_level) AS zoom FROM tiles;"
+        : "SELECT MAX(zoom_level) AS zoom FROM tiles;",
       (error, row) => {
         if (error) {
           return reject(error);
@@ -340,7 +358,7 @@ export async function getMBTilesZoomLevelFromTiles(
  */
 export async function getMBTilesFormatFromTiles(mbtilesSource) {
   return await new Promise((resolve, reject) => {
-    mbtilesSource.get("SELECT tile_data FROM tiles LIMIT 1", (error, row) => {
+    mbtilesSource.get("SELECT tile_data FROM tiles LIMIT 1;", (error, row) => {
       if (error) {
         return reject(error);
       }
@@ -370,7 +388,7 @@ export async function getMBTilesInfos(mbtilesSource) {
 
   /* Get metadatas */
   await new Promise((resolve, reject) => {
-    mbtilesSource.all("SELECT name, value FROM metadata", (error, rows) => {
+    mbtilesSource.all("SELECT name, value FROM metadata;", (error, rows) => {
       if (error) {
         return reject(error);
       }
