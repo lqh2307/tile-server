@@ -296,6 +296,8 @@ export async function updateXYZTileMD5(
       await upsertXYZMD5(db, z, x, y, hash ?? calculateMD5(buffer));
 
       await closeXYZMD5DB(db);
+
+      return;
     } catch (error) {
       if (error.code === "SQLITE_BUSY") {
         await delay(100);
@@ -331,6 +333,8 @@ export async function deleteXYZTileMD5(xyzSource, z, x, y, timeout) {
       await deleteXYZMD5(db, z, x, y);
 
       await closeXYZMD5DB(db);
+
+      return;
     } catch (error) {
       if (error.code === "SQLITE_CANTOPEN") {
         return;
@@ -369,9 +373,7 @@ export async function getXYZTileMD5(sourcePath, z, x, y, format, timeout) {
       try {
         const md5 = getXYZMD5(db, z, x, y);
 
-        if (db !== undefined) {
-          await closeXYZMD5DB(db);
-        }
+        await closeXYZMD5DB(db);
 
         return md5;
       } catch (error) {
