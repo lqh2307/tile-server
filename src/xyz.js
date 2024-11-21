@@ -403,6 +403,7 @@ export async function updateXYZMetadataFileWithLock(
   timeout
 ) {
   const startTime = Date.now();
+
   const lockFilePath = `${filePath}.lock`;
   let lockFileHandle;
 
@@ -535,6 +536,7 @@ export async function createXYZTileDataFileWithLock(filePath, data) {
  */
 export async function storeXYZTileDataFileWithLock(filePath, data, timeout) {
   const startTime = Date.now();
+
   const lockFilePath = `${filePath}.lock`;
   let lockFileHandle;
 
@@ -585,6 +587,7 @@ export async function storeXYZTileDataFileWithLock(filePath, data, timeout) {
  */
 export async function removeXYZTileDataFileWithLock(filePath, timeout) {
   const startTime = Date.now();
+
   const lockFilePath = `${filePath}.lock`;
   let lockFileHandle;
 
@@ -698,7 +701,8 @@ export async function downloadXYZTileDataFile(
               x,
               y,
               response.data,
-              response.headers["Etag"]
+              response.headers["Etag"],
+              180000 // 3 mins
             ).catch((error) =>
               printLog(
                 "error",
@@ -771,7 +775,13 @@ export async function removeXYZTileDataFile(
         );
 
         if (storeMD5 === true) {
-          deleteXYZTileMD5(sourcePath, z, x, y);
+          deleteXYZTileMD5(
+            sourcePath,
+            z,
+            x,
+            y,
+            180000 // 3 mins
+          );
         }
       }, maxTry);
     } catch (error) {
@@ -824,7 +834,15 @@ export async function cacheXYZTileDataFile(
       )) === true
     ) {
       if (storeMD5 === true) {
-        updateXYZTileMD5(sourcePath, z, x, y, data, hash).catch((error) =>
+        updateXYZTileMD5(
+          sourcePath,
+          z,
+          x,
+          y,
+          data,
+          hash,
+          180000 // 3 mins
+        ).catch((error) =>
           printLog(
             "error",
             `Failed to update md5 for tile "${tileName}": ${error}`

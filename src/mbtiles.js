@@ -244,11 +244,12 @@ export async function createMBTilesIndex(
   tableName,
   columnNames
 ) {
-  let mbtilesSource;
+  const mbtilesSource = await openMBTiles(
+    mbtilesFilePath,
+    sqlite3.OPEN_READWRITE
+  );
 
   try {
-    mbtilesSource = await openMBTiles(mbtilesFilePath, sqlite3.OPEN_READWRITE);
-
     if (
       (await isMBTilesExistIndex(mbtilesSource, tableName, columnNames)) ===
       true

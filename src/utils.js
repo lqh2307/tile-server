@@ -737,8 +737,9 @@ export async function updateServerInfoFileWithLock(
   serverInfoAdds = {},
   timeout
 ) {
-  const filePath = `${process.env.DATA_DIR}/server-info.json`;
   const startTime = Date.now();
+
+  const filePath = `${process.env.DATA_DIR}/server-info.json`;
   const lockFilePath = `${filePath}.lock`;
   let lockFileHandle;
 

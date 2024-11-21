@@ -316,7 +316,8 @@ function getDataTileMD5Handler() {
           z,
           x,
           req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
-          req.params.format
+          req.params.format,
+          180000 // 3 mins
         );
       }
 

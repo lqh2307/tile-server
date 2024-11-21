@@ -163,7 +163,14 @@ async function seedXYZTileDataFiles(
                 let oldMD5;
 
                 try {
-                  oldMD5 = getXYZTileMD5(outputFolder, z, x, y);
+                  oldMD5 = getXYZTileMD5(
+                    outputFolder,
+                    z,
+                    x,
+                    y,
+                    metadata.format,
+                    180000 // 3 mins
+                  );
                 } catch (error) {
                   if (error.message === "Tile MD5 does not exist") {
                     await downloadXYZTileDataFile(

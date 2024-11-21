@@ -101,6 +101,7 @@ export async function createStyleDataFileWithLock(filePath, data) {
  */
 export async function storeStyleDataFileWithLock(filePath, data, timeout) {
   const startTime = Date.now();
+
   const lockFilePath = `${filePath}.lock`;
   let lockFileHandle;
 
@@ -161,6 +162,7 @@ export async function storeStyleDataFileWithLock(filePath, data, timeout) {
  */
 export async function removeStyleDataFileWithLock(filePath, timeout) {
   const startTime = Date.now();
+
   const lockFilePath = `${filePath}.lock`;
   let lockFileHandle;
 

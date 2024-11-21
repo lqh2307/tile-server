@@ -126,12 +126,6 @@ async function connectToXYZMD5DB(xyzSource, mode = sqlite3.OPEN_READONLY) {
             }
           });
 
-          db.run("PRAGMA busy_timeout=300000;", (error) => {
-            if (error) {
-              return reject(error);
-            }
-          });
-
           db.run(
             `
           CREATE TABLE IF NOT EXISTS
@@ -287,25 +281,42 @@ async function closeXYZMD5DB(db) {
  * @param {number} y Y tile index
  * @param {Buffer} buffer The data buffer
  * @param {string} hash MD5 hash value
+ * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function updateXYZTileMD5(xyzSource, z, x, y, buffer, hash) {
-  let db;
+export async function updateXYZTileMD5(
+  xyzSource,
+  z,
+  x,
+  y,
+  buffer,
+  hash,
+  timeout
+) {
+  const startTime = Date.now();
 
-  try {
-    db = await connectToXYZMD5DB(
-      xyzSource,
-      sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE
-    );
+  const db = await connectToXYZMD5DB(
+    xyzSource,
+    sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE
+  );
 
-    await upsertXYZMD5(db, z, x, y, hash ?? calculateMD5(buffer));
-  } catch (error) {
-    throw error;
-  } finally {
-    if (db !== undefined) {
-      await closeXYZMD5DB(db);
+  while (Date.now() - startTime <= timeout) {
+    try {
+      await upsertXYZMD5(db, z, x, y, hash ?? calculateMD5(buffer));
+    } catch (error) {
+      if (error.code === "SQLITE_BUSY") {
+        await delay(100);
+      } else {
+        throw error;
+      }
+    } finally {
+      if (db !== undefined) {
+        await closeXYZMD5DB(db);
+      }
     }
   }
+
+  throw new Error(`Timeout to access MD5 DB`);
 }
 
 /**
@@ -314,26 +325,33 @@ export async function updateXYZTileMD5(xyzSource, z, x, y, buffer, hash) {
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
+ * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function deleteXYZTileMD5(xyzSource, z, x, y) {
-  let db;
+export async function deleteXYZTileMD5(xyzSource, z, x, y, timeout) {
+  const startTime = Date.now();
 
-  try {
-    db = await connectToXYZMD5DB(xyzSource, sqlite3.OPEN_READWRITE);
+  const db = await connectToXYZMD5DB(xyzSource, sqlite3.OPEN_READWRITE);
 
-    await deleteXYZMD5(db, z, x, y);
-  } catch (error) {
-    if (error.code === "SQLITE_CANTOPEN") {
-      return;
-    }
-
-    throw error;
-  } finally {
-    if (db !== undefined) {
-      await closeXYZMD5DB(db);
+  while (Date.now() - startTime <= timeout) {
+    try {
+      await deleteXYZMD5(db, z, x, y);
+    } catch (error) {
+      if (error.code === "SQLITE_CANTOPEN") {
+        return;
+      } else if (error.code === "SQLITE_BUSY") {
+        await delay(100);
+      } else {
+        throw error;
+      }
+    } finally {
+      if (db !== undefined) {
+        await closeXYZMD5DB(db);
+      }
     }
   }
+
+  throw new Error(`Timeout to access MD5 DB`);
 }
 
 /**
@@ -342,27 +360,35 @@ export async function deleteXYZTileMD5(xyzSource, z, x, y) {
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
+ * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
+ * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<string>}
  */
-export async function getXYZTileMD5(sourcePath, z, x, y) {
+export async function getXYZTileMD5(sourcePath, z, x, y, format, timeout) {
   try {
-    let db;
+    const startTime = Date.now();
 
-    try {
-      db = await connectToXYZMD5DB(sourcePath);
+    const db = await connectToXYZMD5DB(xyzSource);
 
-      return getXYZMD5(db, z, x, y);
-    } catch (error) {
-      if (error.code === "SQLITE_CANTOPEN") {
-        throw new Error("Tile MD5 does not exist");
-      }
-
-      throw error;
-    } finally {
-      if (db !== undefined) {
-        await closeXYZMD5DB(db);
+    while (Date.now() - startTime <= timeout) {
+      try {
+        return getXYZMD5(db, z, x, y);
+      } catch (error) {
+        if (error.code === "SQLITE_CANTOPEN") {
+          return;
+        } else if (error.code === "SQLITE_BUSY") {
+          await delay(100);
+        } else {
+          throw error;
+        }
+      } finally {
+        if (db !== undefined) {
+          await closeXYZMD5DB(db);
+        }
       }
     }
+
+    throw new Error(`Timeout to access MD5 DB`);
   } catch (error) {
     try {
       let data = await fsPromise.readFile(
