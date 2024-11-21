@@ -297,23 +297,26 @@ export async function updateXYZTileMD5(
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE
   );
 
-  while (Date.now() - startTime <= timeout) {
-    try {
-      await upsertXYZMD5(db, z, x, y, hash ?? calculateMD5(buffer));
-    } catch (error) {
-      if (error.code === "SQLITE_BUSY") {
-        await delay(100);
-      } else {
-        if (db !== undefined) {
-          await closeXYZMD5DB(db);
+  try {
+    while (Date.now() - startTime <= timeout) {
+      try {
+        await upsertXYZMD5(db, z, x, y, hash ?? calculateMD5(buffer));
+      } catch (error) {
+        if (error.code === "SQLITE_BUSY") {
+          await delay(100);
+        } else {
+          throw error;
         }
-
-        throw error;
       }
     }
-  }
 
-  throw new Error(`Timeout to access MD5 DB`);
+    throw new Error(`Timeout to access MD5 DB`);
+  } catch (error) {
+  } finally {
+    if (db !== undefined) {
+      await closeXYZMD5DB(db);
+    }
+  }
 }
 
 /**
@@ -330,25 +333,29 @@ export async function deleteXYZTileMD5(xyzSource, z, x, y, timeout) {
 
   const db = await connectToXYZMD5DB(xyzSource, sqlite3.OPEN_READWRITE);
 
-  while (Date.now() - startTime <= timeout) {
-    try {
-      await deleteXYZMD5(db, z, x, y);
-    } catch (error) {
-      if (error.code === "SQLITE_CANTOPEN") {
-        return;
-      } else if (error.code === "SQLITE_BUSY") {
-        await delay(100);
-      } else {
-        if (db !== undefined) {
-          await closeXYZMD5DB(db);
+  try {
+    while (Date.now() - startTime <= timeout) {
+      try {
+        await deleteXYZMD5(db, z, x, y);
+      } catch (error) {
+        if (error.code === "SQLITE_CANTOPEN") {
+          return;
+        } else if (error.code === "SQLITE_BUSY") {
+          await delay(100);
+        } else {
+          throw error;
         }
-
-        throw error;
       }
     }
-  }
 
-  throw new Error(`Timeout to access MD5 DB`);
+    throw new Error(`Timeout to access MD5 DB`);
+  } catch (error) {
+    throw error;
+  } finally {
+    if (db !== undefined) {
+      await closeXYZMD5DB(db);
+    }
+  }
 }
 
 /**
@@ -362,11 +369,11 @@ export async function deleteXYZTileMD5(xyzSource, z, x, y, timeout) {
  * @returns {Promise<string>}
  */
 export async function getXYZTileMD5(sourcePath, z, x, y, format, timeout) {
+  const startTime = Date.now();
+
+  const db = await connectToXYZMD5DB(xyzSource);
+
   try {
-    const startTime = Date.now();
-
-    const db = await connectToXYZMD5DB(xyzSource);
-
     while (Date.now() - startTime <= timeout) {
       try {
         return getXYZMD5(db, z, x, y);
@@ -376,10 +383,6 @@ export async function getXYZTileMD5(sourcePath, z, x, y, format, timeout) {
         } else if (error.code === "SQLITE_BUSY") {
           await delay(100);
         } else {
-          if (db !== undefined) {
-            await closeXYZMD5DB(db);
-          }
-
           throw error;
         }
       }
@@ -402,6 +405,10 @@ export async function getXYZTileMD5(sourcePath, z, x, y, format, timeout) {
       }
 
       throw error;
+    }
+  } finally {
+    if (db !== undefined) {
+      await closeXYZMD5DB(db);
     }
   }
 }
