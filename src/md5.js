@@ -117,12 +117,6 @@ async function connectToXYZMD5DB(xyzSource, mode = sqlite3.OPEN_READONLY) {
             }
           });
 
-          db.run("PRAGMA busy_timeout=300000;", (error) => {
-            if (error) {
-              return reject(error);
-            }
-          });
-
           db.run(
             `
           CREATE TABLE IF NOT EXISTS
@@ -379,7 +373,7 @@ export async function getXYZTileMD5(sourcePath, z, x, y, format, timeout) {
         return getXYZMD5(db, z, x, y);
       } catch (error) {
         if (error.code === "SQLITE_CANTOPEN") {
-          return;
+          throw new Error("Tile MD5 does not exist");
         } else if (error.code === "SQLITE_BUSY") {
           await delay(100);
         } else {
