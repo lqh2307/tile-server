@@ -20,6 +20,7 @@ import {
   getBBoxFromTiles,
   retry,
   delay,
+  runSQL,
 } from "./utils.js";
 
 /**
@@ -49,17 +50,14 @@ export async function openMBTiles(
         return reject(error);
       }
 
-      if (hasCreateMode) {
-        mbtilesSource.serialize(() => {
-          if (wal === true) {
-            mbtilesSource.run("PRAGMA journal_mode=WAL;", (error) => {
-              if (error) {
-                return reject(error);
-              }
-            });
-          }
+      mbtilesSource.serialize(async () => {
+        if (wal === true) {
+          await runSQL(mbtilesSource, "PRAGMA journal_mode=WAL;");
+        }
 
-          mbtilesSource.run(
+        if (hasCreateMode) {
+          await runSQL(
+            mbtilesSource,
             `
             CREATE TABLE IF NOT EXISTS
               metadata (
@@ -67,15 +65,11 @@ export async function openMBTiles(
                 value TEXT NOT NULL,
                 PRIMARY KEY (name)
               );
-            `,
-            (error) => {
-              if (error) {
-                return reject(error);
-              }
-            }
+            `
           );
 
-          mbtilesSource.run(
+          await runSQL(
+            mbtilesSource,
             `
             CREATE TABLE IF NOT EXISTS
               tiles (
@@ -86,15 +80,11 @@ export async function openMBTiles(
                 created INTEGER,
                 PRIMARY KEY (zoom_level, tile_column, tile_row)
               );
-            `,
-            (error) => {
-              if (error) {
-                return reject(error);
-              }
-            }
+            `
           );
 
-          mbtilesSource.run(
+          await runSQL(
+            mbtilesSource,
             `
             CREATE TABLE IF NOT EXISTS
               md5s (
@@ -104,17 +94,12 @@ export async function openMBTiles(
                 hash TEXT,
                 PRIMARY KEY (z, x, y)
               );
-            `,
-            (error) => {
-              if (error) {
-                return reject(error);
-              }
-            }
+            `
           );
-        });
-      }
+        }
 
-      resolve(mbtilesSource);
+        resolve(mbtilesSource);
+      });
     });
   });
 }
@@ -319,20 +304,12 @@ export async function createMBTilesIndex(
   tableName,
   columnNames
 ) {
-  return new Promise((resolve, reject) => {
-    mbtilesSource.run(
-      `CREATE UNIQUE INDEX ${indexName} ON ${tableName} (${columnNames.join(
-        ", "
-      )});`,
-      (error) => {
-        if (error) {
-          return reject(error);
-        }
-
-        resolve();
-      }
-    );
-  });
+  return await runSQL(
+    mbtilesSource,
+    `CREATE UNIQUE INDEX ${indexName} ON ${tableName} (${columnNames.join(
+      ", "
+    )});`
+  );
 }
 
 /**
@@ -690,29 +667,20 @@ export async function downloadMBTilesFile(url, filePath, maxTry, timeout) {
 async function upsertMBTilesMetadata(mbtilesSource, metadataAdds = {}) {
   return new Promise((resolve, reject) =>
     Promise.all(
-      Object.entries(metadataAdds).map(
-        ([key, value]) =>
-          new Promise((resolveUpsert, rejectUpsert) => {
-            mbtilesSource.run(
-              `
-            INSERT INTO
-              metadata (name, value)
-            VALUES
-              (?, ?)
-            ON CONFLICT (name)
-            DO UPDATE SET value = excluded.value;
-            `,
-              key,
-              JSON.stringify(value),
-              (error) => {
-                if (error) {
-                  return rejectUpsert(error);
-                }
-
-                resolveUpsert();
-              }
-            );
-          })
+      Object.entries(metadataAdds).map(([key, value]) =>
+        runSQL(
+          mbtilesSource,
+          `
+          INSERT INTO
+            metadata (name, value)
+          VALUES
+            (?, ?)
+          ON CONFLICT (name)
+          DO UPDATE SET value = excluded.value;
+          `,
+          key,
+          JSON.stringify(value)
+        )
       )
     )
       .then(() => resolve())
@@ -761,30 +729,22 @@ export async function updateMBTilesMetadataWithLock(
  * @returns {Promise<void>}
  */
 async function upsertMBTilesTile(mbtilesSource, z, x, y, data) {
-  return new Promise((resolve, reject) => {
-    mbtilesSource.run(
-      `
-      INSERT INTO
-        tiles (zoom_level, tile_column, tile_row, tile_data, created)
-      VALUES
-        (?, ?, ?, ?, ?)
-      ON CONFLICT (zoom_level, tile_column, tile_row)
-      DO UPDATE SET tile_data = excluded.tile_data, created = excluded.created;
-      `,
-      z,
-      x,
-      y,
-      data,
-      Date.now(),
-      (error) => {
-        if (error) {
-          return reject(error);
-        }
-
-        resolve();
-      }
-    );
-  });
+  return await runSQL(
+    mbtilesSource,
+    `
+    INSERT INTO
+      tiles (zoom_level, tile_column, tile_row, tile_data, created)
+    VALUES
+      (?, ?, ?, ?, ?)
+    ON CONFLICT (zoom_level, tile_column, tile_row)
+    DO UPDATE SET tile_data = excluded.tile_data, created = excluded.created;
+    `,
+    z,
+    x,
+    y,
+    data,
+    Date.now()
+  );
 }
 
 /**
@@ -833,26 +793,18 @@ export async function createMBTilesTileWithLock(
  * @returns {Promise<void>}
  */
 async function deleteMBTilesTile(mbtilesSource, z, x, y) {
-  return new Promise((resolve, reject) => {
-    mbtilesSource.run(
-      `
-      DELETE FROM
-        tiles
-      WHERE
-        zoom_level = ? AND tile_column = ? AND tile_row = ?;
-      `,
-      z,
-      x,
-      y,
-      (error) => {
-        if (error) {
-          return reject(error);
-        }
-
-        resolve();
-      }
-    );
-  });
+  return await runSQL(
+    mbtilesSource,
+    `
+    DELETE FROM
+      tiles
+    WHERE
+      zoom_level = ? AND tile_column = ? AND tile_row = ?;
+    `,
+    z,
+    x,
+    y
+  );
 }
 
 /**

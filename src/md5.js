@@ -1,6 +1,6 @@
 "use strict";
 
-import { calculateMD5, delay } from "./utils.js";
+import { calculateMD5, delay, runSQL } from "./utils.js";
 import fsPromise from "node:fs/promises";
 import sqlite3 from "sqlite3";
 
@@ -52,26 +52,18 @@ export async function getMBTilesMD5(mbtilesSource, z, x, y) {
  * @returns {Promise<void>}
  */
 export async function deleteMBTilesMD5(mbtilesSource, z, x, y) {
-  return new Promise((resolve, reject) => {
-    mbtilesSource.run(
-      `
-      DELETE FROM
-        md5s
-      WHERE
-        z = ? AND x = ? AND y = ?;
-      `,
-      z,
-      x,
-      y,
-      (error) => {
-        if (error) {
-          return reject(error);
-        }
-
-        resolve();
-      }
-    );
-  });
+  return await runSQL(
+    mbtilesSource,
+    `
+    DELETE FROM
+      md5s
+    WHERE
+      z = ? AND x = ? AND y = ?;
+    `,
+    z,
+    x,
+    y
+  );
 }
 
 /**
@@ -84,31 +76,23 @@ export async function deleteMBTilesMD5(mbtilesSource, z, x, y) {
  * @returns {Promise<void>}
  */
 export async function upsertMBTilesMD5(mbtilesSource, z, x, y, hash) {
-  return new Promise((resolve, reject) => {
-    mbtilesSource.run(
-      `
-      INSERT INTO
-        md5s (z, x, y, hash)
-      VALUES
-        (?, ?, ?, ?)
-      ON CONFLICT
-        (z, x, y)
-      DO
-        UPDATE SET hash = excluded.hash;
-      `,
-      z,
-      x,
-      y,
-      hash,
-      (error) => {
-        if (error) {
-          return reject(error);
-        }
-
-        resolve();
-      }
-    );
-  });
+  return await runSQL(
+    mbtilesSource,
+    `
+    INSERT INTO
+      md5s (z, x, y, hash)
+    VALUES
+      (?, ?, ?, ?)
+    ON CONFLICT
+      (z, x, y)
+    DO
+      UPDATE SET hash = excluded.hash;
+    `,
+    z,
+    x,
+    y,
+    hash
+  );
 }
 
 /**
@@ -262,36 +246,36 @@ export async function openXYZMD5DB(
           return reject(error);
         }
 
-        xyzSource.serialize(() => {
-          if (wal === true) {
-            xyzSource.run("PRAGMA journal_mode=WAL;", (error) => {
-              if (error) {
-                return reject(error);
-              }
-            });
-          }
+        xyzSource.serialize(async () => {
+          try {
+            if (wal === true) {
+              await runSQL(xyzSource, "PRAGMA journal_mode=WAL;");
+            }
 
-          if (hasCreateMode) {
-            xyzSource.run(
-              `
-            CREATE TABLE IF NOT EXISTS
-              md5s (
-                z INTEGER NOT NULL,
-                x INTEGER NOT NULL,
-                y INTEGER NOT NULL,
-                hash TEXT,
-                PRIMARY KEY (z, x, y)
+            if (hasCreateMode) {
+              await runSQL(
+                xyzSource,
+                `
+                CREATE TABLE IF NOT EXISTS
+                  md5s (
+                    z INTEGER NOT NULL,
+                    x INTEGER NOT NULL,
+                    y INTEGER NOT NULL,
+                    hash TEXT,
+                    PRIMARY KEY (z, x, y)
+                  );
+                `
               );
-            `,
-              (error) => {
-                if (error) {
-                  return reject(error);
-                }
-              }
-            );
-          }
+            }
 
-          resolve(xyzSource);
+            resolve(xyzSource);
+          } catch (error) {
+            if (xyzSource !== undefined) {
+              xyzSource.close();
+            }
+
+            reject(err);
+          }
         });
       }
     );
@@ -308,31 +292,23 @@ export async function openXYZMD5DB(
  * @returns {Promise<void>}
  */
 export async function upsertXYZMD5(xyzSource, z, x, y, hash) {
-  return new Promise((resolve, reject) => {
-    xyzSource.run(
-      `
-      INSERT INTO
-        md5s (z, x, y, hash)
-      VALUES
-        (?, ?, ?, ?)
-      ON CONFLICT
-        (z, x, y)
-      DO
-        UPDATE SET hash = excluded.hash;
-      `,
-      z,
-      x,
-      y,
-      hash,
-      (error) => {
-        if (error) {
-          return reject(error);
-        }
-
-        resolve();
-      }
-    );
-  });
+  return await runSQL(
+    xyzSource,
+    `
+    INSERT INTO
+      md5s (z, x, y, hash)
+    VALUES
+      (?, ?, ?, ?)
+    ON CONFLICT
+      (z, x, y)
+    DO
+      UPDATE SET hash = excluded.hash;
+    `,
+    z,
+    x,
+    y,
+    hash
+  );
 }
 
 /**
@@ -381,26 +357,18 @@ export async function getXYZMD5(xyzSource, z, x, y) {
  * @returns {Promise<void>}
  */
 export async function deleteXYZMD5(xyzSource, z, x, y) {
-  return new Promise((resolve, reject) => {
-    xyzSource.run(
-      `
-      DELETE FROM
-        md5s
-      WHERE
-        z = ? AND x = ? AND y = ?;
-      `,
-      z,
-      x,
-      y,
-      (error) => {
-        if (error) {
-          return reject(error);
-        }
-
-        resolve();
-      }
-    );
-  });
+  return await runSQL(
+    xyzSource,
+    `
+    DELETE FROM
+      md5s
+    WHERE
+      z = ? AND x = ? AND y = ?;
+    `,
+    z,
+    x,
+    y
+  );
 }
 
 /**

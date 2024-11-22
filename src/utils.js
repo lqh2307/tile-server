@@ -850,3 +850,22 @@ export async function cancelTask() {
 export function getVersion() {
   return JSON.parse(fs.readFileSync("package.json", "utf8")).version;
 }
+
+/**
+ * Run a SQL command in SQLite and wrap it in a Promise
+ * @param {sqlite3.Database} db SQLite database instance
+ * @param {string} sql SQL command to execute
+ * @param {...any} params Parameters for the SQL command
+ * @returns {Promise<void>}
+ */
+export function runSQL(db, sql, ...params) {
+  return new Promise((resolve, reject) => {
+    db.run(sql, params, (error) => {
+      if (error) {
+        return reject(error);
+      }
+
+      resolve();
+    });
+  });
+}
