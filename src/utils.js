@@ -30,12 +30,12 @@ export async function getLayerNamesFromPBFTileBuffer(pbfData) {
 }
 
 /**
- * Get data tile from a URL
+ * Get data from URL
  * @param {string} url The URL to fetch data from
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<object>}
  */
-export async function getDataTileFromURL(url, timeout) {
+export async function getDataFromURL(url, timeout) {
   try {
     const response = await axios.get(url, {
       timeout: timeout,
@@ -45,50 +45,6 @@ export async function getDataTileFromURL(url, timeout) {
       },
       validateStatus: (status) => {
         return status === StatusCodes.OK;
-      },
-      httpAgent: new http.Agent({
-        keepAlive: false,
-      }),
-      httpsAgent: new https.Agent({
-        keepAlive: false,
-      }),
-    });
-
-    return {
-      data: response.data,
-      headers: detectFormatAndHeaders(response.data).headers,
-    };
-  } catch (error) {
-    if (error.response) {
-      if (
-        error.response.status === StatusCodes.NOT_FOUND ||
-        error.response.status === StatusCodes.NO_CONTENT
-      ) {
-        throw new Error("Tile does not exist");
-      }
-
-      throw new Error(
-        `Status code: ${error.response.status} - ${error.response.statusText}`
-      );
-    } else {
-      throw error;
-    }
-  }
-}
-
-/**
- * Get data buffer from a URL
- * @param {string} url The URL to fetch data from
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<object>}
- */
-export async function getDataBuffer(url, timeout) {
-  try {
-    const response = await axios.get(url, {
-      timeout: timeout,
-      responseType: "arraybuffer",
-      headers: {
-        "User-Agent": "Tile Server",
       },
       httpAgent: new http.Agent({
         keepAlive: false,

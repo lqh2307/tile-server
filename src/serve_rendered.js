@@ -16,7 +16,7 @@ import { getFonts } from "./font.js";
 import express from "express";
 import {
   detectFormatAndHeaders,
-  getDataTileFromURL,
+  getDataFromURL,
   createMetadata,
   getRequestHost,
   unzipAsync,
@@ -685,6 +685,7 @@ export const serve_rendered = {
                               /* Unzip pbf font */
                               const headers =
                                 detectFormatAndHeaders(data).headers;
+
                               if (
                                 headers["Content-Type"] ===
                                   "application/x-protobuf" &&
@@ -877,17 +878,20 @@ export const serve_rendered = {
                                 `Getting data tile from "${url}"...`
                               );
 
-                              const dataTile = await getDataTileFromURL(
+                              const dataTile = await getDataFromURL(
                                 url,
-                                60000
+                                60000 // 1 mins
                               );
 
                               /* Unzip pbf data */
+                              const headers = detectFormatAndHeaders(
+                                dataTile.data
+                              ).headers;
+
                               if (
-                                dataTile.headers["Content-Type"] ===
+                                headers["Content-Type"] ===
                                   "application/x-protobuf" &&
-                                dataTile.headers["Content-Encoding"] !==
-                                  undefined
+                                headers["Content-Encoding"] !== undefined
                               ) {
                                 dataTile.data = await unzipAsync(dataTile.data);
                               }

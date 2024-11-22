@@ -15,7 +15,7 @@ import {
 import {
   getTileBoundsFromBBox,
   removeEmptyFolders,
-  getDataBuffer,
+  getDataFromURL,
   delay,
 } from "./utils.js";
 import os from "os";
@@ -158,7 +158,7 @@ async function seedXYZTileDataFiles(
                   `md5/${tileName}`
                 );
 
-                const response = await getDataBuffer(md5URL, timeout);
+                const response = await getDataFromURL(md5URL, timeout);
 
                 let oldMD5;
 
