@@ -1,9 +1,9 @@
 "use strict";
 
 import { downloadStyleFile, removeStyleFile } from "./style.js";
+import { getXYZTileMD5WithLock } from "./md5.js";
 import { readCleanUpFile } from "./cleanup.js";
 import { readSeedFile } from "./seed.js";
-import { getXYZTileMD5 } from "./md5.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
@@ -163,7 +163,7 @@ async function seedXYZTileDataFiles(
                 let oldMD5;
 
                 try {
-                  oldMD5 = getXYZTileMD5(
+                  oldMD5 = getXYZTileMD5WithLock(
                     outputFolder,
                     z,
                     x,

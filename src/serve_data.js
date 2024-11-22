@@ -1,6 +1,5 @@
 "use strict";
 
-import { getMBTilesTileMD5, getPMTilesTileMD5, getXYZTileMD5 } from "./md5.js";
 import { getPMTilesInfos, getPMTilesTile, openPMTiles } from "./pmtiles.js";
 import { checkReadyMiddleware } from "./middleware.js";
 import { StatusCodes } from "http-status-codes";
@@ -10,12 +9,20 @@ import { config } from "./config.js";
 import express from "express";
 import sqlite3 from "sqlite3";
 import {
+  getMBTilesTileMD5WithLock,
+  getXYZTileMD5WithLock,
+  getPMTilesTileMD5,
+  openXYZMD5DB,
+} from "./md5.js";
+import {
   cacheXYZTileDataFile,
   getXYZTileFromURL,
   getXYZInfos,
   getXYZTile,
 } from "./xyz.js";
 import {
+  getMBTilesTileFromURL,
+  cacheMBtilesTileData,
   downloadMBTilesFile,
   getMBTilesInfos,
   getMBTilesTile,
@@ -24,6 +31,7 @@ import {
 import {
   createMetadata,
   getRequestHost,
+  calculateMD5,
   isExistFile,
   gzipAsync,
 } from "./utils.js";
@@ -136,12 +144,54 @@ function getDataTileHandler() {
       let dataTile;
 
       if (item.sourceType === "mbtiles") {
-        dataTile = await getMBTilesTile(
-          item.source,
-          z,
-          x,
-          req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
-        );
+        try {
+          dataTile = await getMBTilesTile(
+            item.source,
+            z,
+            x,
+            req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+          );
+        } catch (error) {
+          if (
+            error.message === "Tile does not exist" &&
+            item.sourceURL !== undefined
+          ) {
+            const url = item.sourceURL.replaceAll("{z}/{x}/{y}", tileName);
+
+            printLog(
+              "info",
+              `Getting data "${id}" - Tile "${tileName}" - From "${url}"...`
+            );
+
+            /* Get data */
+            dataTile = await getMBTilesTileFromURL(
+              url,
+              60000 // 1 mins
+            );
+
+            /* Cache */
+            if (item.storeCache === true) {
+              cacheMBtilesTileData(
+                item.source,
+                z,
+                x,
+                y,
+                item.tileJSON.format,
+                dataTile.data,
+                dataTile.etag,
+                item.storeMD5,
+                item.storeTransparent
+              ).catch((error) =>
+                printLog(
+                  "error",
+                  `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}`
+                )
+              );
+            }
+          } else {
+            throw error;
+          }
+        }
       } else if (item.sourceType === "pmtiles") {
         dataTile = await getPMTilesTile(
           item.source,
@@ -297,12 +347,24 @@ function getDataTileMD5Handler() {
       let md5;
 
       if (item.sourceType === "mbtiles") {
-        md5 = await getMBTilesTileMD5(
-          item.source,
-          z,
-          x,
-          req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
-        );
+        if (item.storeMD5 === true) {
+          md5 = await getMBTilesTileMD5WithLock(
+            item.source,
+            z,
+            x,
+            req.query.scheme === "tms" ? y : (1 << z) - 1 - y, // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+            60000 // 1 mins
+          );
+        } else {
+          const tile = await getMBTilesTile(
+            item.source,
+            z,
+            x,
+            req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+          );
+
+          md5 = calculateMD5(tile.data);
+        }
       } else if (item.sourceType === "pmtiles") {
         md5 = await getPMTilesTileMD5(
           item.source,
@@ -311,14 +373,54 @@ function getDataTileMD5Handler() {
           req.query.scheme === "tms" ? (1 << z) - 1 - y : y // Default of PMTiles is xyz. Flip Y to convert xyz scheme => tms scheme
         );
       } else if (item.sourceType === "xyz") {
-        md5 = await getXYZTileMD5(
-          item.source,
-          z,
-          x,
-          req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
-          req.params.format,
-          180000 // 3 mins
-        );
+        if (item.storeMD5 === true) {
+          md5 = await getXYZTileMD5WithLock(
+            item.md5Source,
+            z,
+            x,
+            req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+            req.params.format,
+            180000 // 3 mins
+          );
+        } else {
+          const tile = await getXYZTile(
+            item.source,
+            z,
+            x,
+            req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+            item.tileJSON.format
+          );
+
+          md5 = calculateMD5(tile.data);
+        }
+
+        try {
+          md5 = await getXYZTileMD5WithLock(
+            item.source,
+            z,
+            x,
+            req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+            req.params.format,
+            180000 // 3 mins
+          );
+        } catch (error) {
+          try {
+            let data = await fsPromise.readFile(
+              `${sourcePath}/${z}/${x}/${y}.${format}`
+            );
+            if (!data) {
+              throw new Error("Tile MD5 does not exist");
+            }
+
+            return calculateMD5(Buffer.from(data));
+          } catch (error) {
+            if (error.code === "ENOENT") {
+              throw new Error("Tile MD5 does not exist");
+            }
+
+            throw error;
+          }
+        }
       }
 
       /* Add MD5 to header */
@@ -728,6 +830,8 @@ export const serve_data = {
                 if (item.cache.forward === true) {
                   dataInfo.sourceURL = cacheSource.url;
                   dataInfo.storeCache = item.cache.store;
+                  dataInfo.storeMD5 = cacheSource.storeMD5;
+                  dataInfo.storeTransparent = cacheSource.storeTransparent;
                 }
               } else {
                 dataInfo.path = `${process.env.DATA_DIR}/mbtiles/${item.mbtiles}`;
@@ -739,13 +843,16 @@ export const serve_data = {
             if (item.cache !== undefined) {
               dataInfo.source = await openMBTiles(
                 dataInfo.path,
-                sqlite3.OPEN_READONLY | sqlite3.OPEN_CREATE
+                sqlite3.OPEN_READONLY | sqlite3.OPEN_CREATE,
+                true
               );
+
               dataInfo.tileJSON = createMetadata(cacheSource.metadata);
             } else {
               dataInfo.source = await openMBTiles(
                 dataInfo.path,
-                sqlite3.OPEN_READONLY
+                sqlite3.OPEN_READONLY,
+                false
               );
               dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
             }
@@ -788,6 +895,15 @@ export const serve_data = {
 
             if (item.cache !== undefined) {
               dataInfo.source = dataInfo.path;
+
+              if (dataInfo.storeMD5 === true) {
+                dataInfo.md5Source = await openXYZMD5DB(
+                  dataInfo.source,
+                  sqlite3.OPEN_READONLY | sqlite3.OPEN_CREATE,
+                  true
+                );
+              }
+
               dataInfo.tileJSON = createMetadata(cacheSource.metadata);
             } else {
               dataInfo.source = dataInfo.path;

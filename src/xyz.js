@@ -1,6 +1,6 @@
 "use strict";
 
-import { deleteXYZTileMD5, updateXYZTileMD5 } from "./md5.js";
+import { createXYZTileMD5WithLock, deleteXYZTileMD5WithLock } from "./md5.js";
 import { isFullTransparentPNGImage } from "./image.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
@@ -694,7 +694,7 @@ export async function downloadXYZTileDataFile(
 
           // Store data md5 hash
           if (storeMD5 === true) {
-            updateXYZTileMD5(
+            createXYZTileMD5WithLock(
               sourcePath,
               z,
               x,
@@ -774,7 +774,7 @@ export async function removeXYZTileDataFile(
         );
 
         if (storeMD5 === true) {
-          deleteXYZTileMD5(
+          deleteXYZTileMD5WithLock(
             sourcePath,
             z,
             x,
@@ -833,7 +833,7 @@ export async function cacheXYZTileDataFile(
       )) === true
     ) {
       if (storeMD5 === true) {
-        updateXYZTileMD5(
+        createXYZTileMD5WithLock(
           sourcePath,
           z,
           x,
