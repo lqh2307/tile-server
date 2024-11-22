@@ -800,6 +800,8 @@ export const serve_data = {
           const dataInfo = {};
 
           if (item.mbtiles !== undefined) {
+            let cacheSource;
+
             if (
               item.mbtiles.startsWith("https://") === true ||
               item.mbtiles.startsWith("http://") === true
@@ -815,8 +817,6 @@ export const serve_data = {
                 );
               }
             } else {
-              let cacheSource;
-
               if (item.cache !== undefined) {
                 dataInfo.path = `${process.env.DATA_DIR}/caches/mbtiles/${item.mbtiles}/${item.mbtiles}.mbtiles`;
 
