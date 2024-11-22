@@ -108,7 +108,11 @@ export async function openMBTiles(
       Promise.all(setupPromises)
         .then(() => resolve(mbtilesSource))
         .catch((setupError) => {
-          mbtilesSource.close(() => reject(setupError));
+          if (mbtilesSource !== undefined) {
+            mbtilesSource.close();
+          }
+
+          reject(setupError);
         });
     });
   });

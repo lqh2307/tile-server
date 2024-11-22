@@ -273,7 +273,11 @@ export async function openXYZMD5DB(
         Promise.all(setupPromises)
           .then(() => resolve(xyzSource))
           .catch((setupError) => {
-            xyzSource.close(() => reject(setupError));
+            if (xyzSource !== undefined) {
+              xyzSource.close();
+            }
+
+            reject(setupError);
           });
       }
     );
