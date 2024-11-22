@@ -749,17 +749,7 @@ export async function updateServerInfoFileWithLock(
           recursive: true,
         });
 
-        lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-        await updateServerInfoFile(serverInfoAdds);
-
-        await lockFileHandle.close();
-
-        await fsPromise.rm(lockFilePath, {
-          force: true,
-        });
-
-        return;
+        continue;
       } else if (error.code === "EEXIST") {
         await delay(50);
       } else {
