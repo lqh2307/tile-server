@@ -775,7 +775,7 @@ async function upsertMBTilesTile(mbtilesSource, z, x, y, data) {
       x,
       y,
       data,
-      Date().now(),
+      Date.now(),
       (error) => {
         if (error) {
           return reject(error);

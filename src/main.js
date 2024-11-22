@@ -56,7 +56,7 @@ async function startClusterServer(opts) {
       /* Store killed server time */
       updateServerInfoFileWithLock(
         {
-          lastServerKilled: Date().now(),
+          lastServerKilled: Date.now(),
         },
         60000 // 1 mins
       )
@@ -72,7 +72,7 @@ async function startClusterServer(opts) {
       /* Store restarted server time */
       updateServerInfoFileWithLock(
         {
-          lastServerRestarted: Date().now(),
+          lastServerRestarted: Date.now(),
         },
         60000 // 1 mins
       )
@@ -105,7 +105,7 @@ async function startClusterServer(opts) {
     await updateServerInfoFileWithLock(
       {
         mainPID: process.pid,
-        lastServerStarted: Date().now(),
+        lastServerStarted: Date.now(),
       },
       60000 // 1 mins
     );

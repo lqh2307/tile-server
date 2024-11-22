@@ -27,7 +27,7 @@ export function startTaskInWorker(opts) {
     /* Store started task time */
     updateServerInfoFileWithLock(
       {
-        lastTaskStarted: Date().now(),
+        lastTaskStarted: Date.now(),
       },
       60000 // 1 mins
     ).catch((error) =>
@@ -56,7 +56,7 @@ export function startTaskInWorker(opts) {
           /* Store done task time */
           updateServerInfoFileWithLock(
             {
-              lastTaskDone: Date().now(),
+              lastTaskDone: Date.now(),
             },
             60000 // 1 mins
           ).catch((error) =>
@@ -66,7 +66,7 @@ export function startTaskInWorker(opts) {
           /* Store canceled task time */
           updateServerInfoFileWithLock(
             {
-              lastTaskCanceled: Date().now(),
+              lastTaskCanceled: Date.now(),
             },
             60000 // 1 mins
           ).catch((error) =>
@@ -76,7 +76,7 @@ export function startTaskInWorker(opts) {
           /* Store failed task time */
           updateServerInfoFileWithLock(
             {
-              lastTaskFailed: Date().now(),
+              lastTaskFailed: Date.now(),
             },
             60000 // 1 mins
           ).catch((error) =>
