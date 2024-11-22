@@ -1,5 +1,6 @@
 "use strict";
 
+import { createMBTilesTileMD5WithLock } from "./md5.js";
 import { isFullTransparentPNGImage } from "./image.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
@@ -11,7 +12,6 @@ import http from "node:http";
 import path from "node:path";
 import axios from "axios";
 import fs from "node:fs";
-import { createMBTilesTileMD5WithLock } from "./md5.js";
 import {
   getLayersFromPBFBuffer,
   detectFormatAndHeaders,
@@ -732,7 +732,7 @@ export async function updateMBTilesMetadataWithLock(
 }
 
 /**
- * Upsert MBTiles tiles table
+ * Upsert MBTiles tile
  * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {number} z Zoom level
  * @param {number} x X tile index
@@ -760,7 +760,7 @@ async function upsertMBTilesTile(mbtilesSource, z, x, y, data) {
 }
 
 /**
- * Create MBTiles tiles table
+ * Create MBTiles tile
  * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {number} z Zoom level
  * @param {number} x X tile index
@@ -959,8 +959,11 @@ export async function downloadMBTilesTile(
         ) {
           return;
         } else {
-          await storeMBTilesTileDataWithLock(
-            `${sourcePath}/${tileName}.${format}`,
+          await createMBTilesTileWithLock(
+            mbtilesSource,
+            z,
+            x,
+            y,
             response.data,
             300000 // 5 mins
           );
