@@ -1,5 +1,6 @@
 "use strict";
 
+import { isFullTransparentPNGImage } from "./image.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
@@ -790,7 +791,7 @@ async function upsertMBTilesTile(mbtilesSource, z, x, y, data) {
 }
 
 /**
- * Upsert MBTiles tiles table
+ * Create MBTiles tiles table
  * @param {object} mbtilesSource The MBTiles source object
  * @param {number} z Zoom level
  * @param {number} x X tile index
@@ -799,14 +800,14 @@ async function upsertMBTilesTile(mbtilesSource, z, x, y, data) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function updateMBTilesTile(mbtilesSource, z, x, y, timeout) {
+export async function createMBTilesTile(mbtilesSource, z, x, y, data, timeout) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
     try {
       await upsertMBTilesTile(mbtilesSource, z, x, y, data);
 
-      return;
+      return true;
     } catch (error) {
       if (error.code === "SQLITE_BUSY") {
         await delay(100);
@@ -930,5 +931,68 @@ export async function getMBTilesTileFromURL(url, timeout) {
     }
 
     throw new Error(`Failed to get data tile from "${url}": ${error}`);
+  }
+}
+
+/**
+ * Cache MBTiles tile
+ * @param {object} mbtilesSource The MBTiles source object
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
+ * @param {Buffer} data Tile data buffer
+ * @param {string} hash MD5 hash string
+ * @param {boolean} storeMD5 Is store MD5 hashed?
+ * @param {boolean} storeTransparent Is store transparent?
+ * @returns {Promise<void>}
+ */
+export async function cacheMBtilesTile(
+  mbtilesSource,
+  z,
+  x,
+  y,
+  format,
+  data,
+  hash,
+  storeMD5,
+  storeTransparent
+) {
+  const tileName = `${z}/${x}/${y}`;
+
+  if (
+    storeTransparent === false &&
+    format === "png" &&
+    (await isFullTransparentPNGImage(data)) === true
+  ) {
+    return;
+  } else {
+    if (
+      (await createMBTilesTile(
+        mbtilesSource,
+        z,
+        x,
+        y,
+        data,
+        300000 // 5 mins
+      )) === true
+    ) {
+      if (storeMD5 === true) {
+        updateXYZTileMD5(
+          sourcePath,
+          z,
+          x,
+          y,
+          data,
+          hash,
+          180000 // 3 mins
+        ).catch((error) =>
+          printLog(
+            "error",
+            `Failed to update md5 for tile "${tileName}": ${error}`
+          )
+        );
+      }
+    }
   }
 }
