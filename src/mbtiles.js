@@ -51,54 +51,62 @@ export async function openMBTiles(
       }
 
       mbtilesSource.serialize(async () => {
-        if (wal === true) {
-          await runSQL(mbtilesSource, "PRAGMA journal_mode=WAL;");
+        try {
+          if (wal === true) {
+            await runSQL(mbtilesSource, "PRAGMA journal_mode=WAL;");
+          }
+
+          if (hasCreateMode) {
+            await runSQL(
+              mbtilesSource,
+              `
+              CREATE TABLE IF NOT EXISTS
+                metadata (
+                  name TEXT NOT NULL,
+                  value TEXT NOT NULL,
+                  PRIMARY KEY (name)
+                );
+              `
+            );
+
+            await runSQL(
+              mbtilesSource,
+              `
+              CREATE TABLE IF NOT EXISTS
+                tiles (
+                  zoom_level INTEGER NOT NULL,
+                  tile_column INTEGER NOT NULL,
+                  tile_row INTEGER NOT NULL,
+                  tile_data BLOB NOT NULL,
+                  created INTEGER,
+                  PRIMARY KEY (zoom_level, tile_column, tile_row)
+                );
+              `
+            );
+
+            await runSQL(
+              mbtilesSource,
+              `
+              CREATE TABLE IF NOT EXISTS
+                md5s (
+                  z INTEGER NOT NULL,
+                  x INTEGER NOT NULL,
+                  y INTEGER NOT NULL,
+                  hash TEXT,
+                  PRIMARY KEY (z, x, y)
+                );
+              `
+            );
+          }
+
+          resolve(mbtilesSource);
+        } catch (error) {
+          if (mbtilesSource !== undefined) {
+            mbtilesSource.close();
+          }
+
+          reject(err);
         }
-
-        if (hasCreateMode) {
-          await runSQL(
-            mbtilesSource,
-            `
-            CREATE TABLE IF NOT EXISTS
-              metadata (
-                name TEXT NOT NULL,
-                value TEXT NOT NULL,
-                PRIMARY KEY (name)
-              );
-            `
-          );
-
-          await runSQL(
-            mbtilesSource,
-            `
-            CREATE TABLE IF NOT EXISTS
-              tiles (
-                zoom_level INTEGER NOT NULL,
-                tile_column INTEGER NOT NULL,
-                tile_row INTEGER NOT NULL,
-                tile_data BLOB NOT NULL,
-                created INTEGER,
-                PRIMARY KEY (zoom_level, tile_column, tile_row)
-              );
-            `
-          );
-
-          await runSQL(
-            mbtilesSource,
-            `
-            CREATE TABLE IF NOT EXISTS
-              md5s (
-                z INTEGER NOT NULL,
-                x INTEGER NOT NULL,
-                y INTEGER NOT NULL,
-                hash TEXT,
-                PRIMARY KEY (z, x, y)
-              );
-            `
-          );
-        }
-
-        resolve(mbtilesSource);
       });
     });
   });
