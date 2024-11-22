@@ -45,12 +45,14 @@ export async function openMBTiles(
   }
 
   return new Promise((resolve, reject) => {
-    const mbtilesSource = new sqlite3.Database(filePath, mode, (error) => {
-      if (error) {
-        return reject(error);
-      }
+    const mbtilesSource = new sqlite3.Database(
+      filePath,
+      mode,
+      async (error) => {
+        if (error) {
+          return reject(error);
+        }
 
-      mbtilesSource.serialize(async () => {
         try {
           if (wal === true) {
             await runSQL(mbtilesSource, "PRAGMA journal_mode=WAL;");
@@ -105,10 +107,10 @@ export async function openMBTiles(
             mbtilesSource.close();
           }
 
-          reject(err);
+          reject(error);
         }
-      });
-    });
+      }
+    );
   });
 }
 
