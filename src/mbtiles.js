@@ -1,6 +1,7 @@
 "use strict";
 
 import { isFullTransparentPNGImage } from "./image.js";
+import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
