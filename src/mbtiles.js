@@ -684,3 +684,251 @@ export async function downloadMBTilesFile(url, filePath, maxTry, timeout) {
     throw error;
   }
 }
+
+/**
+ * Upsert MBTiles metadata table
+ * @param {object} mbtilesSource The MBTiles source object
+ * @param {Object<string,string>} metadataAdds Metadata object
+ * @returns {Promise<void>}
+ */
+async function upsertMBTilesMetadata(mbtilesSource, metadataAdds = {}) {
+  return new Promise((resolve, reject) =>
+    Promise.all(
+      Object.entries(metadataAdds).map(
+        ([key, value]) =>
+          new Promise((resolveUpsert, rejectUpsert) => {
+            mbtilesSource.run(
+              `
+            INSERT INTO
+            metadata (name, value)
+            VALUES (?, ?)
+            ON CONFLICT (name)
+            DO UPDATE SET value = excluded.value;
+            `,
+              key,
+              JSON.stringify(value),
+              (error) => {
+                if (error) {
+                  return rejectUpsert(error);
+                }
+
+                resolveUpsert();
+              }
+            );
+          })
+      )
+    )
+      .then(() => resolve())
+      .catch((error) => reject(error))
+  );
+}
+
+/**
+ * Update MBTiles metadata table
+ * @param {object} mbtilesSource The MBTiles source object
+ * @param {Object<string,string>} metadataAdds Metadata object
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<void>}
+ */
+export async function updateMBTilesMetadata(
+  mbtilesSource,
+  metadataAdds = {},
+  timeout
+) {
+  const startTime = Date.now();
+
+  while (Date.now() - startTime <= timeout) {
+    try {
+      await upsertMBTilesMetadata(mbtilesSource, metadataAdds);
+
+      return;
+    } catch (error) {
+      if (error.code === "SQLITE_BUSY") {
+        await delay(100);
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(`Timeout to access MBTiles DB`);
+}
+
+/**
+ * Upsert MBTiles tiles table
+ * @param {object} mbtilesSource The MBTiles source object
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @param {Buffer} data Tile data buffer
+ * @returns {Promise<void>}
+ */
+async function upsertMBTilesTile(mbtilesSource, z, x, y, data) {
+  return new Promise((resolve, reject) => {
+    mbtilesSource.run(
+      `
+      INSERT INTO
+      tiles (zoom_level, tile_column, tile_row, tile_data, created)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT (zoom_level, tile_column, tile_row)
+      DO UPDATE SET tile_data = excluded.tile_data, created = excluded.created;
+      `,
+      z,
+      x,
+      y,
+      data,
+      Date().now(),
+      (error) => {
+        if (error) {
+          return reject(error);
+        }
+
+        resolve();
+      }
+    );
+  });
+}
+
+/**
+ * Upsert MBTiles tiles table
+ * @param {object} mbtilesSource The MBTiles source object
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @param {Buffer} data Tile data buffer
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<void>}
+ */
+export async function updateMBTilesTile(mbtilesSource, z, x, y, timeout) {
+  const startTime = Date.now();
+
+  while (Date.now() - startTime <= timeout) {
+    try {
+      await upsertMBTilesTile(mbtilesSource, z, x, y, data);
+
+      return;
+    } catch (error) {
+      if (error.code === "SQLITE_BUSY") {
+        await delay(100);
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(`Timeout to access MBTiles DB`);
+}
+
+/**
+ * Delete a tile from MBTiles tiles table
+ * @param {object} mbtilesSource The MBTiles source object
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @returns {Promise<void>}
+ */
+async function deleteMBTilesTile(mbtilesSource, z, x, y) {
+  return new Promise((resolve, reject) => {
+    mbtilesSource.run(
+      `
+      DELETE FROM
+        tiles
+      WHERE
+        zoom_level = ? AND tile_column = ? AND tile_row = ?;
+      `,
+      z,
+      x,
+      y,
+      (error) => {
+        if (error) {
+          return reject(error);
+        }
+
+        resolve();
+      }
+    );
+  });
+}
+
+/**
+ * Delete a tile from MBTiles tiles table with timeout
+ * @param {object} mbtilesSource The MBTiles source object
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<void>}
+ */
+export async function deleteMBTilesTileWithTimeout(
+  mbtilesSource,
+  z,
+  x,
+  y,
+  timeout
+) {
+  const startTime = Date.now();
+
+  while (Date.now() - startTime <= timeout) {
+    try {
+      await deleteMBTilesTile(mbtilesSource, z, x, y);
+
+      return;
+    } catch (error) {
+      if (error.code === "SQLITE_BUSY") {
+        await delay(100);
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(`Timeout to access MBTiles DB`);
+}
+
+/**
+ * Get MBTiles tile from a URL
+ * @param {string} url The URL to fetch data from
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<object>}
+ */
+export async function getMBTilesTileFromURL(url, timeout) {
+  try {
+    const response = await axios.get(url, {
+      timeout: timeout,
+      responseType: "arraybuffer",
+      headers: {
+        "User-Agent": "Tile Server",
+      },
+      validateStatus: (status) => {
+        return status === StatusCodes.OK;
+      },
+      httpAgent: new http.Agent({
+        keepAlive: false,
+      }),
+      httpsAgent: new https.Agent({
+        keepAlive: false,
+      }),
+    });
+
+    return {
+      data: response.data,
+      headers: detectFormatAndHeaders(response.data).headers,
+      etag: response.headers["Etag"],
+    };
+  } catch (error) {
+    if (error.response) {
+      if (
+        error.response.status === StatusCodes.NOT_FOUND ||
+        error.response.status === StatusCodes.NO_CONTENT
+      ) {
+        throw new Error("Tile does not exist");
+      }
+
+      throw new Error(
+        `Failed to get data tile from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
+      );
+    }
+
+    throw new Error(`Failed to get data tile from "${url}": ${error}`);
+  }
+}
