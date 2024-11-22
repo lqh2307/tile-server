@@ -844,7 +844,7 @@ export const serve_data = {
             if (item.cache !== undefined) {
               dataInfo.source = await openMBTiles(
                 dataInfo.path,
-                sqlite3.OPEN_READONLY | sqlite3.OPEN_CREATE,
+                sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
                 true
               );
 
@@ -900,7 +900,7 @@ export const serve_data = {
               if (dataInfo.storeMD5 === true) {
                 dataInfo.md5Source = await openXYZMD5DB(
                   dataInfo.source,
-                  sqlite3.OPEN_READONLY | sqlite3.OPEN_CREATE,
+                  sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
                   true
                 );
               }
