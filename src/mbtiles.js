@@ -11,10 +11,7 @@ import http from "node:http";
 import path from "node:path";
 import axios from "axios";
 import fs from "node:fs";
-import {
-  createMBTilesTileMD5WithLock,
-  createXYZTileMD5WithLock,
-} from "./md5.js";
+import { createMBTilesTileMD5WithLock } from "./md5.js";
 import {
   getLayersFromPBFBuffer,
   detectFormatAndHeaders,
@@ -121,7 +118,7 @@ export async function openMBTiles(
 
 /**
  * Check if a unique index exists on a specified table with given columns
- * @param {object} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {string} tableName The name of the table to check
  * @param {Array<string>} columnNames The expected column names in the index
  * @returns {Promise<boolean>} Returns true if the index exists with specified columns, otherwise false
@@ -168,7 +165,7 @@ export async function isMBTilesExistIndex(
 
 /**
  * Check if a columns exists on a specified table
- * @param {object} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {string} tableName The name of the table to check
  * @param {Array<string>} columnNames The expected column names
  * @returns {Promise<boolean>} Returns true if there columns exist on a specified table, otherwise false
@@ -197,7 +194,7 @@ export async function isMBTilesExistColumns(
 
 /**
  * Get MBTiles layers from tiles
- * @param {object} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @returns {Promise<Array<string>>}
  */
 export async function getMBTilesLayersFromTiles(mbtilesSource) {
@@ -260,7 +257,7 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
 
 /**
  * Get MBTiles bounding box from tiles
- * @param {object} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @returns {Promise<Array<number>>} Bounding box in format [minLon, minLat, maxLon, maxLat]
  */
 export async function getMBTilesBBoxFromTiles(mbtilesSource) {
@@ -307,7 +304,7 @@ export async function getMBTilesBBoxFromTiles(mbtilesSource) {
 
 /**
  * Create unique index on the metadata table
- * @param {object} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {string} indexName The name of the index
  * @param {string} tableName The name of the table to check
  * @param {Array<string>} columnNames The expected column names in the index
@@ -329,7 +326,7 @@ export async function createMBTilesIndex(
 
 /**
  * Get MBTiles tile
- * @param {object} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -371,7 +368,7 @@ export async function getMBTilesTile(mbtilesSource, z, x, y) {
 
 /**
  * Get MBTiles zoom level from tiles
- * @param {object} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {"minzoom"|"maxzoom"} zoomType
  * @returns {Promise<number>}
  */
@@ -401,7 +398,7 @@ export async function getMBTilesZoomLevelFromTiles(
 
 /**
  * Get MBTiles tile format from tiles
- * @param {object} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @returns {Promise<number>}
  */
 export async function getMBTilesFormatFromTiles(mbtilesSource) {
@@ -422,7 +419,7 @@ export async function getMBTilesFormatFromTiles(mbtilesSource) {
 
 /**
  * Get MBTiles infos
- * @param {object} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @returns {Promise<object>}
  */
 export async function getMBTilesInfos(mbtilesSource) {
@@ -571,7 +568,7 @@ export async function getMBTilesInfos(mbtilesSource) {
 
 /**
  * Close MBTiles
- * @param {object} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @returns {Promise<void>}
  */
 export async function closeMBTiles(mbtilesSource) {
@@ -675,7 +672,7 @@ export async function downloadMBTilesFile(url, filePath, maxTry, timeout) {
 
 /**
  * Upsert MBTiles metadata table
- * @param {object} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {Object<string,string>} metadataAdds Metadata object
  * @returns {Promise<void>}
  */
@@ -705,7 +702,7 @@ async function upsertMBTilesMetadata(mbtilesSource, metadataAdds = {}) {
 
 /**
  * Update MBTiles metadata table
- * @param {object} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {Object<string,string>} metadataAdds Metadata object
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
@@ -736,7 +733,7 @@ export async function updateMBTilesMetadataWithLock(
 
 /**
  * Upsert MBTiles tiles table
- * @param {object} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -764,7 +761,7 @@ async function upsertMBTilesTile(mbtilesSource, z, x, y, data) {
 
 /**
  * Create MBTiles tiles table
- * @param {object} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -801,7 +798,7 @@ export async function createMBTilesTileWithLock(
 
 /**
  * Delete a tile from MBTiles tiles table
- * @param {object} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -824,7 +821,7 @@ async function deleteMBTilesTile(mbtilesSource, z, x, y) {
 
 /**
  * Delete a tile from MBTiles tiles table
- * @param {object} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -908,24 +905,22 @@ export async function getMBTilesTileFromURL(url, timeout) {
 /**
  * Download XYZ tile data file
  * @param {string} url The URL to download the file from
- * @param {string} sourcePath Folder path
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
- * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
  * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {boolean} storeTransparent Is store transparent?
  * @returns {Promise<void>}
  */
-export async function downloadXYZTileDataFile(
+export async function downloadMBTilesTile(
   url,
-  sourcePath,
+  mbtilesSource,
   z,
   x,
   y,
-  format,
   maxTry,
   timeout,
   storeMD5,
@@ -964,7 +959,7 @@ export async function downloadXYZTileDataFile(
         ) {
           return;
         } else {
-          await storeXYZTileDataFileWithLock(
+          await storeMBTilesTileDataWithLock(
             `${sourcePath}/${tileName}.${format}`,
             response.data,
             300000 // 5 mins
@@ -972,8 +967,8 @@ export async function downloadXYZTileDataFile(
 
           // Store data md5 hash
           if (storeMD5 === true) {
-            createXYZTileMD5WithLock(
-              sourcePath,
+            createMBTilesTileMD5WithLock(
+              mbtilesSource,
               z,
               x,
               y,
@@ -1019,7 +1014,7 @@ export async function downloadXYZTileDataFile(
 
 /**
  * Cache MBTiles tile
- * @param {object} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -1062,7 +1057,7 @@ export async function cacheMBtilesTileData(
     ) {
       if (storeMD5 === true) {
         createMBTilesTileMD5WithLock(
-          sourcePath,
+          mbtilesSource,
           z,
           x,
           y,
@@ -1081,23 +1076,21 @@ export async function cacheMBtilesTileData(
 }
 
 /**
- * Remove XYZ tile data file
- * @param {string} sourcePath Folder path
+ * Remove MBTiles tile
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
- * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
  * @param {boolean} storeMD5 Is store MD5 hashed?
  * @returns {Promise<void>}
  */
-export async function removeXYZTileDataFile(
-  sourcePath,
+export async function removeMBTilesTileData(
+  mbtilesSource,
   z,
   x,
   y,
-  format,
   maxTry,
   timeout,
   storeMD5
@@ -1109,13 +1102,10 @@ export async function removeXYZTileDataFile(
   try {
     try {
       await retry(async () => {
-        await removeXYZTileDataFileWithLock(
-          `${sourcePath}/${tileName}.${format}`,
-          timeout
-        );
+        await deleteMBTilesTileWithLock(mbtilesSource, z, x, y, timeout);
 
         if (storeMD5 === true) {
-          deleteXYZTileMD5WithLock(
+          deleteMBTilesTileWithLock(
             sourcePath,
             z,
             x,

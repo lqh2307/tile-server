@@ -340,6 +340,7 @@ function getDataTileMD5Handler() {
     const z = Number(req.params.z);
     const x = Number(req.params.x);
     const y = Number(req.params.y);
+    const tileName = `${z}/${x}/${y}`;
 
     try {
       /* Get tile data MD5 */
@@ -407,7 +408,7 @@ function getDataTileMD5Handler() {
         } catch (error) {
           try {
             let data = await fsPromise.readFile(
-              `${sourcePath}/${z}/${x}/${y}.${format}`
+              `${item.source}/${z}/${x}/${y}.${format}`
             );
             if (!data) {
               throw new Error("Tile MD5 does not exist");
@@ -433,7 +434,7 @@ function getDataTileMD5Handler() {
     } catch (error) {
       printLog(
         "error",
-        `Failed to get md5 data "${id}" - Tile "${z}/${x}/${y}": ${error}`
+        `Failed to get md5 data "${id}" - Tile "${tileName}": ${error}`
       );
 
       if (error.message === "Tile MD5 does not exist") {
