@@ -1,6 +1,6 @@
 "use strict";
 
-import { updateServerInfoFile, killServer } from "./utils.js";
+import { updateServerInfoFileWithLock, killServer } from "./utils.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
@@ -25,9 +25,12 @@ let currentTaskWorker;
 export function startTaskInWorker(opts) {
   if (currentTaskWorker === undefined) {
     /* Store started task time */
-    updateServerInfoFile({
-      lastTaskStarted: new Date().toISOString(),
-    }).catch((error) =>
+    updateServerInfoFileWithLock(
+      {
+        lastTaskStarted: Date().now(),
+      },
+      60000 // 1 mins
+    ).catch((error) =>
       printLog("error", `Failed to store started task time: ${error}`)
     );
 
@@ -51,23 +54,32 @@ export function startTaskInWorker(opts) {
 
         if (code === 0) {
           /* Store done task time */
-          updateServerInfoFile({
-            lastTaskDone: new Date().toISOString(),
-          }).catch((error) =>
+          updateServerInfoFileWithLock(
+            {
+              lastTaskDone: Date().now(),
+            },
+            60000 // 1 mins
+          ).catch((error) =>
             printLog("error", `Failed to store done task time: ${error}`)
           );
         } else if (code === 1) {
           /* Store canceled task time */
-          updateServerInfoFile({
-            lastTaskCanceled: new Date().toISOString(),
-          }).catch((error) =>
+          updateServerInfoFileWithLock(
+            {
+              lastTaskCanceled: Date().now(),
+            },
+            60000 // 1 mins
+          ).catch((error) =>
             printLog("error", `Failed to store canceled task time: ${error}`)
           );
         } else {
           /* Store failed task time */
-          updateServerInfoFile({
-            lastTaskFailed: new Date().toISOString(),
-          }).catch((error) =>
+          updateServerInfoFileWithLock(
+            {
+              lastTaskFailed: Date().now(),
+            },
+            60000 // 1 mins
+          ).catch((error) =>
             printLog("error", `Failed to store failed task time: ${error}`)
           );
         }

@@ -20,10 +20,10 @@ const vectorTileProto = protobuf(
 
 /**
  * Extracts layer names from a vector tile PBF buffer
- * @param {Buffer} pbfData - The PBF data buffer
- * @returns {Promise<Array<string>} - A promise that resolves to an array of layer names
+ * @param {Buffer} pbfData The PBF data buffer
+ * @returns {Promise<Array<string>} A promise that resolves to an array of layer names
  */
-export async function getLayerNamesFromPBFTileBuffer(pbfData) {
+export async function getLayersFromPBFBuffer(pbfData) {
   const decoded = vectorTileProto.tile.decode(pbfData);
 
   return decoded.layers.map((layer) => layer.name);
@@ -290,7 +290,10 @@ export async function removeEmptyFolders(folderPath, regex) {
     entries.map(async (entry) => {
       const fullPath = `${folderPath}/${entry.name}`;
 
-      if (entry.isFile() === true && regex.test(entry.name) === true) {
+      if (
+        entry.isFile() === true &&
+        (regex === undefined || regex.test(entry.name) === true)
+      ) {
         hasMatchingFile = true;
       } else if (entry.isDirectory() === true) {
         await removeEmptyFolders(fullPath, regex);
@@ -317,12 +320,14 @@ export async function removeEmptyFolders(folderPath, regex) {
  * @returns {Promise<void>}
  */
 export async function removeOldCacheLocks(dataDir) {
-  const cacheDir = `${dataDir}/caches`;
-
-  const fileNames = await findFiles(cacheDir, /^.*\.(lock|tmp)$/, true);
+  const fileNames = await findFiles(
+    `${dataDir}/caches`,
+    /^.*\.(lock|tmp)$/,
+    true
+  );
 
   await Promise.all(
-    fileNames.map((fileName) => fsPromise.rm(`${cacheDir}/${fileName}`), {
+    fileNames.map((fileName) => fsPromise.rm(`${dataDir}/caches/${fileName}`), {
       force: true,
     })
   );
@@ -672,7 +677,7 @@ export function deepClone(obj) {
  * @param {Object<string,string>} serverInfoAdds Server info object
  * @returns {Promise<void>}
  */
-export async function updateServerInfoFile(serverInfoAdds = {}) {
+async function updateServerInfoFile(serverInfoAdds = {}) {
   const filePath = `${process.env.DATA_DIR}/server-info.json`;
   const tempFilePath = `${filePath}.tmp`;
 
@@ -773,7 +778,7 @@ export async function updateServerInfoFileWithLock(
  * Get main PID
  * @returns {Promise<number>}
  */
-export async function getMainPID() {
+async function getMainPID() {
   try {
     const data = await fsPromise.readFile(
       `${process.env.DATA_DIR}/server-info.json`,

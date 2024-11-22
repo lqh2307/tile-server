@@ -15,7 +15,7 @@ import {
   createXYZTileMD5WithLock,
 } from "./md5.js";
 import {
-  getLayerNamesFromPBFTileBuffer,
+  getLayersFromPBFBuffer,
   detectFormatAndHeaders,
   getBBoxFromTiles,
   retry,
@@ -234,9 +234,7 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
           /* Run a task */
           (async () => {
             try {
-              const layers = await getLayerNamesFromPBFTileBuffer(
-                row.tile_data
-              );
+              const layers = await getLayersFromPBFBuffer(row.tile_data);
 
               layers.forEach((layer) => layerNames.add(layer));
             } catch (error) {

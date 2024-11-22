@@ -7,7 +7,7 @@ import chokidar from "chokidar";
 import cluster from "cluster";
 import cron from "node-cron";
 import {
-  updateServerInfoFile,
+  updateServerInfoFileWithLock,
   removeOldCacheLocks,
   restartServer,
   getVersion,
@@ -54,9 +54,12 @@ async function startClusterServer(opts) {
       printLog("info", `Received "SIGINT" signal. Killing server...`);
 
       /* Store killed server time */
-      updateServerInfoFile({
-        lastServerKilled: new Date().toISOString(),
-      })
+      updateServerInfoFileWithLock(
+        {
+          lastServerKilled: Date().now(),
+        },
+        60000 // 1 mins
+      )
         .catch((error) =>
           printLog("error", `Failed to store killed server time: ${error}`)
         )
@@ -67,9 +70,12 @@ async function startClusterServer(opts) {
       printLog("info", `Received "SIGTERM" signal. Restarting server...`);
 
       /* Store restarted server time */
-      updateServerInfoFile({
-        lastServerRestarted: new Date().toISOString(),
-      })
+      updateServerInfoFileWithLock(
+        {
+          lastServerRestarted: Date().now(),
+        },
+        60000 // 1 mins
+      )
         .catch((error) =>
           printLog("error", `Failed to store restarted server time: ${error}`)
         )
@@ -96,10 +102,13 @@ async function startClusterServer(opts) {
     await removeOldCacheLocks(dataDir);
 
     /* Store main pid */
-    await updateServerInfoFile({
-      mainPID: process.pid,
-      lastServerStarted: new Date().toISOString(),
-    });
+    await updateServerInfoFileWithLock(
+      {
+        mainPID: process.pid,
+        lastServerStarted: Date().now(),
+      },
+      60000 // 1 mins
+    );
 
     printLog(
       "info",

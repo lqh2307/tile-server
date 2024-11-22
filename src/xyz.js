@@ -11,7 +11,7 @@ import path from "node:path";
 import http from "node:http";
 import axios from "axios";
 import {
-  getLayerNamesFromPBFTileBuffer,
+  getLayersFromPBFBuffer,
   detectFormatAndHeaders,
   getBBoxFromTiles,
   findFolders,
@@ -135,7 +135,7 @@ export async function getXYZLayersFromTiles(sourcePath) {
     (async () => {
       try {
         const data = await fsPromise.readFile(`${sourcePath}/${pbfFilePath}`);
-        const layers = await getLayerNamesFromPBFTileBuffer(data);
+        const layers = await getLayersFromPBFBuffer(data);
 
         layers.forEach((layer) => layerNames.add(layer));
       } catch (error) {
