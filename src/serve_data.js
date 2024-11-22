@@ -11,7 +11,6 @@ import sqlite3 from "sqlite3";
 import {
   getMBTilesTileMD5WithLock,
   getXYZTileMD5WithLock,
-  getPMTilesTileMD5,
   openXYZMD5DB,
 } from "./md5.js";
 import {
@@ -353,7 +352,7 @@ function getDataTileMD5Handler() {
             z,
             x,
             req.query.scheme === "tms" ? y : (1 << z) - 1 - y, // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
-            60000 // 1 mins
+            180000 // 3 mins
           );
         } else {
           const tile = await getMBTilesTile(
@@ -366,12 +365,14 @@ function getDataTileMD5Handler() {
           md5 = calculateMD5(tile.data);
         }
       } else if (item.sourceType === "pmtiles") {
-        md5 = await getPMTilesTileMD5(
+        const tile = await getPMTilesTile(
           item.source,
           z,
           x,
           req.query.scheme === "tms" ? (1 << z) - 1 - y : y // Default of PMTiles is xyz. Flip Y to convert xyz scheme => tms scheme
         );
+
+        md5 = calculateMD5(tile.data);
       } else if (item.sourceType === "xyz") {
         if (item.storeMD5 === true) {
           md5 = await getXYZTileMD5WithLock(
