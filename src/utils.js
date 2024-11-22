@@ -860,22 +860,12 @@ export function getVersion() {
  */
 export function runSQL(db, sql, ...params) {
   return new Promise((resolve, reject) => {
-    if (params) {
-      db.run(sql, params, (error) => {
-        if (error) {
-          return reject(error);
-        }
+    db.run(sql, params, (error) => {
+      if (error) {
+        return reject(error);
+      }
 
-        resolve();
-      });
-    } else {
-      db.run(sql, (error) => {
-        if (error) {
-          return reject(error);
-        }
-
-        resolve();
-      });
-    }
+      resolve();
+    });
   });
 }
