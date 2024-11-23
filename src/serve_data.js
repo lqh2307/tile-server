@@ -137,7 +137,7 @@ function getDataTileHandler() {
     try {
       /* Get tile data */
       let dataTile;
-      const scheme = req.query.scheme ?? "xyz";
+      const scheme = req.query.scheme ? req.query.scheme : "xyz";
 
       if (item.sourceType === "mbtiles") {
         try {
@@ -332,7 +332,7 @@ function getDataTileMD5Handler() {
     try {
       /* Get tile data MD5 */
       let md5;
-      const scheme = req.query.scheme ?? "xyz";
+      const scheme = req.query.scheme ? req.query.scheme : "xyz";
 
       if (item.sourceType === "mbtiles") {
         if (item.storeMD5 === true) {

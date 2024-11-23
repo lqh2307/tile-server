@@ -724,7 +724,10 @@ export const serve_rendered = {
                                   url.slice(queryIndex)
                                 );
 
-                                scheme = query.get("scheme") ?? "xyz";
+                                scheme = query.get("scheme");
+                                if (!scheme) {
+                                  scheme = "xyz";
+                                }
                               }
 
                               /* Get rendered tile */
