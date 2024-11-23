@@ -42,7 +42,7 @@ function getStyleHandler() {
         ) {
           printLog(
             "info",
-            `Getting style "${id}" - From "${item.sourceURL}"...`
+            `Forwarding style "${id}" - From "${item.sourceURL}"...`
           );
 
           /* Get style */
@@ -53,13 +53,7 @@ function getStyleHandler() {
 
           /* Cache */
           if (item.storeCache === true) {
-            cacheStyleFile(item.path, JSON.stringify(styleJSON, null, 2)).catch(
-              (error) =>
-                printLog(
-                  "error",
-                  `Failed to cache style "${id}" - From "${item.sourceURL}": ${error}`
-                )
-            );
+            cacheStyleFile(item.path, JSON.stringify(styleJSON, null, 2));
           }
         } else {
           throw error;

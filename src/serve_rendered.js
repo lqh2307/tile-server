@@ -810,7 +810,7 @@ export const serve_rendered = {
 
                                   printLog(
                                     "info",
-                                    `Getting data "${id}" - Tile "${tileName}" - From "${url}"...`
+                                    `Forwarding data "${id}" - Tile "${tileName}" - From "${url}"...`
                                   );
 
                                   /* Get data */

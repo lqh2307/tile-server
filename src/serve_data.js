@@ -1,6 +1,7 @@
 "use strict";
 
 import { getPMTilesInfos, getPMTilesTile, openPMTiles } from "./pmtiles.js";
+import { getMBTilesTileMD5, getXYZTileMD5, openXYZMD5DB } from "./md5.js";
 import { checkReadyMiddleware } from "./middleware.js";
 import { StatusCodes } from "http-status-codes";
 import { readSeedFile } from "./seed.js";
@@ -8,11 +9,6 @@ import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
 import sqlite3 from "sqlite3";
-import {
-  getMBTilesTileMD5WithLock,
-  getXYZTileMD5WithLock,
-  openXYZMD5DB,
-} from "./md5.js";
 import {
   cacheXYZTileDataFile,
   getXYZTileFromURL,
@@ -159,7 +155,7 @@ function getDataTileHandler() {
 
             printLog(
               "info",
-              `Getting data "${id}" - Tile "${tileName}" - From "${url}"...`
+              `Forwarding data "${id}" - Tile "${tileName}" - From "${url}"...`
             );
 
             /* Get data */
@@ -179,11 +175,6 @@ function getDataTileHandler() {
                 dataTile.etag,
                 item.storeMD5,
                 item.storeTransparent
-              ).catch((error) =>
-                printLog(
-                  "error",
-                  `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}`
-                )
               );
             }
           } else {
@@ -215,7 +206,7 @@ function getDataTileHandler() {
 
             printLog(
               "info",
-              `Getting data "${id}" - Tile "${tileName}" - From "${url}"...`
+              `Forwarding data "${id}" - Tile "${tileName}" - From "${url}"...`
             );
 
             /* Get data */
@@ -342,7 +333,7 @@ function getDataTileMD5Handler() {
 
       if (item.sourceType === "mbtiles") {
         if (item.storeMD5 === true) {
-          md5 = await getMBTilesTileMD5WithLock(
+          md5 = await getMBTilesTileMD5(
             item.source,
             z,
             x,
@@ -370,7 +361,7 @@ function getDataTileMD5Handler() {
         md5 = calculateMD5(tile.data);
       } else if (item.sourceType === "xyz") {
         if (item.storeMD5 === true) {
-          md5 = await getXYZTileMD5WithLock(
+          md5 = await getXYZTileMD5(
             item.md5Source,
             z,
             x,
@@ -389,34 +380,6 @@ function getDataTileMD5Handler() {
 
           md5 = calculateMD5(tile.data);
         }
-
-        try {
-          md5 = await getXYZTileMD5WithLock(
-            item.source,
-            z,
-            x,
-            req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
-            req.params.format,
-            180000 // 3 mins
-          );
-        } catch (error) {
-          try {
-            let data = await fsPromise.readFile(
-              `${item.source}/${z}/${x}/${y}.${format}`
-            );
-            if (!data) {
-              throw new Error("Tile MD5 does not exist");
-            }
-
-            return calculateMD5(Buffer.from(data));
-          } catch (error) {
-            if (error.code === "ENOENT") {
-              throw new Error("Tile MD5 does not exist");
-            }
-
-            throw error;
-          }
-        }
       }
 
       /* Add MD5 to header */
@@ -431,7 +394,10 @@ function getDataTileMD5Handler() {
         `Failed to get md5 data "${id}" - Tile "${tileName}": ${error}`
       );
 
-      if (error.message === "Tile MD5 does not exist") {
+      if (
+        error.message === "Tile MD5 does not exist" ||
+        error.message === "Tile does not exist"
+      ) {
         return res.status(StatusCodes.NO_CONTENT).send(error.message);
       }
 

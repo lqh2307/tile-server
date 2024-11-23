@@ -14,7 +14,7 @@ import sqlite3 from "sqlite3";
  * @param {number} y Y tile index
  * @returns {Promise<string>} Returns the MD5 hash as a string
  */
-export async function getMBTilesMD5(mbtilesSource, z, x, y) {
+export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
   return new Promise((resolve, reject) => {
     mbtilesSource.get(
       `
@@ -75,7 +75,7 @@ export async function removeMBTilesMD5(mbtilesSource, z, x, y) {
  * @param {string} hash MD5 hash value
  * @returns {Promise<void>}
  */
-export async function upsertMBTilesMD5(mbtilesSource, z, x, y, hash) {
+export async function upsertMBTilesTileMD5(mbtilesSource, z, x, y, hash) {
   return await runSQL(
     mbtilesSource,
     `
@@ -119,7 +119,7 @@ export async function createMBTilesTileMD5WithLock(
 
   while (Date.now() - startTime <= timeout) {
     try {
-      await upsertMBTilesMD5(
+      await upsertMBTilesTileMD5(
         mbtilesSource,
         z,
         x,
@@ -197,7 +197,7 @@ export async function getMBTilesTileMD5WithLock(
 
   while (Date.now() - startTime <= timeout) {
     try {
-      return getMBTilesMD5(mbtilesSource, z, x, y);
+      return getMBTilesTileMD5(mbtilesSource, z, x, y);
     } catch (error) {
       if (error.code === "SQLITE_CANTOPEN") {
         throw new Error("Tile MD5 does not exist");
@@ -285,7 +285,7 @@ export async function openXYZMD5DB(
  * @param {string} hash MD5 hash value
  * @returns {Promise<void>}
  */
-export async function upsertXYZMD5(xyzSource, z, x, y, hash) {
+export async function upsertXYZTileMD5(xyzSource, z, x, y, hash) {
   return await runSQL(
     xyzSource,
     `
@@ -313,7 +313,7 @@ export async function upsertXYZMD5(xyzSource, z, x, y, hash) {
  * @param {number} y Y tile index
  * @returns {Promise<string>} Returns the MD5 hash as a string
  */
-export async function getXYZMD5(xyzSource, z, x, y) {
+export async function getXYZTileMD5(xyzSource, z, x, y) {
   return new Promise((resolve, reject) => {
     xyzSource.get(
       `
@@ -350,7 +350,7 @@ export async function getXYZMD5(xyzSource, z, x, y) {
  * @param {number} y Y tile index
  * @returns {Promise<void>}
  */
-export async function removeXYZMD5(xyzSource, z, x, y) {
+export async function removeXYZTileMD5(xyzSource, z, x, y) {
   return await runSQL(
     xyzSource,
     `
@@ -406,7 +406,7 @@ export async function createXYZTileMD5WithLock(
 
   while (Date.now() - startTime <= timeout) {
     try {
-      await upsertXYZMD5(xyzSource, z, x, y, hash ?? calculateMD5(buffer));
+      await upsertXYZTileMD5(xyzSource, z, x, y, hash ?? calculateMD5(buffer));
 
       return;
     } catch (error) {
@@ -435,7 +435,7 @@ export async function removeXYZTileMD5WithLock(xyzSource, z, x, y, timeout) {
 
   while (Date.now() - startTime <= timeout) {
     try {
-      await removeXYZMD5(xyzSource, z, x, y);
+      await removeXYZTileMD5(xyzSource, z, x, y);
 
       return;
     } catch (error) {
@@ -466,7 +466,7 @@ export async function getXYZTileMD5WithLock(xyzSource, z, x, y, timeout) {
 
   while (Date.now() - startTime <= timeout) {
     try {
-      return getXYZMD5(xyzSource, z, x, y);
+      return getXYZTileMD5(xyzSource, z, x, y);
     } catch (error) {
       if (error.code === "SQLITE_CANTOPEN") {
         throw new Error("Tile MD5 does not exist");

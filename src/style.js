@@ -41,30 +41,17 @@ async function createStyleDataFile(filePath, data) {
  * Create style data file with lock
  * @param {string} filePath File path to store style file
  * @param {Buffer} data Data buffer
+ * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<boolean>}
  */
-export async function createStyleDataFileWithLock(filePath, data) {
+export async function createStyleDataFileWithLock(filePath, data, timeout) {
+  const startTime = Date.now();
+
   const lockFilePath = `${filePath}.lock`;
   let lockFileHandle;
 
-  try {
-    lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-    await createStyleDataFile(filePath, data);
-
-    await lockFileHandle.close();
-
-    await fsPromise.rm(lockFilePath, {
-      force: true,
-    });
-
-    return true;
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      await fsPromise.mkdir(path.dirname(filePath), {
-        recursive: true,
-      });
-
+  while (Date.now() - startTime <= timeout) {
+    try {
       lockFileHandle = await fsPromise.open(lockFilePath, "wx");
 
       await createStyleDataFile(filePath, data);
@@ -75,21 +62,31 @@ export async function createStyleDataFileWithLock(filePath, data) {
         force: true,
       });
 
-      return true;
-    } else if (error.code === "EEXIST") {
-      return false;
-    } else {
-      if (lockFileHandle !== undefined) {
-        await lockFileHandle.close();
-
-        await fsPromise.rm(lockFilePath, {
-          force: true,
+      return;
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        await fsPromise.mkdir(path.dirname(filePath), {
+          recursive: true,
         });
-      }
 
-      throw error;
+        continue;
+      } else if (error.code === "EEXIST") {
+        await delay(100);
+      } else {
+        if (lockFileHandle !== undefined) {
+          await lockFileHandle.close();
+
+          await fsPromise.rm(lockFilePath, {
+            force: true,
+          });
+        }
+
+        throw error;
+      }
     }
   }
+
+  throw new Error(`Timeout to access ${lockFilePath} file`);
 }
 
 /**
@@ -287,11 +284,16 @@ export async function removeStyleFile(filePath, maxTry, timeout) {
  * @returns {Promise<void>}
  */
 export async function cacheStyleFile(filePath, data) {
+  printLog("info", `Caching style file "${filePath}"...`);
+
   try {
-    if ((await createStyleDataFileWithLock(filePath, data)) === true) {
-    }
+    await createStyleDataFileWithLock(
+      filePath,
+      data,
+      300000 // 5 mins
+    );
   } catch (error) {
-    throw error;
+    printLog("error", `Failed to cache style file "${filePath}": ${error}`);
   }
 }
 
