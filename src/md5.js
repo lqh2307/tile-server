@@ -23,7 +23,7 @@ export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
       FROM
         md5s
       WHERE
-        z = ? AND x = ? AND y = ?;
+        zoom_level = ? AND tile_column = ? AND tile_row = ?;
       `,
       z,
       x,
@@ -58,7 +58,7 @@ export async function removeMBTilesMD5(mbtilesSource, z, x, y) {
     DELETE FROM
       md5s
     WHERE
-      z = ? AND x = ? AND y = ?;
+      zoom_level = ? AND tile_column = ? AND tile_row = ?;
     `,
     z,
     x,
@@ -80,11 +80,11 @@ export async function upsertMBTilesTileMD5(mbtilesSource, z, x, y, hash) {
     mbtilesSource,
     `
     INSERT INTO
-      md5s (z, x, y, hash)
+      md5s (zoom_level, tile_column, tile_row, hash)
     VALUES
       (?, ?, ?, ?)
     ON CONFLICT
-      (z, x, y)
+      (zoom_level, tile_column, tile_row)
     DO
       UPDATE SET hash = excluded.hash;
     `,
@@ -257,11 +257,11 @@ export async function openXYZMD5DB(
               `
               CREATE TABLE IF NOT EXISTS
                 md5s (
-                  z INTEGER NOT NULL,
-                  x INTEGER NOT NULL,
-                  y INTEGER NOT NULL,
+                  zoom_level INTEGER NOT NULL,
+                  tile_column INTEGER NOT NULL,
+                  tile_row INTEGER NOT NULL,
                   hash TEXT,
-                  PRIMARY KEY (z, x, y)
+                  PRIMARY KEY (zoom_level, tile_column, tile_row)
                 );
               `
             );
@@ -290,11 +290,11 @@ export async function upsertXYZTileMD5(xyzSource, z, x, y, hash) {
     xyzSource,
     `
     INSERT INTO
-      md5s (z, x, y, hash)
+      md5s (zoom_level, tile_column, tile_row, hash)
     VALUES
       (?, ?, ?, ?)
     ON CONFLICT
-      (z, x, y)
+      (zoom_level, tile_column, tile_row)
     DO
       UPDATE SET hash = excluded.hash;
     `,

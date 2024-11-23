@@ -137,6 +137,7 @@ function getDataTileHandler() {
     try {
       /* Get tile data */
       let dataTile;
+      const scheme = req.query.scheme ?? "xyz";
 
       if (item.sourceType === "mbtiles") {
         try {
@@ -144,7 +145,7 @@ function getDataTileHandler() {
             item.source,
             z,
             x,
-            req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+            scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y
           );
         } catch (error) {
           if (
@@ -186,7 +187,7 @@ function getDataTileHandler() {
           item.source,
           z,
           x,
-          req.query.scheme === "tms" ? (1 << z) - 1 - y : y // Default of PMTiles is xyz. Flip Y to convert xyz scheme => tms scheme
+          scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y
         );
       } else if (item.sourceType === "xyz") {
         try {
@@ -194,7 +195,7 @@ function getDataTileHandler() {
             item.source,
             z,
             x,
-            req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+            scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y,
             item.tileJSON.format
           );
         } catch (error) {
@@ -330,6 +331,7 @@ function getDataTileMD5Handler() {
     try {
       /* Get tile data MD5 */
       let md5;
+      const scheme = req.query.scheme ?? "xyz";
 
       if (item.sourceType === "mbtiles") {
         if (item.storeMD5 === true) {
@@ -337,7 +339,7 @@ function getDataTileMD5Handler() {
             item.source,
             z,
             x,
-            req.query.scheme === "tms" ? y : (1 << z) - 1 - y, // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+            scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y,
             180000 // 3 mins
           );
         } else {
@@ -345,7 +347,7 @@ function getDataTileMD5Handler() {
             item.source,
             z,
             x,
-            req.query.scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+            scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y
           );
 
           md5 = calculateMD5(tile.data);
@@ -355,7 +357,7 @@ function getDataTileMD5Handler() {
           item.source,
           z,
           x,
-          req.query.scheme === "tms" ? (1 << z) - 1 - y : y // Default of PMTiles is xyz. Flip Y to convert xyz scheme => tms scheme
+          scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y
         );
 
         md5 = calculateMD5(tile.data);
@@ -365,7 +367,7 @@ function getDataTileMD5Handler() {
             item.md5Source,
             z,
             x,
-            req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+            scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y,
             req.params.format,
             180000 // 3 mins
           );
@@ -374,7 +376,7 @@ function getDataTileMD5Handler() {
             item.source,
             z,
             x,
-            req.query.scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+            scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y,
             item.tileJSON.format
           );
 
@@ -816,6 +818,7 @@ export const serve_data = {
                 sqlite3.OPEN_READONLY,
                 false
               );
+
               dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
             }
           } else if (item.pmtiles !== undefined) {

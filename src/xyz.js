@@ -169,9 +169,10 @@ export async function getXYZFormatFromTiles(sourcePath) {
 /**
  * Get XYZ bounding box from tiles
  * @param {string} sourcePath Folder path
+ * @param {"xyz"|"tms"} scheme Tile scheme
  * @returns {Promise<Array<number>>} Bounding box in format [minLon, minLat, maxLon, maxLat]
  */
-export async function getXYZBBoxFromTiles(sourcePath) {
+export async function getXYZBBoxFromTiles(sourcePath, scheme) {
   const zFolders = await findFolders(sourcePath, /^\d+$/, false);
   const boundsArr = [];
 
@@ -200,7 +201,7 @@ export async function getXYZBBoxFromTiles(sourcePath) {
           const yMax = Math.max(...yFiles.map((file) => Number(file)));
 
           boundsArr.push(
-            getBBoxFromTiles(xMin, yMin, xMax, yMax, zFolder, "xyz")
+            getBBoxFromTiles(xMin, yMin, xMax, yMax, zFolder, scheme)
           );
         }
       }
@@ -246,6 +247,7 @@ export async function getXYZInfos(sourcePath) {
     attribution: "<b>Viettel HighTech</b>",
     version: "1.0.0",
     type: "overlay",
+    scheme: "xyz",
   };
 
   /* Get metadatas */
@@ -288,7 +290,7 @@ export async function getXYZInfos(sourcePath) {
   /* Try get bounds */
   if (metadata.bounds === undefined) {
     try {
-      metadata.bounds = await getXYZBBoxFromTiles(sourcePath, "xyz");
+      metadata.bounds = await getXYZBBoxFromTiles(sourcePath, metadata.scheme);
     } catch (error) {
       metadata.bounds = [-180, -85.051129, 180, 85.051129];
     }

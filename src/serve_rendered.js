@@ -722,7 +722,7 @@ export const serve_rendered = {
                                   url.slice(queryIndex)
                                 );
 
-                                scheme = query.get("scheme");
+                                scheme = query.get("scheme") ?? "xyz";
                               }
 
                               /* Get rendered tile */
@@ -732,13 +732,17 @@ export const serve_rendered = {
                                       sourceData.source,
                                       z,
                                       x,
-                                      scheme === "tms" ? y : (1 << z) - 1 - y // Default of MBTiles is tms. Flip Y to convert tms scheme => xyz scheme
+                                      scheme === sourceData.tileJSON.scheme
+                                        ? y
+                                        : (1 << z) - 1 - y
                                     )
                                   : await getPMTilesTile(
                                       sourceData.source,
                                       z,
                                       x,
-                                      scheme === "tms" ? (1 << z) - 1 - y : y // Default of PMTiles is xyz. Flip Y to convert xyz scheme => tms scheme
+                                      scheme === sourceData.tileJSON.scheme
+                                        ? y
+                                        : (1 << z) - 1 - y
                                     );
 
                               /* Unzip pbf rendered tile */
@@ -795,7 +799,9 @@ export const serve_rendered = {
                                   sourceData.source,
                                   z,
                                   x,
-                                  scheme === "tms" ? (1 << z) - 1 - y : y, // Default of XYZ is xyz. Flip Y to convert xyz scheme => tms scheme
+                                  scheme === sourceData.tileJSON.scheme
+                                    ? y
+                                    : (1 << z) - 1 - y,
                                   sourceData.tileJSON.format
                                 );
                               } catch (error) {
