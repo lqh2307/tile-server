@@ -89,7 +89,6 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
     "serverEndpoint": true,
     "configEndpoint": true,
     "frontPage": true,
-    "serveWMTS": true,
     "serveRendered": true,
     "maxScaleRender": 1,
     "renderedCompression": 6,
@@ -99,8 +98,6 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
     "maxPoolSize": 16,
     "taskSchedule": "0 0 0 * * *",
     "restartServerAfterTask": true,
-    "killInterval": 0,
-    "restartInterval": 0,
     "process": 1,
     "thread": 8
   },

@@ -25,6 +25,7 @@ program
   .description("========== tile-server startup options ==========")
   .usage("tile-server server [options]")
   .option("-d, --data_dir <dir>", "Data directory", "data")
+  .option("-r, --restart", "Auto restart server if config file has changed")
   .version(getVersion())
   .showHelpAfterError()
   .parse(process.argv);
@@ -116,36 +117,14 @@ async function startClusterServer(opts) {
     );
 
     /* Setup watch config file change */
-    if (config.options.killInterval > 0) {
-      printLog(
-        "info",
-        `Watch config file changes interval ${config.options.killInterval}ms to kill server`
-      );
+    if (opts.restart) {
+      printLog("info", "Auto restart server if config file has changed");
 
       chokidar
         .watch(`${dataDir}/config.json`, {
           usePolling: true,
           awaitWriteFinish: true,
-          interval: config.options.killInterval,
-        })
-        .on("change", () => {
-          printLog("info", "Config file has changed. Killing server...");
-
-          killServer().catch((error) =>
-            printLog("error", `Failed to kill server: ${error}`)
-          );
-        });
-    } else if (config.options.restartInterval > 0) {
-      printLog(
-        "info",
-        `Watch config file changes interval ${config.options.restartInterval}ms to restart server`
-      );
-
-      chokidar
-        .watch(`${dataDir}/config.json`, {
-          usePolling: true,
-          awaitWriteFinish: true,
-          interval: config.options.restartInterval,
+          interval: 500,
         })
         .on("change", () => {
           printLog("info", "Config file has changed. Restarting server...");
@@ -195,4 +174,5 @@ async function startClusterServer(opts) {
 /* Run start cluster server */
 startClusterServer({
   dataDir: argOpts.data_dir,
+  restart: argOpts.restart,
 });

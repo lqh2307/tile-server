@@ -40,9 +40,6 @@ async function readConfigFile(dataDir, isValidate) {
               frontPage: {
                 type: "boolean",
               },
-              serveWMTS: {
-                type: "boolean",
-              },
               serveRendered: {
                 type: "boolean",
               },
@@ -78,14 +75,6 @@ async function readConfigFile(dataDir, isValidate) {
               },
               restartServerAfterTask: {
                 type: "boolean",
-              },
-              killInterval: {
-                type: "integer",
-                minimum: 0,
-              },
-              restartInterval: {
-                type: "integer",
-                minimum: 0,
               },
               thread: {
                 type: "integer",
@@ -188,7 +177,6 @@ async function readConfigFile(dataDir, isValidate) {
     serverEndpoint: config.options.serverEndpoint ?? true,
     configEndpoint: config.options.configEndpoint ?? true,
     frontPage: config.options.frontPage ?? true,
-    serveWMTS: config.options.serveWMTS ?? true,
     serveRendered: config.options.serveRendered ?? true,
     maxScaleRender: config.options.maxScaleRender ?? 1,
     renderedCompression: config.options.renderedCompression ?? 1,
@@ -200,8 +188,6 @@ async function readConfigFile(dataDir, isValidate) {
     maxPoolSize: config.options.maxPoolSize ?? os.cpus().length * 2,
     taskSchedule: config.options.taskSchedule, // undefined
     restartServerAfterTask: config.options.restartServerAfterTask ?? true,
-    killInterval: config.options.killInterval, // undefined
-    restartInterval: config.options.restartInterval, // undefined
     process: config.options.process ?? 1,
     thread: config.options.thread ?? os.cpus().length,
     fallbackFont: "Open Sans Regular",

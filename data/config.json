@@ -4,7 +4,6 @@
     "serverEndpoint": true,
     "configEndpoint": true,
     "frontPage": true,
-    "serveWMTS": true,
     "serveRendered": true,
     "serveSwagger": true,
     "maxScaleRender": 2,
@@ -14,8 +13,6 @@
     "maxPoolSize": 16,
     "taskSchedule": "0 0 0 * * *",
     "restartServerAfterTask": true,
-    "killInterval": 0,
-    "restartInterval": 0,
     "process": 1,
     "thread": 8
   },

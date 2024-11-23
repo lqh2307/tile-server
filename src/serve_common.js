@@ -63,8 +63,7 @@ function serveFrontPageHandler() {
               thumbnail: `${getRequestHost(
                 req
               )}styles/${id}/${z}/${x}/${y}.png`,
-              serve_wmts: config.options.serveWMTS === true,
-              serve_rendered: true,
+              serve_rendered: config.options.serveRendered === true,
             };
           });
         } else {
@@ -847,10 +846,7 @@ export const serve_common = {
       app.get("/kill", serveKillHandler());
     }
 
-    if (
-      config.options.serveRendered === true &&
-      config.options.serveWMTS === true
-    ) {
+    if (config.options.serveRendered === true) {
       /**
        * @swagger
        * tags:
