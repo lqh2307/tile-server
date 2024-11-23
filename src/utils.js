@@ -484,7 +484,6 @@ export function createMetadata(metadata) {
     description: "Unknown",
     attribution: "<b>Viettel HighTech</b>",
     version: "1.0.0",
-    scheme: "xyz",
     type: "overlay",
     format: "png",
     bounds: [-180, -85.051129, 180, 85.051129],
@@ -516,10 +515,6 @@ export function createMetadata(metadata) {
 
     if (metadata.version !== undefined) {
       data.version = metadata.version;
-    }
-
-    if (metadata.scheme !== undefined) {
-      data.scheme = metadata.scheme;
     }
 
     if (metadata.tiles !== undefined) {

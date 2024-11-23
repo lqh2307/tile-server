@@ -64,7 +64,6 @@ export async function getPMTilesInfos(pmtilesSource) {
     attribution: "<b>Viettel HighTech</b>",
     version: "1.0.0",
     type: "overlay",
-    scheme: "xyz",
     ...(await pmtilesSource.getMetadata()),
   };
 

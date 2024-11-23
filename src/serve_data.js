@@ -133,24 +133,18 @@ function getDataTileHandler() {
     const x = Number(req.params.x);
     const y = Number(req.params.y);
     const tileName = `${z}/${x}/${y}`;
-    const scheme = req.query.scheme || "xyz";
 
     /* Get tile data */
-    try {
-      let dataTile;
+    let dataTile;
 
+    try {
       if (item.sourceType === "mbtiles") {
         try {
-          dataTile = await getMBTilesTile(
-            item.source,
-            z,
-            x,
-            scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y
-          );
+          dataTile = await getMBTilesTile(item.source, z, x, (1 << z) - 1 - y);
         } catch (error) {
           if (
-            error.message === "Tile does not exist" &&
-            item.sourceURL !== undefined
+            item.sourceURL !== undefined &&
+            error.message === "Tile does not exist"
           ) {
             const url = item.sourceURL.replaceAll("{z}/{x}/{y}", tileName);
 
@@ -171,7 +165,7 @@ function getDataTileHandler() {
                 item.source,
                 z,
                 x,
-                scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y,
+                (1 << z) - 1 - y,
                 dataTile.data,
                 dataTile.etag,
                 item.storeMD5,
@@ -183,25 +177,20 @@ function getDataTileHandler() {
           }
         }
       } else if (item.sourceType === "pmtiles") {
-        dataTile = await getPMTilesTile(
-          item.source,
-          z,
-          x,
-          scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y
-        );
+        dataTile = await getPMTilesTile(item.source, z, x, y);
       } else if (item.sourceType === "xyz") {
         try {
           dataTile = await getXYZTile(
             item.source,
             z,
             x,
-            scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y,
+            y,
             item.tileJSON.format
           );
         } catch (error) {
           if (
-            error.message === "Tile does not exist" &&
-            item.sourceURL !== undefined
+            item.sourceURL !== undefined &&
+            error.message === "Tile does not exist"
           ) {
             const url = item.sourceURL.replaceAll("{z}/{x}/{y}", tileName);
 
@@ -222,7 +211,7 @@ function getDataTileHandler() {
                 item.source,
                 z,
                 x,
-                scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y,
+                y,
                 item.tileJSON.format,
                 dataTile.data,
                 dataTile.etag,
@@ -289,7 +278,7 @@ function getDataHandler() {
         tiles: [
           `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
             item.tileJSON.format
-          }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
+          }`,
         ],
       });
     } catch (error) {
@@ -328,38 +317,27 @@ function getDataTileMD5Handler() {
     const x = Number(req.params.x);
     const y = Number(req.params.y);
     const tileName = `${z}/${x}/${y}`;
-    const scheme = req.query.scheme || "xyz";
 
     /* Get tile data MD5 */
-    try {
-      let md5;
+    let md5;
 
+    try {
       if (item.sourceType === "mbtiles") {
         if (item.storeMD5 === true) {
           md5 = await getMBTilesTileMD5(
             item.source,
             z,
             x,
-            scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y,
+            (1 << z) - 1 - y,
             180000 // 3 mins
           );
         } else {
-          const tile = await getMBTilesTile(
-            item.source,
-            z,
-            x,
-            scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y
-          );
+          const tile = await getMBTilesTile(item.source, z, x, y);
 
           md5 = calculateMD5(tile.data);
         }
       } else if (item.sourceType === "pmtiles") {
-        const tile = await getPMTilesTile(
-          item.source,
-          z,
-          x,
-          scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y
-        );
+        const tile = await getPMTilesTile(item.source, z, x, y);
 
         md5 = calculateMD5(tile.data);
       } else if (item.sourceType === "xyz") {
@@ -368,7 +346,7 @@ function getDataTileMD5Handler() {
             item.md5Source,
             z,
             x,
-            scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y,
+            y,
             req.params.format,
             180000 // 3 mins
           );
@@ -377,7 +355,7 @@ function getDataTileMD5Handler() {
             item.source,
             z,
             x,
-            scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y,
+            y,
             item.tileJSON.format
           );
 
@@ -458,7 +436,7 @@ function getDataTileJSONsListHandler() {
             tiles: [
               `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
                 item.tileJSON.format
-              }${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
+              }`,
             ],
           };
         })
@@ -637,13 +615,6 @@ export const serve_data = {
      *           type: string
      *           enum: [jpeg, jpg, pbf, png, webp, gif]
      *         description: Tile format
-     *       - in: query
-     *         name: scheme
-     *         schema:
-     *           type: string
-     *           enum: [xyz, tms]
-     *         required: false
-     *         description: Use xyz or tms scheme
      *     responses:
      *       200:
      *         description: Data tile
@@ -717,13 +688,6 @@ export const serve_data = {
      *           type: string
      *           enum: [jpeg, jpg, pbf, png, webp, gif]
      *         description: Tile format
-     *       - in: query
-     *         name: scheme
-     *         schema:
-     *           type: string
-     *           enum: [xyz, tms]
-     *         required: false
-     *         description: Use xyz or tms scheme
      *     responses:
      *       200:
      *         description: Data tile

@@ -98,21 +98,12 @@ export function createEmptyData() {
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @param {number} z Zoom level
- * @param {"xyz"|"tms"} scheme
  * @returns {Promise<Buffer>}
  */
-export async function renderData(
-  item,
-  scale,
-  tileSize,
-  x,
-  y,
-  z,
-  scheme = "xyz"
-) {
+export async function renderData(item, scale, tileSize, x, y, z) {
   const params = {
     zoom: z,
-    center: getLonLatFromXYZ(x, y, z, "center", scheme),
+    center: getLonLatFromXYZ(x, y, z, "center", "xyz"),
     width: tileSize,
     height: tileSize,
   };

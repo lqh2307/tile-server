@@ -251,10 +251,9 @@ export async function getMBTilesLayersFromTiles(mbtilesSource) {
 /**
  * Get MBTiles bounding box from tiles
  * @param {sqlite3.Database} mbtilesSource The MBTiles source object
- * @param {"xyz"|"tms"} scheme Tile scheme
  * @returns {Promise<Array<number>>} Bounding box in format [minLon, minLat, maxLon, maxLat]
  */
-export async function getMBTilesBBoxFromTiles(mbtilesSource, scheme) {
+export async function getMBTilesBBoxFromTiles(mbtilesSource) {
   return new Promise((resolve, reject) => {
     mbtilesSource.all(
       `
@@ -278,7 +277,7 @@ export async function getMBTilesBBoxFromTiles(mbtilesSource, scheme) {
               row.xMax,
               row.yMax,
               row.zoom_level,
-              scheme
+              "tms"
             )
           );
 
@@ -423,7 +422,6 @@ export async function getMBTilesInfos(mbtilesSource) {
     attribution: "<b>Viettel HighTech</b>",
     version: "1.0.0",
     type: "overlay",
-    scheme: "xyz",
   };
 
   /* Get metadatas */
@@ -466,10 +464,6 @@ export async function getMBTilesInfos(mbtilesSource) {
               break;
             case "name":
               metadata.name = row.value;
-
-              break;
-            case "scheme":
-              metadata.scheme = row.value;
 
               break;
             case "description":
@@ -532,10 +526,7 @@ export async function getMBTilesInfos(mbtilesSource) {
   /* Try get bounds */
   if (metadata.bounds === undefined) {
     try {
-      metadata.bounds = await getMBTilesBBoxFromTiles(
-        mbtilesSource,
-        metadata.scheme
-      );
+      metadata.bounds = await getMBTilesBBoxFromTiles(mbtilesSource);
     } catch (error) {
       metadata.bounds = [-180, -85.051129, 180, 85.051129];
     }

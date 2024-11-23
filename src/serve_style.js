@@ -30,15 +30,15 @@ function getStyleHandler() {
     }
 
     /* Get style JSON */
-    try {
-      let styleJSON;
+    let styleJSON;
 
+    try {
       try {
         styleJSON = await getStyle(item.path);
       } catch (error) {
         if (
-          error.message === "Style does not exist" &&
-          item.sourceURL !== undefined
+          item.sourceURL !== undefined &&
+          error.message === "Style does not exist"
         ) {
           printLog(
             "info",

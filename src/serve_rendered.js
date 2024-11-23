@@ -2,11 +2,11 @@
 
 import { cacheXYZTileDataFile, getXYZTileFromURL, getXYZTile } from "./xyz.js";
 import { createEmptyData, processImage, renderData } from "./image.js";
+import { cacheMBtilesTileData, getMBTilesTile } from "./mbtiles.js";
 import { checkReadyMiddleware } from "./middleware.js";
 import mlgl from "@maplibre/maplibre-gl-native";
 import { StatusCodes } from "http-status-codes";
 import { getPMTilesTile } from "./pmtiles.js";
-import { getMBTilesTile } from "./mbtiles.js";
 import { createPool } from "generic-pool";
 import { getSprite } from "./sprite.js";
 import { printLog } from "./logger.js";
@@ -53,15 +53,7 @@ function getRenderedTileHandler() {
 
     /* Render tile */
     try {
-      const data = await renderData(
-        item,
-        scale,
-        tileSize,
-        x,
-        y,
-        z,
-        req.query.scheme
-      );
+      const data = await renderData(item, scale, tileSize, x, y, z);
 
       const image = await processImage(
         data,
@@ -112,7 +104,7 @@ function getRenderedHandler() {
         tiles: [
           `${getRequestHost(req)}styles/${id}/${
             req.params.tileSize || 256
-          }/{z}/{x}/{y}.png${req.query.scheme === "tms" ? "?scheme=tms" : ""}`,
+          }/{z}/{x}/{y}.png`,
         ],
       });
     } catch (error) {
@@ -138,12 +130,8 @@ function getRenderedsListHandler() {
             id: id,
             name: config.repo.rendereds[id].tileJSON.name,
             url: [
-              `${getRequestHost(req)}styles/256/${id}.json${
-                req.query.scheme === "tms" ? "?scheme=tms" : ""
-              }`,
-              `${getRequestHost(req)}styles/512/${id}.json${
-                req.query.scheme === "tms" ? "?scheme=tms" : ""
-              }`,
+              `${getRequestHost(req)}styles/256/${id}.json`,
+              `${getRequestHost(req)}styles/512/${id}.json`,
             ],
           };
         })
@@ -174,11 +162,7 @@ function getRenderedTileJSONsListHandler() {
             id: id,
             tilejson: "2.2.0",
             scheme: "xyz",
-            tiles: [
-              `${getRequestHost(req)}styles/${id}/{z}/{x}/{y}.png${
-                req.query.scheme === "tms" ? "?scheme=tms" : ""
-              }`,
-            ],
+            tiles: [`${getRequestHost(req)}styles/${id}/{z}/{x}/{y}.png`],
           };
         })
       );
@@ -217,13 +201,6 @@ export const serve_rendered = {
        *           enum: [256, 512]
        *         required: false
        *         description: Tile size (256 or 512)
-       *       - in: query
-       *         name: scheme
-       *         schema:
-       *           type: string
-       *           enum: [xyz, tms]
-       *         required: false
-       *         description: Use xyz or tms scheme
        *     responses:
        *       200:
        *         description: List of all style rendereds
@@ -272,14 +249,6 @@ export const serve_rendered = {
        *     tags:
        *       - Rendered
        *     summary: Get all rendered tileJSONs
-       *     parameters:
-       *       - in: query
-       *         name: scheme
-       *         schema:
-       *           type: string
-       *           enum: [xyz, tms]
-       *         required: false
-       *         description: Use xyz or tms scheme
        *     responses:
        *       200:
        *         description: List of all rendered tileJSONs
@@ -329,13 +298,6 @@ export const serve_rendered = {
        *           type: string
        *         required: true
        *         description: ID of the style rendered
-       *       - in: query
-       *         name: scheme
-       *         schema:
-       *           type: string
-       *           enum: [xyz, tms]
-       *         required: false
-       *         description: Use xyz or tms scheme
        *     responses:
        *       200:
        *         description: Style rendered
@@ -416,13 +378,6 @@ export const serve_rendered = {
        *           type: string
        *         required: false
        *         description: Scale of the tile (e.g., @2x)
-       *       - in: query
-       *         name: scheme
-       *         schema:
-       *           type: string
-       *           enum: [xyz, tms]
-       *         required: false
-       *         description: Use xyz or tms scheme
        *     responses:
        *       200:
        *         description: Style tile
@@ -704,10 +659,7 @@ export const serve_rendered = {
                                 data: null,
                               });
                             }
-                          } else if (
-                            protocol === "mbtiles:" ||
-                            protocol === "pmtiles:"
-                          ) {
+                          } else if (protocol === "pmtiles:") {
                             const sourceID = parts[2];
                             const z = Number(parts[3]);
                             const x = Number(parts[4]);
@@ -715,37 +667,99 @@ export const serve_rendered = {
                               parts[5].slice(0, parts[5].indexOf("."))
                             );
                             const sourceData = config.repo.datas[sourceID];
-                            let scheme = "xyz";
 
                             try {
-                              const queryIndex = url.lastIndexOf("?");
-                              if (queryIndex !== -1) {
-                                const query = new URLSearchParams(
-                                  url.slice(queryIndex)
-                                );
+                              /* Get rendered tile */
+                              const dataTile = await getPMTilesTile(
+                                sourceData.source,
+                                z,
+                                x,
+                                y
+                              );
 
-                                scheme = query.get("scheme") || "xyz";
+                              /* Unzip pbf rendered tile */
+                              if (
+                                dataTile.headers["Content-Type"] ===
+                                  "application/x-protobuf" &&
+                                dataTile.headers["Content-Encoding"] !==
+                                  undefined
+                              ) {
+                                dataTile.data = await unzipAsync(dataTile.data);
                               }
 
+                              callback(null, {
+                                data: dataTile.data,
+                              });
+                            } catch (error) {
+                              printLog(
+                                "warning",
+                                `Failed to get data "${sourceID}" - Tile "${z}/${x}/${y}": ${error}. Serving empty tile...`
+                              );
+
+                              callback(null, {
+                                data:
+                                  emptyDatas[sourceData.tileJSON.format] ||
+                                  emptyDatas.other,
+                              });
+                            }
+                          } else if (protocol === "mbtiles:") {
+                            const sourceID = parts[2];
+                            const z = Number(parts[3]);
+                            const x = Number(parts[4]);
+                            const y = Number(
+                              parts[5].slice(0, parts[5].indexOf("."))
+                            );
+                            const sourceData = config.repo.datas[sourceID];
+
+                            try {
                               /* Get rendered tile */
-                              const dataTile =
-                                sourceData.sourceType === "mbtiles"
-                                  ? await getMBTilesTile(
+                              let dataTile;
+
+                              try {
+                                dataTile = await getMBTilesTile(
+                                  sourceData.source,
+                                  z,
+                                  x,
+                                  (1 << z) - 1 - y
+                                );
+                              } catch (error) {
+                                if (
+                                  sourceData.sourceURL !== undefined &&
+                                  error.message === "Tile does not exist"
+                                ) {
+                                  const url = sourceData.sourceURL.replaceAll(
+                                    "{z}/{x}/{y}",
+                                    tileName
+                                  );
+
+                                  printLog(
+                                    "info",
+                                    `Forwarding data "${id}" - Tile "${tileName}" - To "${url}"...`
+                                  );
+
+                                  /* Get data */
+                                  dataTile = await getXYZTileFromURL(
+                                    url,
+                                    60000 // 1 mins
+                                  );
+
+                                  /* Cache */
+                                  if (sourceData.storeCache === true) {
+                                    cacheMBtilesTileData(
                                       sourceData.source,
                                       z,
                                       x,
-                                      scheme === sourceData.tileJSON.scheme
-                                        ? y
-                                        : (1 << z) - 1 - y
-                                    )
-                                  : await getPMTilesTile(
-                                      sourceData.source,
-                                      z,
-                                      x,
-                                      scheme === sourceData.tileJSON.scheme
-                                        ? y
-                                        : (1 << z) - 1 - y
+                                      (1 << z) - 1 - y,
+                                      dataTile.data,
+                                      dataTile.etag,
+                                      sourceData.storeMD5,
+                                      sourceData.storeTransparent
                                     );
+                                  }
+                                } else {
+                                  throw error;
+                                }
+                              }
 
                               /* Unzip pbf rendered tile */
                               if (
@@ -781,18 +795,8 @@ export const serve_rendered = {
                             );
                             const tileName = `${z}/${x}/${y}`;
                             const sourceData = config.repo.datas[sourceID];
-                            let scheme = "xyz";
 
                             try {
-                              const queryIndex = url.lastIndexOf("?");
-                              if (queryIndex !== -1) {
-                                const query = new URLSearchParams(
-                                  url.slice(queryIndex)
-                                );
-
-                                scheme = query.get("scheme");
-                              }
-
                               /* Get rendered tile */
                               let dataTile;
 
@@ -801,15 +805,13 @@ export const serve_rendered = {
                                   sourceData.source,
                                   z,
                                   x,
-                                  scheme === sourceData.tileJSON.scheme
-                                    ? y
-                                    : (1 << z) - 1 - y,
+                                  y,
                                   sourceData.tileJSON.format
                                 );
                               } catch (error) {
                                 if (
-                                  error.message === "Tile does not exist" &&
-                                  sourceData.sourceURL !== undefined
+                                  sourceData.sourceURL !== undefined &&
+                                  error.message === "Tile does not exist"
                                 ) {
                                   const url = sourceData.sourceURL.replaceAll(
                                     "{z}/{x}/{y}",
