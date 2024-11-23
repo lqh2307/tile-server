@@ -781,7 +781,7 @@ export const serve_common = {
       app.get("/cleanup", serveCleanUpHandler());
     }
 
-    if (config.options.restartEndpoint === true) {
+    if (config.options.serverEndpoint === true) {
       /**
        * @swagger
        * tags:
@@ -813,9 +813,7 @@ export const serve_common = {
        *         description: Internal server error
        */
       app.get("/restart", serveRestartHandler());
-    }
 
-    if (config.options.killEndpoint === true) {
       /**
        * @swagger
        * tags:

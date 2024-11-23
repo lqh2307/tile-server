@@ -31,10 +31,7 @@ async function readConfigFile(dataDir, isValidate) {
                 type: "integer",
                 minimum: 0,
               },
-              killEndpoint: {
-                type: "boolean",
-              },
-              restartEndpoint: {
+              serverEndpoint: {
                 type: "boolean",
               },
               configEndpoint: {
@@ -188,8 +185,7 @@ async function readConfigFile(dataDir, isValidate) {
   /* Fix object */
   config.options = {
     listenPort: config.options.listenPort ?? 8080,
-    killEndpoint: config.options.killEndpoint ?? true,
-    restartEndpoint: config.options.restartEndpoint ?? true,
+    serverEndpoint: config.options.serverEndpoint ?? true,
     configEndpoint: config.options.configEndpoint ?? true,
     frontPage: config.options.frontPage ?? true,
     serveWMTS: config.options.serveWMTS ?? true,

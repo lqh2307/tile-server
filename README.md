@@ -86,8 +86,7 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
 {
   "options": {
     "listenPort": 8080,
-    "killEndpoint": true,
-    "restartEndpoint": true,
+    "serverEndpoint": true,
     "configEndpoint": true,
     "frontPage": true,
     "serveWMTS": true,

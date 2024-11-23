@@ -1,8 +1,7 @@
 {
   "options": {
     "listenPort": 8080,
-    "killEndpoint": true,
-    "restartEndpoint": true,
+    "serverEndpoint": true,
     "configEndpoint": true,
     "frontPage": true,
     "serveWMTS": true,
