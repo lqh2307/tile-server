@@ -7,43 +7,6 @@ import sqlite3 from "sqlite3";
 /****************************************** MBTiles *********************************************/
 
 /**
- * Get MD5 hash of MBTiles tile
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @returns {Promise<string>} Returns the MD5 hash as a string
- */
-export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
-  return new Promise((resolve, reject) => {
-    mbtilesSource.get(
-      `
-      SELECT
-        hash
-      FROM
-        md5s
-      WHERE
-        zoom_level = ? AND tile_column = ? AND tile_row = ?;
-      `,
-      z,
-      x,
-      (1 << z) - 1 - y,
-      (error, row) => {
-        if (error) {
-          return reject(error);
-        }
-
-        if (!row?.hash) {
-          return reject(new Error("Tile MD5 does not exist"));
-        }
-
-        resolve(row.hash);
-      }
-    );
-  });
-}
-
-/**
  * Remove MD5 hash of MBTiles tile
  * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {number} z Zoom level
@@ -93,6 +56,43 @@ async function upsertMBTilesTileMD5(mbtilesSource, z, x, y, hash) {
     (1 << z) - 1 - y,
     hash
   );
+}
+
+/**
+ * Get MD5 hash of MBTiles tile
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @returns {Promise<string>} Returns the MD5 hash as a string
+ */
+export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
+  return new Promise((resolve, reject) => {
+    mbtilesSource.get(
+      `
+      SELECT
+        hash
+      FROM
+        md5s
+      WHERE
+        zoom_level = ? AND tile_column = ? AND tile_row = ?;
+      `,
+      z,
+      x,
+      (1 << z) - 1 - y,
+      (error, row) => {
+        if (error) {
+          return reject(error);
+        }
+
+        if (!row?.hash) {
+          return reject(new Error("Tile MD5 does not exist"));
+        }
+
+        resolve(row.hash);
+      }
+    );
+  });
 }
 
 /**
@@ -217,6 +217,58 @@ export async function getMBTilesTileMD5WithLock(
 /******************************************** XYZ ***********************************************/
 
 /**
+ * Upsert MD5 hash of XYZ tile
+ * @param {sqlite3.Database} xyzSource SQLite database instance
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @param {string} hash MD5 hash value
+ * @returns {Promise<void>}
+ */
+async function upsertXYZTileMD5(xyzSource, z, x, y, hash) {
+  return await runSQL(
+    xyzSource,
+    `
+    INSERT INTO
+      md5s (zoom_level, tile_column, tile_row, hash)
+    VALUES
+      (?, ?, ?, ?)
+    ON CONFLICT
+      (zoom_level, tile_column, tile_row)
+    DO
+      UPDATE SET hash = excluded.hash;
+    `,
+    z,
+    x,
+    y,
+    hash
+  );
+}
+
+/**
+ * Remove MD5 hash of XYZ tile
+ * @param {sqlite3.Database} xyzSource SQLite database instance
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @returns {Promise<void>}
+ */
+async function removeXYZTileMD5(xyzSource, z, x, y) {
+  return await runSQL(
+    xyzSource,
+    `
+    DELETE FROM
+      md5s
+    WHERE
+      z = ? AND x = ? AND y = ?;
+    `,
+    z,
+    x,
+    y
+  );
+}
+
+/**
  * Open XYZ MD5 SQLite database
  * @param {string} sourcePath
  * @param {number} mode SQLite mode (e.g: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE | sqlite3.OPEN_READONLY)
@@ -277,35 +329,6 @@ export async function openXYZMD5DB(
 }
 
 /**
- * Upsert MD5 hash of XYZ tile
- * @param {sqlite3.Database} xyzSource SQLite database instance
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {string} hash MD5 hash value
- * @returns {Promise<void>}
- */
-async function upsertXYZTileMD5(xyzSource, z, x, y, hash) {
-  return await runSQL(
-    xyzSource,
-    `
-    INSERT INTO
-      md5s (zoom_level, tile_column, tile_row, hash)
-    VALUES
-      (?, ?, ?, ?)
-    ON CONFLICT
-      (zoom_level, tile_column, tile_row)
-    DO
-      UPDATE SET hash = excluded.hash;
-    `,
-    z,
-    x,
-    y,
-    hash
-  );
-}
-
-/**
  * Get MD5 hash of XYZ tile
  * @param {sqlite3.Database} xyzSource SQLite database instance
  * @param {number} z Zoom level
@@ -340,29 +363,6 @@ export async function getXYZTileMD5(xyzSource, z, x, y) {
       }
     );
   });
-}
-
-/**
- * Remove MD5 hash of XYZ tile
- * @param {sqlite3.Database} xyzSource SQLite database instance
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @returns {Promise<void>}
- */
-async function removeXYZTileMD5(xyzSource, z, x, y) {
-  return await runSQL(
-    xyzSource,
-    `
-    DELETE FROM
-      md5s
-    WHERE
-      z = ? AND x = ? AND y = ?;
-    `,
-    z,
-    x,
-    y
-  );
 }
 
 /**
