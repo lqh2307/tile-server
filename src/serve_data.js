@@ -9,7 +9,6 @@ import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
 import sqlite3 from "sqlite3";
-import zlib from "zlib";
 import {
   cacheXYZTileDataFile,
   getXYZTileFromURL,
@@ -29,6 +28,7 @@ import {
   getRequestHost,
   calculateMD5,
   isExistFile,
+  gzipAsync,
 } from "./utils.js";
 
 /**
@@ -241,13 +241,7 @@ function getDataTileHandler() {
         dataTile.headers["Content-Type"] === "application/x-protobuf" &&
         dataTile.headers["Content-Encoding"] === undefined
       ) {
-        zlib.gzip(dataTile.data, (error, buffer) => {
-          if (error) {
-            throw error;
-          }
-
-          dataTile.data = buffer;
-        });
+        dataTile.data = await gzipAsync(dataTile.data);
 
         dataTile.headers["Content-Encoding"] = "gzip";
       }
