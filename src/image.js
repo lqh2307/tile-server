@@ -199,8 +199,9 @@ export async function isFullTransparentPNGImage(filePathOrBuffer) {
       resolveWithObject: true,
     });
 
-    if (typeof filePathOrBuffer === "object" &&
-        (filePathOrBuffer[0] !== 0x89 ||
+    if (
+      typeof filePathOrBuffer === "object" &&
+      (filePathOrBuffer[0] !== 0x89 ||
         filePathOrBuffer[1] !== 0x50 ||
         filePathOrBuffer[2] !== 0x4e ||
         filePathOrBuffer[3] !== 0x47 ||
@@ -208,9 +209,8 @@ export async function isFullTransparentPNGImage(filePathOrBuffer) {
         filePathOrBuffer[5] !== 0x0a ||
         filePathOrBuffer[6] !== 0x1a ||
         filePathOrBuffer[7] !== 0x0a)
-      ) {
-        return false;
-      }
+    ) {
+      return false;
     } else if (path.extname(filePathOrBuffer) !== ".png") {
       return false;
     }
