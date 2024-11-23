@@ -208,6 +208,7 @@ async function readConfigFile(dataDir, isValidate) {
     restartInterval: config.options.restartInterval, // undefined
     process: config.options.process ?? 1,
     thread: config.options.thread ?? os.cpus().length,
+    fallbackFont: "Open Sans Regular",
   };
 
   config.repo = Object.fromEntries(

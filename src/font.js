@@ -8,7 +8,6 @@ import { config } from "./config.js";
 import fs from "node:fs";
 
 const glyphsProto = protobuf(fs.readFileSync("public/protos/glyphs.proto"));
-const fallbackFont = "Open Sans Regular";
 
 /**
  * Validate font
@@ -45,11 +44,11 @@ export async function getFonts(ids, fileName) {
       } catch (error) {
         printLog(
           "warning",
-          `Failed to get font "${font}": ${error}. Using fallback font "${fallbackFont}"...`
+          `Failed to get font "${font}": ${error}. Using fallback font "${config.options.fallbackFont}"...`
         );
 
         return await fsPromise.readFile(
-          `public/resources/fonts/${fallbackFont}/${fileName}`
+          `public/resources/fonts/${config.options.fallbackFont}/${fileName}`
         );
       }
     })
