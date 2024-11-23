@@ -10,8 +10,6 @@ import path from "node:path";
 import crypto from "crypto";
 import axios from "axios";
 import fs from "node:fs";
-import zlib from "zlib";
-import util from "util";
 import Ajv from "ajv";
 
 const vectorTileProto = protobuf(
@@ -636,16 +634,6 @@ export function detectFormatAndHeaders(buffer) {
     headers,
   };
 }
-
-/**
- *
- */
-export const gzipAsync = util.promisify(zlib.gzip);
-
-/**
- *
- */
-export const unzipAsync = util.promisify(zlib.unzip);
 
 /**
  * Validate tileJSON

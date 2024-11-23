@@ -1,12 +1,13 @@
 "use strict";
 
-import { detectFormatAndHeaders, getRequestHost, gzipAsync } from "./utils.js";
+import { detectFormatAndHeaders, getRequestHost } from "./utils.js";
 import { checkReadyMiddleware } from "./middleware.js";
 import { getFonts, validateFont } from "./font.js";
 import { StatusCodes } from "http-status-codes";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
+import zlib from "zlib";
 
 /**
  * Get font handler
@@ -25,7 +26,7 @@ function getFontHandler() {
       /* Gzip pbf font */
       const headers = detectFormatAndHeaders(data).headers;
       if (headers["Content-Encoding"] === undefined) {
-        data = await gzipAsync(data);
+        data = zlib.gzip(data);
 
         res.header("Content-Encoding", "gzip");
       }

@@ -14,12 +14,12 @@ import { getStyle } from "./style.js";
 import { config } from "./config.js";
 import { getFonts } from "./font.js";
 import express from "express";
+import zlib from "zlib";
 import {
   detectFormatAndHeaders,
   getDataFromURL,
   createMetadata,
   getRequestHost,
-  unzipAsync,
 } from "./utils.js";
 
 /**
@@ -693,7 +693,7 @@ export const serve_rendered = {
                                   "application/x-protobuf" &&
                                 headers["Content-Encoding"] !== undefined
                               ) {
-                                data = await unzipAsync(data);
+                                data = zlib.unzip(data);
                               }
 
                               callback(null, {
@@ -757,7 +757,7 @@ export const serve_rendered = {
                                 dataTile.headers["Content-Encoding"] !==
                                   undefined
                               ) {
-                                dataTile.data = await unzipAsync(dataTile.data);
+                                dataTile.data = zlib.unzip(dataTile.data);
                               }
 
                               callback(null, {
@@ -856,7 +856,7 @@ export const serve_rendered = {
                                 dataTile.headers["Content-Encoding"] !==
                                   undefined
                               ) {
-                                dataTile.data = await unzipAsync(dataTile.data);
+                                dataTile.data = zlib.unzip(dataTile.data);
                               }
 
                               callback(null, {
@@ -899,7 +899,7 @@ export const serve_rendered = {
                                   "application/x-protobuf" &&
                                 headers["Content-Encoding"] !== undefined
                               ) {
-                                dataTile.data = await unzipAsync(dataTile.data);
+                                dataTile.data = zlib.unzip(dataTile.data);
                               }
 
                               callback(null, {
