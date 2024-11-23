@@ -3,14 +3,14 @@
 import { parentPort, workerData } from "node:worker_threads";
 import { restartServer } from "./utils.js";
 import { printLog } from "./logger.js";
-import { runTask } from "./task.js";
+import { runTasks } from "./task.js";
 
 (async () => {
   try {
     printLog("info", "Starting seed and clean up task...");
 
     /* Run task */
-    await runTask(workerData);
+    await runTasks(workerData);
 
     /* Restart server */
     if (workerData.restartServerAfterTask === true) {

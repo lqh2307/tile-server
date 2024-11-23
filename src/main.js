@@ -39,17 +39,15 @@ const argOpts = program.opts();
  * @returns {Promise<void>}
  */
 async function startClusterServer(opts) {
-  const dataDir = opts.dataDir;
-
   /* Load config.json file */
-  printLog("info", `Loading config.json file at "${dataDir}"...`);
+  printLog("info", `Loading config.json file at "${opts.dataDir}"...`);
 
-  await readConfigFile(dataDir, cluster.isPrimary);
+  await readConfigFile(opts.dataDir, cluster.isPrimary);
 
   if (cluster.isPrimary === true) {
     /* Setup envs & events */
     process.env.UV_THREADPOOL_SIZE = config.options.thread; // For libuv
-    process.env.DATA_DIR = dataDir; // Store data directory
+    process.env.DATA_DIR = opts.dataDir; // Store data directory
 
     process.on("SIGINT", () => {
       printLog("info", `Received "SIGINT" signal. Killing server...`);
@@ -100,7 +98,7 @@ async function startClusterServer(opts) {
     /* Remove old cache locks */
     printLog("info", `Removing old cache locks before start server...`);
 
-    await removeOldCacheLocks(dataDir);
+    await removeOldCacheLocks(opts.dataDir);
 
     /* Store main pid */
     await updateServerInfoFileWithLock(
@@ -121,7 +119,7 @@ async function startClusterServer(opts) {
       printLog("info", "Auto restart server if config file has changed");
 
       chokidar
-        .watch(`${dataDir}/config.json`, {
+        .watch(`${opts.dataDir}/config.json`, {
           usePolling: true,
           awaitWriteFinish: true,
           interval: 500,

@@ -255,7 +255,7 @@ export function calculateMD5(buffer) {
 /**
  * Attempt do function multiple times
  * @param {function} fn The function to attempt
- * @param {number} maxTry The number of maxTry allowed
+ * @param {number} maxTry Number of retry attempts on failure
  * @param {number} after Delay in milliseconds between each retry
  * @returns {Promise<void>}
  */

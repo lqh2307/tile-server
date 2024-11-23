@@ -1,12 +1,13 @@
 "use strict";
 
 import { downloadStyleFile, removeStyleFile } from "./style.js";
+import { getMBTilesTileMD5, getXYZTileMD5 } from "./md5.js";
 import { readCleanUpFile } from "./cleanup.js";
 import { readSeedFile } from "./seed.js";
 import fsPromise from "node:fs/promises";
-import { getMBTilesTileMD5, getXYZTileMD5 } from "./md5.js";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
+import path from "node:path";
 import {
   updateXYZMetadataFileWithLock,
   downloadXYZTileDataFile,
@@ -20,18 +21,18 @@ import {
 } from "./utils.js";
 import os from "os";
 import {
+  updateMBTilesMetadataWithLock,
+  removeMBTilesTileData,
   downloadMBTilesTile,
   openMBTilesDB,
-  removeMBTilesTileData,
-  updateMBTilesMetadataWithLock,
 } from "./mbtiles.js";
 
 /**
- * Run task
+ * Run clean up and seed tasks
  * @param {object} opts Options
  * @returns {Promise<void>}
  */
-export async function runTask(opts) {
+export async function runTasks(opts) {
   const dataDir = process.env.DATA_DIR;
 
   /* Read cleanup.json and seed.json files */
@@ -46,10 +47,10 @@ export async function runTask(opts) {
   ]);
 
   /* Run clean up task */
-  await runCleanUpTask(dataDir, cleanUpData, seedData);
+  await cleanUpTask(dataDir, cleanUpData, seedData);
 
   /* Run seed task */
-  await runSeedTask(dataDir, seedData);
+  await seedTask(dataDir, seedData);
 }
 
 /**
@@ -67,7 +68,7 @@ export async function runTask(opts) {
  * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
  * @returns {Promise<void>}
  */
-async function seedMBTilesTileDataFiles(
+async function seedMBTilesTileDatas(
   outputFolder,
   metadata,
   tileURL,
@@ -285,7 +286,7 @@ async function seedMBTilesTileDataFiles(
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-async function cleanMBTilesTileDataFiles(
+async function cleanMBTilesTileDatas(
   outputFolder,
   format,
   zooms = [
@@ -427,7 +428,7 @@ async function cleanMBTilesTileDataFiles(
  * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
  * @returns {Promise<void>}
  */
-async function seedXYZTileDataFiles(
+async function seedXYZTileDatas(
   outputFolder,
   metadata,
   tileURL,
@@ -646,7 +647,7 @@ async function seedXYZTileDataFiles(
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-async function cleanXYZTileDataFiles(
+async function cleanXYZTileDatas(
   outputFolder,
   format,
   zooms = [
@@ -781,7 +782,7 @@ async function cleanXYZTileDataFiles(
  * @param {object} seedData Seed object
  * @returns {Promise<void>}
  */
-async function runCleanUpTask(dataDir, cleanUpData, seedData) {
+async function cleanUpTask(dataDir, cleanUpData, seedData) {
   try {
     printLog(
       "info",
@@ -790,7 +791,7 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
 
     for (const id in cleanUpData.styles) {
       try {
-        await cleanStyleFile(
+        await cleanStyle(
           `${dataDir}/caches/styles/${id}`,
           cleanUpData.styles[id].cleanUpBefore?.time ||
             cleanUpData.styles[id].cleanUpBefore?.day
@@ -816,7 +817,7 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
 
     for (const id in cleanUpData.datas) {
       try {
-        await cleanXYZTileDataFiles(
+        await cleanXYZTileDatas(
           `${dataDir}/caches/xyzs/${id}`,
           seedData.datas[id].metadata.format,
           cleanUpData.datas[id].zooms,
@@ -847,7 +848,7 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
  * @param {object} seedData Seed object
  * @returns {Promise<void>}
  */
-async function runSeedTask(dataDir, seedData) {
+async function seedTask(dataDir, seedData) {
   try {
     printLog(
       "info",
@@ -856,7 +857,7 @@ async function runSeedTask(dataDir, seedData) {
 
     for (const id in seedData.styles) {
       try {
-        await seedStyleFile(
+        await seedStyle(
           `${dataDir}/caches/styles/${id}`,
           seedData.styles[id].url,
           seedData.styles[id].maxTry,
@@ -885,7 +886,7 @@ async function runSeedTask(dataDir, seedData) {
 
     for (const id in seedData.datas) {
       try {
-        await seedXYZTileDataFiles(
+        await seedXYZTileDatas(
           `${dataDir}/caches/xyzs/${id}`,
           seedData.datas[id].metadata,
           seedData.datas[id].url,
@@ -915,23 +916,25 @@ async function runSeedTask(dataDir, seedData) {
 }
 
 /**
- * Download style.json file
- * @param {string} outputFolder Folder to store downloaded style
- * @param {string} styleURL Style URL to download
+ * Seed cache style
+ * @param {string} sourcePath Folder path
+ * @param {string} styleURL Style URL
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
  * @param {string|number} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which file should be refreshed
  * @returns {Promise<void>}
  */
-async function seedStyleFile(
-  outputFolder,
+async function seedStyle(
+  sourcePath,
   styleURL,
   maxTry = 5,
   timeout = 60000,
   refreshBefore
 ) {
   let refreshTimestamp;
-  let log = `Seeding style file with:\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}`;
+  let log = `Seeding cache style id ${path.basename(
+    sourcePath
+  )} with:\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}`;
 
   if (typeof refreshBefore === "string") {
     refreshTimestamp = new Date(refreshBefore).getTime();
@@ -948,14 +951,14 @@ async function seedStyleFile(
   printLog("info", log);
 
   // Download file
-  const filePath = `${outputFolder}/style.json`;
+  const filePath = `${sourcePath}/style.json`;
 
   try {
     if (refreshTimestamp !== undefined) {
       const stats = await fsPromise.stat(filePath);
 
+      // Check timestamp
       if (stats.ctimeMs === undefined || stats.ctimeMs < refreshTimestamp) {
-        // Check timestamp
         await downloadStyleFile(styleURL, filePath, maxTry, timeout);
       }
     } else {
@@ -965,23 +968,28 @@ async function seedStyleFile(
     if (error.code === "ENOENT") {
       await downloadStyleFile(styleURL, filePath, maxTry, timeout);
     } else {
-      printLog("error", `Failed to seed style file "${filePath}": ${error}`);
+      printLog(
+        "error",
+        `Failed to seed cache style id ${path.basename(sourcePath)}: ${error}`
+      );
     }
   }
 
   // Remove parent folders if empty
-  await removeEmptyFolders(outputFolder, /^.*\.json$/);
+  await removeEmptyFolders(sourcePath, /^.*\.json$/);
 }
 
 /**
- * Remove style.json file
- * @param {string} outputFolder Folder to store downloaded style
+ * Clean cache style
+ * @param {string} sourcePath Folder path
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-async function cleanStyleFile(outputFolder, cleanUpBefore) {
+async function cleanStyle(sourcePath, cleanUpBefore) {
   let cleanUpTimestamp;
-  let log = `Cleaning up style file with:\n\tMax tries: ${maxTry}`;
+  let log = `Cleaning up cache style id ${path.basename(
+    sourcePath
+  )} with:\n\tMax tries: ${maxTry}`;
 
   if (typeof cleanUpBefore === "string") {
     cleanUpTimestamp = new Date(cleanUpBefore).getTime();
@@ -998,7 +1006,7 @@ async function cleanStyleFile(outputFolder, cleanUpBefore) {
   printLog("info", log);
 
   // Remove file
-  const filePath = `${outputFolder}/style.json`;
+  const filePath = `${sourcePath}/style.json`;
 
   try {
     if (cleanUpTimestamp !== undefined) {
@@ -1025,11 +1033,13 @@ async function cleanStyleFile(outputFolder, cleanUpBefore) {
     } else {
       printLog(
         "error",
-        `Failed to clean up style file "${filePath}": ${error}`
+        `Failed to clean up cache style id ${path.basename(
+          sourcePath
+        )}: ${error}`
       );
     }
   }
 
   // Remove parent folders if empty
-  await removeEmptyFolders(outputFolder, /^.*\.json$/);
+  await removeEmptyFolders(sourcePath, /^.*\.json$/);
 }
