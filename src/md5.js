@@ -130,7 +130,7 @@ export async function createMBTilesTileMD5WithLock(
       return;
     } catch (error) {
       if (error.code === "SQLITE_BUSY") {
-        await delay(100);
+        await delay(50);
       } else {
         throw error;
       }
@@ -167,7 +167,7 @@ export async function removeMBTilesTileMD5WithLock(
       if (error.code === "SQLITE_CANTOPEN") {
         return;
       } else if (error.code === "SQLITE_BUSY") {
-        await delay(100);
+        await delay(50);
       } else {
         throw error;
       }
@@ -202,7 +202,7 @@ export async function getMBTilesTileMD5WithLock(
       if (error.code === "SQLITE_CANTOPEN") {
         throw new Error("Tile MD5 does not exist");
       } else if (error.code === "SQLITE_BUSY") {
-        await delay(100);
+        await delay(50);
       } else {
         throw error;
       }
@@ -411,7 +411,7 @@ export async function createXYZTileMD5WithLock(
       return;
     } catch (error) {
       if (error.code === "SQLITE_BUSY") {
-        await delay(100);
+        await delay(50);
       } else {
         throw error;
       }
@@ -442,7 +442,7 @@ export async function removeXYZTileMD5WithLock(xyzSource, z, x, y, timeout) {
       if (error.code === "SQLITE_CANTOPEN") {
         return;
       } else if (error.code === "SQLITE_BUSY") {
-        await delay(100);
+        await delay(50);
       } else {
         throw error;
       }
@@ -471,7 +471,7 @@ export async function getXYZTileMD5WithLock(xyzSource, z, x, y, timeout) {
       if (error.code === "SQLITE_CANTOPEN") {
         throw new Error("Tile MD5 does not exist");
       } else if (error.code === "SQLITE_BUSY") {
-        await delay(100);
+        await delay(50);
       } else {
         throw error;
       }

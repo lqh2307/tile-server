@@ -1,6 +1,7 @@
 "use strict";
 
 import { getLonLatFromXYZ } from "./utils.js";
+import path from "node:path";
 import sharp from "sharp";
 
 /**
@@ -198,16 +199,19 @@ export async function isFullTransparentPNGImage(filePathOrBuffer) {
       resolveWithObject: true,
     });
 
-    if (
-      data[0] !== 0x89 ||
-      data[1] !== 0x50 ||
-      data[2] !== 0x4e ||
-      data[3] !== 0x47 ||
-      data[4] !== 0x0d ||
-      data[5] !== 0x0a ||
-      data[6] !== 0x1a ||
-      data[7] !== 0x0a
-    ) {
+    if (typeof filePathOrBuffer === "object" &&
+        (filePathOrBuffer[0] !== 0x89 ||
+        filePathOrBuffer[1] !== 0x50 ||
+        filePathOrBuffer[2] !== 0x4e ||
+        filePathOrBuffer[3] !== 0x47 ||
+        filePathOrBuffer[4] !== 0x0d ||
+        filePathOrBuffer[5] !== 0x0a ||
+        filePathOrBuffer[6] !== 0x1a ||
+        filePathOrBuffer[7] !== 0x0a)
+      ) {
+        return false;
+      }
+    } else if (path.extname(filePathOrBuffer) !== ".png") {
       return false;
     }
 

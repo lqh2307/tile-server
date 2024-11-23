@@ -488,7 +488,7 @@ export async function createXYZTileDataFileWithLock(filePath, data, timeout) {
 
         continue;
       } else if (error.code === "EEXIST") {
-        await delay(100);
+        await delay(50);
       } else {
         if (lockFileHandle !== undefined) {
           await lockFileHandle.close();

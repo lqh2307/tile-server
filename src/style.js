@@ -39,61 +39,9 @@ async function createStyleDataFile(filePath, data) {
  * @param {string} filePath File path to store style file
  * @param {Buffer} data Data buffer
  * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<boolean>}
- */
-export async function createStyleDataFileWithLock(filePath, data, timeout) {
-  const startTime = Date.now();
-
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      await createStyleDataFile(filePath, data);
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        await fsPromise.mkdir(path.dirname(filePath), {
-          recursive: true,
-        });
-
-        continue;
-      } else if (error.code === "EEXIST") {
-        await delay(100);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access ${lockFilePath} file`);
-}
-
-/**
- * Store style data file with lock
- * @param {string} filePath File path to store style file
- * @param {Buffer} data Data buffer
- * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function storeStyleDataFileWithLock(filePath, data, timeout) {
+export async function createStyleDataFileWithLock(filePath, data, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;
@@ -130,7 +78,7 @@ export async function storeStyleDataFileWithLock(filePath, data, timeout) {
 
         return;
       } else if (error.code === "EEXIST") {
-        await delay(100);
+        await delay(50);
       } else {
         if (lockFileHandle !== undefined) {
           await lockFileHandle.close();

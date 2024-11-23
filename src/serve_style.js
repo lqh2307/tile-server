@@ -42,7 +42,7 @@ function getStyleHandler() {
         ) {
           printLog(
             "info",
-            `Forwarding style "${id}" - From "${item.sourceURL}"...`
+            `Forwarding style "${id}" - To "${item.sourceURL}"...`
           );
 
           /* Get style */

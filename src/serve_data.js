@@ -133,11 +133,11 @@ function getDataTileHandler() {
     const x = Number(req.params.x);
     const y = Number(req.params.y);
     const tileName = `${z}/${x}/${y}`;
+    const scheme = req.query.scheme || "xyz";
 
+    /* Get tile data */
     try {
-      /* Get tile data */
       let dataTile;
-      const scheme = req.query.scheme ? req.query.scheme : "xyz";
 
       if (item.sourceType === "mbtiles") {
         try {
@@ -156,7 +156,7 @@ function getDataTileHandler() {
 
             printLog(
               "info",
-              `Forwarding data "${id}" - Tile "${tileName}" - From "${url}"...`
+              `Forwarding data "${id}" - Tile "${tileName}" - To "${url}"...`
             );
 
             /* Get data */
@@ -171,7 +171,7 @@ function getDataTileHandler() {
                 item.source,
                 z,
                 x,
-                y,
+                scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y,
                 dataTile.data,
                 dataTile.etag,
                 item.storeMD5,
@@ -207,7 +207,7 @@ function getDataTileHandler() {
 
             printLog(
               "info",
-              `Forwarding data "${id}" - Tile "${tileName}" - From "${url}"...`
+              `Forwarding data "${id}" - Tile "${tileName}" - To "${url}"...`
             );
 
             /* Get data */
@@ -222,7 +222,7 @@ function getDataTileHandler() {
                 item.source,
                 z,
                 x,
-                y,
+                scheme === item.tileJSON.scheme ? y : (1 << z) - 1 - y,
                 item.tileJSON.format,
                 dataTile.data,
                 dataTile.etag,
@@ -328,11 +328,11 @@ function getDataTileMD5Handler() {
     const x = Number(req.params.x);
     const y = Number(req.params.y);
     const tileName = `${z}/${x}/${y}`;
+    const scheme = req.query.scheme || "xyz";
 
+    /* Get tile data MD5 */
     try {
-      /* Get tile data MD5 */
       let md5;
-      const scheme = req.query.scheme ? req.query.scheme : "xyz";
 
       if (item.sourceType === "mbtiles") {
         if (item.storeMD5 === true) {
@@ -861,19 +861,20 @@ export const serve_data = {
             dataInfo.sourceType = "xyz";
 
             if (item.cache !== undefined) {
-              dataInfo.source = dataInfo.path;
-
               if (dataInfo.storeMD5 === true) {
                 dataInfo.md5Source = await openXYZMD5DB(
                   dataInfo.source,
                   sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
                   true
                 );
+              } else {
+                dataInfo.source = dataInfo.path;
               }
 
               dataInfo.tileJSON = createMetadata(cacheSource.metadata);
             } else {
               dataInfo.source = dataInfo.path;
+
               dataInfo.tileJSON = await getXYZInfos(dataInfo.source);
             }
           }

@@ -706,7 +706,7 @@ export async function updateMBTilesMetadataWithLock(
       return;
     } catch (error) {
       if (error.code === "SQLITE_BUSY") {
-        await delay(100);
+        await delay(50);
       } else {
         throw error;
       }
@@ -771,7 +771,7 @@ export async function createMBTilesTileWithLock(
       return;
     } catch (error) {
       if (error.code === "SQLITE_BUSY") {
-        await delay(100);
+        await delay(50);
       } else {
         throw error;
       }
@@ -829,7 +829,7 @@ export async function removeMBTilesTileWithLock(
       return;
     } catch (error) {
       if (error.code === "SQLITE_BUSY") {
-        await delay(100);
+        await delay(50);
       } else {
         throw error;
       }

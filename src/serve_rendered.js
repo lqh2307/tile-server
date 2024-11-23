@@ -724,10 +724,7 @@ export const serve_rendered = {
                                   url.slice(queryIndex)
                                 );
 
-                                scheme = query.get("scheme");
-                                if (!scheme) {
-                                  scheme = "xyz";
-                                }
+                                scheme = query.get("scheme") || "xyz";
                               }
 
                               /* Get rendered tile */
@@ -821,7 +818,7 @@ export const serve_rendered = {
 
                                   printLog(
                                     "info",
-                                    `Forwarding data "${id}" - Tile "${tileName}" - From "${url}"...`
+                                    `Forwarding data "${id}" - Tile "${tileName}" - To "${url}"...`
                                   );
 
                                   /* Get data */
