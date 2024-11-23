@@ -1,8 +1,8 @@
 "use strict";
 
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
+import { delay, getDataFromURL, retry } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
-import { delay, retry } from "./utils.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
@@ -218,22 +218,7 @@ export async function downloadStyleFile(url, filePath, maxTry, timeout) {
     await retry(async () => {
       try {
         // Get data from URL
-        const response = await axios.get(url, {
-          timeout: timeout,
-          responseType: "arraybuffer",
-          headers: {
-            "User-Agent": "Tile Server",
-          },
-          validateStatus: (status) => {
-            return status === StatusCodes.OK;
-          },
-          httpAgent: new http.Agent({
-            keepAlive: false,
-          }),
-          httpsAgent: new https.Agent({
-            keepAlive: false,
-          }),
-        });
+        const response = await getDataFromURL(url, timeout);
 
         // Store data to file
         await storeStyleDataFileWithLock(
@@ -242,27 +227,27 @@ export async function downloadStyleFile(url, filePath, maxTry, timeout) {
           300000 // 5 mins
         );
       } catch (error) {
-        if (error.response) {
-          if (
-            error.response.status === StatusCodes.NO_CONTENT ||
-            error.response.status === StatusCodes.NOT_FOUND
-          ) {
-            printLog(
-              "error",
-              `Failed to download style file "${filePath}" from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
-            );
+        if (error.statusCode !== undefined) {
+          printLog(
+            "error",
+            `Failed to download style file "${filePath}" from "${url}": ${error}`
+          );
 
+          if (
+            error.statusCode === StatusCodes.NO_CONTENT ||
+            error.statusCode === StatusCodes.NOT_FOUND
+          ) {
             return;
           } else {
             throw new Error(
-              `Failed to download style file "${filePath}" from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
+              `Failed to download style file "${filePath}" from "${url}": ${error}`
             );
           }
+        } else {
+          throw new Error(
+            `Failed to download style file "${filePath}" from "${url}": ${error}`
+          );
         }
-
-        throw new Error(
-          `Failed to download style file "${filePath}" from "${url}": ${error}`
-        );
       }
     }, maxTry);
   } catch (error) {

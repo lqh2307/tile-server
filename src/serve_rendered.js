@@ -831,11 +831,6 @@ export const serve_rendered = {
                                       dataTile.etag,
                                       sourceData.storeMD5,
                                       sourceData.storeTransparent
-                                    ).catch((error) =>
-                                      printLog(
-                                        "error",
-                                        `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}`
-                                      )
                                     );
                                   }
                                 } else {

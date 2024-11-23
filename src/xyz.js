@@ -1,19 +1,17 @@
 "use strict";
 
-import { createXYZTileMD5WithLock, deleteXYZTileMD5WithLock } from "./md5.js";
+import { createXYZTileMD5WithLock, removeXYZTileMD5WithLock } from "./md5.js";
 import { isFullTransparentPNGImage } from "./image.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
-import https from "node:https";
 import path from "node:path";
-import http from "node:http";
-import axios from "axios";
 import {
   getLayersFromPBFBuffer,
   detectFormatAndHeaders,
   getBBoxFromTiles,
+  getDataFromURL,
   findFolders,
   findFiles,
   delay,
@@ -61,22 +59,7 @@ export async function getXYZTile(sourcePath, z, x, y, format) {
  */
 export async function getXYZTileFromURL(url, timeout) {
   try {
-    const response = await axios.get(url, {
-      timeout: timeout,
-      responseType: "arraybuffer",
-      headers: {
-        "User-Agent": "Tile Server",
-      },
-      validateStatus: (status) => {
-        return status === StatusCodes.OK;
-      },
-      httpAgent: new http.Agent({
-        keepAlive: false,
-      }),
-      httpsAgent: new https.Agent({
-        keepAlive: false,
-      }),
-    });
+    const response = await getDataFromURL(url, timeout);
 
     return {
       data: response.data,
@@ -84,20 +67,18 @@ export async function getXYZTileFromURL(url, timeout) {
       etag: response.headers["Etag"],
     };
   } catch (error) {
-    if (error.response) {
+    if (error.statusCode !== undefined) {
       if (
-        error.response.status === StatusCodes.NOT_FOUND ||
-        error.response.status === StatusCodes.NO_CONTENT
+        error.statusCode === StatusCodes.NO_CONTENT ||
+        error.statusCode === StatusCodes.NOT_FOUND
       ) {
         throw new Error("Tile does not exist");
+      } else {
+        throw new Error(`Failed to get data tile from "${url}": ${error}`);
       }
-
-      throw new Error(
-        `Failed to get data tile from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
-      );
+    } else {
+      throw new Error(`Failed to get data tile from "${url}": ${error}`);
     }
-
-    throw new Error(`Failed to get data tile from "${url}": ${error}`);
   }
 }
 
@@ -475,65 +456,10 @@ async function createXYZTileDataFile(filePath, data) {
  * Create XYZ tile data file with lock
  * @param {string} filePath File path to store tile data file
  * @param {Buffer} data Tile data buffer
- * @returns {Promise<boolean>}
- */
-export async function createXYZTileDataFileWithLock(filePath, data) {
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  try {
-    lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-    await createXYZTileDataFile(filePath, data);
-
-    await lockFileHandle.close();
-
-    await fsPromise.rm(lockFilePath, {
-      force: true,
-    });
-
-    return true;
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      await fsPromise.mkdir(path.dirname(filePath), {
-        recursive: true,
-      });
-
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      await createXYZTileDataFile(filePath, data);
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return true;
-    } else if (error.code === "EEXIST") {
-      return false;
-    } else {
-      if (lockFileHandle !== undefined) {
-        await lockFileHandle.close();
-
-        await fsPromise.rm(lockFilePath, {
-          force: true,
-        });
-      }
-
-      throw error;
-    }
-  }
-}
-
-/**
- * Store XYZ tile data file with lock
- * @param {string} filePath File path to store tile data file
- * @param {Buffer} data Tile data buffer
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function storeXYZTileDataFileWithLock(filePath, data, timeout) {
+export async function createXYZTileDataFileWithLock(filePath, data, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;
@@ -661,32 +587,16 @@ export async function downloadXYZTileDataFile(
     await retry(async () => {
       try {
         // Get data from URL
-        const response = await axios.get(url, {
-          timeout: timeout,
-          responseType: "arraybuffer",
-          headers: {
-            "User-Agent": "Tile Server",
-          },
-          validateStatus: (status) => {
-            return status === StatusCodes.OK;
-          },
-          httpAgent: new http.Agent({
-            keepAlive: false,
-          }),
-          httpsAgent: new https.Agent({
-            keepAlive: false,
-          }),
-        });
+        const response = await getDataFromURL(url, timeout);
 
         // Store data to file
         if (
           storeTransparent === false &&
-          format === "png" &&
           (await isFullTransparentPNGImage(response.data)) === true
         ) {
           return;
         } else {
-          await storeXYZTileDataFileWithLock(
+          await createXYZTileDataFileWithLock(
             `${sourcePath}/${tileName}.${format}`,
             response.data,
             300000 // 5 mins
@@ -694,7 +604,7 @@ export async function downloadXYZTileDataFile(
 
           // Store data md5 hash
           if (storeMD5 === true) {
-            createXYZTileMD5WithLock(
+            await createXYZTileMD5WithLock(
               sourcePath,
               z,
               x,
@@ -702,36 +612,31 @@ export async function downloadXYZTileDataFile(
               response.data,
               response.headers["Etag"],
               180000 // 3 mins
-            ).catch((error) =>
-              printLog(
-                "error",
-                `Failed to update md5 for tile "${tileName}": ${error}`
-              )
             );
           }
         }
       } catch (error) {
-        if (error.response) {
-          if (
-            error.response.status === StatusCodes.NO_CONTENT ||
-            error.response.status === StatusCodes.NOT_FOUND
-          ) {
-            printLog(
-              "error",
-              `Failed to download tile data file "${tileName}" from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
-            );
+        if (error.statusCode !== undefined) {
+          printLog(
+            "error",
+            `Failed to download tile data file "${tileName}" from "${url}": ${error}`
+          );
 
+          if (
+            error.statusCode === StatusCodes.NO_CONTENT ||
+            error.statusCode === StatusCodes.NOT_FOUND
+          ) {
             return;
           } else {
             throw new Error(
-              `Failed to download tile data file "${tileName}" from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
+              `Failed to download tile data file "${tileName}" from "${url}": ${error}`
             );
           }
+        } else {
+          throw new Error(
+            `Failed to download tile data file "${tileName}" from "${url}": ${error}`
+          );
         }
-
-        throw new Error(
-          `Failed to download tile data file "${tileName}" from "${url}": ${error}`
-        );
       }
     }, maxTry);
   } catch (error) {
@@ -774,7 +679,7 @@ export async function removeXYZTileDataFile(
         );
 
         if (storeMD5 === true) {
-          deleteXYZTileMD5WithLock(
+          await removeXYZTileMD5WithLock(
             sourcePath,
             z,
             x,
@@ -794,7 +699,7 @@ export async function removeXYZTileDataFile(
 }
 
 /**
- * Cache tile data file
+ * Cache XYZ tile data file
  * @param {string} sourcePath Folder path
  * @param {number} z Zoom level
  * @param {number} x X tile index
@@ -819,21 +724,23 @@ export async function cacheXYZTileDataFile(
 ) {
   const tileName = `${z}/${x}/${y}`;
 
-  if (
-    storeTransparent === false &&
-    format === "png" &&
-    (await isFullTransparentPNGImage(data)) === true
-  ) {
-    return;
-  } else {
+  printLog("info", `Caching tile data file "${tileName}"...`);
+
+  try {
     if (
-      (await createXYZTileDataFileWithLock(
-        `${sourcePath}/${tileName}.${format}`,
-        data
-      )) === true
+      storeTransparent === false &&
+      (await isFullTransparentPNGImage(data)) === true
     ) {
+      return;
+    } else {
+      await createXYZTileDataFileWithLock(
+        `${sourcePath}/${z}/${x}/${y}.${format}`,
+        data,
+        300000 // 5 mins
+      );
+
       if (storeMD5 === true) {
-        createXYZTileMD5WithLock(
+        await createXYZTileMD5WithLock(
           sourcePath,
           z,
           x,
@@ -841,13 +748,10 @@ export async function cacheXYZTileDataFile(
           data,
           hash,
           180000 // 3 mins
-        ).catch((error) =>
-          printLog(
-            "error",
-            `Failed to update md5 for tile "${tileName}": ${error}`
-          )
         );
       }
     }
+  } catch (error) {
+    printLog("error", `Failed to cache tile data file "${tileName}": ${error}`);
   }
 }

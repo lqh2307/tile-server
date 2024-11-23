@@ -44,14 +44,14 @@ export async function getMBTilesMD5(mbtilesSource, z, x, y) {
 }
 
 /**
- * Delete MD5 hash of MBTiles tile
+ * Remove MD5 hash of MBTiles tile
  * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @returns {Promise<void>}
  */
-export async function deleteMBTilesMD5(mbtilesSource, z, x, y) {
+export async function removeMBTilesMD5(mbtilesSource, z, x, y) {
   return await runSQL(
     mbtilesSource,
     `
@@ -141,7 +141,7 @@ export async function createMBTilesTileMD5WithLock(
 }
 
 /**
- * Delete MD5 hash of MBTiles tile
+ * Remove MD5 hash of MBTiles tile
  * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {number} z Zoom level
  * @param {number} x X tile index
@@ -149,7 +149,7 @@ export async function createMBTilesTileMD5WithLock(
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function deleteMBTilesTileMD5WithLock(
+export async function removeMBTilesTileMD5WithLock(
   mbtilesSource,
   z,
   x,
@@ -160,7 +160,7 @@ export async function deleteMBTilesTileMD5WithLock(
 
   while (Date.now() - startTime <= timeout) {
     try {
-      await deleteMBTilesMD5(mbtilesSource, z, x, y);
+      await removeMBTilesMD5(mbtilesSource, z, x, y);
 
       return;
     } catch (error) {
@@ -351,14 +351,14 @@ export async function getXYZMD5(xyzSource, z, x, y) {
 }
 
 /**
- * Delete MD5 hash of XYZ tile
+ * Remove MD5 hash of XYZ tile
  * @param {sqlite3.Database} xyzSource SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @returns {Promise<void>}
  */
-export async function deleteXYZMD5(xyzSource, z, x, y) {
+export async function removeXYZMD5(xyzSource, z, x, y) {
   return await runSQL(
     xyzSource,
     `
@@ -430,7 +430,7 @@ export async function createXYZTileMD5WithLock(
 }
 
 /**
- * Delete MD5 hash of XYZ tile
+ * Remove MD5 hash of XYZ tile
  * @param {sqlite3.Database} xyzSource SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
@@ -438,12 +438,12 @@ export async function createXYZTileMD5WithLock(
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function deleteXYZTileMD5WithLock(xyzSource, z, x, y, timeout) {
+export async function removeXYZTileMD5WithLock(xyzSource, z, x, y, timeout) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
     try {
-      await deleteXYZMD5(xyzSource, z, x, y);
+      await removeXYZMD5(xyzSource, z, x, y);
 
       return;
     } catch (error) {

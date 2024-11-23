@@ -57,12 +57,11 @@ export async function getDataFromURL(url, timeout) {
     return response;
   } catch (error) {
     if (error.response) {
-      throw new Error(
-        `Status code: ${error.response.status} - ${error.response.statusText}`
-      );
-    } else {
-      throw error;
+      error.message = `Status code: ${error.response.status} - ${error.response.statusText}`;
+      error.statusCode = error.response.status;
     }
+
+    throw error;
   }
 }
 

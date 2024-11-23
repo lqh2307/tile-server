@@ -175,7 +175,6 @@ function getDataTileHandler() {
                 z,
                 x,
                 y,
-                item.tileJSON.format,
                 dataTile.data,
                 dataTile.etag,
                 item.storeMD5,
@@ -237,11 +236,6 @@ function getDataTileHandler() {
                 dataTile.etag,
                 item.storeMD5,
                 item.storeTransparent
-              ).catch((error) =>
-                printLog(
-                  "error",
-                  `Failed to cache data "${id}" - Tile "${tileName}" - From "${url}": ${error}`
-                )
               );
             }
           } else {

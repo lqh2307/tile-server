@@ -1,6 +1,5 @@
 "use strict";
 
-import { createMBTilesTileMD5WithLock } from "./md5.js";
 import { isFullTransparentPNGImage } from "./image.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
@@ -13,9 +12,14 @@ import path from "node:path";
 import axios from "axios";
 import fs from "node:fs";
 import {
+  createMBTilesTileMD5WithLock,
+  removeMBTilesTileMD5WithLock,
+} from "./md5.js";
+import {
   getLayersFromPBFBuffer,
   detectFormatAndHeaders,
   getBBoxFromTiles,
+  getDataFromURL,
   retry,
   delay,
   runSQL,
@@ -783,7 +787,7 @@ export async function createMBTilesTileWithLock(
     try {
       await upsertMBTilesTile(mbtilesSource, z, x, y, data);
 
-      return true;
+      return;
     } catch (error) {
       if (error.code === "SQLITE_BUSY") {
         await delay(100);
@@ -804,7 +808,7 @@ export async function createMBTilesTileWithLock(
  * @param {number} y Y tile index
  * @returns {Promise<void>}
  */
-async function deleteMBTilesTile(mbtilesSource, z, x, y) {
+async function removeMBTilesTile(mbtilesSource, z, x, y) {
   return await runSQL(
     mbtilesSource,
     `
@@ -828,7 +832,7 @@ async function deleteMBTilesTile(mbtilesSource, z, x, y) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function deleteMBTilesTileWithLock(
+export async function removeMBTilesTileWithLock(
   mbtilesSource,
   z,
   x,
@@ -839,7 +843,7 @@ export async function deleteMBTilesTileWithLock(
 
   while (Date.now() - startTime <= timeout) {
     try {
-      await deleteMBTilesTile(mbtilesSource, z, x, y);
+      await removeMBTilesTile(mbtilesSource, z, x, y);
 
       return;
     } catch (error) {
@@ -862,22 +866,7 @@ export async function deleteMBTilesTileWithLock(
  */
 export async function getMBTilesTileFromURL(url, timeout) {
   try {
-    const response = await axios.get(url, {
-      timeout: timeout,
-      responseType: "arraybuffer",
-      headers: {
-        "User-Agent": "Tile Server",
-      },
-      validateStatus: (status) => {
-        return status === StatusCodes.OK;
-      },
-      httpAgent: new http.Agent({
-        keepAlive: false,
-      }),
-      httpsAgent: new https.Agent({
-        keepAlive: false,
-      }),
-    });
+    const response = await getDataFromURL(url, timeout);
 
     return {
       data: response.data,
@@ -885,25 +874,23 @@ export async function getMBTilesTileFromURL(url, timeout) {
       etag: response.headers["Etag"],
     };
   } catch (error) {
-    if (error.response) {
+    if (error.statusCode !== undefined) {
       if (
-        error.response.status === StatusCodes.NOT_FOUND ||
-        error.response.status === StatusCodes.NO_CONTENT
+        error.statusCode === StatusCodes.NO_CONTENT ||
+        error.statusCode === StatusCodes.NOT_FOUND
       ) {
         throw new Error("Tile does not exist");
+      } else {
+        throw new Error(`Failed to get data tile from "${url}": ${error}`);
       }
-
-      throw new Error(
-        `Failed to get data tile from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
-      );
+    } else {
+      throw new Error(`Failed to get data tile from "${url}": ${error}`);
     }
-
-    throw new Error(`Failed to get data tile from "${url}": ${error}`);
   }
 }
 
 /**
- * Download XYZ tile data file
+ * Download MBTiles tile data
  * @param {string} url The URL to download the file from
  * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {number} z Zoom level
@@ -928,33 +915,17 @@ export async function downloadMBTilesTile(
 ) {
   const tileName = `${z}/${x}/${y}`;
 
-  printLog("info", `Downloading tile data file "${tileName}" from "${url}"...`);
+  printLog("info", `Downloading tile data "${tileName}" from "${url}"...`);
 
   try {
     await retry(async () => {
       try {
         // Get data from URL
-        const response = await axios.get(url, {
-          timeout: timeout,
-          responseType: "arraybuffer",
-          headers: {
-            "User-Agent": "Tile Server",
-          },
-          validateStatus: (status) => {
-            return status === StatusCodes.OK;
-          },
-          httpAgent: new http.Agent({
-            keepAlive: false,
-          }),
-          httpsAgent: new https.Agent({
-            keepAlive: false,
-          }),
-        });
+        const response = await getDataFromURL(url, timeout);
 
-        // Store data to file
+        // Store data
         if (
           storeTransparent === false &&
-          format === "png" &&
           (await isFullTransparentPNGImage(response.data)) === true
         ) {
           return;
@@ -970,7 +941,7 @@ export async function downloadMBTilesTile(
 
           // Store data md5 hash
           if (storeMD5 === true) {
-            createMBTilesTileMD5WithLock(
+            await createMBTilesTileMD5WithLock(
               mbtilesSource,
               z,
               x,
@@ -978,36 +949,31 @@ export async function downloadMBTilesTile(
               response.data,
               response.headers["Etag"],
               180000 // 3 mins
-            ).catch((error) =>
-              printLog(
-                "error",
-                `Failed to update md5 for tile "${tileName}": ${error}`
-              )
             );
           }
         }
       } catch (error) {
-        if (error.response) {
-          if (
-            error.response.status === StatusCodes.NO_CONTENT ||
-            error.response.status === StatusCodes.NOT_FOUND
-          ) {
-            printLog(
-              "error",
-              `Failed to download tile data file "${tileName}" from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
-            );
+        if (error.statusCode !== undefined) {
+          printLog(
+            "error",
+            `Failed to download tile data "${tileName}" from "${url}": ${error}`
+          );
 
+          if (
+            error.statusCode === StatusCodes.NO_CONTENT ||
+            error.statusCode === StatusCodes.NOT_FOUND
+          ) {
             return;
           } else {
             throw new Error(
-              `Failed to download tile data file "${tileName}" from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
+              `Failed to download tile data "${tileName}" from "${url}": ${error}`
             );
           }
+        } else {
+          throw new Error(
+            `Failed to download tile data "${tileName}" from "${url}": ${error}`
+          );
         }
-
-        throw new Error(
-          `Failed to download tile data file "${tileName}" from "${url}": ${error}`
-        );
       }
     }, maxTry);
   } catch (error) {
@@ -1016,70 +982,7 @@ export async function downloadMBTilesTile(
 }
 
 /**
- * Cache MBTiles tile
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
- * @param {Buffer} data Tile data buffer
- * @param {string} hash MD5 hash string
- * @param {boolean} storeMD5 Is store MD5 hashed?
- * @param {boolean} storeTransparent Is store transparent?
- * @returns {Promise<void>}
- */
-export async function cacheMBtilesTileData(
-  mbtilesSource,
-  z,
-  x,
-  y,
-  format,
-  data,
-  hash,
-  storeMD5,
-  storeTransparent
-) {
-  const tileName = `${z}/${x}/${y}`;
-
-  if (
-    storeTransparent === false &&
-    format === "png" &&
-    (await isFullTransparentPNGImage(data)) === true
-  ) {
-    return;
-  } else {
-    if (
-      (await createMBTilesTileWithLock(
-        mbtilesSource,
-        z,
-        x,
-        y,
-        data,
-        300000 // 5 mins
-      )) === true
-    ) {
-      if (storeMD5 === true) {
-        createMBTilesTileMD5WithLock(
-          mbtilesSource,
-          z,
-          x,
-          y,
-          data,
-          hash,
-          180000 // 3 mins
-        ).catch((error) =>
-          printLog(
-            "error",
-            `Failed to update md5 for tile "${tileName}": ${error}`
-          )
-        );
-      }
-    }
-  }
-}
-
-/**
- * Remove MBTiles tile
+ * Remove MBTiles tile data
  * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {number} z Zoom level
  * @param {number} x X tile index
@@ -1100,15 +1003,15 @@ export async function removeMBTilesTileData(
 ) {
   const tileName = `${z}/${x}/${y}`;
 
-  printLog("info", `Removing tile data file "${tileName}"...`);
+  printLog("info", `Removing tile data "${tileName}"...`);
 
   try {
     try {
       await retry(async () => {
-        await deleteMBTilesTileWithLock(mbtilesSource, z, x, y, timeout);
+        await removeMBTilesTileWithLock(mbtilesSource, z, x, y, timeout);
 
         if (storeMD5 === true) {
-          deleteMBTilesTileWithLock(
+          await removeMBTilesTileMD5WithLock(
             sourcePath,
             z,
             x,
@@ -1118,11 +1021,68 @@ export async function removeMBTilesTileData(
         }
       }, maxTry);
     } catch (error) {
-      throw new Error(
-        `Failed to remove tile data file "${tileName}": ${error}`
-      );
+      throw new Error(`Failed to remove tile data "${tileName}": ${error}`);
     }
   } catch (error) {
     printLog("error", `${error}`);
+  }
+}
+
+/**
+ * Cache MBTiles tile data
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @param {Buffer} data Tile data buffer
+ * @param {string} hash MD5 hash string
+ * @param {boolean} storeMD5 Is store MD5 hashed?
+ * @param {boolean} storeTransparent Is store transparent?
+ * @returns {Promise<void>}
+ */
+export async function cacheMBtilesTileData(
+  mbtilesSource,
+  z,
+  x,
+  y,
+  data,
+  hash,
+  storeMD5,
+  storeTransparent
+) {
+  const tileName = `${z}/${x}/${y}`;
+
+  printLog("info", `Caching tile data "${tileName}"...`);
+
+  try {
+    if (
+      storeTransparent === false &&
+      (await isFullTransparentPNGImage(data)) === true
+    ) {
+      return;
+    } else {
+      await createMBTilesTileWithLock(
+        mbtilesSource,
+        z,
+        x,
+        y,
+        data,
+        300000 // 5 mins
+      );
+
+      if (storeMD5 === true) {
+        await createMBTilesTileMD5WithLock(
+          mbtilesSource,
+          z,
+          x,
+          y,
+          data,
+          hash,
+          180000 // 3 mins
+        );
+      }
+    }
+  } catch (error) {
+    printLog("error", `Failed to cache tile data "${tileName}": ${error}`);
   }
 }
