@@ -21,7 +21,7 @@ import {
   downloadMBTilesFile,
   getMBTilesInfos,
   getMBTilesTile,
-  openMBTiles,
+  openMBTilesDB,
 } from "./mbtiles.js";
 import {
   createMetadata,
@@ -751,7 +751,10 @@ export const serve_data = {
 
                 cacheSource = seed.datas[item.mbtiles];
 
-                if (cacheSource === undefined) {
+                if (
+                  cacheSource === undefined ||
+                  cacheSource.storeType !== "mbtiles"
+                ) {
                   throw new Error(
                     `Cache mbtiles data id "${item.mbtiles}" is invalid`
                   );
@@ -771,7 +774,7 @@ export const serve_data = {
             dataInfo.sourceType = "mbtiles";
 
             if (item.cache !== undefined) {
-              dataInfo.source = await openMBTiles(
+              dataInfo.source = await openMBTilesDB(
                 dataInfo.path,
                 sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
                 true
@@ -779,7 +782,7 @@ export const serve_data = {
 
               dataInfo.tileJSON = createMetadata(cacheSource.metadata);
             } else {
-              dataInfo.source = await openMBTiles(
+              dataInfo.source = await openMBTilesDB(
                 dataInfo.path,
                 sqlite3.OPEN_READONLY,
                 false
@@ -808,7 +811,10 @@ export const serve_data = {
 
               cacheSource = seed.datas[item.xyz];
 
-              if (cacheSource === undefined) {
+              if (
+                cacheSource === undefined ||
+                cacheSource.storeType !== "xyz"
+              ) {
                 throw new Error(`Cache xyz data id "${item.xyz}" is invalid`);
               }
 

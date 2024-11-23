@@ -51,7 +51,7 @@ export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
  * @param {number} y Y tile index
  * @returns {Promise<void>}
  */
-export async function removeMBTilesMD5(mbtilesSource, z, x, y) {
+async function removeMBTilesMD5(mbtilesSource, z, x, y) {
   return await runSQL(
     mbtilesSource,
     `
@@ -75,7 +75,7 @@ export async function removeMBTilesMD5(mbtilesSource, z, x, y) {
  * @param {string} hash MD5 hash value
  * @returns {Promise<void>}
  */
-export async function upsertMBTilesTileMD5(mbtilesSource, z, x, y, hash) {
+async function upsertMBTilesTileMD5(mbtilesSource, z, x, y, hash) {
   return await runSQL(
     mbtilesSource,
     `
@@ -285,7 +285,7 @@ export async function openXYZMD5DB(
  * @param {string} hash MD5 hash value
  * @returns {Promise<void>}
  */
-export async function upsertXYZTileMD5(xyzSource, z, x, y, hash) {
+async function upsertXYZTileMD5(xyzSource, z, x, y, hash) {
   return await runSQL(
     xyzSource,
     `
@@ -350,7 +350,7 @@ export async function getXYZTileMD5(xyzSource, z, x, y) {
  * @param {number} y Y tile index
  * @returns {Promise<void>}
  */
-export async function removeXYZTileMD5(xyzSource, z, x, y) {
+async function removeXYZTileMD5(xyzSource, z, x, y) {
   return await runSQL(
     xyzSource,
     `

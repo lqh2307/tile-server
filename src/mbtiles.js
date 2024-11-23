@@ -23,13 +23,13 @@ import {
 } from "./utils.js";
 
 /**
- * Open MBTiles
+ * Open MBTiles database
  * @param {string} filePath MBTiles file path
  * @param {number} mode SQLite mode (e.g: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE | sqlite3.OPEN_READONLY)
  * @param {boolean} wal Use WAL
  * @returns {Promise<object>}
  */
-export async function openMBTiles(
+export async function openMBTilesDB(
   filePath,
   mode = sqlite3.OPEN_READONLY,
   wal = false
@@ -807,7 +807,7 @@ async function removeMBTilesTile(mbtilesSource, z, x, y) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function removeMBTilesTileWithLock(
+async function removeMBTilesTileWithLock(
   mbtilesSource,
   z,
   x,

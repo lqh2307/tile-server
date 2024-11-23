@@ -510,7 +510,7 @@ export async function createXYZTileDataFileWithLock(filePath, data, timeout) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function removeXYZTileDataFileWithLock(filePath, timeout) {
+async function removeXYZTileDataFileWithLock(filePath, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;

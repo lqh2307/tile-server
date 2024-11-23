@@ -247,6 +247,10 @@ export async function readSeedFile(dataDir, isValidate) {
                   type: "integer",
                   minimum: 1,
                 },
+                storeType: {
+                  type: "string",
+                  enum: ["xyz", "mbtiles"],
+                },
                 storeMD5: {
                   type: "boolean",
                 },
@@ -254,7 +258,7 @@ export async function readSeedFile(dataDir, isValidate) {
                   type: "boolean",
                 },
               },
-              required: ["metadata", "url"],
+              required: ["metadata", "storeType", "url"],
               additionalProperties: true,
             },
           },
