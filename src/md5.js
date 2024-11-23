@@ -241,20 +241,18 @@ export async function openXYZMD5DB(
     const xyzSource = new sqlite3.Database(
       `${sourcePath}/md5.sqlite`,
       mode,
-      (error) => {
+      async (error) => {
         if (error) {
           return reject(error);
         }
 
-        const setupPromises = [];
+        try {
+          if (wal === true) {
+            await runSQL(xyzSource, "PRAGMA journal_mode=WAL;");
+          }
 
-        if (wal === true) {
-          setupPromises.push(runSQL(xyzSource, "PRAGMA journal_mode=WAL;"));
-        }
-
-        if (hasCreateMode) {
-          setupPromises.push(
-            runSQL(
+          if (hasCreateMode) {
+            await runSQL(
               xyzSource,
               `
               CREATE TABLE IF NOT EXISTS
@@ -266,19 +264,13 @@ export async function openXYZMD5DB(
                   PRIMARY KEY (z, x, y)
                 );
               `
-            )
-          );
+            );
+          }
+
+          resolve(xyzSource);
+        } catch (error) {
+          reject(error);
         }
-
-        Promise.all(setupPromises)
-          .then(() => resolve(xyzSource))
-          .catch((setupError) => {
-            if (xyzSource !== undefined) {
-              xyzSource.close();
-            }
-
-            reject(setupError);
-          });
       }
     );
   });
