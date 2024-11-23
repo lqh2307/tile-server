@@ -26,7 +26,13 @@ function getFontHandler() {
       /* Gzip pbf font */
       const headers = detectFormatAndHeaders(data).headers;
       if (headers["Content-Encoding"] === undefined) {
-        data = zlib.gzip(data);
+        zlib.gzip(data, (error, buffer) => {
+          if (error) {
+            throw error;
+          }
+
+          data = buffer;
+        });
 
         res.header("Content-Encoding", "gzip");
       }

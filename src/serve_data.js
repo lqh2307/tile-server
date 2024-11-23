@@ -241,7 +241,13 @@ function getDataTileHandler() {
         dataTile.headers["Content-Type"] === "application/x-protobuf" &&
         dataTile.headers["Content-Encoding"] === undefined
       ) {
-        dataTile.data = zlib.gzip(dataTile.data);
+        zlib.gzip(dataTile.data, (error, buffer) => {
+          if (error) {
+            throw error;
+          }
+
+          dataTile.data = buffer;
+        });
 
         dataTile.headers["Content-Encoding"] = "gzip";
       }

@@ -693,7 +693,13 @@ export const serve_rendered = {
                                   "application/x-protobuf" &&
                                 headers["Content-Encoding"] !== undefined
                               ) {
-                                data = zlib.unzip(data);
+                                zlib.unzip(data, (error, buffer) => {
+                                  if (error) {
+                                    throw error;
+                                  }
+
+                                  data = buffer;
+                                });
                               }
 
                               callback(null, {
@@ -757,7 +763,13 @@ export const serve_rendered = {
                                 dataTile.headers["Content-Encoding"] !==
                                   undefined
                               ) {
-                                dataTile.data = zlib.unzip(dataTile.data);
+                                zlib.unzip(dataTile.data, (error, buffer) => {
+                                  if (error) {
+                                    throw error;
+                                  }
+
+                                  dataTile.data = buffer;
+                                });
                               }
 
                               callback(null, {
@@ -856,7 +868,13 @@ export const serve_rendered = {
                                 dataTile.headers["Content-Encoding"] !==
                                   undefined
                               ) {
-                                dataTile.data = zlib.unzip(dataTile.data);
+                                zlib.unzip(dataTile.data, (error, buffer) => {
+                                  if (error) {
+                                    throw error;
+                                  }
+
+                                  dataTile.data = buffer;
+                                });
                               }
 
                               callback(null, {
@@ -899,7 +917,13 @@ export const serve_rendered = {
                                   "application/x-protobuf" &&
                                 headers["Content-Encoding"] !== undefined
                               ) {
-                                dataTile.data = zlib.unzip(dataTile.data);
+                                zlib.unzip(dataTile.data, (error, buffer) => {
+                                  if (error) {
+                                    throw error;
+                                  }
+
+                                  dataTile.data = buffer;
+                                });
                               }
 
                               callback(null, {
