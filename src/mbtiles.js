@@ -92,11 +92,11 @@ export async function openMBTiles(
                 `
                 CREATE TABLE IF NOT EXISTS
                   md5s (
-                    z INTEGER NOT NULL,
-                    x INTEGER NOT NULL,
-                    y INTEGER NOT NULL,
+                    zoom_level INTEGER NOT NULL,
+                    tile_column INTEGER NOT NULL,
+                    tile_row INTEGER NOT NULL,
                     hash TEXT,
-                    PRIMARY KEY (z, x, y)
+                    PRIMARY KEY (zoom_level, tile_column, tile_row)
                   );
                 `
               ),
