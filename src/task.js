@@ -54,8 +54,148 @@ export async function runTasks(opts) {
 }
 
 /**
+ * Run clean up task
+ * @param {string} dataDir The data directory
+ * @param {object} cleanUpData Clean up object
+ * @param {object} seedData Seed object
+ * @returns {Promise<void>}
+ */
+async function cleanUpTask(dataDir, cleanUpData, seedData) {
+  try {
+    printLog(
+      "info",
+      `Starting clean up ${Object.keys(cleanUpData.styles).length} styles...`
+    );
+
+    for (const id in cleanUpData.styles) {
+      try {
+        await cleanUpStyle(
+          `${dataDir}/caches/styles/${id}`,
+          cleanUpData.styles[id].cleanUpBefore?.time ||
+            cleanUpData.styles[id].cleanUpBefore?.day
+        );
+      } catch (error) {
+        printLog(
+          "error",
+          `Failed to clean up style id "${id}": ${error}. Skipping...`
+        );
+      }
+    }
+
+    printLog("info", "Completed clean up style!");
+  } catch (error) {
+    printLog("error", `Failed to clean up style: ${error}. Exited!`);
+  }
+
+  try {
+    printLog(
+      "info",
+      `Starting clean up ${Object.keys(cleanUpData.datas).length} datas...`
+    );
+
+    for (const id in cleanUpData.datas) {
+      try {
+        await cleanUpXYZTiles(
+          `${dataDir}/caches/xyzs/${id}`,
+          seedData.datas[id].metadata.format,
+          cleanUpData.datas[id].zooms,
+          cleanUpData.datas[id].bbox,
+          seedData.datas[id].concurrency,
+          seedData.datas[id].maxTry,
+          seedData.datas[id].storeMD5,
+          cleanUpData.datas[id].cleanUpBefore?.time ||
+            cleanUpData.datas[id].cleanUpBefore?.day
+        );
+      } catch (error) {
+        printLog(
+          "error",
+          `Failed to clean up data id "${id}": ${error}. Skipping...`
+        );
+      }
+    }
+
+    printLog("info", "Completed clean up data!");
+  } catch (error) {
+    printLog("error", `Failed to clean up data: ${error}. Exited!`);
+  }
+}
+
+/**
+ * Run seed task
+ * @param {string} dataDir The data directory
+ * @param {object} seedData Seed object
+ * @returns {Promise<void>}
+ */
+async function seedTask(dataDir, seedData) {
+  try {
+    printLog(
+      "info",
+      `Starting seed ${Object.keys(seedData.styles).length} styles...`
+    );
+
+    for (const id in seedData.styles) {
+      try {
+        await seedStyle(
+          `${dataDir}/caches/styles/${id}`,
+          seedData.styles[id].url,
+          seedData.styles[id].maxTry,
+          seedData.styles[id].timeout,
+          seedData.styles[id].refreshBefore?.time ||
+            seedData.styles[id].refreshBefore?.day
+        );
+      } catch (error) {
+        printLog(
+          "error",
+          `Failed to seed style id "${id}": ${error}. Skipping...`
+        );
+      }
+    }
+
+    printLog("info", "Completed seed style!");
+  } catch (error) {
+    printLog("error", `Failed to seed style: ${error}. Exited!`);
+  }
+
+  try {
+    printLog(
+      "info",
+      `Starting seed ${Object.keys(seedData.datas).length} datas...`
+    );
+
+    for (const id in seedData.datas) {
+      try {
+        await seedXYZTiles(
+          `${dataDir}/caches/xyzs/${id}`,
+          seedData.datas[id].metadata,
+          seedData.datas[id].url,
+          seedData.datas[id].bbox,
+          seedData.datas[id].zooms,
+          seedData.datas[id].concurrency,
+          seedData.datas[id].maxTry,
+          seedData.datas[id].timeout,
+          seedData.datas[id].storeMD5,
+          seedData.datas[id].storeTransparent,
+          seedData.datas[id].refreshBefore?.time ||
+            seedData.datas[id].refreshBefore?.day ||
+            seedData.datas[id].refreshBefore?.md5
+        );
+      } catch (error) {
+        printLog(
+          "error",
+          `Failed to seed data id "${id}": ${error}. Skipping...`
+        );
+      }
+    }
+
+    printLog("info", "Completed seed data!");
+  } catch (error) {
+    printLog("error", `Failed to seed data: ${error}. Exited!`);
+  }
+}
+
+/**
  * Download all MBTiles tile data files in a specified bounding box and zoom levels
- * @param {string} outputFolder Folder to store downloaded tiles
+ * @param {string} sourcePath Folder path
  * @param {object} metadata Metadata object
  * @param {string} tileURL Tile URL to download
  * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
@@ -64,12 +204,12 @@ export async function runTasks(opts) {
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
  * @param {boolean} storeMD5 Is store MD5 hashed?
- * @param {boolean} storeTransparent Is store transparent?
+ * @param {boolean} storeTransparent Is store transparent tile?
  * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
  * @returns {Promise<void>}
  */
-async function seedMBTilesTileDatas(
-  outputFolder,
+async function seedMBTilesTiles(
+  sourcePath,
   metadata,
   tileURL,
   bbox = [-180, -85.051129, 180, 85.051129],
@@ -91,7 +231,9 @@ async function seedMBTilesTileDatas(
     0
   );
   let refreshTimestamp;
-  let log = `Seeding ${totalTasks} tile datas with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
+  let log = `Seeding ${totalTasks} tiles of cache mbtiles data id ${path.basename(
+    sourcePath
+  )} with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBox: [${bbox.join(", ")}]`;
 
@@ -115,13 +257,13 @@ async function seedMBTilesTileDatas(
 
   // Open MBTiles database
   const mbtilesSource = await openMBTilesDB(
-    outputFolder,
+    sourcePath,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     true
   );
 
   // Update metadata
-  printLog("info", `Updating metadata to "${outputFolder}"...`);
+  printLog("info", `Updating metadata to "${sourcePath}"...`);
 
   await updateMBTilesMetadataWithLock(
     mbtilesSource,
@@ -161,7 +303,7 @@ async function seedMBTilesTileDatas(
           try {
             if (refreshTimestamp !== undefined) {
               const stats = await fsPromise.stat(
-                `${outputFolder}/${tileName}.${metadata.format}`
+                `${sourcePath}/${tileName}.${metadata.format}`
               );
 
               if (refreshTimestamp === true) {
@@ -242,7 +384,7 @@ async function seedMBTilesTileDatas(
             if (error.code === "ENOENT") {
               await downloadXYZTileDataFile(
                 url,
-                outputFolder,
+                sourcePath,
                 z,
                 x,
                 y,
@@ -276,7 +418,7 @@ async function seedMBTilesTileDatas(
 
 /**
  * Remove all MBTiles tile data files in a specified zoom levels
- * @param {string} outputFolder Folder to store downloaded tiles
+ * @param {string} sourcePath Folder to store downloaded tiles
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
@@ -286,8 +428,8 @@ async function seedMBTilesTileDatas(
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-async function cleanMBTilesTileDatas(
-  outputFolder,
+async function cleanUpMBTilesTiles(
+  sourcePath,
   format,
   zooms = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
@@ -306,7 +448,9 @@ async function cleanMBTilesTileDatas(
     0
   );
   let cleanUpTimestamp;
-  let log = `Cleaning up ${totalTasks} tile datas with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${totalTasks} tiles of cache mbtiles data id ${path.basename(
+    sourcePath
+  )} with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBox: [${bbox.join(", ")}]`;
 
@@ -326,7 +470,7 @@ async function cleanMBTilesTileDatas(
 
   // Open MBTiles database
   const mbtilesSource = await openMBTilesDB(
-    outputFolder,
+    sourcePath,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     true
   );
@@ -362,7 +506,7 @@ async function cleanMBTilesTileDatas(
           try {
             if (cleanUpTimestamp !== undefined) {
               const stats = await fsPromise.stat(
-                `${outputFolder}/${tileName}.${format}`
+                `${sourcePath}/${tileName}.${format}`
               );
 
               if (
@@ -414,22 +558,22 @@ async function cleanMBTilesTileDatas(
 }
 
 /**
- * Download all XYZ tile data files in a specified bounding box and zoom levels
- * @param {string} outputFolder Folder to store downloaded tiles
+ * Seed cache XYZ tiles
+ * @param {string} sourcePath Folder path
  * @param {object} metadata Metadata object
- * @param {string} tileURL Tile URL to download
+ * @param {string} tileURL Tile URL
  * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {Array<number>} zooms Array of specific zoom levels
- * @param {number} concurrency Concurrency download
+ * @param {number} concurrency Concurrency to download
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
  * @param {boolean} storeMD5 Is store MD5 hashed?
- * @param {boolean} storeTransparent Is store transparent?
+ * @param {boolean} storeTransparent Is store transparent tile?
  * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
  * @returns {Promise<void>}
  */
-async function seedXYZTileDatas(
-  outputFolder,
+async function seedXYZTiles(
+  sourcePath,
   metadata,
   tileURL,
   bbox = [-180, -85.051129, 180, 85.051129],
@@ -451,7 +595,9 @@ async function seedXYZTileDatas(
     0
   );
   let refreshTimestamp;
-  let log = `Seeding ${totalTasks} tile data files with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
+  let log = `Seeding ${totalTasks} tiles of cache xyz data id ${path.basename(
+    sourcePath
+  )} with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBox: [${bbox.join(", ")}]`;
 
@@ -474,7 +620,7 @@ async function seedXYZTileDatas(
   printLog("info", log);
 
   // Update metadata.json file
-  const metadataFilePath = `${outputFolder}/metadata.json`;
+  const metadataFilePath = `${sourcePath}/metadata.json`;
 
   printLog("info", `Updating metadata to "${metadataFilePath}"...`);
 
@@ -516,7 +662,7 @@ async function seedXYZTileDatas(
           try {
             if (refreshTimestamp !== undefined) {
               const stats = await fsPromise.stat(
-                `${outputFolder}/${tileName}.${metadata.format}`
+                `${sourcePath}/${tileName}.${metadata.format}`
               );
 
               if (refreshTimestamp === true) {
@@ -530,12 +676,12 @@ async function seedXYZTileDatas(
                 let oldMD5;
 
                 try {
-                  oldMD5 = await getXYZTileMD5(outputFolder, z, x, y);
+                  oldMD5 = await getXYZTileMD5(sourcePath, z, x, y);
                 } catch (error) {
                   if (error.message === "Tile MD5 does not exist") {
                     await downloadXYZTileDataFile(
                       url,
-                      outputFolder,
+                      sourcePath,
                       z,
                       x,
                       y,
@@ -551,7 +697,7 @@ async function seedXYZTileDatas(
                 if (response.headers["Etag"] !== oldMD5) {
                   await downloadXYZTileDataFile(
                     url,
-                    outputFolder,
+                    sourcePath,
                     z,
                     x,
                     y,
@@ -568,7 +714,7 @@ async function seedXYZTileDatas(
               ) {
                 await downloadXYZTileDataFile(
                   url,
-                  outputFolder,
+                  sourcePath,
                   z,
                   x,
                   y,
@@ -582,7 +728,7 @@ async function seedXYZTileDatas(
             } else {
               await downloadXYZTileDataFile(
                 url,
-                outputFolder,
+                sourcePath,
                 z,
                 x,
                 y,
@@ -597,7 +743,7 @@ async function seedXYZTileDatas(
             if (error.code === "ENOENT") {
               await downloadXYZTileDataFile(
                 url,
-                outputFolder,
+                sourcePath,
                 z,
                 x,
                 y,
@@ -630,25 +776,25 @@ async function seedXYZTileDatas(
 
   // Remove parent folders if empty
   await removeEmptyFolders(
-    outputFolder,
+    sourcePath,
     /^.*\.(sqlite|json|gif|png|jpg|jpeg|webp|pbf)$/
   );
 }
 
 /**
- * Remove all XYZ tile data files in a specified zoom levels
- * @param {string} outputFolder Folder to store downloaded tiles
+ * Clean up cache XYZ tiles
+ * @param {string} sourcePath Folder path
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
- * @param {number} concurrency Concurrency download
+ * @param {number} concurrency Concurrency to clean up
  * @param {number} maxTry Number of retry attempts on failure
  * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-async function cleanXYZTileDatas(
-  outputFolder,
+async function cleanUpXYZTiles(
+  sourcePath,
   format,
   zooms = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
@@ -667,7 +813,9 @@ async function cleanXYZTileDatas(
     0
   );
   let cleanUpTimestamp;
-  let log = `Cleaning up ${totalTasks} tile data files with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${totalTasks} tiles of cache xyz data id ${path.basename(
+    sourcePath
+  )} with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBox: [${bbox.join(", ")}]`;
 
@@ -716,7 +864,7 @@ async function cleanXYZTileDatas(
           try {
             if (cleanUpTimestamp !== undefined) {
               const stats = await fsPromise.stat(
-                `${outputFolder}/${tileName}.${format}`
+                `${sourcePath}/${tileName}.${format}`
               );
 
               if (
@@ -724,7 +872,7 @@ async function cleanXYZTileDatas(
                 stats.ctimeMs < cleanUpTimestamp
               ) {
                 await removeXYZTileDataFile(
-                  outputFolder,
+                  sourcePath,
                   z,
                   x,
                   y,
@@ -736,7 +884,7 @@ async function cleanXYZTileDatas(
               }
             } else {
               await removeXYZTileDataFile(
-                outputFolder,
+                sourcePath,
                 z,
                 x,
                 y,
@@ -750,7 +898,7 @@ async function cleanXYZTileDatas(
             if (error.code !== "ENOENT") {
               printLog(
                 "error",
-                `Failed to clean up tile data file "${tileName}": ${error}`
+                `Failed to clean up tile "${tileName}": ${error}`
               );
             }
           } finally {
@@ -770,149 +918,9 @@ async function cleanXYZTileDatas(
 
   // Remove parent folders if empty
   await removeEmptyFolders(
-    outputFolder,
+    sourcePath,
     /^.*\.(sqlite|json|gif|png|jpg|jpeg|webp|pbf)$/
   );
-}
-
-/**
- * Run clean up task
- * @param {string} dataDir The data directory
- * @param {object} cleanUpData Clean up object
- * @param {object} seedData Seed object
- * @returns {Promise<void>}
- */
-async function cleanUpTask(dataDir, cleanUpData, seedData) {
-  try {
-    printLog(
-      "info",
-      `Starting clean up ${Object.keys(cleanUpData.styles).length} styles...`
-    );
-
-    for (const id in cleanUpData.styles) {
-      try {
-        await cleanStyle(
-          `${dataDir}/caches/styles/${id}`,
-          cleanUpData.styles[id].cleanUpBefore?.time ||
-            cleanUpData.styles[id].cleanUpBefore?.day
-        );
-      } catch (error) {
-        printLog(
-          "error",
-          `Failed to clean up style id "${id}": ${error}. Skipping...`
-        );
-      }
-    }
-
-    printLog("info", "Completed clean up style!");
-  } catch (error) {
-    printLog("error", `Failed to clean up style: ${error}. Exited!`);
-  }
-
-  try {
-    printLog(
-      "info",
-      `Starting clean up ${Object.keys(cleanUpData.datas).length} datas...`
-    );
-
-    for (const id in cleanUpData.datas) {
-      try {
-        await cleanXYZTileDatas(
-          `${dataDir}/caches/xyzs/${id}`,
-          seedData.datas[id].metadata.format,
-          cleanUpData.datas[id].zooms,
-          cleanUpData.datas[id].bbox,
-          seedData.datas[id].concurrency,
-          seedData.datas[id].maxTry,
-          seedData.datas[id].storeMD5,
-          cleanUpData.datas[id].cleanUpBefore?.time ||
-            cleanUpData.datas[id].cleanUpBefore?.day
-        );
-      } catch (error) {
-        printLog(
-          "error",
-          `Failed to clean up data id "${id}": ${error}. Skipping...`
-        );
-      }
-    }
-
-    printLog("info", "Completed clean up data!");
-  } catch (error) {
-    printLog("error", `Failed to clean up data: ${error}. Exited!`);
-  }
-}
-
-/**
- * Run seed task
- * @param {string} dataDir The data directory
- * @param {object} seedData Seed object
- * @returns {Promise<void>}
- */
-async function seedTask(dataDir, seedData) {
-  try {
-    printLog(
-      "info",
-      `Starting seed ${Object.keys(seedData.styles).length} styles...`
-    );
-
-    for (const id in seedData.styles) {
-      try {
-        await seedStyle(
-          `${dataDir}/caches/styles/${id}`,
-          seedData.styles[id].url,
-          seedData.styles[id].maxTry,
-          seedData.styles[id].timeout,
-          seedData.styles[id].refreshBefore?.time ||
-            seedData.styles[id].refreshBefore?.day
-        );
-      } catch (error) {
-        printLog(
-          "error",
-          `Failed to seed style id "${id}": ${error}. Skipping...`
-        );
-      }
-    }
-
-    printLog("info", "Completed seed style!");
-  } catch (error) {
-    printLog("error", `Failed to seed style: ${error}. Exited!`);
-  }
-
-  try {
-    printLog(
-      "info",
-      `Starting seed ${Object.keys(seedData.datas).length} datas...`
-    );
-
-    for (const id in seedData.datas) {
-      try {
-        await seedXYZTileDatas(
-          `${dataDir}/caches/xyzs/${id}`,
-          seedData.datas[id].metadata,
-          seedData.datas[id].url,
-          seedData.datas[id].bbox,
-          seedData.datas[id].zooms,
-          seedData.datas[id].concurrency,
-          seedData.datas[id].maxTry,
-          seedData.datas[id].timeout,
-          seedData.datas[id].storeMD5,
-          seedData.datas[id].storeTransparent,
-          seedData.datas[id].refreshBefore?.time ||
-            seedData.datas[id].refreshBefore?.day ||
-            seedData.datas[id].refreshBefore?.md5
-        );
-      } catch (error) {
-        printLog(
-          "error",
-          `Failed to seed data id "${id}": ${error}. Skipping...`
-        );
-      }
-    }
-
-    printLog("info", "Completed seed data!");
-  } catch (error) {
-    printLog("error", `Failed to seed data: ${error}. Exited!`);
-  }
 }
 
 /**
@@ -980,12 +988,12 @@ async function seedStyle(
 }
 
 /**
- * Clean cache style
+ * Clean up cache style
  * @param {string} sourcePath Folder path
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-async function cleanStyle(sourcePath, cleanUpBefore) {
+async function cleanUpStyle(sourcePath, cleanUpBefore) {
   let cleanUpTimestamp;
   let log = `Cleaning up cache style id ${path.basename(
     sourcePath

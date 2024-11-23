@@ -860,7 +860,7 @@ export async function getMBTilesTileFromURL(url, timeout) {
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
  * @param {boolean} storeMD5 Is store MD5 hashed?
- * @param {boolean} storeTransparent Is store transparent?
+ * @param {boolean} storeTransparent Is store transparent tile?
  * @returns {Promise<void>}
  */
 export async function downloadMBTilesTile(
@@ -998,7 +998,7 @@ export async function removeMBTilesTileData(
  * @param {Buffer} data Tile data buffer
  * @param {string} hash MD5 hash string
  * @param {boolean} storeMD5 Is store MD5 hashed?
- * @param {boolean} storeTransparent Is store transparent?
+ * @param {boolean} storeTransparent Is store transparent tile?
  * @returns {Promise<void>}
  */
 export async function cacheMBtilesTileData(
