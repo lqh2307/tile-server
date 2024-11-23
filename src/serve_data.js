@@ -285,6 +285,7 @@ function getDataHandler() {
       return res.status(StatusCodes.OK).send({
         ...item.tileJSON,
         tilejson: "2.2.0",
+        scheme: "xyz",
         tiles: [
           `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
             item.tileJSON.format
@@ -452,6 +453,7 @@ function getDataTileJSONsListHandler() {
           return {
             ...item.tileJSON,
             tilejson: "2.2.0",
+            scheme: "xyz",
             id: id,
             tiles: [
               `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${

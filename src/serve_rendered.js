@@ -108,6 +108,7 @@ function getRenderedHandler() {
       return res.status(StatusCodes.OK).send({
         ...item.tileJSON,
         tilejson: "2.2.0",
+        scheme: "xyz",
         tiles: [
           `${getRequestHost(req)}styles/${id}/${
             req.params.tileSize || 256
@@ -172,6 +173,7 @@ function getRenderedTileJSONsListHandler() {
             ...config.repo.rendereds[id].tileJSON,
             id: id,
             tilejson: "2.2.0",
+            scheme: "xyz",
             tiles: [
               `${getRequestHost(req)}styles/${id}/{z}/{x}/{y}.png${
                 req.query.scheme === "tms" ? "?scheme=tms" : ""
