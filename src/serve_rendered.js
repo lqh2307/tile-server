@@ -934,8 +934,8 @@ export const serve_rendered = {
                     destroy: (renderer) => renderer.release(),
                   },
                   {
-                    min: config.options.minPoolSize,
-                    max: config.options.maxPoolSize,
+                    min: config.options.minRenderedPoolSize,
+                    max: config.options.maxRenderedPoolSize,
                   }
                 )
               );

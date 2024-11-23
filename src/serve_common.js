@@ -890,7 +890,7 @@ export const serve_common = {
       );
     }
 
-    if (config.options.frontPage === true) {
+    if (config.options.serveFrontPage === true) {
       /**
        * @swagger
        * tags:

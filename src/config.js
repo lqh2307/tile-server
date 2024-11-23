@@ -37,7 +37,7 @@ async function readConfigFile(dataDir, isValidate) {
               configEndpoint: {
                 type: "boolean",
               },
-              frontPage: {
+              serveFrontPage: {
                 type: "boolean",
               },
               serveRendered: {
@@ -59,11 +59,11 @@ async function readConfigFile(dataDir, isValidate) {
                 type: "string",
                 minLength: 1,
               },
-              minPoolSize: {
+              minRenderedPoolSize: {
                 type: "integer",
                 minimum: 1,
               },
-              maxPoolSize: {
+              maxRenderedPoolSize: {
                 type: "integer",
                 minimum: 1,
               },
@@ -176,16 +176,17 @@ async function readConfigFile(dataDir, isValidate) {
     listenPort: config.options.listenPort ?? 8080,
     serverEndpoint: config.options.serverEndpoint ?? true,
     configEndpoint: config.options.configEndpoint ?? true,
-    frontPage: config.options.frontPage ?? true,
+    serveFrontPage: config.options.serveFrontPage ?? true,
+    serveSwagger: config.options.serveSwagger ?? true,
     serveRendered: config.options.serveRendered ?? true,
     maxScaleRender: config.options.maxScaleRender ?? 1,
     renderedCompression: config.options.renderedCompression ?? 1,
-    serveSwagger: config.options.serveSwagger ?? true,
+    minRenderedPoolSize: config.options.minRenderedPoolSize ?? os.cpus().length,
+    maxRenderedPoolSize:
+      config.options.maxRenderedPoolSize ?? os.cpus().length * 2,
     loggerFormat:
       config.options.loggerFormat ??
       ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
-    minPoolSize: config.options.minPoolSize ?? os.cpus().length,
-    maxPoolSize: config.options.maxPoolSize ?? os.cpus().length * 2,
     taskSchedule: config.options.taskSchedule, // undefined
     restartServerAfterTask: config.options.restartServerAfterTask ?? true,
     process: config.options.process ?? 1,
