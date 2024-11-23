@@ -27,7 +27,7 @@ export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
       `,
       z,
       x,
-      y,
+      (1 << z) - 1 - y,
       (error, row) => {
         if (error) {
           return reject(error);
@@ -62,7 +62,7 @@ export async function removeMBTilesMD5(mbtilesSource, z, x, y) {
     `,
     z,
     x,
-    y
+    (1 << z) - 1 - y
   );
 }
 
@@ -90,7 +90,7 @@ export async function upsertMBTilesTileMD5(mbtilesSource, z, x, y, hash) {
     `,
     z,
     x,
-    y,
+    (1 << z) - 1 - y,
     hash
   );
 }

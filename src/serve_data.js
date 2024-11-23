@@ -140,7 +140,7 @@ function getDataTileHandler() {
     try {
       if (item.sourceType === "mbtiles") {
         try {
-          dataTile = await getMBTilesTile(item.source, z, x, (1 << z) - 1 - y);
+          dataTile = await getMBTilesTile(item.source, z, x, y);
         } catch (error) {
           if (
             item.sourceURL !== undefined &&
@@ -165,7 +165,7 @@ function getDataTileHandler() {
                 item.source,
                 z,
                 x,
-                (1 << z) - 1 - y,
+                y,
                 dataTile.data,
                 dataTile.etag,
                 item.storeMD5,
@@ -328,7 +328,7 @@ function getDataTileMD5Handler() {
             item.source,
             z,
             x,
-            (1 << z) - 1 - y,
+            y,
             180000 // 3 mins
           );
         } else {

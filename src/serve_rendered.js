@@ -720,7 +720,7 @@ export const serve_rendered = {
                                   sourceData.source,
                                   z,
                                   x,
-                                  (1 << z) - 1 - y
+                                  y
                                 );
                               } catch (error) {
                                 if (
@@ -749,7 +749,7 @@ export const serve_rendered = {
                                       sourceData.source,
                                       z,
                                       x,
-                                      (1 << z) - 1 - y,
+                                      y,
                                       dataTile.data,
                                       dataTile.etag,
                                       sourceData.storeMD5,

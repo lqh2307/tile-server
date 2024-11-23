@@ -338,7 +338,7 @@ export async function getMBTilesTile(mbtilesSource, z, x, y) {
       `,
       z,
       x,
-      y,
+      (1 << z) - 1 - y,
       (error, row) => {
         if (error) {
           return reject(error);
@@ -655,7 +655,10 @@ export async function downloadMBTilesFile(url, filePath, maxTry, timeout) {
 async function upsertMBTilesMetadata(mbtilesSource, metadataAdds = {}) {
   return new Promise((resolve, reject) =>
     Promise.all(
-      Object.entries(metadataAdds).map(([key, value]) =>
+      Object.keys({
+        ...metadataAdds,
+        scheme: "tms",
+      }).map((key) =>
         runSQL(
           mbtilesSource,
           `
@@ -667,7 +670,7 @@ async function upsertMBTilesMetadata(mbtilesSource, metadataAdds = {}) {
           DO UPDATE SET value = excluded.value;
           `,
           key,
-          JSON.stringify(value)
+          JSON.stringify(metadataAdds[key])
         )
       )
     )
@@ -729,7 +732,7 @@ async function upsertMBTilesTile(mbtilesSource, z, x, y, data) {
     `,
     z,
     x,
-    y,
+    (1 << z) - 1 - y,
     data,
     Date.now()
   );
@@ -791,7 +794,7 @@ async function removeMBTilesTile(mbtilesSource, z, x, y) {
     `,
     z,
     x,
-    y
+    (1 << z) - 1 - y
   );
 }
 
