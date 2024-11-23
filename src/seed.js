@@ -106,6 +106,10 @@ export async function readSeedFile(dataDir, isValidate) {
                       type: "string",
                       enum: ["baselayer", "overlay"],
                     },
+                    scheme: {
+                      type: "string",
+                      enum: ["tms", "xyz"],
+                    },
                     format: {
                       type: "string",
                       enum: ["gif", "png", "jpg", "jpeg", "webp", "pbf"],
