@@ -31,15 +31,22 @@ export async function getLayersFromPBFBuffer(pbfData) {
 
 /**
  * Get data from URL
- * @param {string} url The URL to fetch data from
+ * @param {string} url URL to fetch data from
  * @param {number} timeout Timeout in milliseconds
+ * @param {"arraybuffer"|"json"|"text"|"stream"} responseType Response type
  * @returns {Promise<object>}
  */
-export async function getDataFromURL(url, timeout) {
+export async function getDataFromURL(
+  url,
+  timeout,
+  responseType = "arraybuffer"
+) {
   try {
-    const response = await axios.get(url, {
+    const response = await axios({
+      method: "GET",
+      url: url,
       timeout: timeout,
-      responseType: "arraybuffer",
+      responseType: responseType,
       headers: {
         "User-Agent": "Tile Server",
       },

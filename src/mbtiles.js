@@ -5,11 +5,8 @@ import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
-import https from "node:https";
 import sqlite3 from "sqlite3";
-import http from "node:http";
 import path from "node:path";
-import axios from "axios";
 import fs from "node:fs";
 import {
   createMBTilesTileMD5WithLock,
@@ -606,24 +603,7 @@ export async function downloadMBTilesFile(url, filePath, maxTry, timeout) {
           recursive: true,
         });
 
-        const response = await axios({
-          url,
-          responseType: "stream",
-          method: "GET",
-          timeout: timeout,
-          headers: {
-            "User-Agent": "Tile Server",
-          },
-          validateStatus: (status) => {
-            return status === StatusCodes.OK;
-          },
-          httpAgent: new http.Agent({
-            keepAlive: false,
-          }),
-          httpsAgent: new https.Agent({
-            keepAlive: false,
-          }),
-        });
+        const response = await getDataFromURL(url, timeout, "stream");
 
         const tempFilePath = `${filePath}.tmp`;
 

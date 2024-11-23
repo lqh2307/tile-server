@@ -6,10 +6,7 @@ import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
-import https from "node:https";
 import path from "node:path";
-import http from "node:http";
-import axios from "axios";
 
 /**
  * Create style data file
@@ -305,39 +302,22 @@ export async function cacheStyleFile(filePath, data) {
  */
 export async function getStyleJSONFromURL(url, timeout) {
   try {
-    const response = await axios.get(url, {
-      timeout: timeout,
-      responseType: "json",
-      headers: {
-        "User-Agent": "Tile Server",
-      },
-      validateStatus: (status) => {
-        return status === StatusCodes.OK;
-      },
-      httpAgent: new http.Agent({
-        keepAlive: false,
-      }),
-      httpsAgent: new https.Agent({
-        keepAlive: false,
-      }),
-    });
+    const response = await getDataFromURL(url, timeout, "json");
 
     return response.data;
   } catch (error) {
-    if (error.response) {
+    if (error.statusCode !== undefined) {
       if (
-        error.response.status === StatusCodes.NOT_FOUND ||
-        error.response.status === StatusCodes.NO_CONTENT
+        error.statusCode === StatusCodes.NO_CONTENT ||
+        error.statusCode === StatusCodes.NOT_FOUND
       ) {
         throw new Error("Style does not exist");
+      } else {
+        throw new Error(`Failed to get style from "${url}": ${error}`);
       }
-
-      throw new Error(
-        `Failed to get style from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
-      );
+    } else {
+      throw new Error(`Failed to get style from "${url}": ${error}`);
     }
-
-    throw new Error(`Failed to get style from "${url}": ${error}`);
   }
 }
 
