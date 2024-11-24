@@ -1,6 +1,7 @@
 "use strict";
 
 import { isFullTransparentPNGImage } from "./image.js";
+import { openSQLite, runSQL } from "./sqlile.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
@@ -19,8 +20,55 @@ import {
   getDataFromURL,
   retry,
   delay,
-  runSQL,
 } from "./utils.js";
+
+/**
+ * Initialize MBTiles database tables
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @returns {Promise<void>}
+ */
+async function initializeMBTilesTables(mbtilesSource) {
+  await Promise.all([
+    runSQL(
+      mbtilesSource,
+      `
+      CREATE TABLE IF NOT EXISTS
+        metadata (
+          name TEXT NOT NULL,
+          value TEXT NOT NULL,
+          PRIMARY KEY (name)
+        );
+      `
+    ),
+    runSQL(
+      mbtilesSource,
+      `
+      CREATE TABLE IF NOT EXISTS
+        tiles (
+          zoom_level INTEGER NOT NULL,
+          tile_column INTEGER NOT NULL,
+          tile_row INTEGER NOT NULL,
+          tile_data BLOB NOT NULL,
+          created INTEGER,
+          PRIMARY KEY (zoom_level, tile_column, tile_row)
+        );
+      `
+    ),
+    runSQL(
+      mbtilesSource,
+      `
+      CREATE TABLE IF NOT EXISTS
+        md5s (
+          zoom_level INTEGER NOT NULL,
+          tile_column INTEGER NOT NULL,
+          tile_row INTEGER NOT NULL,
+          hash TEXT,
+          PRIMARY KEY (zoom_level, tile_column, tile_row)
+        );
+      `
+    ),
+  ]);
+}
 
 /**
  * Check if a unique index exists on a specified table with given columns
@@ -435,79 +483,13 @@ export async function openMBTilesDB(
   mode = sqlite3.OPEN_READONLY,
   wal = false
 ) {
-  const hasCreateMode = mode & sqlite3.OPEN_CREATE;
+  const mbtilesSource = await openSQLite(filePath, mode, wal);
 
-  // Create folder
-  if (hasCreateMode) {
-    await fsPromise.mkdir(path.dirname(filePath), {
-      recursive: true,
-    });
+  if (mode & sqlite3.OPEN_CREATE) {
+    await initializeMBTilesTables(mbtilesSource);
   }
 
-  return new Promise((resolve, reject) => {
-    const mbtilesSource = new sqlite3.Database(
-      filePath,
-      mode,
-      async (error) => {
-        if (error) {
-          return reject(error);
-        }
-
-        try {
-          if (wal === true) {
-            await runSQL(mbtilesSource, "PRAGMA journal_mode=WAL;");
-          }
-
-          if (hasCreateMode) {
-            Promise.all([
-              runSQL(
-                mbtilesSource,
-                `
-                CREATE TABLE IF NOT EXISTS
-                  metadata (
-                    name TEXT NOT NULL,
-                    value TEXT NOT NULL,
-                    PRIMARY KEY (name)
-                  );
-                `
-              ),
-              runSQL(
-                mbtilesSource,
-                `
-                CREATE TABLE IF NOT EXISTS
-                  tiles (
-                    zoom_level INTEGER NOT NULL,
-                    tile_column INTEGER NOT NULL,
-                    tile_row INTEGER NOT NULL,
-                    tile_data BLOB NOT NULL,
-                    created INTEGER,
-                    PRIMARY KEY (zoom_level, tile_column, tile_row)
-                  );
-                `
-              ),
-              runSQL(
-                mbtilesSource,
-                `
-                CREATE TABLE IF NOT EXISTS
-                  md5s (
-                    zoom_level INTEGER NOT NULL,
-                    tile_column INTEGER NOT NULL,
-                    tile_row INTEGER NOT NULL,
-                    hash TEXT,
-                    PRIMARY KEY (zoom_level, tile_column, tile_row)
-                  );
-                `
-              ),
-            ]);
-          }
-
-          resolve(mbtilesSource);
-        } catch (error) {
-          reject(error);
-        }
-      }
-    );
-  });
+  return mbtilesSource;
 }
 
 /**
