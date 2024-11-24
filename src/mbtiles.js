@@ -583,6 +583,8 @@ export async function getMBTilesInfos(mbtilesSource) {
  * @returns {Promise<void>}
  */
 export async function closeMBTilesDB(mbtilesSource) {
+  await runSQL(mbtilesSource, "PRAGMA wal_checkpoint(PASSIVE);");
+
   return new Promise((resolve, reject) => {
     mbtilesSource.close((error) => {
       if (error) {

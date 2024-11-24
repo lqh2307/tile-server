@@ -934,6 +934,8 @@ export async function openXYZMD5DB(
  * @returns {Promise<void>}
  */
 export async function closeXYZMD5DB(xyzSource) {
+  await runSQL(xyzSource, "PRAGMA wal_checkpoint(PASSIVE);");
+
   return new Promise((resolve, reject) => {
     xyzSource.close((error) => {
       if (error) {
