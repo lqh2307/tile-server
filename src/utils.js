@@ -683,7 +683,7 @@ export function deepClone(obj) {
  * @param {Object<string,string>} serverInfoAdds Server info object
  * @returns {Promise<void>}
  */
-async function updateServerInfoFile(serverInfoAdds = {}) {
+async function updateServerInfoFile(serverInfoAdds) {
   const filePath = `${process.env.DATA_DIR}/server-info.json`;
   const tempFilePath = `${filePath}.tmp`;
 

@@ -438,7 +438,7 @@ export async function seedMBTilesTiles(
 
   // Open MBTiles SQLite database
   const mbtilesSource = await openMBTilesDB(
-    `${sourcePath}/${path.basename(sourcePath).mbtiles}`,
+    `${sourcePath}/${path.basename(sourcePath)}.mbtiles`,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     true
   );
