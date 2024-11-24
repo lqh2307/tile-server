@@ -19,54 +19,6 @@ import {
 } from "./utils.js";
 
 /**
- * Initialize MBTiles database tables
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
- * @returns {Promise<void>}
- */
-async function initializeMBTilesTables(mbtilesSource) {
-  return await Promise.all([
-    runSQL(
-      mbtilesSource,
-      `
-      CREATE TABLE IF NOT EXISTS
-        metadata (
-          name TEXT NOT NULL,
-          value TEXT NOT NULL,
-          PRIMARY KEY (name)
-        );
-      `
-    ),
-    runSQL(
-      mbtilesSource,
-      `
-      CREATE TABLE IF NOT EXISTS
-        tiles (
-          zoom_level INTEGER NOT NULL,
-          tile_column INTEGER NOT NULL,
-          tile_row INTEGER NOT NULL,
-          tile_data BLOB NOT NULL,
-          created INTEGER,
-          PRIMARY KEY (zoom_level, tile_column, tile_row)
-        );
-      `
-    ),
-    runSQL(
-      mbtilesSource,
-      `
-      CREATE TABLE IF NOT EXISTS
-        md5s (
-          zoom_level INTEGER NOT NULL,
-          tile_column INTEGER NOT NULL,
-          tile_row INTEGER NOT NULL,
-          hash TEXT,
-          PRIMARY KEY (zoom_level, tile_column, tile_row)
-        );
-      `
-    ),
-  ]);
-}
-
-/**
  * Check if a unique index exists on a specified table with given columns
  * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {string} tableName The name of the table to check
@@ -117,6 +69,64 @@ async function isMBTilesExistColumns(mbtilesSource, tableName, columnNames) {
   return columnNames.every((columnName) =>
     tableColumnNames.includes(columnName)
   );
+}
+
+/**
+ * Create unique index on the metadata table
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {string} indexName The name of the index
+ * @param {string} tableName The name of the table to check
+ * @param {Array<string>} columnNames The expected column names in the index
+ * @returns {Promise<void>}
+ */
+async function createMBTilesIndex(
+  mbtilesSource,
+  indexName,
+  tableName,
+  columnNames
+) {
+  return await runSQL(
+    mbtilesSource,
+    `CREATE UNIQUE INDEX ${indexName} ON ${tableName} (${columnNames.join(
+      ", "
+    )});`
+  );
+}
+
+/**
+ * Initialize MBTiles database tables
+ * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @returns {Promise<void>}
+ */
+async function initializeMBTilesTables(mbtilesSource) {
+  return await Promise.all([
+    runSQL(
+      mbtilesSource,
+      `
+      CREATE TABLE IF NOT EXISTS
+        metadata (
+          name TEXT NOT NULL,
+          value TEXT NOT NULL,
+          PRIMARY KEY (name)
+        );
+      `
+    ),
+    runSQL(
+      mbtilesSource,
+      `
+      CREATE TABLE IF NOT EXISTS
+        tiles (
+          zoom_level INTEGER NOT NULL,
+          tile_column INTEGER NOT NULL,
+          tile_row INTEGER NOT NULL,
+          tile_data BLOB NOT NULL,
+          hash TEXT,
+          created INTEGER,
+          PRIMARY KEY (zoom_level, tile_column, tile_row)
+        );
+      `
+    ),
+  ]);
 }
 
 /**
@@ -192,28 +202,6 @@ async function getMBTilesBBoxFromTiles(mbtilesSource) {
 }
 
 /**
- * Create unique index on the metadata table
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
- * @param {string} indexName The name of the index
- * @param {string} tableName The name of the table to check
- * @param {Array<string>} columnNames The expected column names in the index
- * @returns {Promise<void>}
- */
-async function createMBTilesIndex(
-  mbtilesSource,
-  indexName,
-  tableName,
-  columnNames
-) {
-  return await runSQL(
-    mbtilesSource,
-    `CREATE UNIQUE INDEX ${indexName} ON ${tableName} (${columnNames.join(
-      ", "
-    )});`
-  );
-}
-
-/**
  * Get MBTiles zoom level from tiles
  * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @param {"minzoom"|"maxzoom"} zoomType
@@ -281,23 +269,25 @@ async function upsertMBTilesMetadata(mbtilesSource, metadataAdds = {}) {
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
+ * @param {string} hash MD5 hash value
  * @param {Buffer} data Tile data buffer
  * @returns {Promise<void>}
  */
-async function upsertMBTilesTile(mbtilesSource, z, x, y, data) {
+async function upsertMBTilesTile(mbtilesSource, z, x, y, hash, data) {
   return await runSQL(
     mbtilesSource,
     `
     INSERT INTO
-      tiles (zoom_level, tile_column, tile_row, tile_data, created)
+      tiles (zoom_level, tile_column, tile_row, tile_data, hash, created)
     VALUES
       (?, ?, ?, ?, ?)
     ON CONFLICT (zoom_level, tile_column, tile_row)
-    DO UPDATE SET tile_data = excluded.tile_data, created = excluded.created;
+    DO UPDATE SET tile_data = excluded.tile_data, hash = excluded.hash, created = excluded.created;
     `,
     z,
     x,
     (1 << z) - 1 - y,
+    hash,
     data,
     Date.now()
   );
@@ -310,6 +300,7 @@ async function upsertMBTilesTile(mbtilesSource, z, x, y, data) {
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @param {Buffer} data Tile data buffer
+ * @param {string} hash MD5 hash value
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
@@ -319,13 +310,14 @@ async function createMBTilesTileWithLock(
   x,
   y,
   data,
+  hash,
   timeout
 ) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
     try {
-      await upsertMBTilesTile(mbtilesSource, z, x, y, data);
+      await upsertMBTilesTile(mbtilesSource, z, x, y, hash, data);
 
       return;
     } catch (error) {
@@ -777,27 +769,25 @@ export async function downloadMBTilesTile(
         ) {
           return;
         } else {
+          let md5;
+
+          if (storeMD5 === true) {
+            if (response.headers["Etag"]) {
+              md5 = response.headers["Etag"];
+            } else {
+              md5 = calculateMD5(response.data);
+            }
+          }
+
           await createMBTilesTileWithLock(
             mbtilesSource,
             z,
             x,
             y,
             response.data,
+            md5,
             300000 // 5 mins
           );
-
-          // Store data md5 hash
-          if (storeMD5 === true) {
-            await createMBTilesTileMD5WithLock(
-              mbtilesSource,
-              z,
-              x,
-              y,
-              response.data,
-              response.headers["Etag"],
-              180000 // 3 mins
-            );
-          }
         }
       } catch (error) {
         if (error.statusCode !== undefined) {
@@ -908,26 +898,25 @@ export async function cacheMBtilesTileData(
     ) {
       return;
     } else {
+      let md5;
+
+      if (storeMD5 === true) {
+        if (hash) {
+          md5 = hash;
+        } else {
+          md5 = calculateMD5(data);
+        }
+      }
+
       await createMBTilesTileWithLock(
         mbtilesSource,
         z,
         x,
         y,
         data,
+        md5,
         300000 // 5 mins
       );
-
-      if (storeMD5 === true) {
-        await createMBTilesTileMD5WithLock(
-          mbtilesSource,
-          z,
-          x,
-          y,
-          data,
-          hash,
-          180000 // 3 mins
-        );
-      }
     }
   } catch (error) {
     printLog("error", `Failed to cache tile data "${tileName}": ${error}`);
@@ -949,7 +938,7 @@ export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
     SELECT
       hash
     FROM
-      md5s
+      tiles
     WHERE
       zoom_level = ? AND tile_column = ? AND tile_row = ?;
     `,
@@ -959,7 +948,7 @@ export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
   );
 
   if (!data?.hash) {
-    return reject(new Error("Tile MD5 does not exist"));
+    throw new Error("Tile MD5 does not exist");
   }
 
   return data.hash;
@@ -990,171 +979,8 @@ export async function getMBTilesTileCreated(mbtilesSource, z, x, y) {
   );
 
   if (!data?.created) {
-    return reject(new Error("Tile created does not exist"));
+    throw new Error("Tile created does not exist");
   }
 
   return data.created;
-}
-
-/**
- * Create MD5 hash of MBTiles tile
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {Buffer} buffer The data buffer
- * @param {string} hash MD5 hash value
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-export async function createMBTilesTileMD5WithLock(
-  mbtilesSource,
-  z,
-  x,
-  y,
-  buffer,
-  hash,
-  timeout
-) {
-  const startTime = Date.now();
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      await upsertMBTilesTileMD5(
-        mbtilesSource,
-        z,
-        x,
-        y,
-        hash ?? calculateMD5(buffer)
-      );
-
-      return;
-    } catch (error) {
-      if (error.code === "SQLITE_BUSY") {
-        await delay(50);
-      } else {
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access MBTiles DB`);
-}
-
-/**
- * Remove MD5 hash of MBTiles tile
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-export async function removeMBTilesTileMD5WithLock(
-  mbtilesSource,
-  z,
-  x,
-  y,
-  timeout
-) {
-  const startTime = Date.now();
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      await removeMBTilesTileMD5(mbtilesSource, z, x, y);
-
-      return;
-    } catch (error) {
-      if (error.code === "SQLITE_CANTOPEN") {
-        return;
-      } else if (error.code === "SQLITE_BUSY") {
-        await delay(50);
-      } else {
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access MBTiles DB`);
-}
-
-/**
- * Get MD5 hash of MBTiles tile
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<string>}
- */
-async function getMBTilesTileMD5WithLock(mbtilesSource, z, x, y, timeout) {
-  const startTime = Date.now();
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      return getMBTilesTileMD5(mbtilesSource, z, x, y);
-    } catch (error) {
-      if (error.code === "SQLITE_CANTOPEN") {
-        throw new Error("Tile MD5 does not exist");
-      } else if (error.code === "SQLITE_BUSY") {
-        await delay(50);
-      } else {
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access MBTiles DB`);
-}
-
-/**
- * Remove MD5 hash of MBTiles tile
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @returns {Promise<void>}
- */
-async function removeMBTilesTileMD5(mbtilesSource, z, x, y) {
-  return await runSQL(
-    mbtilesSource,
-    `
-    DELETE FROM
-      md5s
-    WHERE
-      zoom_level = ? AND tile_column = ? AND tile_row = ?;
-    `,
-    z,
-    x,
-    (1 << z) - 1 - y
-  );
-}
-
-/**
- * Upsert MD5 hash of MBTiles tile
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {string} hash MD5 hash value
- * @returns {Promise<void>}
- */
-async function upsertMBTilesTileMD5(mbtilesSource, z, x, y, hash) {
-  return await runSQL(
-    mbtilesSource,
-    `
-    INSERT INTO
-      md5s (zoom_level, tile_column, tile_row, hash)
-    VALUES
-      (?, ?, ?, ?)
-    ON CONFLICT
-      (zoom_level, tile_column, tile_row)
-    DO
-      UPDATE SET hash = excluded.hash;
-    `,
-    z,
-    x,
-    (1 << z) - 1 - y,
-    hash
-  );
 }

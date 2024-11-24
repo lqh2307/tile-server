@@ -431,3 +431,22 @@ export async function getStyle(filePath) {
     }
   }
 }
+
+/**
+ * Get created of style
+ * @param {string} filePath The path of the file
+ * @returns {Promise<number>}
+ */
+export async function getStyleCreated(filePath) {
+  try {
+    const stats = await fsPromise.stat(filePath);
+
+    return stats.ctimeMs;
+  } catch (error) {
+    if (error === "ENOENT") {
+      throw new Error("Style created does not exist");
+    } else {
+      throw error;
+    }
+  }
+}

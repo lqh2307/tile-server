@@ -185,6 +185,7 @@ export async function cleanUpMBTilesTiles(
   storeMD5 = false,
   cleanUpBefore
 ) {
+  const id = path.basename(sourcePath);
   const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
   let totalTasks = Object.values(tilesSummary).reduce(
     (total, tile) =>
@@ -192,9 +193,7 @@ export async function cleanUpMBTilesTiles(
     0
   );
   let cleanUpTimestamp;
-  let log = `Cleaning up ${totalTasks} tiles of cache mbtiles data id ${path.basename(
-    sourcePath
-  )} with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${totalTasks} tiles of cache mbtiles data id "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBox: [${bbox.join(", ")}]`;
 
@@ -326,6 +325,7 @@ export async function cleanUpXYZTiles(
   storeMD5 = false,
   cleanUpBefore
 ) {
+  const id = path.basename(sourcePath);
   const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
   let totalTasks = Object.values(tilesSummary).reduce(
     (total, tile) =>
@@ -333,9 +333,7 @@ export async function cleanUpXYZTiles(
     0
   );
   let cleanUpTimestamp;
-  let log = `Cleaning up ${totalTasks} tiles of cache xyz data id ${path.basename(
-    sourcePath
-  )} with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${totalTasks} tiles of cache xyz data id "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBox: [${bbox.join(", ")}]`;
 
@@ -450,10 +448,9 @@ export async function cleanUpXYZTiles(
  * @returns {Promise<void>}
  */
 export async function cleanUpStyle(sourcePath, cleanUpBefore) {
+  const id = path.basename(sourcePath);
   let cleanUpTimestamp;
-  let log = `Cleaning up cache style id ${path.basename(
-    sourcePath
-  )} with:\n\tMax tries: ${maxTry}`;
+  let log = `Cleaning up cache style id "${id}" with:\n\tMax tries: ${maxTry}`;
 
   if (typeof cleanUpBefore === "string") {
     cleanUpTimestamp = new Date(cleanUpBefore).getTime();
@@ -495,12 +492,7 @@ export async function cleanUpStyle(sourcePath, cleanUpBefore) {
     if (error.code === "ENOENT") {
       return;
     } else {
-      printLog(
-        "error",
-        `Failed to clean up cache style id ${path.basename(
-          sourcePath
-        )}: ${error}`
-      );
+      printLog("error", `Failed to clean up cache style id "${id}": ${error}`);
     }
   }
 

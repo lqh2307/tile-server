@@ -818,7 +818,7 @@ export async function getXYZTileMD5(xyzSource, z, x, y) {
   );
 
   if (!data?.hash) {
-    return reject(new Error("Tile MD5 does not exist"));
+    throw new Error("Tile MD5 does not exist");
   }
 
   return data.hash;
@@ -892,6 +892,25 @@ export async function removeXYZTileMD5WithLock(xyzSource, z, x, y, timeout) {
   }
 
   throw new Error(`Timeout to access MD5 DB`);
+}
+
+/**
+ * Get created of XYZ tile
+ * @param {string} filePath The path of the file
+ * @returns {Promise<number>}
+ */
+export async function getXYZTileCreated(filePath) {
+  try {
+    const stats = await fsPromise.stat(filePath);
+
+    return stats.ctimeMs;
+  } catch (error) {
+    if (error === "ENOENT") {
+      throw new Error("Tile created does not exist");
+    } else {
+      throw error;
+    }
+  }
 }
 
 /**
