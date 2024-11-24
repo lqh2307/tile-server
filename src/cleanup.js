@@ -4,7 +4,6 @@ import { closeXYZMD5DB, openXYZMD5DB, removeXYZTileDataFile } from "./xyz.js";
 import { removeMBTilesTileData, openMBTilesDB } from "./mbtiles.js";
 import { removeStyleFile } from "./style.js";
 import fsPromise from "node:fs/promises";
-import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
 import path from "node:path";
