@@ -909,7 +909,7 @@ export async function cacheXYZTileDataFile(
 
 /**
  * Open XYZ MD5 SQLite database
- * @param {string} sourcePath
+ * @param {string} sourcePath XYZ folder path
  * @param {number} mode SQLite mode (e.g: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE | sqlite3.OPEN_READONLY)
  * @param {boolean} wal Use WAL
  * @returns {Promise<sqlite3.Database>}

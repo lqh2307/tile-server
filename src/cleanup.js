@@ -2,7 +2,7 @@
 
 import { closeXYZMD5DB, openXYZMD5DB, removeXYZTileDataFile } from "./xyz.js";
 import { removeMBTilesTileData, openMBTilesDB } from "./mbtiles.js";
-import { removeStyleFile } from "./style.js";
+import { getStyleCreated, removeStyleFile } from "./style.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
@@ -211,7 +211,7 @@ export async function cleanUpMBTilesTiles(
 
   // Open MBTiles SQLite database
   const mbtilesSource = await openMBTilesDB(
-    sourcePath,
+    `${sourcePath}/${path.basename(sourcePath).mbtiles}`,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     true
   );
@@ -486,20 +486,28 @@ export async function cleanUpStyle(sourcePath, cleanUpBefore) {
 
   // Remove file
   const filePath = `${sourcePath}/style.json`;
+  let needRemove = false;
 
   try {
     if (cleanUpTimestamp !== undefined) {
-      const stats = await fsPromise.stat(filePath);
+      try {
+        created = await getStyleCreated(filePath);
 
-      // Check timestamp
-      if (stats.ctimeMs === undefined || stats.ctimeMs < cleanUpTimestamp) {
-        await removeStyleFile(
-          filePath,
-          maxTry,
-          300000 // 5 mins
-        );
+        if (!created || created < cleanUpTimestamp) {
+          needRemove = true;
+        }
+      } catch (error) {
+        if (error.message === "Style created does not exist") {
+          needRemove = true;
+        } else {
+          throw error;
+        }
       }
     } else {
+      needRemove = true;
+    }
+
+    if (needRemove === true) {
       await removeStyleFile(
         filePath,
         maxTry,
@@ -507,11 +515,7 @@ export async function cleanUpStyle(sourcePath, cleanUpBefore) {
       );
     }
   } catch (error) {
-    if (error.code === "ENOENT") {
-      return;
-    } else {
-      printLog("error", `Failed to clean up style id "${id}": ${error}`);
-    }
+    printLog("error", `Failed to clean up style id "${id}": ${error}`);
   }
 
   // Remove parent folders if empty
