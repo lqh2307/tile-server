@@ -280,7 +280,7 @@ async function upsertMBTilesTile(mbtilesSource, z, x, y, hash, data) {
     INSERT INTO
       tiles (zoom_level, tile_column, tile_row, tile_data, hash, created)
     VALUES
-      (?, ?, ?, ?, ?)
+      (?, ?, ?, ?, ?, ?)
     ON CONFLICT (zoom_level, tile_column, tile_row)
     DO UPDATE SET tile_data = excluded.tile_data, hash = excluded.hash, created = excluded.created;
     `,
