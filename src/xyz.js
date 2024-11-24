@@ -293,7 +293,7 @@ async function createXYZTileDataFileWithLock(filePath, data, timeout) {
     }
   }
 
-  throw new Error(`Timeout to access ${lockFilePath} file`);
+  throw new Error(`Timeout to access lock file`);
 }
 
 /**
@@ -342,7 +342,7 @@ async function removeXYZTileDataFileWithLock(filePath, timeout) {
     }
   }
 
-  throw new Error(`Timeout to access ${lockFilePath} file`);
+  throw new Error(`Timeout to access lock file`);
 }
 
 /**
@@ -454,7 +454,7 @@ async function createXYZTileMD5WithLock(
     }
   }
 
-  throw new Error(`Timeout to access MD5 DB`);
+  throw new Error(`Timeout to access XYZ MD5 DB`);
 }
 
 /**
@@ -485,7 +485,7 @@ async function removeXYZTileMD5WithLock(xyzSource, z, x, y, timeout) {
     }
   }
 
-  throw new Error(`Timeout to access MD5 DB`);
+  throw new Error(`Timeout to access XYZ MD5 DB`);
 }
 
 /**
@@ -695,7 +695,7 @@ export async function updateXYZMetadataFileWithLock(
     }
   }
 
-  throw new Error(`Timeout to access ${lockFilePath} file`);
+  throw new Error(`Timeout to access lock file`);
 }
 
 /**

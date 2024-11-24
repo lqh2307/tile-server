@@ -777,7 +777,7 @@ export async function updateServerInfoFileWithLock(
     }
   }
 
-  throw new Error(`Timeout to access ${lockFilePath} file`);
+  throw new Error(`Timeout to access lock file`);
 }
 
 /**

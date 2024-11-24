@@ -93,7 +93,7 @@ export async function createStyleDataFileWithLock(filePath, data, timeout) {
     }
   }
 
-  throw new Error(`Timeout to access ${lockFilePath} file`);
+  throw new Error(`Timeout to access lock file`);
 }
 
 /**
@@ -142,7 +142,7 @@ export async function removeStyleDataFileWithLock(filePath, timeout) {
     }
   }
 
-  throw new Error(`Timeout to access ${lockFilePath} file`);
+  throw new Error(`Timeout to access lock file`);
 }
 
 /**

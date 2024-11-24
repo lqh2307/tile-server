@@ -54,6 +54,8 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
       `Starting clean up ${Object.keys(cleanUpData.styles).length} styles...`
     );
 
+    const startTime = Date.now();
+
     for (const id in cleanUpData.styles) {
       const cleanUpStyleItem = cleanUpData.styles[id];
       const cleanUpData =
@@ -70,7 +72,12 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
       }
     }
 
-    printLog("info", "Completed clean up style!");
+    const doneTime = Date.now();
+
+    printLog(
+      "info",
+      `Completed clean up style after: ${(doneTime - startTime) / 1000}s!`
+    );
   } catch (error) {
     printLog("error", `Failed to clean up style: ${error}. Exited!`);
   }
@@ -80,6 +87,8 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
       "info",
       `Starting clean up ${Object.keys(cleanUpData.datas).length} datas...`
     );
+
+    const startTime = Date.now();
 
     for (const id in cleanUpData.datas) {
       const seedDataItem = seedData.datas[id];
@@ -118,7 +127,12 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
       }
     }
 
-    printLog("info", "Completed clean up data!");
+    const doneTime = Date.now();
+
+    printLog(
+      "info",
+      `Completed clean up data after: ${(doneTime - startTime) / 1000}s!`
+    );
   } catch (error) {
     printLog("error", `Failed to clean up data: ${error}. Exited!`);
   }
@@ -136,6 +150,8 @@ async function runSeedTask(dataDir, seedData) {
       "info",
       `Starting seed ${Object.keys(seedData.styles).length} styles...`
     );
+
+    const startTime = Date.now();
 
     for (const id in seedData.styles) {
       const seedStyleItem = seedData.styles[id];
@@ -158,7 +174,12 @@ async function runSeedTask(dataDir, seedData) {
       }
     }
 
-    printLog("info", "Completed seed style!");
+    const doneTime = Date.now();
+
+    printLog(
+      "info",
+      `Completed seed style after: ${(doneTime - startTime) / 1000}s!`
+    );
   } catch (error) {
     printLog("error", `Failed to seed style: ${error}. Exited!`);
   }
@@ -168,6 +189,8 @@ async function runSeedTask(dataDir, seedData) {
       "info",
       `Starting seed ${Object.keys(seedData.datas).length} datas...`
     );
+
+    const startTime = Date.now();
 
     for (const id in seedData.datas) {
       const seedDataItem = seedData.datas[id];
@@ -214,7 +237,12 @@ async function runSeedTask(dataDir, seedData) {
       }
     }
 
-    printLog("info", "Completed seed data!");
+    const doneTime = Date.now();
+
+    printLog(
+      "info",
+      `Completed seed data after: ${(doneTime - startTime) / 1000}s!`
+    );
   } catch (error) {
     printLog("error", `Failed to seed data: ${error}. Exited!`);
   }
