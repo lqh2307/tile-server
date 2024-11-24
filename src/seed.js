@@ -583,7 +583,6 @@ export async function seedMBTilesTiles(
  */
 export async function seedXYZTiles(
   sourcePath,
-  xyzSource,
   metadata,
   tileURL,
   bbox = [-180, -85.051129, 180, 85.051129],
