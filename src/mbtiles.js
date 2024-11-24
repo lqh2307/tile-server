@@ -1,6 +1,6 @@
 "use strict";
 
-import { fetchAll, fetchOne, openSQLite, runSQL } from "./sqlile.js";
+import { fetchAll, fetchOne, openSQLite, runSQL } from "./sqlite.js";
 import { isFullTransparentPNGImage } from "./image.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
