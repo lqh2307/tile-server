@@ -1,5 +1,6 @@
 "use strict";
 
+import fsPromise from "node:fs/promises";
 import sqlite3 from "sqlite3";
 import path from "node:path";
 
