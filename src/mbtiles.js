@@ -287,8 +287,8 @@ async function upsertMBTilesTile(mbtilesSource, z, x, y, hash, data) {
     z,
     x,
     (1 << z) - 1 - y,
-    hash,
     data,
+    hash,
     Date.now()
   );
 }

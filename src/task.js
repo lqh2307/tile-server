@@ -1,8 +1,18 @@
 "use strict";
 
-import { cleanUpStyle, cleanUpXYZTiles, readCleanUpFile } from "./cleanup.js";
-import { readSeedFile, seedStyle, seedXYZTiles } from "./seed.js";
 import { printLog } from "./logger.js";
+import {
+  cleanUpMBTilesTiles,
+  cleanUpXYZTiles,
+  readCleanUpFile,
+  cleanUpStyle,
+} from "./cleanup.js";
+import {
+  seedMBTilesTiles,
+  readSeedFile,
+  seedXYZTiles,
+  seedStyle,
+} from "./seed.js";
 
 /**
  * Run clean up and seed tasks
@@ -72,17 +82,31 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
 
     for (const id in cleanUpData.datas) {
       try {
-        await cleanUpXYZTiles(
-          `${dataDir}/caches/xyzs/${id}`,
-          seedData.datas[id].metadata.format,
-          cleanUpData.datas[id].zooms,
-          cleanUpData.datas[id].bbox,
-          seedData.datas[id].concurrency,
-          seedData.datas[id].maxTry,
-          seedData.datas[id].storeMD5,
-          cleanUpData.datas[id].cleanUpBefore?.time ||
-            cleanUpData.datas[id].cleanUpBefore?.day
-        );
+        if (seedData.datas[id].storeType === "xyz") {
+          await cleanUpXYZTiles(
+            `${dataDir}/caches/xyzs/${id}`,
+            seedData.datas[id].metadata.format,
+            cleanUpData.datas[id].zooms,
+            cleanUpData.datas[id].bbox,
+            seedData.datas[id].concurrency,
+            seedData.datas[id].maxTry,
+            seedData.datas[id].storeMD5,
+            cleanUpData.datas[id].cleanUpBefore?.time ||
+              cleanUpData.datas[id].cleanUpBefore?.day
+          );
+        } else if (seedData.datas[id].storeType === "mbtiles") {
+          await cleanUpMBTilesTiles(
+            `${dataDir}/caches/mbtiles/${id}`,
+            seedData.datas[id].metadata.format,
+            cleanUpData.datas[id].zooms,
+            cleanUpData.datas[id].bbox,
+            seedData.datas[id].concurrency,
+            seedData.datas[id].maxTry,
+            seedData.datas[id].storeMD5,
+            cleanUpData.datas[id].cleanUpBefore?.time ||
+              cleanUpData.datas[id].cleanUpBefore?.day
+          );
+        }
       } catch (error) {
         printLog(
           "error",
@@ -141,21 +165,39 @@ async function runSeedTask(dataDir, seedData) {
 
     for (const id in seedData.datas) {
       try {
-        await seedXYZTiles(
-          `${dataDir}/caches/xyzs/${id}`,
-          seedData.datas[id].metadata,
-          seedData.datas[id].url,
-          seedData.datas[id].bbox,
-          seedData.datas[id].zooms,
-          seedData.datas[id].concurrency,
-          seedData.datas[id].maxTry,
-          seedData.datas[id].timeout,
-          seedData.datas[id].storeMD5,
-          seedData.datas[id].storeTransparent,
-          seedData.datas[id].refreshBefore?.time ||
-            seedData.datas[id].refreshBefore?.day ||
-            seedData.datas[id].refreshBefore?.md5
-        );
+        if (seedData.datas[id].storeType === "xyz") {
+          await seedXYZTiles(
+            `${dataDir}/caches/xyzs/${id}`,
+            seedData.datas[id].metadata,
+            seedData.datas[id].url,
+            seedData.datas[id].bbox,
+            seedData.datas[id].zooms,
+            seedData.datas[id].concurrency,
+            seedData.datas[id].maxTry,
+            seedData.datas[id].timeout,
+            seedData.datas[id].storeMD5,
+            seedData.datas[id].storeTransparent,
+            seedData.datas[id].refreshBefore?.time ||
+              seedData.datas[id].refreshBefore?.day ||
+              seedData.datas[id].refreshBefore?.md5
+          );
+        } else if (seedData.datas[id].storeType === "mbtiles") {
+          await seedMBTilesTiles(
+            `${dataDir}/caches/mbtiles/${id}`,
+            seedData.datas[id].metadata,
+            seedData.datas[id].url,
+            seedData.datas[id].bbox,
+            seedData.datas[id].zooms,
+            seedData.datas[id].concurrency,
+            seedData.datas[id].maxTry,
+            seedData.datas[id].timeout,
+            seedData.datas[id].storeMD5,
+            seedData.datas[id].storeTransparent,
+            seedData.datas[id].refreshBefore?.time ||
+              seedData.datas[id].refreshBefore?.day ||
+              seedData.datas[id].refreshBefore?.md5
+          );
+        }
       } catch (error) {
         printLog(
           "error",
