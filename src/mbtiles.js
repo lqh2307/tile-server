@@ -1,11 +1,10 @@
 "use strict";
 
+import { fetchAll, fetchOne, openSQLite, runSQL } from "./sqlile.js";
 import { isFullTransparentPNGImage } from "./image.js";
-import { openSQLite, runSQL } from "./sqlile.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
-import { Mutex } from "async-mutex";
 import sqlite3 from "sqlite3";
 import path from "node:path";
 import fs from "node:fs";
@@ -28,7 +27,7 @@ import {
  * @returns {Promise<void>}
  */
 async function initializeMBTilesTables(mbtilesSource) {
-  await Promise.all([
+  return await Promise.all([
     runSQL(
       mbtilesSource,
       `
@@ -78,32 +77,21 @@ async function initializeMBTilesTables(mbtilesSource) {
  * @returns {Promise<boolean>} Returns true if the index exists with specified columns, otherwise false
  */
 async function isMBTilesExistIndex(mbtilesSource, tableName, columnNames) {
-  const indexes = await new Promise((resolve, reject) => {
-    mbtilesSource.all(`PRAGMA index_list (${tableName});`, (error, indexes) => {
-      if (error) {
-        return reject(error);
-      }
+  const indexes = await fetchAll(
+    mbtilesSource,
+    "PRAGMA index_list (?);",
+    tableName
+  );
 
-      resolve(indexes);
-    });
-  });
-
-  for (const index of indexes || {}) {
-    const columns = await new Promise((resolve, reject) => {
-      mbtilesSource.all(
-        `PRAGMA index_info (${index.name});`,
-        (error, columns) => {
-          if (error) {
-            return reject(error);
-          }
-
-          resolve(columns);
-        }
-      );
-    });
+  for (const index of indexes) {
+    const columns = await fetchAll(
+      mbtilesSource,
+      "PRAGMA index_info (?);",
+      index.name
+    );
 
     if (
-      columns?.length === columnNames.length &&
+      columns.length === columnNames.length &&
       columns.every((col, i) => col.name === columnNames[i])
     ) {
       return true;
@@ -121,17 +109,13 @@ async function isMBTilesExistIndex(mbtilesSource, tableName, columnNames) {
  * @returns {Promise<boolean>} Returns true if there columns exist on a specified table, otherwise false
  */
 async function isMBTilesExistColumns(mbtilesSource, tableName, columnNames) {
-  const columns = await new Promise((resolve, reject) => {
-    mbtilesSource.all(`PRAGMA table_info (${tableName});`, (error, columns) => {
-      if (error) {
-        return reject(error);
-      }
+  const columns = await fetchAll(
+    mbtilesSource,
+    "PRAGMA table_info (?);",
+    tableName
+  );
 
-      resolve(columns);
-    });
-  });
-
-  const tableColumnNames = (columns || []).map((column) => column.name);
+  const tableColumnNames = columns.map((column) => column.name);
 
   return columnNames.every((columnName) =>
     tableColumnNames.includes(columnName)
@@ -144,61 +128,31 @@ async function isMBTilesExistColumns(mbtilesSource, tableName, columnNames) {
  * @returns {Promise<Array<string>>}
  */
 async function getMBTilesLayersFromTiles(mbtilesSource) {
-  return await new Promise((resolve, reject) => {
-    mbtilesSource.all("SELECT tile_data FROM tiles;", async (error, rows) => {
-      if (error) {
-        return reject(error);
-      }
+  const layerNames = new Set();
+  let offset = 0;
 
-      if (rows !== undefined) {
-        const layerNames = new Set();
-        let totalTasks = rows.length;
-        let activeTasks = 0;
-        const mutex = new Mutex();
+  while (true) {
+    const rows = await fetchAll(
+      mbtilesSource,
+      `SELECT tile_data FROM tiles LIMIT ? OFFSET ?;`,
+      200,
+      offset
+    );
 
-        async function updateActiveTasks(action) {
-          return await mutex.runExclusive(async () => {
-            return action();
-          });
-        }
+    if (rows.length === 0) {
+      break;
+    }
 
-        for (const row of rows) {
-          /* Wait slot for a task */
-          while (activeTasks >= 200) {
-            await delay(50);
-          }
+    for (const row of rows) {
+      const layers = await getLayersFromPBFBuffer(row.tile_data);
 
-          await mutex.runExclusive(() => {
-            activeTasks++;
+      layers.forEach((layer) => layerNames.add(layer));
+    }
 
-            totalTasks--;
-          });
+    offset += batchSize;
+  }
 
-          /* Run a task */
-          (async () => {
-            try {
-              const layers = await getLayersFromPBFBuffer(row.tile_data);
-
-              layers.forEach((layer) => layerNames.add(layer));
-            } catch (error) {
-              reject(error);
-            } finally {
-              await updateActiveTasks(() => {
-                activeTasks--;
-              });
-            }
-          })();
-        }
-
-        /* Wait all tasks done */
-        while (activeTasks > 0) {
-          await delay(50);
-        }
-      }
-
-      resolve(Array.from(layerNames));
-    });
-  });
+  return Array.from(layerNames);
 }
 
 /**
@@ -207,45 +161,37 @@ async function getMBTilesLayersFromTiles(mbtilesSource) {
  * @returns {Promise<Array<number>>} Bounding box in format [minLon, minLat, maxLon, maxLat]
  */
 async function getMBTilesBBoxFromTiles(mbtilesSource) {
-  return new Promise((resolve, reject) => {
-    mbtilesSource.all(
-      `
-      SELECT
-        zoom_level, MIN(tile_column) AS xMin, MAX(tile_column) AS xMax, MIN(tile_row) AS yMin, MAX(tile_row) AS yMax
-      FROM
-        tiles
-      GROUP BY
-        zoom_level;
-      `,
-      (error, rows) => {
-        if (error) {
-          return reject(error);
-        }
+  const rows = await fetchAll(
+    mbtilesSource,
+    `
+    SELECT
+      zoom_level, MIN(tile_column) AS xMin, MAX(tile_column) AS xMax, MIN(tile_row) AS yMin, MAX(tile_row) AS yMax
+    FROM
+      tiles
+    GROUP BY
+      zoom_level;
+    `
+  );
 
-        if (rows !== undefined) {
-          const boundsArr = rows.map((row) =>
-            getBBoxFromTiles(
-              row.xMin,
-              row.yMin,
-              row.xMax,
-              row.yMax,
-              row.zoom_level,
-              "tms"
-            )
-          );
-
-          resolve([
-            Math.min(...boundsArr.map((bbox) => bbox[0])),
-            Math.min(...boundsArr.map((bbox) => bbox[1])),
-            Math.max(...boundsArr.map((bbox) => bbox[2])),
-            Math.max(...boundsArr.map((bbox) => bbox[3])),
-          ]);
-        } else {
-          resolve();
-        }
-      }
+  if (rows.length > 0) {
+    const boundsArr = rows.map((row) =>
+      getBBoxFromTiles(
+        row.xMin,
+        row.yMin,
+        row.xMax,
+        row.yMax,
+        row.zoom_level,
+        "tms"
+      )
     );
-  });
+
+    return [
+      Math.min(...boundsArr.map((bbox) => bbox[0])),
+      Math.min(...boundsArr.map((bbox) => bbox[1])),
+      Math.max(...boundsArr.map((bbox) => bbox[2])),
+      Math.max(...boundsArr.map((bbox) => bbox[3])),
+    ];
+  }
 }
 
 /**
@@ -280,45 +226,27 @@ async function getMBTilesZoomLevelFromTiles(
   mbtilesSource,
   zoomType = "maxzoom"
 ) {
-  return await new Promise((resolve, reject) => {
-    mbtilesSource.get(
-      zoomType === "minzoom"
-        ? "SELECT MIN(zoom_level) AS zoom FROM tiles;"
-        : "SELECT MAX(zoom_level) AS zoom FROM tiles;",
-      (error, row) => {
-        if (error) {
-          return reject(error);
-        }
+  const data = await fetchOne(
+    mbtilesSource,
+    zoomType === "minzoom"
+      ? "SELECT MIN(zoom_level) AS zoom FROM tiles;"
+      : "SELECT MAX(zoom_level) AS zoom FROM tiles;"
+  );
 
-        if (row !== undefined) {
-          return resolve(row.zoom);
-        }
-
-        resolve();
-      }
-    );
-  });
+  return data?.zoom;
 }
 
 /**
  * Get MBTiles tile format from tiles
  * @param {sqlite3.Database} mbtilesSource The MBTiles source object
- * @returns {Promise<number>}
+ * @returns {Promise<string>}
  */
 async function getMBTilesFormatFromTiles(mbtilesSource) {
-  return await new Promise((resolve, reject) => {
-    mbtilesSource.get("SELECT tile_data FROM tiles LIMIT 1;", (error, row) => {
-      if (error) {
-        return reject(error);
-      }
+  const data = await fetchOne(mbtilesSource, "SELECT tile_data FROM tiles;");
 
-      if (row !== undefined) {
-        return resolve(detectFormatAndHeaders(row.tile_data).format);
-      }
-
-      resolve();
-    });
-  });
+  if (data !== undefined) {
+    return detectFormatAndHeaders(data.tile_data).format;
+  }
 }
 
 /**
@@ -328,29 +256,25 @@ async function getMBTilesFormatFromTiles(mbtilesSource) {
  * @returns {Promise<void>}
  */
 async function upsertMBTilesMetadata(mbtilesSource, metadataAdds = {}) {
-  return new Promise((resolve, reject) =>
-    Promise.all(
-      Object.keys({
-        ...metadataAdds,
-        scheme: "tms",
-      }).map((key) =>
-        runSQL(
-          mbtilesSource,
-          `
-          INSERT INTO
-            metadata (name, value)
-          VALUES
-            (?, ?)
-          ON CONFLICT (name)
-          DO UPDATE SET value = excluded.value;
-          `,
-          key,
-          JSON.stringify(metadataAdds[key])
-        )
+  return await Promise.all(
+    Object.keys({
+      ...metadataAdds,
+      scheme: "tms",
+    }).map((key) =>
+      runSQL(
+        mbtilesSource,
+        `
+        INSERT INTO
+          metadata (name, value)
+        VALUES
+          (?, ?)
+        ON CONFLICT (name)
+        DO UPDATE SET value = excluded.value;
+        `,
+        key,
+        JSON.stringify(metadataAdds[key])
       )
     )
-      .then(() => resolve())
-      .catch((error) => reject(error))
   );
 }
 
@@ -501,37 +425,31 @@ export async function openMBTilesDB(
  * @returns {Promise<object>}
  */
 export async function getMBTilesTile(mbtilesSource, z, x, y) {
-  return new Promise((resolve, reject) => {
-    mbtilesSource.get(
-      `
-      SELECT
-        tile_data
-      FROM
-        tiles
-      WHERE
-        zoom_level = ? AND tile_column = ? AND tile_row = ?;
-      `,
-      z,
-      x,
-      (1 << z) - 1 - y,
-      (error, row) => {
-        if (error) {
-          return reject(error);
-        }
+  let data = await fetchOne(
+    mbtilesSource,
+    `
+    SELECT
+      tile_data
+    FROM
+      tiles
+    WHERE
+      zoom_level = ? AND tile_column = ? AND tile_row = ?;
+    `,
+    z,
+    x,
+    (1 << z) - 1 - y
+  );
 
-        if (!row?.tile_data) {
-          return reject(new Error("Tile does not exist"));
-        }
+  if (!data?.tile_data) {
+    throw new Error("Tile does not exist");
+  }
 
-        const data = Buffer.from(row.tile_data);
+  data = Buffer.from(data.tile_data);
 
-        resolve({
-          data: data,
-          headers: detectFormatAndHeaders(data).headers,
-        });
-      }
-    );
-  });
+  return {
+    data: data,
+    headers: detectFormatAndHeaders(data).headers,
+  };
 }
 
 /**
@@ -549,69 +467,58 @@ export async function getMBTilesInfos(mbtilesSource) {
   };
 
   /* Get metadatas */
-  await new Promise((resolve, reject) => {
-    mbtilesSource.all("SELECT name, value FROM metadata;", (error, rows) => {
-      if (error) {
-        return reject(error);
-      }
+  const rows = await fetchAll(
+    mbtilesSource,
+    "SELECT name, value FROM metadata;"
+  );
 
-      if (rows !== undefined) {
-        rows.forEach((row) => {
-          switch (row.name) {
-            case "json":
-              try {
-                Object.assign(metadata, JSON.parse(row.value));
-              } catch (error) {
-                return reject(error);
-              }
+  rows.forEach((row) => {
+    switch (row.name) {
+      case "json":
+        Object.assign(metadata, JSON.parse(row.value));
 
-              break;
-            case "minzoom":
-              metadata.minzoom = Number(row.value);
+        break;
+      case "minzoom":
+        metadata.minzoom = Number(row.value);
 
-              break;
-            case "maxzoom":
-              metadata.maxzoom = Number(row.value);
+        break;
+      case "maxzoom":
+        metadata.maxzoom = Number(row.value);
 
-              break;
-            case "center":
-              metadata.center = row.value.split(",").map((elm) => Number(elm));
+        break;
+      case "center":
+        metadata.center = row.value.split(",").map((elm) => Number(elm));
 
-              break;
-            case "format":
-              metadata.format = row.value;
+        break;
+      case "format":
+        metadata.format = row.value;
 
-              break;
-            case "bounds":
-              metadata.bounds = row.value.split(",").map((elm) => Number(elm));
+        break;
+      case "bounds":
+        metadata.bounds = row.value.split(",").map((elm) => Number(elm));
 
-              break;
-            case "name":
-              metadata.name = row.value;
+        break;
+      case "name":
+        metadata.name = row.value;
 
-              break;
-            case "description":
-              metadata.description = row.value;
+        break;
+      case "description":
+        metadata.description = row.value;
 
-              break;
-            case "attribution":
-              metadata.attribution = row.value;
+        break;
+      case "attribution":
+        metadata.attribution = row.value;
 
-              break;
-            case "version":
-              metadata.version = row.value;
+        break;
+      case "version":
+        metadata.version = row.value;
 
-              break;
-            case "type":
-              metadata.type = row.value;
+        break;
+      case "type":
+        metadata.type = row.value;
 
-              break;
-          }
-        });
-      }
-
-      resolve();
-    });
+        break;
+    }
   });
 
   /* Try get min zoom */

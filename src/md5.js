@@ -1,7 +1,7 @@
 "use strict";
 
+import { fetchOne, openSQLite, runSQL } from "./sqlile.js";
 import { calculateMD5, delay } from "./utils.js";
-import { openSQLite, runSQL } from "./sqlile.js";
 import sqlite3 from "sqlite3";
 
 /****************************************** MBTiles *********************************************/
@@ -15,32 +15,26 @@ import sqlite3 from "sqlite3";
  * @returns {Promise<string>} Returns the MD5 hash as a string
  */
 export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
-  return new Promise((resolve, reject) => {
-    mbtilesSource.get(
-      `
-      SELECT
-        hash
-      FROM
-        md5s
-      WHERE
-        zoom_level = ? AND tile_column = ? AND tile_row = ?;
-      `,
-      z,
-      x,
-      (1 << z) - 1 - y,
-      (error, row) => {
-        if (error) {
-          return reject(error);
-        }
+  const data = await fetchOne(
+    mbtilesSource,
+    `
+    SELECT
+      hash
+    FROM
+      md5s
+    WHERE
+      zoom_level = ? AND tile_column = ? AND tile_row = ?;
+    `,
+    z,
+    x,
+    (1 << z) - 1 - y
+  );
 
-        if (!row?.hash) {
-          return reject(new Error("Tile MD5 does not exist"));
-        }
+  if (!data?.hash) {
+    return reject(new Error("Tile MD5 does not exist"));
+  }
 
-        resolve(row.hash);
-      }
-    );
-  });
+  return data.hash;
 }
 
 /**
@@ -52,32 +46,26 @@ export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
  * @returns {Promise<number>} Returns the created as a number
  */
 export async function getMBTilesTileCreated(mbtilesSource, z, x, y) {
-  return new Promise((resolve, reject) => {
-    mbtilesSource.get(
-      `
-      SELECT
-        created
-      FROM
-        tiles
-      WHERE
-        zoom_level = ? AND tile_column = ? AND tile_row = ?;
-      `,
-      z,
-      x,
-      (1 << z) - 1 - y,
-      (error, row) => {
-        if (error) {
-          return reject(error);
-        }
+  const data = await fetchOne(
+    mbtilesSource,
+    `
+    SELECT
+      created
+    FROM
+      tiles
+    WHERE
+      zoom_level = ? AND tile_column = ? AND tile_row = ?;
+    `,
+    z,
+    x,
+    (1 << z) - 1 - y
+  );
 
-        if (!row?.created) {
-          return reject(new Error("Tile created does not exist"));
-        }
+  if (!data?.created) {
+    return reject(new Error("Tile created does not exist"));
+  }
 
-        resolve(row.created);
-      }
-    );
-  });
+  return data.created;
 }
 
 /**
@@ -294,32 +282,26 @@ export async function closeXYZMD5DB(xyzSource) {
  * @returns {Promise<string>} Returns the MD5 hash as a string
  */
 export async function getXYZTileMD5(xyzSource, z, x, y) {
-  return new Promise((resolve, reject) => {
-    xyzSource.get(
-      `
-      SELECT
-        hash
-      FROM
-        md5s
-      WHERE
-        z = ? AND x = ? AND y = ?;
-      `,
-      z,
-      x,
-      y,
-      (error, row) => {
-        if (error) {
-          return reject(error);
-        }
+  const data = await fetchOne(
+    xyzSource,
+    `
+    SELECT
+      hash
+    FROM
+      md5s
+    WHERE
+      z = ? AND x = ? AND y = ?;
+    `,
+    z,
+    x,
+    y
+  );
 
-        if (!row?.hash) {
-          return reject(new Error("Tile MD5 does not exist"));
-        }
+  if (!data?.hash) {
+    return reject(new Error("Tile MD5 does not exist"));
+  }
 
-        resolve(row.hash);
-      }
-    );
-  });
+  return data.hash;
 }
 
 /**
@@ -398,7 +380,7 @@ export async function removeXYZTileMD5WithLock(xyzSource, z, x, y, timeout) {
  * @returns {Promise<void>}
  */
 async function initializeXYZMD5Tables(xyzSource) {
-  await runSQL(
+  return await runSQL(
     xyzSource,
     `
     CREATE TABLE IF NOT EXISTS
