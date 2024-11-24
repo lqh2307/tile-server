@@ -55,12 +55,13 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
     );
 
     for (const id in cleanUpData.styles) {
+      const cleanUpStyleItem = cleanUpData.styles[id];
+      const cleanUpData =
+        cleanUpStyleItem.refreshBefore?.time ||
+        cleanUpStyleItem.refreshBefore?.day;
+
       try {
-        await cleanUpStyle(
-          `${dataDir}/caches/styles/${id}`,
-          cleanUpData.styles[id].cleanUpBefore?.time ||
-            cleanUpData.styles[id].cleanUpBefore?.day
-        );
+        await cleanUpStyle(`${dataDir}/caches/styles/${id}`, cleanUpData);
       } catch (error) {
         printLog(
           "error",
@@ -81,30 +82,33 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
     );
 
     for (const id in cleanUpData.datas) {
+      const seedDataItem = seedData.datas[id];
+      const cleanUpDataItem = cleanUpData.datas[id];
+      const cleanUpBefore =
+        cleanUpDataItem.cleanUpBefore?.time ||
+        cleanUpDataItem.cleanUpBefore?.day;
+
       try {
-        if (seedData.datas[id].storeType === "xyz") {
+        if (seedDataItem.storeType === "xyz") {
           await cleanUpXYZTiles(
             `${dataDir}/caches/xyzs/${id}`,
-            seedData.datas[id].metadata.format,
-            cleanUpData.datas[id].zooms,
-            cleanUpData.datas[id].bbox,
-            seedData.datas[id].concurrency,
-            seedData.datas[id].maxTry,
-            seedData.datas[id].storeMD5,
-            cleanUpData.datas[id].cleanUpBefore?.time ||
-              cleanUpData.datas[id].cleanUpBefore?.day
+            seedDataItem.metadata.format,
+            cleanUpDataItem.zooms,
+            cleanUpDataItem.bbox,
+            seedDataItem.concurrency,
+            seedDataItem.maxTry,
+            seedDataItem.storeMD5,
+            cleanUpBefore
           );
-        } else if (seedData.datas[id].storeType === "mbtiles") {
+        } else if (seedDataItem.storeType === "mbtiles") {
           await cleanUpMBTilesTiles(
             `${dataDir}/caches/mbtiles/${id}`,
-            seedData.datas[id].metadata.format,
-            cleanUpData.datas[id].zooms,
-            cleanUpData.datas[id].bbox,
-            seedData.datas[id].concurrency,
-            seedData.datas[id].maxTry,
-            seedData.datas[id].storeMD5,
-            cleanUpData.datas[id].cleanUpBefore?.time ||
-              cleanUpData.datas[id].cleanUpBefore?.day
+            cleanUpDataItem.zooms,
+            cleanUpDataItem.bbox,
+            seedDataItem.concurrency,
+            seedDataItem.maxTry,
+            seedDataItem.storeMD5,
+            cleanUpBefore
           );
         }
       } catch (error) {
@@ -135,14 +139,17 @@ async function runSeedTask(dataDir, seedData) {
     );
 
     for (const id in seedData.styles) {
+      const seedStyleItem = seedData.styles[id];
+      const refreshBefore =
+        seedStyleItem.refreshBefore?.time || seedStyleItem.refreshBefore?.day;
+
       try {
         await seedStyle(
           `${dataDir}/caches/styles/${id}`,
-          seedData.styles[id].url,
-          seedData.styles[id].maxTry,
-          seedData.styles[id].timeout,
-          seedData.styles[id].refreshBefore?.time ||
-            seedData.styles[id].refreshBefore?.day
+          seedStyleItem.url,
+          seedStyleItem.maxTry,
+          seedStyleItem.timeout,
+          refreshBefore
         );
       } catch (error) {
         printLog(
@@ -164,38 +171,40 @@ async function runSeedTask(dataDir, seedData) {
     );
 
     for (const id in seedData.datas) {
+      const seedDataItem = seedData.datas[id];
+      const refreshBefore =
+        seedDataItem.refreshBefore?.time ||
+        seedDataItem.refreshBefore?.day ||
+        seedDataItem.refreshBefore?.md5;
+
       try {
-        if (seedData.datas[id].storeType === "xyz") {
+        if (seedDataItem.storeType === "xyz") {
           await seedXYZTiles(
             `${dataDir}/caches/xyzs/${id}`,
-            seedData.datas[id].metadata,
-            seedData.datas[id].url,
-            seedData.datas[id].bbox,
-            seedData.datas[id].zooms,
-            seedData.datas[id].concurrency,
-            seedData.datas[id].maxTry,
-            seedData.datas[id].timeout,
-            seedData.datas[id].storeMD5,
-            seedData.datas[id].storeTransparent,
-            seedData.datas[id].refreshBefore?.time ||
-              seedData.datas[id].refreshBefore?.day ||
-              seedData.datas[id].refreshBefore?.md5
+            seedDataItem.metadata,
+            seedDataItem.url,
+            seedDataItem.bbox,
+            seedDataItem.zooms,
+            seedDataItem.concurrency,
+            seedDataItem.maxTry,
+            seedDataItem.timeout,
+            seedDataItem.storeMD5,
+            seedDataItem.storeTransparent,
+            refreshBefore
           );
-        } else if (seedData.datas[id].storeType === "mbtiles") {
+        } else if (seedDataItem.storeType === "mbtiles") {
           await seedMBTilesTiles(
             `${dataDir}/caches/mbtiles/${id}`,
-            seedData.datas[id].metadata,
-            seedData.datas[id].url,
-            seedData.datas[id].bbox,
-            seedData.datas[id].zooms,
-            seedData.datas[id].concurrency,
-            seedData.datas[id].maxTry,
-            seedData.datas[id].timeout,
-            seedData.datas[id].storeMD5,
-            seedData.datas[id].storeTransparent,
-            seedData.datas[id].refreshBefore?.time ||
-              seedData.datas[id].refreshBefore?.day ||
-              seedData.datas[id].refreshBefore?.md5
+            seedDataItem.metadata,
+            seedDataItem.url,
+            seedDataItem.bbox,
+            seedDataItem.zooms,
+            seedDataItem.concurrency,
+            seedDataItem.maxTry,
+            seedDataItem.timeout,
+            seedDataItem.storeMD5,
+            seedDataItem.storeTransparent,
+            refreshBefore
           );
         }
       } catch (error) {

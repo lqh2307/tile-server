@@ -87,9 +87,9 @@ async function createMBTilesIndex(
 ) {
   return await runSQL(
     mbtilesSource,
-    `CREATE UNIQUE INDEX ${indexName} ON ${tableName} (${columnNames.join(
-      ", "
-    )});`
+    `CREATE UNIQUE INDEX ? ON ? (${columnNames.join(", ")});`,
+    indexName,
+    tableName
   );
 }
 
@@ -136,13 +136,14 @@ async function initializeMBTilesTables(mbtilesSource) {
  */
 async function getMBTilesLayersFromTiles(mbtilesSource) {
   const layerNames = new Set();
+  const batchSize = 200;
   let offset = 0;
 
   while (true) {
     const rows = await fetchAll(
       mbtilesSource,
       `SELECT tile_data FROM tiles LIMIT ? OFFSET ?;`,
-      200,
+      batchSize,
       offset
     );
 
@@ -240,12 +241,9 @@ async function getMBTilesFormatFromTiles(mbtilesSource) {
  * @param {Object<string,string>} metadataAdds Metadata object
  * @returns {Promise<void>}
  */
-async function upsertMBTilesMetadata(mbtilesSource, metadataAdds = {}) {
+async function upsertMBTilesMetadata(mbtilesSource, metadataAdds) {
   return await Promise.all(
-    Object.keys({
-      ...metadataAdds,
-      scheme: "tms",
-    }).map((key) =>
+    Object.keys(metadataAdds).map((key) =>
       runSQL(
         mbtilesSource,
         `
@@ -299,8 +297,8 @@ async function upsertMBTilesTile(mbtilesSource, z, x, y, hash, data) {
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
- * @param {Buffer} data Tile data buffer
  * @param {string} hash MD5 hash value
+ * @param {Buffer} data Tile data buffer
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
@@ -309,8 +307,8 @@ async function createMBTilesTileWithLock(
   z,
   x,
   y,
-  data,
   hash,
+  data,
   timeout
 ) {
   const startTime = Date.now();
@@ -675,14 +673,17 @@ export async function downloadMBTilesFile(url, filePath, maxTry, timeout) {
  */
 export async function updateMBTilesMetadataWithLock(
   mbtilesSource,
-  metadataAdds = {},
+  metadataAdds,
   timeout
 ) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
     try {
-      await upsertMBTilesMetadata(mbtilesSource, metadataAdds);
+      await upsertMBTilesMetadata(mbtilesSource, {
+        ...metadataAdds,
+        scheme: "tms",
+      });
 
       return;
     } catch (error) {
@@ -784,8 +785,8 @@ export async function downloadMBTilesTile(
             z,
             x,
             y,
-            response.data,
             md5,
+            response.data,
             300000 // 5 mins
           );
         }
@@ -853,7 +854,7 @@ export async function removeMBTilesTileData(
             z,
             x,
             y,
-            180000 // 3 mins
+            300000 // 5 mins
           );
         }
       }, maxTry);
@@ -913,8 +914,8 @@ export async function cacheMBtilesTileData(
         z,
         x,
         y,
-        data,
         md5,
+        data,
         300000 // 5 mins
       );
     }

@@ -211,6 +211,7 @@ function getDataTileHandler() {
             if (item.storeCache === true) {
               cacheXYZTileDataFile(
                 item.source,
+                item.md5Source,
                 z,
                 x,
                 y,

@@ -2,7 +2,11 @@
 
 import { cacheXYZTileDataFile, getXYZTileFromURL, getXYZTile } from "./xyz.js";
 import { createEmptyData, processImage, renderData } from "./image.js";
-import { cacheMBtilesTileData, getMBTilesTile } from "./mbtiles.js";
+import {
+  cacheMBtilesTileData,
+  getMBTilesTile,
+  getMBTilesTileFromURL,
+} from "./mbtiles.js";
 import { checkReadyMiddleware } from "./middleware.js";
 import mlgl from "@maplibre/maplibre-gl-native";
 import { StatusCodes } from "http-status-codes";
@@ -738,7 +742,7 @@ export const serve_rendered = {
                                   );
 
                                   /* Get data */
-                                  dataTile = await getXYZTileFromURL(
+                                  dataTile = await getMBTilesTileFromURL(
                                     url,
                                     60000 // 1 mins
                                   );
@@ -833,6 +837,7 @@ export const serve_rendered = {
                                   if (sourceData.storeCache === true) {
                                     cacheXYZTileDataFile(
                                       sourceData.source,
+                                      sourceData.md5Source,
                                       z,
                                       x,
                                       y,

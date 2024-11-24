@@ -1,7 +1,7 @@
 "use strict";
 
+import { closeXYZMD5DB, openXYZMD5DB, removeXYZTileDataFile } from "./xyz.js";
 import { removeMBTilesTileData, openMBTilesDB } from "./mbtiles.js";
-import { removeXYZTileDataFile } from "./xyz.js";
 import { removeStyleFile } from "./style.js";
 import fsPromise from "node:fs/promises";
 import fsPromise from "node:fs/promises";
@@ -161,9 +161,8 @@ export async function readCleanUpFile(dataDir, isValidate) {
 }
 
 /**
- * Remove all MBTiles tile data files in a specified zoom levels
- * @param {string} sourcePath Folder to store downloaded tiles
- * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
+ * Clean up MBTiles tiles
+ * @param {string} sourcePath MBTiles folder path
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {number} concurrency Concurrency download
@@ -193,7 +192,7 @@ export async function cleanUpMBTilesTiles(
     0
   );
   let cleanUpTimestamp;
-  let log = `Cleaning up ${totalTasks} tiles of cache mbtiles data id "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${totalTasks} tiles of mbtiles data id "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBox: [${bbox.join(", ")}]`;
 
@@ -211,7 +210,7 @@ export async function cleanUpMBTilesTiles(
 
   printLog("info", log);
 
-  // Open MBTiles database
+  // Open MBTiles SQLite database
   const mbtilesSource = await openMBTilesDB(
     sourcePath,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
@@ -245,28 +244,33 @@ export async function cleanUpMBTilesTiles(
         /* Run a task */
         (async () => {
           const tileName = `${z}/${x}/${y}`;
+          let needRemove = false;
 
           try {
             if (cleanUpTimestamp !== undefined) {
-              const stats = await fsPromise.stat(
-                `${sourcePath}/${tileName}.${format}`
-              );
-
-              if (
-                stats.ctimeMs === undefined ||
-                stats.ctimeMs < cleanUpTimestamp
-              ) {
-                await removeMBTilesTileData(
-                  mbtilesSource,
+              try {
+                const created = await getMBTilesTileCreated(
+                  needRemove,
                   z,
                   x,
-                  y,
-                  maxTry,
-                  300000, // 5 mins
-                  storeMD5
+                  y
                 );
+
+                if (!created || created < cleanUpTimestamp) {
+                  needRemove = true;
+                }
+              } catch (error) {
+                if (error.message === "Tile created does not exist") {
+                  needRemove = true;
+                } else {
+                  throw error;
+                }
               }
             } else {
+              needRemove = true;
+            }
+
+            if (needRemove === true) {
               await removeMBTilesTileData(
                 mbtilesSource,
                 z,
@@ -278,12 +282,10 @@ export async function cleanUpMBTilesTiles(
               );
             }
           } catch (error) {
-            if (error.code !== "ENOENT") {
-              printLog(
-                "error",
-                `Failed to clean up tile data file "${tileName}": ${error}`
-              );
-            }
+            printLog(
+              "error",
+              `Failed to clean up tile data "${tileName}": ${error}`
+            );
           } finally {
             await updateActiveTasks(() => {
               activeTasks--;
@@ -298,11 +300,16 @@ export async function cleanUpMBTilesTiles(
   while (activeTasks > 0) {
     await delay(50);
   }
+
+  // Close MBTiles SQLite database
+  if (mbtilesSource !== undefined) {
+    await closeMBTiles(mbtilesSource);
+  }
 }
 
 /**
- * Clean up cache XYZ tiles
- * @param {string} sourcePath Folder path
+ * Clean up XYZ tiles
+ * @param {string} sourcePath XYZ folder path
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
@@ -333,7 +340,7 @@ export async function cleanUpXYZTiles(
     0
   );
   let cleanUpTimestamp;
-  let log = `Cleaning up ${totalTasks} tiles of cache xyz data id "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${totalTasks} tiles of xyz data id "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBox: [${bbox.join(", ")}]`;
 
@@ -350,6 +357,13 @@ export async function cleanUpXYZTiles(
   }
 
   printLog("info", log);
+
+  // Open MD5 SQLite database
+  const xyzSource = await openXYZMD5DB(
+    sourcePath,
+    sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+    true
+  );
 
   // Remove files
   let activeTasks = 0;
@@ -378,31 +392,33 @@ export async function cleanUpXYZTiles(
         /* Run a task */
         (async () => {
           const tileName = `${z}/${x}/${y}`;
+          let needRemove = false;
 
           try {
             if (cleanUpTimestamp !== undefined) {
-              const stats = await fsPromise.stat(
-                `${sourcePath}/${tileName}.${format}`
-              );
-
-              if (
-                stats.ctimeMs === undefined ||
-                stats.ctimeMs < cleanUpTimestamp
-              ) {
-                await removeXYZTileDataFile(
-                  sourcePath,
-                  z,
-                  x,
-                  y,
-                  format,
-                  maxTry,
-                  300000, // 5 mins
-                  storeMD5
+              try {
+                created = await getXYZTileCreated(
+                  `${sourcePath}/${tileName}.${format}`
                 );
+
+                if (!created || created < cleanUpTimestamp) {
+                  needRemove = true;
+                }
+              } catch (error) {
+                if (error.message === "Tile created does not exist") {
+                  needRemove = true;
+                } else {
+                  throw error;
+                }
               }
             } else {
+              needRemove = true;
+            }
+
+            if (needRemove === true) {
               await removeXYZTileDataFile(
                 sourcePath,
+                xyzSource,
                 z,
                 x,
                 y,
@@ -413,12 +429,10 @@ export async function cleanUpXYZTiles(
               );
             }
           } catch (error) {
-            if (error.code !== "ENOENT") {
-              printLog(
-                "error",
-                `Failed to clean up tile "${tileName}": ${error}`
-              );
-            }
+            printLog(
+              "error",
+              `Failed to clean up tile "${tileName}": ${error}`
+            );
           } finally {
             await updateActiveTasks(() => {
               activeTasks--;
@@ -434,6 +448,11 @@ export async function cleanUpXYZTiles(
     await delay(50);
   }
 
+  // Close MD5 SQLite database
+  if (xyzSource !== undefined) {
+    await closeXYZMD5DB(xyzSource);
+  }
+
   // Remove parent folders if empty
   await removeEmptyFolders(
     sourcePath,
@@ -442,15 +461,15 @@ export async function cleanUpXYZTiles(
 }
 
 /**
- * Clean up cache style
- * @param {string} sourcePath Folder path
+ * Clean up style
+ * @param {string} sourcePath Style folder path
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
 export async function cleanUpStyle(sourcePath, cleanUpBefore) {
   const id = path.basename(sourcePath);
   let cleanUpTimestamp;
-  let log = `Cleaning up cache style id "${id}" with:\n\tMax tries: ${maxTry}`;
+  let log = `Cleaning up style id "${id}" with:\n\tMax tries: ${maxTry}`;
 
   if (typeof cleanUpBefore === "string") {
     cleanUpTimestamp = new Date(cleanUpBefore).getTime();
@@ -492,7 +511,7 @@ export async function cleanUpStyle(sourcePath, cleanUpBefore) {
     if (error.code === "ENOENT") {
       return;
     } else {
-      printLog("error", `Failed to clean up cache style id "${id}": ${error}`);
+      printLog("error", `Failed to clean up style id "${id}": ${error}`);
     }
   }
 
