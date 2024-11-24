@@ -582,7 +582,7 @@ export async function getMBTilesInfos(mbtilesSource) {
  * @param {sqlite3.Database} mbtilesSource The MBTiles source object
  * @returns {Promise<void>}
  */
-export async function closeMBTiles(mbtilesSource) {
+export async function closeMBTilesDB(mbtilesSource) {
   return new Promise((resolve, reject) => {
     mbtilesSource.close((error) => {
       if (error) {

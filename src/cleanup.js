@@ -16,6 +16,7 @@ import {
 import {
   removeMBTilesTileData,
   getMBTilesTileCreated,
+  closeMBTilesDB,
   openMBTilesDB,
 } from "./mbtiles.js";
 import {
@@ -308,7 +309,7 @@ export async function cleanUpMBTilesTiles(
 
   // Close MBTiles SQLite database
   if (mbtilesSource !== undefined) {
-    await closeMBTiles(mbtilesSource);
+    await closeMBTilesDB(mbtilesSource);
   }
 }
 

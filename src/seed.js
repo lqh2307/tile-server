@@ -20,8 +20,8 @@ import {
   getMBTilesTileCreated,
   downloadMBTilesTile,
   getMBTilesTileMD5,
+  closeMBTilesDB,
   openMBTilesDB,
-  closeMBTiles,
 } from "./mbtiles.js";
 import {
   getTileBoundsFromBBox,
@@ -563,7 +563,7 @@ export async function seedMBTilesTiles(
 
   // Close MBTiles SQLite database
   if (mbtilesSource !== undefined) {
-    await closeMBTiles(mbtilesSource);
+    await closeMBTilesDB(mbtilesSource);
   }
 }
 
