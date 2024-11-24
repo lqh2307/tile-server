@@ -2,7 +2,6 @@
 
 import { downloadStyleFile } from "./style.js";
 import fsPromise from "node:fs/promises";
-import { readSeedFile } from "./seed.js";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
 import path from "node:path";

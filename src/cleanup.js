@@ -2,7 +2,6 @@
 
 import { removeMBTilesTileData, openMBTilesDB } from "./mbtiles.js";
 import { removeXYZTileDataFile } from "./xyz.js";
-import { readCleanUpFile } from "./cleanup.js";
 import { removeStyleFile } from "./style.js";
 import fsPromise from "node:fs/promises";
 import fsPromise from "node:fs/promises";
