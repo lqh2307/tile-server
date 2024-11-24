@@ -1,7 +1,6 @@
 "use strict";
 
 import { getPMTilesInfos, getPMTilesTile, openPMTiles } from "./pmtiles.js";
-import { getMBTilesTileMD5, getXYZTileMD5, openXYZMD5DB } from "./md5.js";
 import { checkReadyMiddleware } from "./middleware.js";
 import { StatusCodes } from "http-status-codes";
 import { readSeedFile } from "./seed.js";
@@ -12,6 +11,8 @@ import sqlite3 from "sqlite3";
 import {
   cacheXYZTileDataFile,
   getXYZTileFromURL,
+  getXYZTileMD5,
+  openXYZMD5DB,
   getXYZInfos,
   getXYZTile,
 } from "./xyz.js";
@@ -19,6 +20,7 @@ import {
   getMBTilesTileFromURL,
   cacheMBtilesTileData,
   downloadMBTilesFile,
+  getMBTilesTileMD5,
   getMBTilesInfos,
   getMBTilesTile,
   openMBTilesDB,

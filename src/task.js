@@ -1,17 +1,18 @@
 "use strict";
 
 import { downloadStyleFile, removeStyleFile } from "./style.js";
-import { getMBTilesTileMD5, getXYZTileMD5 } from "./md5.js";
 import { readCleanUpFile } from "./cleanup.js";
 import { readSeedFile } from "./seed.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
 import path from "node:path";
+import os from "os";
 import {
   updateXYZMetadataFileWithLock,
   downloadXYZTileDataFile,
   removeXYZTileDataFile,
+  getXYZTileMD5,
 } from "./xyz.js";
 import {
   getTileBoundsFromBBox,
@@ -19,11 +20,11 @@ import {
   getDataFromURL,
   delay,
 } from "./utils.js";
-import os from "os";
 import {
   updateMBTilesMetadataWithLock,
   removeMBTilesTileData,
   downloadMBTilesTile,
+  getMBTilesTileMD5,
   openMBTilesDB,
 } from "./mbtiles.js";
 
