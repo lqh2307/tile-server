@@ -2,11 +2,6 @@
 
 import { cacheXYZTileDataFile, getXYZTileFromURL, getXYZTile } from "./xyz.js";
 import { createEmptyData, processImage, renderData } from "./image.js";
-import {
-  cacheMBtilesTileData,
-  getMBTilesTile,
-  getMBTilesTileFromURL,
-} from "./mbtiles.js";
 import { checkReadyMiddleware } from "./middleware.js";
 import mlgl from "@maplibre/maplibre-gl-native";
 import { StatusCodes } from "http-status-codes";
@@ -25,6 +20,11 @@ import {
   getRequestHost,
   unzipAsync,
 } from "./utils.js";
+import {
+  getMBTilesTileFromURL,
+  cacheMBtilesTileData,
+  getMBTilesTile,
+} from "./mbtiles.js";
 
 /**
  * Get rendered tile handler

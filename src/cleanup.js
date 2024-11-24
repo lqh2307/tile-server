@@ -6,6 +6,7 @@ import { removeStyleFile } from "./style.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
+import sqlite3 from "sqlite3";
 import path from "node:path";
 import os from "os";
 import {
