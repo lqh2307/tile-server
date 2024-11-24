@@ -1,6 +1,5 @@
 "use strict";
 
-import { closeXYZMD5DB, openXYZMD5DB, removeXYZTileDataFile } from "./xyz.js";
 import { getStyleCreated, removeStyleFile } from "./style.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
@@ -8,6 +7,12 @@ import { Mutex } from "async-mutex";
 import sqlite3 from "sqlite3";
 import path from "node:path";
 import os from "os";
+import {
+  removeXYZTileDataFile,
+  getXYZTileCreated,
+  closeXYZMD5DB,
+  openXYZMD5DB,
+} from "./xyz.js";
 import {
   removeMBTilesTileData,
   getMBTilesTileCreated,
@@ -253,7 +258,7 @@ export async function cleanUpMBTilesTiles(
             if (cleanUpTimestamp !== undefined) {
               try {
                 const created = await getMBTilesTileCreated(
-                  needRemove,
+                  mbtilesSource,
                   z,
                   x,
                   y
