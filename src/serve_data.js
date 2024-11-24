@@ -327,13 +327,7 @@ function getDataTileMD5Handler() {
     try {
       if (item.sourceType === "mbtiles") {
         if (item.storeMD5 === true) {
-          md5 = await getMBTilesTileMD5(
-            item.source,
-            z,
-            x,
-            y,
-            180000 // 3 mins
-          );
+          md5 = await getMBTilesTileMD5(item.source, z, x, y);
         } else {
           const tile = await getMBTilesTile(item.source, z, x, y);
 
@@ -345,14 +339,7 @@ function getDataTileMD5Handler() {
         md5 = calculateMD5(tile.data);
       } else if (item.sourceType === "xyz") {
         if (item.storeMD5 === true) {
-          md5 = await getXYZTileMD5(
-            item.md5Source,
-            z,
-            x,
-            y,
-            req.params.format,
-            180000 // 3 mins
-          );
+          md5 = await getXYZTileMD5(item.md5Source, z, x, y);
         } else {
           const tile = await getXYZTile(
             item.source,
