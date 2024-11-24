@@ -107,7 +107,6 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
             cleanUpDataItem.bbox,
             seedDataItem.concurrency,
             seedDataItem.maxTry,
-            seedDataItem.storeMD5,
             cleanUpBefore
           );
         }

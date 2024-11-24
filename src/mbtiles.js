@@ -827,7 +827,6 @@ export async function downloadMBTilesTile(
  * @param {number} y Y tile index
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
- * @param {boolean} storeMD5 Is store MD5 hashed?
  * @returns {Promise<void>}
  */
 export async function removeMBTilesTileData(
@@ -836,8 +835,7 @@ export async function removeMBTilesTileData(
   x,
   y,
   maxTry,
-  timeout,
-  storeMD5
+  timeout
 ) {
   const tileName = `${z}/${x}/${y}`;
 
@@ -847,16 +845,6 @@ export async function removeMBTilesTileData(
     try {
       await retry(async () => {
         await removeMBTilesTileWithLock(mbtilesSource, z, x, y, timeout);
-
-        if (storeMD5 === true) {
-          await removeMBTilesTileMD5WithLock(
-            sourcePath,
-            z,
-            x,
-            y,
-            300000 // 5 mins
-          );
-        }
       }, maxTry);
     } catch (error) {
       throw new Error(`Failed to remove tile data "${tileName}": ${error}`);

@@ -176,7 +176,6 @@ export async function readCleanUpFile(dataDir, isValidate) {
  * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {number} concurrency Concurrency download
  * @param {number} maxTry Number of retry attempts on failure
- * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
@@ -189,7 +188,6 @@ export async function cleanUpMBTilesTiles(
   bbox = [-180, -85.051129, 180, 85.051129],
   concurrency = os.cpus().length,
   maxTry = 5,
-  storeMD5 = false,
   cleanUpBefore
 ) {
   const id = path.basename(sourcePath);
@@ -285,8 +283,7 @@ export async function cleanUpMBTilesTiles(
                 x,
                 y,
                 maxTry,
-                300000, // 5 mins
-                storeMD5
+                300000 // 5 mins
               );
             }
           } catch (error) {
