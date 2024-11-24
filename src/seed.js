@@ -480,7 +480,7 @@ export async function seedMBTilesTiles(
         (async () => {
           const tileName = `${z}/${x}/${y}`;
           const url = tileURL.replaceAll("{z}/{x}/{y}", tileName);
-          const needDownload = false;
+          let needDownload = false;
 
           try {
             if (refreshTimestamp === true) {
@@ -674,7 +674,7 @@ export async function seedXYZTiles(
         (async () => {
           const tileName = `${z}/${x}/${y}`;
           const url = tileURL.replaceAll("{z}/{x}/{y}", tileName);
-          const needDownload = false;
+          let needDownload = false;
 
           try {
             if (refreshTimestamp === true) {
