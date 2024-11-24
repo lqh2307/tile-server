@@ -18,7 +18,7 @@ import {
   startTaskInWorker,
   startServer,
 } from "./server.js";
-import { fetchAll } from "./sqlile.js";
+import { fetchAll, fetchOne } from "./sqlile.js";
 import { openMBTilesDB } from "./mbtiles.js";
 import sqlite3 from "sqlite3";
 
@@ -43,7 +43,7 @@ const argOpts = program.opts();
 async function startClusterServer(opts) {
   const db = await openMBTilesDB("test.sqlite", sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, true)
 
-  const test = await fetchAll(db, "SELECT * FROM tiles")
+  const test = await fetchOne(db, "SELECT * FROM tiles WHERE zoom_level = 5 AND tile_column = 5 AND tile_row = 5")
 
   console.log(test)
 
