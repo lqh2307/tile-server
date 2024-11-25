@@ -1,7 +1,6 @@
 "use strict";
 
 import { getLonLatFromXYZ, inflateAsync } from "./utils.js";
-import fsPromise from "node:fs/promises";
 import sharp from "sharp";
 
 /**
@@ -181,16 +180,10 @@ export async function processImage(data, scale, compression, size, z) {
 
 /**
  * Check if PNG image file/buffer is full transparent (alpha = 0)
- * @param {string|Buffer} filePathOrBuffer Path/Buffer of the PNG image
+ * @param {Buffer} buffer Buffer of the PNG image
  * @returns {Promise<boolean>}
  */
-export async function isFullTransparentPNGImage(filePathOrBuffer) {
-  // Read buffer
-  const buffer =
-    typeof filePathOrBuffer === "object"
-      ? filePathOrBuffer
-      : await fsPromise.readFile(filePathOrBuffer);
-
+export async function isFullTransparentPNGImage(buffer) {
   // Check PNG signature (8 bytes)
   if (
     buffer[0] !== 0x89 ||

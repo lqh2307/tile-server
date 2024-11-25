@@ -406,6 +406,8 @@ export async function seedMBTilesTiles(
   storeTransparent = false,
   refreshBefore
 ) {
+  const startTime = Date.now();
+
   const id = path.basename(sourcePath);
   const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
   let totalTasks = Object.values(tilesSummary).reduce(
@@ -452,7 +454,7 @@ export async function seedMBTilesTiles(
     300000 // 5 mins
   );
 
-  // Download files
+  // Download tiles
   const mutex = new Mutex();
 
   async function updateActiveTasks(action) {
@@ -480,19 +482,16 @@ export async function seedMBTilesTiles(
         /* Run a task */
         (async () => {
           const tileName = `${z}/${x}/${y}`;
-          const url = tileURL.replaceAll("{z}/{x}/{y}", tileName);
           let needDownload = false;
 
           try {
             if (refreshTimestamp === true) {
-              const md5URL = tileURL.replaceAll(
-                "{z}/{x}/{y}",
-                `md5/${tileName}`
-              );
-
               try {
                 const [response, md5] = await Promise.all([
-                  getDataFromURL(md5URL, timeout),
+                  getDataFromURL(
+                    tileURL.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
+                    timeout
+                  ),
                   getMBTilesTileMD5(mbtilesSource, z, x, y),
                 ]);
 
@@ -531,7 +530,7 @@ export async function seedMBTilesTiles(
 
             if (needDownload === true) {
               await downloadMBTilesTile(
-                url,
+                tileURL.replaceAll("{z}/{x}/{y}", tileName),
                 mbtilesSource,
                 z,
                 x,
@@ -566,6 +565,15 @@ export async function seedMBTilesTiles(
   if (mbtilesSource !== undefined) {
     await closeMBTilesDB(mbtilesSource);
   }
+
+  const doneTime = Date.now();
+
+  printLog(
+    "info",
+    `Completed seed ${totalTasks} tiles of mbtiles data "${id}" after ${
+      (doneTime - startTime) / 1000
+    }s!`
+  );
 }
 
 /**
@@ -599,6 +607,8 @@ export async function seedXYZTiles(
   storeTransparent = false,
   refreshBefore
 ) {
+  const startTime = Date.now();
+
   const id = path.basename(sourcePath);
   const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
   let totalTasks = Object.values(tilesSummary).reduce(
@@ -647,8 +657,7 @@ export async function seedXYZTiles(
     300000 // 5 mins
   );
 
-  // Download files
-  let activeTasks = 0;
+  // Download tile files
   const mutex = new Mutex();
 
   async function updateActiveTasks(action) {
@@ -656,6 +665,8 @@ export async function seedXYZTiles(
       return action();
     });
   }
+
+  let activeTasks = 0;
 
   for (const z in tilesSummary) {
     for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
@@ -674,19 +685,16 @@ export async function seedXYZTiles(
         /* Run a task */
         (async () => {
           const tileName = `${z}/${x}/${y}`;
-          const url = tileURL.replaceAll("{z}/{x}/{y}", tileName);
           let needDownload = false;
 
           try {
             if (refreshTimestamp === true) {
-              const md5URL = tileURL.replaceAll(
-                "{z}/{x}/{y}",
-                `md5/${tileName}`
-              );
-
               try {
                 const [response, md5] = await Promise.all([
-                  getDataFromURL(md5URL, timeout),
+                  getDataFromURL(
+                    tileURL.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
+                    timeout
+                  ),
                   getXYZTileMD5(xyzSource, z, x, y),
                 ]);
 
@@ -702,7 +710,7 @@ export async function seedXYZTiles(
               }
             } else if (refreshTimestamp !== undefined) {
               try {
-                created = await getXYZTileCreated(
+                const created = await getXYZTileCreated(
                   `${sourcePath}/${tileName}.${metadata.format}`
                 );
 
@@ -722,7 +730,7 @@ export async function seedXYZTiles(
 
             if (needDownload === true) {
               await downloadXYZTileDataFile(
-                url,
+                tileURL.replaceAll("{z}/{x}/{y}", tileName),
                 sourcePath,
                 xyzSource,
                 z,
@@ -765,6 +773,15 @@ export async function seedXYZTiles(
     sourcePath,
     /^.*\.(sqlite|json|gif|png|jpg|jpeg|webp|pbf)$/
   );
+
+  const doneTime = Date.now();
+
+  printLog(
+    "info",
+    `Completed seed ${totalTasks} tiles of xyz data "${id}" after ${
+      (doneTime - startTime) / 1000
+    }s!`
+  );
 }
 
 /**
@@ -783,6 +800,8 @@ export async function seedStyle(
   timeout = 60000,
   refreshBefore
 ) {
+  const startTime = Date.now();
+
   const id = path.basename(sourcePath);
   let refreshTimestamp;
   let log = `Seeding style "${id}" with:\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}`;
@@ -801,13 +820,13 @@ export async function seedStyle(
 
   printLog("info", log);
 
-  // Download file
+  // Download style.json file
   const filePath = `${sourcePath}/style.json`;
 
   try {
     if (refreshTimestamp !== undefined) {
       try {
-        created = await getStyleCreated(filePath);
+        const created = await getStyleCreated(filePath);
 
         if (!created || created < refreshTimestamp) {
           needDownload = true;
@@ -832,4 +851,11 @@ export async function seedStyle(
 
   // Remove parent folders if empty
   await removeEmptyFolders(sourcePath, /^.*\.json$/);
+
+  const doneTime = Date.now();
+
+  printLog(
+    "info",
+    `Completed seeding style "${id}" after ${(doneTime - startTime) / 1000}s!`
+  );
 }

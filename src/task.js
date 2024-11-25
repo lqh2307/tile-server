@@ -49,14 +49,13 @@ export async function runTasks(opts) {
  */
 async function runCleanUpTask(dataDir, cleanUpData, seedData) {
   try {
-    printLog(
-      "info",
-      `Starting clean up ${Object.keys(cleanUpData.styles).length} styles...`
-    );
+    const ids = Object.keys(cleanUpData.styles);
+
+    printLog("info", `Starting clean up ${ids.length} styles...`);
 
     const startTime = Date.now();
 
-    for (const id in cleanUpData.styles) {
+    for (const id of ids) {
       const cleanUpStyleItem = cleanUpData.styles[id];
       const cleanUpData =
         cleanUpStyleItem.refreshBefore?.time ||
@@ -76,21 +75,20 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
 
     printLog(
       "info",
-      `Completed clean up style after: ${(doneTime - startTime) / 1000}s!`
+      `Completed clean up styles after: ${(doneTime - startTime) / 1000}s!`
     );
   } catch (error) {
-    printLog("error", `Failed to clean up style: ${error}. Exited!`);
+    printLog("error", `Failed to clean up styles: ${error}. Exited!`);
   }
 
   try {
-    printLog(
-      "info",
-      `Starting clean up ${Object.keys(cleanUpData.datas).length} datas...`
-    );
+    const ids = Object.keys(cleanUpData.datas);
+
+    printLog("info", `Starting clean up ${ids.length} datas...`);
 
     const startTime = Date.now();
 
-    for (const id in cleanUpData.datas) {
+    for (const id of ids) {
       const seedDataItem = seedData.datas[id];
       const cleanUpDataItem = cleanUpData.datas[id];
       const cleanUpBefore =
@@ -130,10 +128,10 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
 
     printLog(
       "info",
-      `Completed clean up data after: ${(doneTime - startTime) / 1000}s!`
+      `Completed clean up datas after: ${(doneTime - startTime) / 1000}s!`
     );
   } catch (error) {
-    printLog("error", `Failed to clean up data: ${error}. Exited!`);
+    printLog("error", `Failed to clean up datas: ${error}. Exited!`);
   }
 }
 
@@ -145,14 +143,13 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
  */
 async function runSeedTask(dataDir, seedData) {
   try {
-    printLog(
-      "info",
-      `Starting seed ${Object.keys(seedData.styles).length} styles...`
-    );
+    const ids = Object.keys(cleanUpData.styles);
+
+    printLog("info", `Starting seed ${ids.length} styles...`);
 
     const startTime = Date.now();
 
-    for (const id in seedData.styles) {
+    for (const id of ids) {
       const seedStyleItem = seedData.styles[id];
       const refreshBefore =
         seedStyleItem.refreshBefore?.time || seedStyleItem.refreshBefore?.day;
@@ -177,21 +174,20 @@ async function runSeedTask(dataDir, seedData) {
 
     printLog(
       "info",
-      `Completed seed style after: ${(doneTime - startTime) / 1000}s!`
+      `Completed seed styles after: ${(doneTime - startTime) / 1000}s!`
     );
   } catch (error) {
-    printLog("error", `Failed to seed style: ${error}. Exited!`);
+    printLog("error", `Failed to seed styles: ${error}. Exited!`);
   }
 
   try {
-    printLog(
-      "info",
-      `Starting seed ${Object.keys(seedData.datas).length} datas...`
-    );
+    const ids = Object.keys(cleanUpData.datas);
+
+    printLog("info", `Starting seed ${ids.length} datas...`);
 
     const startTime = Date.now();
 
-    for (const id in seedData.datas) {
+    for (const id of ids) {
       const seedDataItem = seedData.datas[id];
       const refreshBefore =
         seedDataItem.refreshBefore?.time ||
@@ -237,9 +233,9 @@ async function runSeedTask(dataDir, seedData) {
 
     printLog(
       "info",
-      `Completed seed data after: ${(doneTime - startTime) / 1000}s!`
+      `Completed seed datas after: ${(doneTime - startTime) / 1000}s!`
     );
   } catch (error) {
-    printLog("error", `Failed to seed data: ${error}. Exited!`);
+    printLog("error", `Failed to seed datas: ${error}. Exited!`);
   }
 }

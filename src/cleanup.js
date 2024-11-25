@@ -191,6 +191,8 @@ export async function cleanUpMBTilesTiles(
   maxTry = 5,
   cleanUpBefore
 ) {
+  const startTime = Date.now();
+
   const id = path.basename(sourcePath);
   const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
   let totalTasks = Object.values(tilesSummary).reduce(
@@ -312,6 +314,15 @@ export async function cleanUpMBTilesTiles(
   if (mbtilesSource !== undefined) {
     await closeMBTilesDB(mbtilesSource);
   }
+
+  const doneTime = Date.now();
+
+  printLog(
+    "info",
+    `Completed clean up ${totalTasks} tiles of mbtiles data "${id}" after ${
+      (doneTime - startTime) / 1000
+    }s!`
+  );
 }
 
 /**
@@ -337,6 +348,8 @@ export async function cleanUpXYZTiles(
   maxTry = 5,
   cleanUpBefore
 ) {
+  const startTime = Date.now();
+
   const id = path.basename(sourcePath);
   const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
   let totalTasks = Object.values(tilesSummary).reduce(
@@ -363,15 +376,14 @@ export async function cleanUpXYZTiles(
 
   printLog("info", log);
 
-  // Open MD5 SQLite database
+  // Open XYZ MD5 SQLite database
   const xyzSource = await openXYZMD5DB(
     sourcePath,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     true
   );
 
-  // Remove files
-  let activeTasks = 0;
+  // Remove tile files
   const mutex = new Mutex();
 
   async function updateActiveTasks(action) {
@@ -379,6 +391,8 @@ export async function cleanUpXYZTiles(
       return action();
     });
   }
+
+  let activeTasks = 0;
 
   for (const z in tilesSummary) {
     for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
@@ -402,7 +416,7 @@ export async function cleanUpXYZTiles(
           try {
             if (cleanUpTimestamp !== undefined) {
               try {
-                created = await getXYZTileCreated(
+                const created = await getXYZTileCreated(
                   `${sourcePath}/${tileName}.${format}`
                 );
 
@@ -452,7 +466,7 @@ export async function cleanUpXYZTiles(
     await delay(50);
   }
 
-  // Close MD5 SQLite database
+  // Close XYZ MD5 SQLite database
   if (xyzSource !== undefined) {
     await closeXYZMD5DB(xyzSource);
   }
@@ -461,6 +475,15 @@ export async function cleanUpXYZTiles(
   await removeEmptyFolders(
     sourcePath,
     /^.*\.(sqlite|json|gif|png|jpg|jpeg|webp|pbf)$/
+  );
+
+  const doneTime = Date.now();
+
+  printLog(
+    "info",
+    `Completed clean up ${totalTasks} tiles of xyz data "${id}" after ${
+      (doneTime - startTime) / 1000
+    }s!`
   );
 }
 
@@ -471,6 +494,8 @@ export async function cleanUpXYZTiles(
  * @returns {Promise<void>}
  */
 export async function cleanUpStyle(sourcePath, cleanUpBefore) {
+  const startTime = Date.now();
+
   const id = path.basename(sourcePath);
   let cleanUpTimestamp;
   let log = `Cleaning up style "${id}" with:\n\tMax tries: ${maxTry}`;
@@ -489,14 +514,14 @@ export async function cleanUpStyle(sourcePath, cleanUpBefore) {
 
   printLog("info", log);
 
-  // Remove file
+  // Remove style file
   const filePath = `${sourcePath}/style.json`;
   let needRemove = false;
 
   try {
     if (cleanUpTimestamp !== undefined) {
       try {
-        created = await getStyleCreated(filePath);
+        const created = await getStyleCreated(filePath);
 
         if (!created || created < cleanUpTimestamp) {
           needRemove = true;
@@ -525,4 +550,11 @@ export async function cleanUpStyle(sourcePath, cleanUpBefore) {
 
   // Remove parent folders if empty
   await removeEmptyFolders(sourcePath, /^.*\.json$/);
+
+  const doneTime = Date.now();
+
+  printLog(
+    "info",
+    `Completed clean up style "${id}" after ${(doneTime - startTime) / 1000}s!`
+  );
 }
