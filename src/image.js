@@ -180,62 +180,30 @@ export async function processImage(data, scale, compression, size, z) {
 
 /**
  * Check if PNG image file/buffer is full transparent (alpha = 0)
- * @param {Buffer} buffer Buffer of the PNG image
+ * @param {string|Buffer} filePathOrBuffer Path/Buffer of the PNG image
  * @returns {Promise<boolean>}
  */
-export async function isFullTransparentPNGImage(buffer) {
-  // Check PNG signature (8 bytes)
-  if (
-    buffer[0] !== 0x89 ||
-    buffer[1] !== 0x50 ||
-    buffer[2] !== 0x4e ||
-    buffer[3] !== 0x47 ||
-    buffer[4] !== 0x0d ||
-    buffer[5] !== 0x0a ||
-    buffer[6] !== 0x1a ||
-    buffer[7] !== 0x0a
-  ) {
-    return false;
-  }
+export async function isFullTransparentPNGImage(filePathOrBuffer) {
+  try {
+    const { data, info } = await sharp(filePathOrBuffer)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({
+        resolveWithObject: true,
+      });
 
-  // Read chunks
-  let offset = 8;
-
-  while (offset < buffer.length) {
-    // Read chunk length (4 bytes)
-    const chunkLength = buffer.readUInt32BE(offset);
-
-    offset += 4;
-
-    // Read chunk type (4 bytes)
-    const chunkType = buffer.toString("ascii", offset, offset + 4);
-
-    offset += 4;
-
-    if (chunkType === "IHDR") {
-      // IHDR chunk contains width, height, bit depth, and color type -> check color type is RGBA?
-      if (buffer.readUInt8(offset + 9) !== 6) {
-        return false;
-      }
-    } else if (chunkType === "IDAT") {
-      // IDAT chunk contains zlib image data -> decompress
-      const rawData = await inflateAsync(
-        buffer.subarray(offset, offset + chunkLength)
-      );
-
-      // Check alpha channel
-      for (let i = 3; i < rawData.length; i += 4) {
-        if (rawData[i] !== 0) {
-          return false;
-        }
-      }
-
-      return true;
+    if (info.channels !== 4) {
+      return false;
     }
 
-    // Skip CRC and go to next chunk (4 bytes)
-    offset += chunkLength + 4;
-  }
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] !== 0) {
+        return false;
+      }
+    }
 
-  return false;
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
