@@ -643,6 +643,11 @@ export const gzipAsync = util.promisify(zlib.gzip);
 export const unzipAsync = util.promisify(zlib.unzip);
 
 /**
+ *
+ */
+export const inflateAsync = util.promisify(zlib.inflate);
+
+/**
  * Validate tileJSON
  * @param {object} schema JSON schema
  * @param {object} jsonData JSON data

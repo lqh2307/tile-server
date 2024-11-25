@@ -1,7 +1,7 @@
 "use strict";
 
-import { getLonLatFromXYZ } from "./utils.js";
-import path from "node:path";
+import { getLonLatFromXYZ, inflateAsync } from "./utils.js";
+import fsPromise from "node:fs/promises";
 import sharp from "sharp";
 
 /**
@@ -185,35 +185,64 @@ export async function processImage(data, scale, compression, size, z) {
  * @returns {Promise<boolean>}
  */
 export async function isFullTransparentPNGImage(filePathOrBuffer) {
-  try {
-    const { data, info } = await sharp(filePathOrBuffer).raw().toBuffer({
-      resolveWithObject: true,
-    });
+  // Read buffer
+  const buffer =
+    typeof filePathOrBuffer === "object"
+      ? filePathOrBuffer
+      : await fsPromise.readFile(filePathOrBuffer);
 
-    if (
-      typeof filePathOrBuffer === "object" &&
-      (filePathOrBuffer[0] !== 0x89 ||
-        filePathOrBuffer[1] !== 0x50 ||
-        filePathOrBuffer[2] !== 0x4e ||
-        filePathOrBuffer[3] !== 0x47 ||
-        filePathOrBuffer[4] !== 0x0d ||
-        filePathOrBuffer[5] !== 0x0a ||
-        filePathOrBuffer[6] !== 0x1a ||
-        filePathOrBuffer[7] !== 0x0a)
-    ) {
-      return false;
-    } else if (path.extname(filePathOrBuffer) !== ".png") {
-      return false;
-    }
-
-    for (let i = 0; i < info.width * info.height * 4; i += 4) {
-      if (data[i + 3] !== 0) {
-        return false;
-      }
-    }
-
-    return true;
-  } catch (error) {
+  // Check PNG signature (8 bytes)
+  if (
+    buffer[0] !== 0x89 ||
+    buffer[1] !== 0x50 ||
+    buffer[2] !== 0x4e ||
+    buffer[3] !== 0x47 ||
+    buffer[4] !== 0x0d ||
+    buffer[5] !== 0x0a ||
+    buffer[6] !== 0x1a ||
+    buffer[7] !== 0x0a
+  ) {
     return false;
   }
+
+  // Read chunks
+  let offset = 8;
+
+  while (offset < buffer.length) {
+    // Read chunk length (4 bytes)
+    const chunkLength = buffer.readUInt32BE(offset);
+
+    offset += 4;
+
+    // Read chunk type (4 bytes)
+    const chunkType = buffer.toString("ascii", offset, offset + 4);
+
+    offset += 4;
+
+    if (chunkType === "IHDR") {
+      // IHDR chunk contains width, height, bit depth, and color type -> check color type is RGBA?
+      if (buffer.readUInt8(offset + 9) !== 6) {
+        return false;
+      }
+    } else if (chunkType === "IDAT") {
+      // IDAT chunk contains zlib image data -> decompress
+      const rawData = await inflateAsync(
+        buffer.subarray(offset, offset + chunkLength)
+      );
+
+      // Check alpha channel
+      for (let i = 3; i < rawData.length; i += 4) {
+        if (rawData[i] !== 0) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    // Skip CRC and go to next chunk (4 bytes)
+    offset += chunkLength + 4;
+  }
+
+  return false;
 }

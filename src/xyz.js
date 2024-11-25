@@ -826,13 +826,15 @@ export async function removeXYZTileDataFile(
           timeout
         );
 
-        await removeXYZTileMD5WithLock(
-          xyzSource,
-          z,
-          x,
-          y,
-          300000 // 5 mins
-        );
+        if (xyzSource !== undefined) {
+          await removeXYZTileMD5WithLock(
+            xyzSource,
+            z,
+            x,
+            y,
+            300000 // 5 mins
+          );
+        }
       }, maxTry);
     } catch (error) {
       throw new Error(
