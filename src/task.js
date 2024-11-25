@@ -143,7 +143,7 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
  */
 async function runSeedTask(dataDir, seedData) {
   try {
-    const ids = Object.keys(cleanUpData.styles);
+    const ids = Object.keys(seedData.styles);
 
     printLog("info", `Starting seed ${ids.length} styles...`);
 
@@ -181,7 +181,7 @@ async function runSeedTask(dataDir, seedData) {
   }
 
   try {
-    const ids = Object.keys(cleanUpData.datas);
+    const ids = Object.keys(seedData.datas);
 
     printLog("info", `Starting seed ${ids.length} datas...`);
 
