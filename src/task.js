@@ -67,7 +67,7 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
       } catch (error) {
         printLog(
           "error",
-          `Failed to clean up style id "${id}": ${error}. Skipping...`
+          `Failed to clean up style "${id}": ${error}. Skipping...`
         );
       }
     }
@@ -106,7 +106,6 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
             cleanUpDataItem.bbox,
             seedDataItem.concurrency,
             seedDataItem.maxTry,
-            seedDataItem.storeMD5,
             cleanUpBefore
           );
         } else if (seedDataItem.storeType === "mbtiles") {
@@ -122,7 +121,7 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
       } catch (error) {
         printLog(
           "error",
-          `Failed to clean up data id "${id}": ${error}. Skipping...`
+          `Failed to clean up data "${id}": ${error}. Skipping...`
         );
       }
     }
@@ -169,7 +168,7 @@ async function runSeedTask(dataDir, seedData) {
       } catch (error) {
         printLog(
           "error",
-          `Failed to seed style id "${id}": ${error}. Skipping...`
+          `Failed to seed style "${id}": ${error}. Skipping...`
         );
       }
     }
@@ -230,10 +229,7 @@ async function runSeedTask(dataDir, seedData) {
           );
         }
       } catch (error) {
-        printLog(
-          "error",
-          `Failed to seed data id "${id}": ${error}. Skipping...`
-        );
+        printLog("error", `Failed to seed data "${id}": ${error}. Skipping...`);
       }
     }
 

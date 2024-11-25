@@ -199,7 +199,7 @@ export async function cleanUpMBTilesTiles(
     0
   );
   let cleanUpTimestamp;
-  let log = `Cleaning up ${totalTasks} tiles of mbtiles data id "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${totalTasks} tiles of mbtiles data "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBox: [${bbox.join(", ")}]`;
 
@@ -225,7 +225,6 @@ export async function cleanUpMBTilesTiles(
   );
 
   // Remove tiles
-  let activeTasks = 0;
   const mutex = new Mutex();
 
   async function updateActiveTasks(action) {
@@ -233,6 +232,8 @@ export async function cleanUpMBTilesTiles(
       return action();
     });
   }
+
+  let activeTasks = 0;
 
   for (const z in tilesSummary) {
     for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
@@ -321,7 +322,6 @@ export async function cleanUpMBTilesTiles(
  * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {number} concurrency Concurrency to clean up
  * @param {number} maxTry Number of retry attempts on failure
- * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
@@ -335,7 +335,6 @@ export async function cleanUpXYZTiles(
   bbox = [-180, -85.051129, 180, 85.051129],
   concurrency = os.cpus().length,
   maxTry = 5,
-  storeMD5 = false,
   cleanUpBefore
 ) {
   const id = path.basename(sourcePath);
@@ -346,7 +345,7 @@ export async function cleanUpXYZTiles(
     0
   );
   let cleanUpTimestamp;
-  let log = `Cleaning up ${totalTasks} tiles of xyz data id "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${totalTasks} tiles of xyz data "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBox: [${bbox.join(", ")}]`;
 
@@ -430,8 +429,7 @@ export async function cleanUpXYZTiles(
                 y,
                 format,
                 maxTry,
-                300000, // 5 mins
-                storeMD5
+                300000 // 5 mins
               );
             }
           } catch (error) {
@@ -475,7 +473,7 @@ export async function cleanUpXYZTiles(
 export async function cleanUpStyle(sourcePath, cleanUpBefore) {
   const id = path.basename(sourcePath);
   let cleanUpTimestamp;
-  let log = `Cleaning up style id "${id}" with:\n\tMax tries: ${maxTry}`;
+  let log = `Cleaning up style "${id}" with:\n\tMax tries: ${maxTry}`;
 
   if (typeof cleanUpBefore === "string") {
     cleanUpTimestamp = new Date(cleanUpBefore).getTime();
@@ -522,7 +520,7 @@ export async function cleanUpStyle(sourcePath, cleanUpBefore) {
       );
     }
   } catch (error) {
-    printLog("error", `Failed to clean up style id "${id}": ${error}`);
+    printLog("error", `Failed to clean up style "${id}": ${error}`);
   }
 
   // Remove parent folders if empty

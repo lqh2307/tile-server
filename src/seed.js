@@ -414,7 +414,7 @@ export async function seedMBTilesTiles(
     0
   );
   let refreshTimestamp;
-  let log = `Seeding ${totalTasks} tiles of mbtiles data id "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
+  let log = `Seeding ${totalTasks} tiles of mbtiles data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBox: [${bbox.join(", ")}]`;
 
@@ -453,7 +453,6 @@ export async function seedMBTilesTiles(
   );
 
   // Download files
-  let activeTasks = 0;
   const mutex = new Mutex();
 
   async function updateActiveTasks(action) {
@@ -461,6 +460,8 @@ export async function seedMBTilesTiles(
       return action();
     });
   }
+
+  let activeTasks = 0;
 
   for (const z in tilesSummary) {
     for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
@@ -606,7 +607,7 @@ export async function seedXYZTiles(
     0
   );
   let refreshTimestamp;
-  let log = `Seeding ${totalTasks} tiles of xyz data id "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
+  let log = `Seeding ${totalTasks} tiles of xyz data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBox: [${bbox.join(", ")}]`;
 
@@ -784,7 +785,7 @@ export async function seedStyle(
 ) {
   const id = path.basename(sourcePath);
   let refreshTimestamp;
-  let log = `Seeding style id "${id}" with:\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}`;
+  let log = `Seeding style "${id}" with:\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}`;
 
   if (typeof refreshBefore === "string") {
     refreshTimestamp = new Date(refreshBefore).getTime();
@@ -826,7 +827,7 @@ export async function seedStyle(
       await downloadStyleFile(styleURL, filePath, maxTry, timeout);
     }
   } catch (error) {
-    printLog("error", `Failed to seed style id "${id}": ${error}`);
+    printLog("error", `Failed to seed style "${id}": ${error}`);
   }
 
   // Remove parent folders if empty

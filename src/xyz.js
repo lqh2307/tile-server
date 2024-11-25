@@ -26,10 +26,6 @@ import {
  * @returns {Promise<Array<string>>}
  */
 async function getXYZLayersFromTiles(sourcePath) {
-  const pbfFilePaths = await findFiles(sourcePath, /^\d+\.pbf$/, true);
-  let totalTasks = pbfFilePaths.length;
-  const layerNames = new Set();
-  let activeTasks = 0;
   const mutex = new Mutex();
 
   async function updateActiveTasks(action) {
@@ -37,6 +33,11 @@ async function getXYZLayersFromTiles(sourcePath) {
       return action();
     });
   }
+
+  const pbfFilePaths = await findFiles(sourcePath, /^\d+\.pbf$/, true);
+  let totalTasks = pbfFilePaths.length;
+  const layerNames = new Set();
+  let activeTasks = 0;
 
   for (const pbfFilePath of pbfFilePaths) {
     /* Wait slot for a task */
@@ -801,7 +802,6 @@ export async function downloadXYZTileDataFile(
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
- * @param {boolean} storeMD5 Is store MD5 hashed?
  * @returns {Promise<void>}
  */
 export async function removeXYZTileDataFile(
@@ -812,8 +812,7 @@ export async function removeXYZTileDataFile(
   y,
   format,
   maxTry,
-  timeout,
-  storeMD5
+  timeout
 ) {
   const tileName = `${z}/${x}/${y}`;
 
@@ -827,15 +826,13 @@ export async function removeXYZTileDataFile(
           timeout
         );
 
-        if (storeMD5 === true) {
-          await removeXYZTileMD5WithLock(
-            xyzSource,
-            z,
-            x,
-            y,
-            300000 // 5 mins
-          );
-        }
+        await removeXYZTileMD5WithLock(
+          xyzSource,
+          z,
+          x,
+          y,
+          300000 // 5 mins
+        );
       }, maxTry);
     } catch (error) {
       throw new Error(

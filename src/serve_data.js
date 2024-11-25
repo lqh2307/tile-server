@@ -746,7 +746,7 @@ export const serve_data = {
                   cacheSource.storeType !== "mbtiles"
                 ) {
                   throw new Error(
-                    `Cache mbtiles data id "${item.mbtiles}" is invalid`
+                    `Cache mbtiles data "${item.mbtiles}" is invalid`
                   );
                 }
 
@@ -805,7 +805,7 @@ export const serve_data = {
                 cacheSource === undefined ||
                 cacheSource.storeType !== "xyz"
               ) {
-                throw new Error(`Cache xyz data id "${item.xyz}" is invalid`);
+                throw new Error(`Cache xyz data "${item.xyz}" is invalid`);
               }
 
               if (item.cache.forward === true) {

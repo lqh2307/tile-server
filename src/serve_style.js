@@ -328,7 +328,7 @@ export const serve_style = {
               cacheSource = seed.styles[item.style];
 
               if (cacheSource === undefined) {
-                throw new Error(`Cache style id "${item.style}" is invalid`);
+                throw new Error(`Cache style "${item.style}" is invalid`);
               }
 
               if (item.cache.forward === true) {
