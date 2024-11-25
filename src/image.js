@@ -186,7 +186,6 @@ export async function processImage(data, scale, compression, size, z) {
 export async function isFullTransparentPNGImage(filePathOrBuffer) {
   try {
     const { data, info } = await sharp(filePathOrBuffer)
-      .ensureAlpha()
       .raw()
       .toBuffer({
         resolveWithObject: true,
