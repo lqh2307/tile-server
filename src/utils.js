@@ -688,7 +688,7 @@ export function deepClone(obj) {
  * @param {Object<string,string>} serverInfoAdds Server info object
  * @returns {Promise<void>}
  */
-async function updateServerInfoFile(serverInfoAdds) {
+export async function updateServerInfoFile(serverInfoAdds = {}) {
   const filePath = `${process.env.DATA_DIR}/server-info.json`;
   const tempFilePath = `${filePath}.tmp`;
 
@@ -728,61 +728,6 @@ async function updateServerInfoFile(serverInfoAdds) {
       throw error;
     }
   }
-}
-
-/**
- * Update server-info.json file with lock
- * @param {Object<string,string>} serverInfoAdds Server info object
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-export async function updateServerInfoFileWithLock(
-  serverInfoAdds = {},
-  timeout
-) {
-  const startTime = Date.now();
-
-  const filePath = `${process.env.DATA_DIR}/server-info.json`;
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      await updateServerInfoFile(serverInfoAdds);
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        await fsPromise.mkdir(path.dirname(filePath), {
-          recursive: true,
-        });
-
-        continue;
-      } else if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access lock file`);
 }
 
 /**

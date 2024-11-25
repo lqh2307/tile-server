@@ -1,6 +1,6 @@
 "use strict";
 
-import { updateServerInfoFileWithLock, killServer } from "./utils.js";
+import { updateServerInfoFile, killServer } from "./utils.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
@@ -25,12 +25,9 @@ let currentTaskWorker;
 export function startTaskInWorker(opts) {
   if (currentTaskWorker === undefined) {
     /* Store started task time */
-    updateServerInfoFileWithLock(
-      {
-        lastTaskStarted: Date.now(),
-      },
-      60000 // 1 mins
-    ).catch((error) =>
+    updateServerInfoFile({
+      lastTaskStarted: Date.now(),
+    }).catch((error) =>
       printLog("error", `Failed to store started task time: ${error}`)
     );
 
@@ -54,32 +51,23 @@ export function startTaskInWorker(opts) {
 
         if (code === 0) {
           /* Store done task time */
-          updateServerInfoFileWithLock(
-            {
-              lastTaskDone: Date.now(),
-            },
-            60000 // 1 mins
-          ).catch((error) =>
+          updateServerInfoFile({
+            lastTaskDone: Date.now(),
+          }).catch((error) =>
             printLog("error", `Failed to store done task time: ${error}`)
           );
         } else if (code === 1) {
           /* Store canceled task time */
-          updateServerInfoFileWithLock(
-            {
-              lastTaskCanceled: Date.now(),
-            },
-            60000 // 1 mins
-          ).catch((error) =>
+          updateServerInfoFile({
+            lastTaskCanceled: Date.now(),
+          }).catch((error) =>
             printLog("error", `Failed to store canceled task time: ${error}`)
           );
         } else {
           /* Store failed task time */
-          updateServerInfoFileWithLock(
-            {
-              lastTaskFailed: Date.now(),
-            },
-            60000 // 1 mins
-          ).catch((error) =>
+          updateServerInfoFile({
+            lastTaskFailed: Date.now(),
+          }).catch((error) =>
             printLog("error", `Failed to store failed task time: ${error}`)
           );
         }
