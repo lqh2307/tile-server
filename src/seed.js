@@ -410,7 +410,7 @@ export async function seedMBTilesTiles(
 
   const id = path.basename(sourcePath);
   const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
-  let totalTasks = Object.values(tilesSummary).reduce(
+  const totalTasks = Object.values(tilesSummary).reduce(
     (total, tile) =>
       total + (tile.x[1] - tile.x[0] + 1) * (tile.y[1] - tile.y[0] + 1),
     0
@@ -464,6 +464,7 @@ export async function seedMBTilesTiles(
   }
 
   let activeTasks = 0;
+  let remainingTasks = totalTasks;
 
   for (const z in tilesSummary) {
     for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
@@ -476,7 +477,7 @@ export async function seedMBTilesTiles(
         await mutex.runExclusive(() => {
           activeTasks++;
 
-          totalTasks--;
+          remainingTasks--;
         });
 
         /* Run a task */
@@ -611,7 +612,7 @@ export async function seedXYZTiles(
 
   const id = path.basename(sourcePath);
   const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
-  let totalTasks = Object.values(tilesSummary).reduce(
+  const totalTasks = Object.values(tilesSummary).reduce(
     (total, tile) =>
       total + (tile.x[1] - tile.x[0] + 1) * (tile.y[1] - tile.y[0] + 1),
     0
@@ -667,6 +668,7 @@ export async function seedXYZTiles(
   }
 
   let activeTasks = 0;
+  let remainingTasks = totalTasks;
 
   for (const z in tilesSummary) {
     for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
@@ -679,7 +681,7 @@ export async function seedXYZTiles(
         await mutex.runExclusive(() => {
           activeTasks++;
 
-          totalTasks--;
+          remainingTasks--;
         });
 
         /* Run a task */
