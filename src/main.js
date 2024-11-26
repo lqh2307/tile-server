@@ -138,6 +138,8 @@ async function startClusterServer(opts) {
     }
 
     /* Fork servers */
+    printLog("info", "Creating workers...");
+
     for (let i = 0; i < config.options.process; i++) {
       cluster.fork();
     }
