@@ -6,14 +6,15 @@
     "serveFrontPage": true,
     "serveSwagger": true,
     "serveRendered": true,
-    "maxScaleRender": 2,
+    "maxScaleRender": 1,
     "renderedCompression": 1,
     "minRenderedPoolSize": 8,
     "maxRenderedPoolSize": 16,
     "loggerFormat": ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
     "taskSchedule": "0 0 0 * * *",
     "restartServerAfterTask": true,
-    "process": 1
+    "process": 1,
+    "thead": 8
   },
   "styles": {},
   "datas": {},
