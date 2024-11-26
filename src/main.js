@@ -138,22 +138,18 @@ async function startClusterServer(opts) {
     }
 
     /* Fork servers */
-    if (config.options.process > 1) {
-      for (let i = 0; i < config.options.process; i++) {
-        cluster.fork();
-      }
-
-      cluster.on("exit", (worker, code, signal) => {
-        printLog(
-          "info",
-          `PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
-        );
-
-        cluster.fork();
-      });
-    } else {
-      startServer();
+    for (let i = 0; i < config.options.process; i++) {
+      cluster.fork();
     }
+
+    cluster.on("exit", (worker, code, signal) => {
+      printLog(
+        "info",
+        `PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
+      );
+
+      cluster.fork();
+    });
   } else {
     startServer();
   }
