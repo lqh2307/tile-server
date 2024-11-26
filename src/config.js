@@ -10,13 +10,13 @@ let config;
  * Read config.json file
  * @param {string} dataDir The data directory
  * @param {boolean} isValidate Is validate file?
- * @returns {Promise<void>}
+ * @returns {Promise<object>}
  */
 async function readConfigFile(dataDir, isValidate) {
   /* Read config.json file */
   const data = await fsPromise.readFile(`${dataDir}/config.json`, "utf8");
 
-  config = JSON.parse(data);
+  const config = JSON.parse(data);
 
   /* Validate config.json file */
   if (isValidate === true) {
@@ -195,6 +195,17 @@ async function readConfigFile(dataDir, isValidate) {
       {},
     ])
   );
+
+  return config;
 }
 
-export { readConfigFile, config };
+/**
+ * Load config.json file
+ * @param {string} dataDir The data directory
+ * @returns {Promise<void>}
+ */
+async function loadConfigFile(dataDir) {
+  config = await readConfigFile(dataDir, false);
+}
+
+export { readConfigFile, loadConfigFile, config };
