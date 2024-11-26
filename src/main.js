@@ -48,6 +48,9 @@ async function startClusterServer(opts) {
 
     const config = await readConfigFile(true);
 
+    /* Setup envs */
+    process.env.UV_THREADPOOL_SIZE = config.options.thread; // For libuv
+
     /* Setup events */
     process.on("SIGINT", () => {
       printLog("info", `Received "SIGINT" signal. Killing server...`);

@@ -82,6 +82,10 @@ async function readConfigFile(isValidate) {
                 type: "integer",
                 minimum: 1,
               },
+              thread: {
+                type: "integer",
+                minimum: 1,
+              },
             },
             additionalProperties: true,
           },
@@ -188,6 +192,7 @@ async function readConfigFile(isValidate) {
     taskSchedule: config.options.taskSchedule, // undefined
     restartServerAfterTask: config.options.restartServerAfterTask ?? true,
     process: config.options.process ?? 1,
+    thread: config.options.thread ?? os.cpus().length,
     fallbackFont: "Open Sans Regular",
   };
 

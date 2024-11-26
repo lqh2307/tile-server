@@ -98,7 +98,8 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
     "loggerFormat": ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
     "taskSchedule": "0 0 0 * * *",
     "restartServerAfterTask": true,
-    "process": 1
+    "process": 1,
+    "thread": 8
   },
   "styles": {
     "vietnam": {
