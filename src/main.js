@@ -1,15 +1,6 @@
 "use strict";
 
-<<<<<<< HEAD
-import os from "os";
-
-process.env.UV_THREADPOOL_SIZE =
-  process.env.UV_THREADPOOL_SIZE || Math.max(4, os.cpus().length * 2);
-
-import { readConfigFile, config } from "./config.js";
-=======
 import { readConfigFile } from "./config.js";
->>>>>>> b797bd6a94a4133e2e03be35a976c133c06b87dc
 import { printLog } from "./logger.js";
 import { program } from "commander";
 import chokidar from "chokidar";
