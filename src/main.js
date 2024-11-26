@@ -1,6 +1,6 @@
 "use strict";
 
-import { readConfigFile, config } from "./config.js";
+import { readConfigFile } from "./config.js";
 import { printLog } from "./logger.js";
 import { program } from "commander";
 import chokidar from "chokidar";
@@ -38,12 +38,12 @@ const argOpts = program.opts();
  * @returns {Promise<void>}
  */
 async function startClusterServer(opts) {
-  /* Load config.json file */
-  printLog("info", `Loading config.json file at "${opts.dataDir}"...`);
-
-  await readConfigFile(opts.dataDir, cluster.isPrimary);
-
   if (cluster.isPrimary === true) {
+    /* Read config.json file */
+    printLog("info", `Reading config.json file at "${opts.dataDir}"...`);
+
+    const config = await readConfigFile(opts.dataDir, true);
+
     /* Setup envs & events */
     process.env.UV_THREADPOOL_SIZE = config.options.thread; // For libuv
     process.env.DATA_DIR = opts.dataDir; // Store data directory
@@ -153,7 +153,7 @@ async function startClusterServer(opts) {
       cluster.fork();
     });
   } else {
-    startServer();
+    startServer(argOpts.data_dir);
   }
 }
 

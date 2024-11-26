@@ -1,6 +1,7 @@
 "use strict";
 
 import { updateServerInfoFile, killServer } from "./utils.js";
+import { config, loadConfigFile } from "./config.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
@@ -10,7 +11,6 @@ import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
 import { serve_task } from "./serve_task.js";
 import { printLog } from "./logger.js";
-import { config } from "./config.js";
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
@@ -166,11 +166,29 @@ async function loadData() {
 }
 
 /**
- * Start server
+ * Load config.json file
+ * @param {string} dataDir The data directory
  * @returns {Promise<void>}
  */
-export async function startServer() {
+async function loadConfig(dataDir) {
+  printLog("info", `Loading config.json file at "${dataDir}"...`);
+
   try {
+    await loadConfigFile(dataDir);
+  } catch (error) {
+    throw new Error(`Failed to load config.json file: ${error}`);
+  }
+}
+
+/**
+ * Start server
+ * @param {string} dataDir The data directory
+ * @returns {Promise<void>}
+ */
+export async function startServer(dataDir) {
+  try {
+    await loadConfig(dataDir);
+
     startHTTPServer();
 
     loadData();
