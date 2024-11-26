@@ -28,13 +28,15 @@ import {
 
 /**
  * Read cleanup.json file
- * @param {string} dataDir The data directory
  * @param {boolean} isValidate Is validate file?
  * @returns {Promise<object>}
  */
-export async function readCleanUpFile(dataDir, isValidate) {
+export async function readCleanUpFile(isValidate) {
   /* Read cleanup.json file */
-  const data = await fsPromise.readFile(`${dataDir}/cleanup.json`, "utf8");
+  const data = await fsPromise.readFile(
+    `${process.env.DATA_DIR}/cleanup.json`,
+    "utf8"
+  );
 
   const cleanUp = JSON.parse(data);
 

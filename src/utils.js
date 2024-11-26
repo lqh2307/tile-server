@@ -322,20 +322,22 @@ export async function removeEmptyFolders(folderPath, regex) {
 
 /**
  * Recursively removes old cache locks
- * @param {string} dataDir The data directory
  * @returns {Promise<void>}
  */
-export async function removeOldCacheLocks(dataDir) {
+export async function removeOldCacheLocks() {
   const fileNames = await findFiles(
-    `${dataDir}/caches`,
+    `${process.env.DATA_DIR}/caches`,
     /^.*\.(lock|tmp)$/,
     true
   );
 
   await Promise.all(
-    fileNames.map((fileName) => fsPromise.rm(`${dataDir}/caches/${fileName}`), {
-      force: true,
-    })
+    fileNames.map(
+      (fileName) => fsPromise.rm(`${process.env.DATA_DIR}/caches/${fileName}`),
+      {
+        force: true,
+      }
+    )
   );
 }
 
@@ -731,36 +733,11 @@ export async function updateServerInfoFile(serverInfoAdds = {}) {
 }
 
 /**
- * Get main PID
- * @returns {Promise<number>}
- */
-async function getMainPID() {
-  try {
-    const data = await fsPromise.readFile(
-      `${process.env.DATA_DIR}/server-info.json`,
-      "utf8"
-    );
-
-    return JSON.parse(data).mainPID;
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      return;
-    } else {
-      throw error;
-    }
-  }
-}
-
-/**
  * Restart server
  * @returns {Promise<void>}
  */
 export async function restartServer() {
-  const mainPID = await getMainPID();
-
-  if (mainPID !== undefined) {
-    process.kill(mainPID, "SIGTERM");
-  }
+  process.kill(process.env.MAIN_PID, "SIGTERM");
 }
 
 /**
@@ -768,11 +745,7 @@ export async function restartServer() {
  * @returns {Promise<void>}
  */
 export async function killServer() {
-  const mainPID = await getMainPID();
-
-  if (mainPID !== undefined) {
-    process.kill(mainPID, "SIGINT");
-  }
+  process.kill(process.env.MAIN_PID, "SIGINT");
 }
 
 /**
@@ -780,11 +753,7 @@ export async function killServer() {
  * @returns {Promise<void>}
  */
 export async function startTask() {
-  const taskPID = await getMainPID();
-
-  if (taskPID !== undefined) {
-    process.kill(taskPID, "SIGUSR1");
-  }
+  process.kill(process.env.MAIN_PID, "SIGUSR1");
 }
 
 /**
@@ -792,11 +761,7 @@ export async function startTask() {
  * @returns {Promise<void>}
  */
 export async function cancelTask() {
-  const taskPID = await getMainPID();
-
-  if (taskPID !== undefined) {
-    process.kill(taskPID, "SIGUSR2");
-  }
+  process.kill(process.env.MAIN_PID, "SIGUSR2");
 }
 
 /**

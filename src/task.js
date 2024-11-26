@@ -20,34 +20,31 @@ import {
  * @returns {Promise<void>}
  */
 export async function runTasks(opts) {
-  const dataDir = process.env.DATA_DIR;
-
   /* Read cleanup.json and seed.json files */
   printLog(
     "info",
-    `Loading "seed.json" and "cleanup.json" files at "${dataDir}"...`
+    `Loading "seed.json" and "cleanup.json" files at "${process.env.DATA_DIR}"...`
   );
 
   const [cleanUpData, seedData] = await Promise.all([
-    readCleanUpFile(dataDir, true),
-    readSeedFile(dataDir, true),
+    readCleanUpFile(true),
+    readSeedFile(true),
   ]);
 
   /* Run clean up task */
-  await runCleanUpTask(dataDir, cleanUpData, seedData);
+  await runCleanUpTask(cleanUpData, seedData);
 
   /* Run seed task */
-  await runSeedTask(dataDir, seedData);
+  await runSeedTask(seedData);
 }
 
 /**
  * Run clean up task
- * @param {string} dataDir The data directory
  * @param {object} cleanUpData Clean up object
  * @param {object} seedData Seed object
  * @returns {Promise<void>}
  */
-async function runCleanUpTask(dataDir, cleanUpData, seedData) {
+async function runCleanUpTask(cleanUpData, seedData) {
   try {
     const ids = Object.keys(cleanUpData.styles);
 
@@ -62,7 +59,10 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
         cleanUpStyleItem.refreshBefore?.day;
 
       try {
-        await cleanUpStyle(`${dataDir}/caches/styles/${id}`, cleanUpData);
+        await cleanUpStyle(
+          `${process.env.DATA_DIR}/caches/styles/${id}`,
+          cleanUpData
+        );
       } catch (error) {
         printLog(
           "error",
@@ -98,7 +98,7 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
       try {
         if (seedDataItem.storeType === "xyz") {
           await cleanUpXYZTiles(
-            `${dataDir}/caches/xyzs/${id}`,
+            `${process.env.DATA_DIR}/caches/xyzs/${id}`,
             seedDataItem.metadata.format,
             cleanUpDataItem.zooms,
             cleanUpDataItem.bbox,
@@ -108,7 +108,7 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
           );
         } else if (seedDataItem.storeType === "mbtiles") {
           await cleanUpMBTilesTiles(
-            `${dataDir}/caches/mbtiles/${id}`,
+            `${process.env.DATA_DIR}/caches/mbtiles/${id}`,
             cleanUpDataItem.zooms,
             cleanUpDataItem.bbox,
             seedDataItem.concurrency,
@@ -137,11 +137,10 @@ async function runCleanUpTask(dataDir, cleanUpData, seedData) {
 
 /**
  * Run seed task
- * @param {string} dataDir The data directory
  * @param {object} seedData Seed object
  * @returns {Promise<void>}
  */
-async function runSeedTask(dataDir, seedData) {
+async function runSeedTask(seedData) {
   try {
     const ids = Object.keys(seedData.styles);
 
@@ -156,7 +155,7 @@ async function runSeedTask(dataDir, seedData) {
 
       try {
         await seedStyle(
-          `${dataDir}/caches/styles/${id}`,
+          `${process.env.DATA_DIR}/caches/styles/${id}`,
           seedStyleItem.url,
           seedStyleItem.maxTry,
           seedStyleItem.timeout,
@@ -197,7 +196,7 @@ async function runSeedTask(dataDir, seedData) {
       try {
         if (seedDataItem.storeType === "xyz") {
           await seedXYZTiles(
-            `${dataDir}/caches/xyzs/${id}`,
+            `${process.env.DATA_DIR}/caches/xyzs/${id}`,
             seedDataItem.metadata,
             seedDataItem.url,
             seedDataItem.bbox,
@@ -211,7 +210,7 @@ async function runSeedTask(dataDir, seedData) {
           );
         } else if (seedDataItem.storeType === "mbtiles") {
           await seedMBTilesTiles(
-            `${dataDir}/caches/mbtiles/${id}`,
+            `${process.env.DATA_DIR}/caches/mbtiles/${id}`,
             seedDataItem.metadata,
             seedDataItem.url,
             seedDataItem.bbox,

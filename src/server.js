@@ -167,14 +167,13 @@ async function loadData() {
 
 /**
  * Load config.json file
- * @param {string} dataDir The data directory
  * @returns {Promise<void>}
  */
-async function loadConfig(dataDir) {
-  printLog("info", `Loading config.json file at "${dataDir}"...`);
+async function loadConfig() {
+  printLog("info", `Loading config.json file at "${process.env.DATA_DIR}"...`);
 
   try {
-    await loadConfigFile(dataDir);
+    await loadConfigFile();
   } catch (error) {
     throw new Error(`Failed to load config.json file: ${error}`);
   }
@@ -182,12 +181,11 @@ async function loadConfig(dataDir) {
 
 /**
  * Start server
- * @param {string} dataDir The data directory
  * @returns {Promise<void>}
  */
-export async function startServer(dataDir) {
+export async function startServer() {
   try {
-    await loadConfig(dataDir);
+    await loadConfig();
 
     startHTTPServer();
 

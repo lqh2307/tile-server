@@ -8,13 +8,15 @@ let config;
 
 /**
  * Read config.json file
- * @param {string} dataDir The data directory
  * @param {boolean} isValidate Is validate file?
  * @returns {Promise<object>}
  */
-async function readConfigFile(dataDir, isValidate) {
+async function readConfigFile(isValidate) {
   /* Read config.json file */
-  const data = await fsPromise.readFile(`${dataDir}/config.json`, "utf8");
+  const data = await fsPromise.readFile(
+    `${process.env.DATA_DIR}/config.json`,
+    "utf8"
+  );
 
   const config = JSON.parse(data);
 
@@ -201,11 +203,10 @@ async function readConfigFile(dataDir, isValidate) {
 
 /**
  * Load config.json file
- * @param {string} dataDir The data directory
  * @returns {Promise<void>}
  */
-async function loadConfigFile(dataDir) {
-  config = await readConfigFile(dataDir, false);
+async function loadConfigFile() {
+  config = await readConfigFile(false);
 }
 
 export { readConfigFile, loadConfigFile, config };

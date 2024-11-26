@@ -39,14 +39,16 @@ const argOpts = program.opts();
  */
 async function startClusterServer(opts) {
   if (cluster.isPrimary === true) {
+    /* Setup envs */
+    process.env.DATA_DIR = opts.dataDir; // Store data directory
+    process.env.MAIN_PID = process.pid; // Store main PID
+
     /* Read config.json file */
     printLog("info", `Reading config.json file at "${opts.dataDir}"...`);
 
-    const config = await readConfigFile(opts.dataDir, true);
+    const config = await readConfigFile(true);
 
-    /* Setup envs & events */
-    process.env.DATA_DIR = opts.dataDir; // Store data directory
-
+    /* Setup events */
     process.on("SIGINT", () => {
       printLog("info", `Received "SIGINT" signal. Killing server...`);
 
@@ -88,13 +90,15 @@ async function startClusterServer(opts) {
     });
 
     /* Remove old cache locks */
-    printLog("info", `Removing old cache locks before start server...`);
+    printLog(
+      "info",
+      `Removing old cache locks at "${opts.dataDir}" before start server...`
+    );
 
-    await removeOldCacheLocks(opts.dataDir);
+    await removeOldCacheLocks();
 
     /* Store main pid */
     await updateServerInfoFile({
-      mainPID: process.pid,
       lastServerStarted: Date.now(),
     });
 
@@ -152,7 +156,7 @@ async function startClusterServer(opts) {
       cluster.fork();
     });
   } else {
-    startServer(argOpts.data_dir);
+    startServer();
   }
 }
 

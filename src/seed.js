@@ -33,13 +33,15 @@ import {
 
 /**
  * Read seed.json file
- * @param {string} dataDir The data directory
  * @param {boolean} isValidate Is validate file?
  * @returns {Promise<object>}
  */
-export async function readSeedFile(dataDir, isValidate) {
+export async function readSeedFile(isValidate) {
   /* Read seed.json file */
-  const data = await fsPromise.readFile(`${dataDir}/seed.json`, "utf8");
+  const data = await fsPromise.readFile(
+    `${process.env.DATA_DIR}/seed.json`,
+    "utf8"
+  );
 
   const seed = JSON.parse(data);
 
