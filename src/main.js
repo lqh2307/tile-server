@@ -2,7 +2,8 @@
 
 import os from "os";
 
-process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length * 2);
+process.env.UV_THREADPOOL_SIZE =
+  process.env.UV_THREADPOOL_SIZE || Math.max(4, os.cpus().length * 2);
 
 import { readConfigFile, config } from "./config.js";
 import { printLog } from "./logger.js";
