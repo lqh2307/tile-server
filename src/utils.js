@@ -2,7 +2,6 @@
 
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
-import protobuf from "protocol-buffers";
 import { printLog } from "./logger.js";
 import https from "node:https";
 import http from "node:http";
@@ -13,21 +12,6 @@ import fs from "node:fs";
 import zlib from "zlib";
 import util from "util";
 import Ajv from "ajv";
-
-const vectorTileProto = protobuf(
-  fs.readFileSync("public/protos/vector_tile.proto")
-);
-
-/**
- * Extracts layer names from a vector tile PBF buffer
- * @param {Buffer} pbfData The PBF data buffer
- * @returns {Promise<Array<string>} A promise that resolves to an array of layer names
- */
-export async function getLayersFromPBFBuffer(pbfData) {
-  const decoded = vectorTileProto.tile.decode(pbfData);
-
-  return decoded.layers.map((layer) => layer.name);
-}
 
 /**
  * Get data from URL

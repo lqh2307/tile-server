@@ -4,12 +4,12 @@ import { fetchOne, openSQLite, runSQL } from "./sqlite.js";
 import { isFullTransparentPNGImage } from "./image.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
+import protobuf from "protocol-buffers";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
 import sqlite3 from "sqlite3";
 import path from "node:path";
 import {
-  getLayersFromPBFBuffer,
   detectFormatAndHeaders,
   getBBoxFromTiles,
   getDataFromURL,
@@ -39,6 +39,10 @@ async function getXYZLayersFromTiles(sourcePath) {
   const layerNames = new Set();
   let activeTasks = 0;
 
+  const vectorTileProto = protobuf(
+    await fsPromise.readFile("public/protos/vector_tile.proto")
+  );
+
   for (const pbfFilePath of pbfFilePaths) {
     /* Wait slot for a task */
     while (activeTasks >= 200) {
@@ -54,10 +58,10 @@ async function getXYZLayersFromTiles(sourcePath) {
     /* Run a task */
     (async () => {
       try {
-        const data = await fsPromise.readFile(`${sourcePath}/${pbfFilePath}`);
-        const layers = await getLayersFromPBFBuffer(data);
-
-        layers.forEach((layer) => layerNames.add(layer));
+        vectorTileProto.tile
+          .decode(await fsPromise.readFile(`${sourcePath}/${pbfFilePath}`))
+          .layers.map((layer) => layer.name)
+          .forEach((layer) => layerNames.add(layer));
       } catch (error) {
         throw error;
       } finally {

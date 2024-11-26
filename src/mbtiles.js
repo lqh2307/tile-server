@@ -4,12 +4,12 @@ import { fetchAll, fetchOne, openSQLite, runSQL } from "./sqlite.js";
 import { isFullTransparentPNGImage } from "./image.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
+import protobuf from "protocol-buffers";
 import { printLog } from "./logger.js";
 import sqlite3 from "sqlite3";
 import path from "node:path";
 import fs from "node:fs";
 import {
-  getLayersFromPBFBuffer,
   detectFormatAndHeaders,
   getBBoxFromTiles,
   getDataFromURL,
@@ -139,6 +139,10 @@ async function getMBTilesLayersFromTiles(mbtilesSource) {
   const batchSize = 200;
   let offset = 0;
 
+  const vectorTileProto = protobuf(
+    await fsPromise.readFile("public/protos/vector_tile.proto")
+  );
+
   while (true) {
     const rows = await fetchAll(
       mbtilesSource,
@@ -152,9 +156,10 @@ async function getMBTilesLayersFromTiles(mbtilesSource) {
     }
 
     for (const row of rows) {
-      const layers = await getLayersFromPBFBuffer(row.tile_data);
-
-      layers.forEach((layer) => layerNames.add(layer));
+      vectorTileProto.tile
+        .decode(row.tile_data)
+        .layers.map((layer) => layer.name)
+        .forEach((layer) => layerNames.add(layer));
     }
 
     offset += batchSize;
