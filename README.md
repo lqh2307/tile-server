@@ -92,14 +92,13 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
     "serveSwagger": true,
     "serveRendered": true,
     "maxScaleRender": 1,
-    "renderedCompression": 6,
+    "renderedCompression": 1,
     "minRenderedPoolSize": 8,
     "maxRenderedPoolSize": 16,
     "loggerFormat": ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
     "taskSchedule": "0 0 0 * * *",
     "restartServerAfterTask": true,
-    "process": 1,
-    "thread": 8
+    "process": 1
   },
   "styles": {
     "vietnam": {

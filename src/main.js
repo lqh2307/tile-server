@@ -1,5 +1,9 @@
 "use strict";
 
+import os from "os";
+
+process.env.UV_THREADPOOL_SIZE = Math.max(4, os.cpus().length * 2);
+
 import { readConfigFile, config } from "./config.js";
 import { printLog } from "./logger.js";
 import { program } from "commander";
@@ -45,7 +49,6 @@ async function startClusterServer(opts) {
 
   if (cluster.isPrimary === true) {
     /* Setup envs & events */
-    process.env.UV_THREADPOOL_SIZE = config.options.thread; // For libuv
     process.env.DATA_DIR = opts.dataDir; // Store data directory
 
     process.on("SIGINT", () => {

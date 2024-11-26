@@ -76,10 +76,6 @@ async function readConfigFile(dataDir, isValidate) {
               restartServerAfterTask: {
                 type: "boolean",
               },
-              thread: {
-                type: "integer",
-                minimum: 1,
-              },
               process: {
                 type: "integer",
                 minimum: 1,
@@ -190,7 +186,6 @@ async function readConfigFile(dataDir, isValidate) {
     taskSchedule: config.options.taskSchedule, // undefined
     restartServerAfterTask: config.options.restartServerAfterTask ?? true,
     process: config.options.process ?? 1,
-    thread: config.options.thread ?? os.cpus().length,
     fallbackFont: "Open Sans Regular",
   };
 
