@@ -1,6 +1,6 @@
 "use strict";
 
-import { getLonLatFromXYZ, inflateAsync } from "./utils.js";
+import { getLonLatFromXYZ } from "./utils.js";
 import sharp from "sharp";
 
 /**
@@ -180,16 +180,27 @@ export async function processImage(data, scale, compression, size, z) {
 
 /**
  * Check if PNG image file/buffer is full transparent (alpha = 0)
- * @param {string|Buffer} filePathOrBuffer Path/Buffer of the PNG image
+ * @param {Buffer} buffer Buffer of the PNG image
  * @returns {Promise<boolean>}
  */
-export async function isFullTransparentPNGImage(filePathOrBuffer) {
+export async function isFullTransparentPNGImage(buffer) {
   try {
-    const { data, info } = await sharp(filePathOrBuffer)
-      .raw()
-      .toBuffer({
-        resolveWithObject: true,
-      });
+    if (
+      buffer[0] !== 0x89 ||
+      buffer[1] !== 0x50 ||
+      buffer[2] !== 0x4e ||
+      buffer[3] !== 0x47 ||
+      buffer[4] !== 0x0d ||
+      buffer[5] !== 0x0a ||
+      buffer[6] !== 0x1a ||
+      buffer[7] !== 0x0a
+    ) {
+      return false;
+    }
+
+    const { data, info } = await sharp(buffer).raw().toBuffer({
+      resolveWithObject: true,
+    });
 
     if (info.channels !== 4) {
       return false;
