@@ -1,15 +1,15 @@
 #!/bin/sh
 
-XVFB_STARTED=0
+# Run Xvfb
+if test -z "$DISPLAY"; then
+  Xvfb :99 -screen 0 1920x1080x24 &
 
+  export DISPLAY=:99
+fi
+
+# Run nodejs
 while true; do
-  if test -z "$DISPLAY" && test "$XVFB_STARTED" -eq 0; then
-    xvfb-run -a -s "-terminate -nolisten unix" node ./src/main.js "$@"
-    
-    XVFB_STARTED=1
-  else
-    node ./src/main.js "$@"
-  fi
+  node ./src/main.js "$@"
 
   EXIT_CODE=$?
 
