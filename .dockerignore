@@ -2,6 +2,7 @@
 !src
 !data
 !public
+!nginx.conf
 !package.json
 !entrypoint.sh
 !docker-entrypoint.sh
