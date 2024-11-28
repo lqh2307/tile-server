@@ -31,6 +31,8 @@ export async function openSQLite(
       }
 
       try {
+        await runSQL(db, "PRAGMA mmap_size = 0;");
+
         if (wal === true) {
           await runSQL(db, "PRAGMA journal_mode=WAL;");
         }
