@@ -7,6 +7,8 @@ if test "$USE_NGINX" = "true"; then
   echo "Starting nginx..."
 
   nginx &
+
+  NGINX_PID=$!
 fi
 
 # Run Xvfb
@@ -14,6 +16,8 @@ if test -z "$DISPLAY"; then
   echo "Starting Xvfb..."
 
   Xvfb :99 -screen 0 1920x1080x24 &
+
+  XVFB_PID=$!
 
   export DISPLAY=:99
 fi
@@ -34,3 +38,21 @@ while true; do
     sleep 5
   fi
 done
+
+# Stop nginx
+if test "$NGINX_PID" = "true"; then
+  echo "Stopping nginx..."
+
+  kill "$NGINX_PID"
+
+  wait "$NGINX_PID" 2>/dev/null
+fi
+
+# Stop Xvfb
+if test -n "$XVFB_PID"; then
+  echo "Stopping Xvfb..."
+
+  kill "$XVFB_PID"
+
+  wait "$XVFB_PID" 2>/dev/null
+fi

@@ -27,11 +27,16 @@ export async function openSQLite(filePath, mode, wal) {
       }
 
       try {
+        // Enable WAL mode if specified
         if (wal === true) {
           await runSQL(db, "PRAGMA journal_mode=WAL;");
         }
 
+        // Set busy timeout
         await runSQL(db, "PRAGMA busy_timeout = 5000;");
+
+        // Disable mmap if specified
+        await runSQL(db, "PRAGMA mmap_size = 0;");
 
         resolve(db);
       } catch (error) {

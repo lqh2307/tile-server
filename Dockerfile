@@ -72,11 +72,11 @@ COPY --from=builder /usr/local/lib/nodejs /usr/local/lib/nodejs
 COPY --from=builder /tile-server/nginx.conf /etc/nginx/nginx.conf
 
 ENV PATH=/usr/local/lib/nodejs/bin:$PATH
-
 ENV USE_NGINX=true
 
 VOLUME /tile-server/data
 
-EXPOSE 8888
+EXPOSE 8080
+EXPOSE 80
 
 ENTRYPOINT ["./entrypoint.sh"]

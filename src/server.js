@@ -1,7 +1,6 @@
 "use strict";
 
 import { config, loadConfigFile } from "./config.js";
-import { serve_rendered } from "./serve_rendered.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
 import { serve_style } from "./serve_style.js";
@@ -91,7 +90,6 @@ function startHTTPServer() {
       .use("/fonts", serve_font.init())
       .use("/sprites", serve_sprite.init())
       .use("/styles", serve_style.init())
-      .use("/styles", serve_rendered.init())
       .use("/tasks", serve_task.init())
       .listen(config.options.listenPort, () => {
         printLog(
@@ -118,7 +116,6 @@ async function loadData() {
     /* Load data */
     await Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()]);
     await serve_style.add();
-    await serve_rendered.add();
 
     /* Clean */
     config.styles = undefined;
