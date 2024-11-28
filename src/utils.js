@@ -5,7 +5,6 @@ import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import https from "node:https";
 import http from "node:http";
-import path from "node:path";
 import crypto from "crypto";
 import axios from "axios";
 import fs from "node:fs";
@@ -666,53 +665,6 @@ export async function validateJSON(schema, jsonData) {
 export function deepClone(obj) {
   if (obj !== undefined) {
     return JSON.parse(JSON.stringify(obj));
-  }
-}
-
-/**
- * Update server-info.json file
- * @param {Object<string,string>} serverInfoAdds Server info object
- * @returns {Promise<void>}
- */
-export async function updateServerInfoFile(serverInfoAdds = {}) {
-  const filePath = `${process.env.DATA_DIR}/server-info.json`;
-  const tempFilePath = `${filePath}.tmp`;
-
-  try {
-    const serverInfo = JSON.parse(await fsPromise.readFile(filePath, "utf8"));
-
-    await fsPromise.writeFile(
-      tempFilePath,
-      JSON.stringify(
-        {
-          ...serverInfo,
-          ...serverInfoAdds,
-        },
-        null,
-        2
-      ),
-      "utf8"
-    );
-
-    await fsPromise.rename(tempFilePath, filePath);
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      await fsPromise.mkdir(path.dirname(filePath), {
-        recursive: true,
-      });
-
-      await fsPromise.writeFile(
-        filePath,
-        JSON.stringify(serverInfoAdds, null, 2),
-        "utf8"
-      );
-    } else {
-      await fsPromise.rm(tempFilePath, {
-        force: true,
-      });
-
-      throw error;
-    }
   }
 }
 

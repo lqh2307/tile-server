@@ -33,6 +33,8 @@ export async function openSQLite(
       try {
         await runSQL(db, "PRAGMA mmap_size = 0;");
 
+        await runSQL(db, "PRAGMA busy_timeout = 5000;");
+
         if (wal === true) {
           await runSQL(db, "PRAGMA journal_mode=WAL;");
         }
@@ -98,6 +100,45 @@ export function fetchAll(db, sql, ...params) {
       }
 
       resolve(rows);
+    });
+  });
+}
+
+/**
+ * Close SQLite database
+ * @param {sqlite3.Database} db SQLite database instance
+ * @returns {Promise<void>}
+ */
+export async function closeSQLite(db) {
+  return new Promise((resolve, reject) => {
+    db.get("PRAGMA journal_mode;", async (error, row) => {
+      if (error) {
+        return reject(error);
+      }
+
+      if (row.journal_mode === "wal") {
+        db.run("PRAGMA wal_checkpoint(PASSIVE);", (error) => {
+          if (error) {
+            return reject(error);
+          }
+
+          db.close((closeError) => {
+            if (closeError) {
+              return reject(closeError);
+            }
+
+            resolve();
+          });
+        });
+      } else {
+        db.close((closeError) => {
+          if (closeError) {
+            return reject(closeError);
+          }
+
+          resolve();
+        });
+      }
     });
   });
 }

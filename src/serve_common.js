@@ -491,31 +491,6 @@ function serveSummaryHandler() {
 }
 
 /**
- * Get server info content handler
- * @returns {(req: any, res: any, next: any) => Promise<any>}
- */
-function serveInfoHandler() {
-  return async (req, res, next) => {
-    try {
-      const taskInfo = await fsPromise.readFile(
-        `${process.env.DATA_DIR}/server-info.json`,
-        "utf8"
-      );
-
-      res.header("Content-Type", "application/json");
-
-      return res.status(StatusCodes.OK).send(taskInfo);
-    } catch (error) {
-      printLog("error", `Failed to get server info": ${error}`);
-
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send("Internal server error");
-    }
-  };
-}
-
-/**
  * Get health of server handler
  * @returns {(req: any, res: any, next: any) => Promise<any>}
  */
@@ -588,39 +563,6 @@ export const serve_common = {
     if (config.options.serveSwagger === true) {
       app.use("/swagger/index.html", swaggerUi.serve, serveSwagger());
     }
-
-    /**
-     * @swagger
-     * tags:
-     *   - name: Common
-     *     description: Common related endpoints
-     * /info:
-     *   get:
-     *     tags:
-     *       - Common
-     *     summary: Get info
-     *     responses:
-     *       200:
-     *         description: Info
-     *         content:
-     *           application/json:
-     *             schema:
-     *               type: object
-     *       400:
-     *         description: Bad request
-     *       404:
-     *         description: Not found
-     *       503:
-     *         description: Server is starting up
-     *         content:
-     *           text/plain:
-     *             schema:
-     *               type: string
-     *               example: Starting...
-     *       500:
-     *         description: Internal server error
-     */
-    app.get("/info", checkReadyMiddleware(), serveInfoHandler());
 
     /**
      * @swagger

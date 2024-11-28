@@ -1,6 +1,6 @@
 "use strict";
 
-import { fetchOne, openSQLite, runSQL } from "./sqlite.js";
+import { closeSQLite, fetchOne, openSQLite, runSQL } from "./sqlite.js";
 import { isFullTransparentPNGImage } from "./image.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
@@ -937,17 +937,7 @@ export async function openXYZMD5DB(
  * @returns {Promise<void>}
  */
 export async function closeXYZMD5DB(xyzSource) {
-  await runSQL(xyzSource, "PRAGMA wal_checkpoint(PASSIVE);");
-
-  return new Promise((resolve, reject) => {
-    xyzSource.close((error) => {
-      if (error) {
-        return reject(error);
-      }
-
-      resolve();
-    });
-  });
+  return await closeSQLite(xyzSource);
 }
 
 /**

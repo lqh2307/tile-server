@@ -764,11 +764,19 @@ export const serve_data = {
             dataInfo.sourceType = "mbtiles";
 
             if (item.cache !== undefined) {
-              dataInfo.source = await openMBTilesDB(
-                dataInfo.path,
-                sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
-                true
-              );
+              if (dataInfo.storeCache === true) {
+                dataInfo.source = await openMBTilesDB(
+                  dataInfo.path,
+                  sqlite3.OPEN_READONLY,
+                  false
+                );
+              } else {
+                dataInfo.source = await openMBTilesDB(
+                  dataInfo.path,
+                  sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+                  false
+                );
+              }
 
               dataInfo.tileJSON = createMetadata(cacheSource.metadata);
             } else {
@@ -825,7 +833,7 @@ export const serve_data = {
                 dataInfo.md5Source = await openXYZMD5DB(
                   dataInfo.source,
                   sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
-                  true
+                  false
                 );
               } else {
                 dataInfo.source = dataInfo.path;

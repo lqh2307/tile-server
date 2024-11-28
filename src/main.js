@@ -7,7 +7,6 @@ import chokidar from "chokidar";
 import cluster from "cluster";
 import cron from "node-cron";
 import {
-  updateServerInfoFile,
   removeOldCacheLocks,
   restartServer,
   getVersion,
@@ -55,27 +54,13 @@ async function startClusterServer(opts) {
     process.on("SIGINT", () => {
       printLog("info", `Received "SIGINT" signal. Killing server...`);
 
-      /* Store killed server time */
-      updateServerInfoFile({
-        lastServerKilled: Date.now(),
-      })
-        .catch((error) =>
-          printLog("error", `Failed to store killed server time: ${error}`)
-        )
-        .finally(() => process.exit(0));
+      process.exit(0);
     });
 
     process.on("SIGTERM", () => {
       printLog("info", `Received "SIGTERM" signal. Restarting server...`);
 
-      /* Store restarted server time */
-      updateServerInfoFile({
-        lastServerRestarted: Date.now(),
-      })
-        .catch((error) =>
-          printLog("error", `Failed to store restarted server time: ${error}`)
-        )
-        .finally(() => process.exit(1));
+      process.exit(1);
     });
 
     process.on("SIGUSR1", () => {
@@ -99,11 +84,6 @@ async function startClusterServer(opts) {
     );
 
     await removeOldCacheLocks();
-
-    /* Store main pid */
-    await updateServerInfoFile({
-      lastServerStarted: Date.now(),
-    });
 
     printLog(
       "info",

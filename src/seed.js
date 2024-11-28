@@ -444,7 +444,7 @@ export async function seedMBTilesTiles(
   const mbtilesSource = await openMBTilesDB(
     `${sourcePath}/${path.basename(sourcePath)}.mbtiles`,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
-    true
+    false
   );
 
   // Update metadata
@@ -646,7 +646,7 @@ export async function seedXYZTiles(
   const xyzSource = await openXYZMD5DB(
     sourcePath,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
-    true
+    false
   );
 
   // Update metadata.json file

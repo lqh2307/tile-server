@@ -1,6 +1,5 @@
 "use strict";
 
-import { updateServerInfoFile, killServer } from "./utils.js";
 import { config, loadConfigFile } from "./config.js";
 import { serve_rendered } from "./serve_rendered.js";
 import { serve_common } from "./serve_common.js";
@@ -10,6 +9,7 @@ import { Worker } from "node:worker_threads";
 import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
 import { serve_task } from "./serve_task.js";
+import { killServer } from "./utils.js";
 import { printLog } from "./logger.js";
 import express from "express";
 import morgan from "morgan";
@@ -24,13 +24,6 @@ let currentTaskWorker;
  */
 export function startTaskInWorker(opts) {
   if (currentTaskWorker === undefined) {
-    /* Store started task time */
-    updateServerInfoFile({
-      lastTaskStarted: Date.now(),
-    }).catch((error) =>
-      printLog("error", `Failed to store started task time: ${error}`)
-    );
-
     currentTaskWorker = new Worker("./src/task_worker.js", {
       workerData: opts,
     })
@@ -49,27 +42,8 @@ export function startTaskInWorker(opts) {
       .on("exit", (code) => {
         currentTaskWorker = undefined;
 
-        if (code === 0) {
-          /* Store done task time */
-          updateServerInfoFile({
-            lastTaskDone: Date.now(),
-          }).catch((error) =>
-            printLog("error", `Failed to store done task time: ${error}`)
-          );
-        } else if (code === 1) {
-          /* Store canceled task time */
-          updateServerInfoFile({
-            lastTaskCanceled: Date.now(),
-          }).catch((error) =>
-            printLog("error", `Failed to store canceled task time: ${error}`)
-          );
-        } else {
-          /* Store failed task time */
-          updateServerInfoFile({
-            lastTaskFailed: Date.now(),
-          }).catch((error) =>
-            printLog("error", `Failed to store failed task time: ${error}`)
-          );
+        if (code !== 0) {
+          printLog("error", `Task worker exited with code: ${code}`);
         }
       });
   } else {

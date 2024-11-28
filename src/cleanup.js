@@ -225,7 +225,7 @@ export async function cleanUpMBTilesTiles(
   const mbtilesSource = await openMBTilesDB(
     `${sourcePath}/${path.basename(sourcePath)}.mbtiles`,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
-    true
+    false
   );
 
   // Remove tiles
@@ -382,7 +382,7 @@ export async function cleanUpXYZTiles(
   const xyzSource = await openXYZMD5DB(
     sourcePath,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
-    true
+    false
   );
 
   // Remove tile files

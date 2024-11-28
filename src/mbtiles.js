@@ -1,6 +1,5 @@
 "use strict";
 
-import { fetchAll, fetchOne, openSQLite, runSQL } from "./sqlite.js";
 import { isFullTransparentPNGImage } from "./image.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
@@ -17,6 +16,13 @@ import {
   retry,
   delay,
 } from "./utils.js";
+import {
+  closeSQLite,
+  openSQLite,
+  fetchAll,
+  fetchOne,
+  runSQL,
+} from "./sqlite.js";
 
 /**
  * Check if a unique index exists on a specified table with given columns
@@ -99,10 +105,9 @@ async function createMBTilesIndex(
  * @returns {Promise<void>}
  */
 async function initializeMBTilesTables(mbtilesSource) {
-  return await Promise.all([
-    runSQL(
-      mbtilesSource,
-      `
+  await runSQL(
+    mbtilesSource,
+    `
       CREATE TABLE IF NOT EXISTS
         metadata (
           name TEXT NOT NULL,
@@ -110,10 +115,11 @@ async function initializeMBTilesTables(mbtilesSource) {
           PRIMARY KEY (name)
         );
       `
-    ),
-    runSQL(
-      mbtilesSource,
-      `
+  );
+
+  return await runSQL(
+    mbtilesSource,
+    `
       CREATE TABLE IF NOT EXISTS
         tiles (
           zoom_level INTEGER NOT NULL,
@@ -125,8 +131,7 @@ async function initializeMBTilesTables(mbtilesSource) {
           PRIMARY KEY (zoom_level, tile_column, tile_row)
         );
       `
-    ),
-  ]);
+  );
 }
 
 /**
@@ -588,17 +593,7 @@ export async function getMBTilesInfos(mbtilesSource) {
  * @returns {Promise<void>}
  */
 export async function closeMBTilesDB(mbtilesSource) {
-  await runSQL(mbtilesSource, "PRAGMA wal_checkpoint(PASSIVE);");
-
-  return new Promise((resolve, reject) => {
-    mbtilesSource.close((error) => {
-      if (error) {
-        return reject(error);
-      }
-
-      resolve();
-    });
-  });
+  return await closeSQLite(mbtilesSource);
 }
 
 /**
