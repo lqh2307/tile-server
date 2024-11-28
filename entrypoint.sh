@@ -1,5 +1,14 @@
 #!/bin/sh
 
+# Run nginx
+USE_NGINX=${USE_NGINX:-false}
+
+if test "$USE_NGINX" = "true"; then
+  echo "Starting nginx..."
+
+  nginx &
+fi
+
 # Run Xvfb
 if test -z "$DISPLAY"; then
   echo "Starting Xvfb..."

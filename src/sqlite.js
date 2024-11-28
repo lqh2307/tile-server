@@ -11,11 +11,7 @@ import path from "node:path";
  * @param {boolean} wal Use WAL
  * @returns {Promise<sqlite3.Database>}
  */
-export async function openSQLite(
-  filePath,
-  mode = sqlite3.OPEN_READONLY,
-  wal = false
-) {
+export async function openSQLite(filePath, mode, wal) {
   // Create folder if has sqlite3.OPEN_CREATE mode
   if (mode & sqlite3.OPEN_CREATE) {
     await fsPromise.mkdir(path.dirname(filePath), {
