@@ -23,7 +23,6 @@ import {
   getDataFromURL,
   getRequestHost,
   createMetadata,
-  getRequestHost,
   isExistFile,
   unzipAsync,
 } from "./utils.js";
