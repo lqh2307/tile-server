@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# Run nginx
+echo "Starting nginx..."
+
+nginx &
+
 # Run Xvfb
 if test -z "$DISPLAY"; then
   echo "Starting Xvfb..."

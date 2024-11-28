@@ -4,3 +4,4 @@
 !public
 !package.json
 !entrypoint.sh
+!docker-entrypoint.sh
