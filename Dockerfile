@@ -77,6 +77,6 @@ ENV USE_NGINX=true
 
 VOLUME /tile-server/data
 
-EXPOSE 80
+EXPOSE 8888
 
 ENTRYPOINT ["./entrypoint.sh"]
