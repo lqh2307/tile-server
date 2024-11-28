@@ -77,6 +77,7 @@ WORKDIR /tile-server
 
 COPY --from=builder /tile-server .
 COPY --from=builder /usr/local/lib/nodejs /usr/local/lib/nodejs
+COPY --from=builder /tile-server/nginx.conf /etc/nginx/nginx.conf
 
 ENV PATH=/usr/local/lib/nodejs/bin:$PATH
 
