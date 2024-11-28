@@ -24,7 +24,7 @@ fi
 
 # Run nodejs
 while true; do
-  echo "Starting nodejs application..."
+  echo "Starting application..."
 
   node ./src/main.js "$@"
 
