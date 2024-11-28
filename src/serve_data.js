@@ -764,11 +764,27 @@ export const serve_data = {
             dataInfo.sourceType = "mbtiles";
 
             if (item.cache !== undefined) {
-              dataInfo.source = await openMBTilesDB(
-                dataInfo.path,
-                sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
-                false
-              );
+              if (dataInfo.storeCache === true) {
+                dataInfo.source = await openMBTilesDB(
+                  dataInfo.path,
+                  sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+                  false
+                );
+              } else {
+                if ((await isExistFile(dataInfo.path)) === true) {
+                  dataInfo.source = await openMBTilesDB(
+                    dataInfo.path,
+                    sqlite3.OPEN_READONLY,
+                    false
+                  );
+                } else {
+                  dataInfo.source = await openMBTilesDB(
+                    dataInfo.path,
+                    sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+                    false
+                  );
+                }
+              }
 
               dataInfo.tileJSON = createMetadata(cacheSource.metadata);
             } else {
