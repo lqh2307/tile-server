@@ -47,7 +47,7 @@ if test -n "$NGINX_PID"; then
     kill "$NGINX_PID"
 
     wait "$NGINX_PID" 2>/dev/null
-  else
+  fi
 fi
 
 # Stop Xvfb
@@ -58,5 +58,5 @@ if test -n "$XVFB_PID"; then
     kill "$XVFB_PID"
 
     wait "$XVFB_PID" 2>/dev/null
-  else
+  fi
 fi
