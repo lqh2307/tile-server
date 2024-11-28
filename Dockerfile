@@ -59,6 +59,7 @@ RUN \
   apt-get -y upgrade; \
   apt-get -y install \
     xvfb \
+    nginx \
     libglfw3 \
     libuv1 \
     libjpeg-turbo8 \
@@ -81,6 +82,6 @@ ENV PATH=/usr/local/lib/nodejs/bin:$PATH
 
 VOLUME /tile-server/data
 
-EXPOSE 8080
+EXPOSE 80
 
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["./docker-entrypoint.sh"]
