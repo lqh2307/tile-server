@@ -41,18 +41,22 @@ done
 
 # Stop nginx
 if test -n "$NGINX_PID"; then
-  echo "Stopping nginx..."
+  if ps -p "$NGINX_PID" > /dev/null; then
+    echo "Stopping nginx..."
 
-  kill "$NGINX_PID"
+    kill "$NGINX_PID"
 
-  wait "$NGINX_PID" 2>/dev/null
+    wait "$NGINX_PID" 2>/dev/null
+  else
 fi
 
 # Stop Xvfb
 if test -n "$XVFB_PID"; then
-  echo "Stopping Xvfb..."
+  if ps -p "$XVFB_PID" > /dev/null; then
+    echo "Stopping Xvfb..."
 
-  kill "$XVFB_PID"
+    kill "$XVFB_PID"
 
-  wait "$XVFB_PID" 2>/dev/null
+    wait "$XVFB_PID" 2>/dev/null
+  else
 fi
