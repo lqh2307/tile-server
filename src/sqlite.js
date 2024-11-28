@@ -31,17 +31,19 @@ export async function openSQLite(
       }
 
       try {
-        await runSQL(db, "PRAGMA mmap_size = 0;");
-
-        await runSQL(db, "PRAGMA busy_timeout = 5000;");
-
         if (wal === true) {
           await runSQL(db, "PRAGMA journal_mode=WAL;");
         }
 
+        await runSQL(db, "PRAGMA busy_timeout = 5000;");
+
         resolve(db);
       } catch (error) {
-        db.close(() => reject(error));
+        if (db !== undefined) {
+          db.close();
+        }
+
+        reject(error);
       }
     });
   });
@@ -116,24 +118,16 @@ export async function closeSQLite(db) {
         return reject(error);
       }
 
-      if (row.journal_mode === "wal") {
-        db.run("PRAGMA wal_checkpoint(PASSIVE);", (error) => {
+      try {
+        if (row.journal_mode === "wal") {
+          await runSQL(db, "PRAGMA wal_checkpoint(PASSIVE);");
+        }
+      } catch (error) {
+        reject(error);
+      } finally {
+        db.close((error) => {
           if (error) {
             return reject(error);
-          }
-
-          db.close((closeError) => {
-            if (closeError) {
-              return reject(closeError);
-            }
-
-            resolve();
-          });
-        });
-      } else {
-        db.close((closeError) => {
-          if (closeError) {
-            return reject(closeError);
           }
 
           resolve();
