@@ -457,7 +457,7 @@ export function getRequestHost(req) {
   return `${req.protocol}://${
     req.headers["x-forwarded-host"] || req.headers.host
   }${
-    req.headers["x-forwarded-port"] ? `:req.headers['x-forwarded-port']` : ""
+    req.headers["x-forwarded-port"] ? `:${req.headers["x-forwarded-port"]}` : ""
   }/`;
 }
 
