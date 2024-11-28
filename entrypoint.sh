@@ -40,7 +40,7 @@ while true; do
 done
 
 # Stop nginx
-if test "$NGINX_PID" = "true"; then
+if test -n "$NGINX_PID"; then
   echo "Stopping nginx..."
 
   kill "$NGINX_PID"
