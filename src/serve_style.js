@@ -1033,6 +1033,7 @@ export const serve_style = {
                             const y = Number(
                               parts[5].slice(0, parts[5].indexOf("."))
                             );
+                            const tileName = `${z}/${x}/${y}`;
                             const sourceData = config.repo.datas[sourceID];
 
                             try {
@@ -1060,7 +1061,7 @@ export const serve_style = {
                             } catch (error) {
                               printLog(
                                 "warning",
-                                `Failed to get data "${sourceID}" - Tile "${z}/${x}/${y}": ${error}. Serving empty tile...`
+                                `Failed to get data "${sourceID}" - Tile "${tileName}": ${error}. Serving empty tile...`
                               );
 
                               callback(null, {
@@ -1076,6 +1077,7 @@ export const serve_style = {
                             const y = Number(
                               parts[5].slice(0, parts[5].indexOf("."))
                             );
+                            const tileName = `${z}/${x}/${y}`;
                             const sourceData = config.repo.datas[sourceID];
 
                             try {
@@ -1144,7 +1146,7 @@ export const serve_style = {
                             } catch (error) {
                               printLog(
                                 "warning",
-                                `Failed to get data "${sourceID}" - Tile "${z}/${x}/${y}": ${error}. Serving empty tile...`
+                                `Failed to get data "${sourceID}" - Tile "${tileName}": ${error}. Serving empty tile...`
                               );
 
                               callback(null, {

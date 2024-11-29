@@ -255,15 +255,18 @@ export async function readSeedFile(isValidate) {
                   minItems: 0,
                   maxItems: 23,
                 },
-                bbox: {
+                bboxs: {
                   type: "array",
                   items: {
-                    type: "number",
-                    minimum: -180,
-                    maximum: 180,
+                    type: "array",
+                    items: {
+                      type: "number",
+                      minimum: -180,
+                      maximum: 180,
+                    },
+                    minItems: 4,
+                    maxItems: 4,
                   },
-                  minItems: 4,
-                  maxItems: 4,
                 },
                 timeout: {
                   type: "integer",

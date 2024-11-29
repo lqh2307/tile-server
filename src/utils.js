@@ -152,10 +152,11 @@ export function getLonLatFromXYZ(
  * @param {Array<number>} bbox [west, south, east, north] in EPSG:4326
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {"xyz"|"tms"} scheme Tile scheme
- * @returns {Object} Object with keys as zoom levels and values as {x: [min, max], y: [min, max]}
+ * @returns {number,Object} Total tiles and Object with keys as zoom levels and values as {x: [min, max], y: [min, max]}
  */
 export function getTileBoundsFromBBox(bbox, zooms, scheme) {
   const tilesSummary = {};
+  let total = 0;
 
   for (const zoom of zooms) {
     const [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], zoom, scheme);
@@ -165,9 +166,11 @@ export function getTileBoundsFromBBox(bbox, zooms, scheme) {
       x: [xMin, xMax],
       y: [yMin, yMax],
     };
+
+    total += (xMax - xMin + 1) * (yMax - yMin + 1);
   }
 
-  return tilesSummary;
+  return { total, tilesSummary };
 }
 
 /**

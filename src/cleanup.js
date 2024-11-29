@@ -74,15 +74,18 @@ export async function readCleanUpFile(isValidate) {
             additionalProperties: {
               type: "object",
               properties: {
-                bbox: {
+                bboxs: {
                   type: "array",
                   items: {
-                    type: "number",
-                    minimum: -180,
-                    maximum: 180,
+                    type: "array",
+                    items: {
+                      type: "number",
+                      minimum: -180,
+                      maximum: 180,
+                    },
+                    minItems: 4,
+                    maxItems: 4,
                   },
-                  minItems: 4,
-                  maxItems: 4,
                 },
                 zooms: {
                   type: "array",
@@ -176,7 +179,7 @@ export async function readCleanUpFile(isValidate) {
  * Clean up MBTiles tiles
  * @param {string} sourcePath MBTiles folder path
  * @param {Array<number>} zooms Array of specific zoom levels
- * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
  * @param {number} concurrency Concurrency download
  * @param {number} maxTry Number of retry attempts on failure
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
@@ -188,7 +191,7 @@ export async function cleanUpMBTilesTiles(
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
     21, 22,
   ],
-  bbox = [-180, -85.051129, 180, 85.051129],
+  bboxs = [[-180, -85.051129, 180, 85.051129]],
   concurrency = os.cpus().length,
   maxTry = 5,
   cleanUpBefore
