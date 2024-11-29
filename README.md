@@ -22,7 +22,9 @@ Switch to 0.0.1:
 git checkout 0.0.1
 ```
 
-If run on ubuntu:
+### Run with nodejs (on ubuntu)
+
+Install dependencies:
 
 ```bash
 apt-get -y update; \
@@ -48,6 +50,8 @@ apt-get clean; \
 rm -rf /var/lib/apt/lists/*;
 ```
 
+Install nodejs:
+
 ```bash
 wget -q https://nodejs.org/download/release/v22.11.0/node-v22.11.0-linux-x64.tar.xz; \
 mkdir -p /usr/local/lib/nodejs && tar -xJf node-v22.11.0-linux-x64.tar.xz --strip-components=1 -C /usr/local/lib/nodejs; \
@@ -56,15 +60,11 @@ echo 'export PATH=/usr/local/lib/nodejs/bin:$PATH' >> ~/.bashrc; \
 source ~/.bashrc;
 ```
 
-### Run with nodejs
-
 Install packages:
 
 ```bash
 npm install -g yarn
-```
 
-```bash
 NODE_ENV=production yarn install
 ```
 
