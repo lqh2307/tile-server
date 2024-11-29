@@ -468,7 +468,7 @@ export function getRequestHost(req) {
     return `${protocol}://${host}/`;
   }
 
-  return `${protocol}://${host}/${port}/`;
+  return `${protocol}://${host}:${port}/`;
 }
 
 /**
