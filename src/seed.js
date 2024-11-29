@@ -496,7 +496,7 @@ export async function seedMBTilesTiles(
                     getMBTilesTileMD5(mbtilesSource, z, x, y),
                   ]);
 
-                  if (response.headers["Etag"] !== md5) {
+                  if (response.headers["etag"] !== md5) {
                     needDownload = true;
                   }
                 } catch (error) {
@@ -696,7 +696,7 @@ export async function seedXYZTiles(
                     getXYZTileMD5(xyzSource, z, x, y),
                   ]);
 
-                  if (response.headers["Etag"] !== md5) {
+                  if (response.headers["etag"] !== md5) {
                     needDownload = true;
                   }
                 } catch (error) {
