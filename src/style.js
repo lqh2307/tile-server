@@ -41,7 +41,7 @@ async function createStyleDataFile(filePath, data) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function createStyleDataFileWithLock(filePath, data, timeout) {
+async function createStyleDataFileWithLock(filePath, data, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;
@@ -160,10 +160,10 @@ export async function downloadStyleFile(url, filePath, maxTry, timeout) {
     await retry(async () => {
       try {
         // Get data from URL
-        const response = await getDataFromURL(url, timeout);
+        const response = await getDataFromURL(url, timeout, "arraybuffer");
 
         // Store data to file
-        await storeStyleDataFileWithLock(
+        await createStyleDataFileWithLock(
           filePath,
           response.data,
           300000 // 5 mins

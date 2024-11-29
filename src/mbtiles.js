@@ -708,7 +708,7 @@ export async function updateMBTilesMetadataWithLock(
  */
 export async function getMBTilesTileFromURL(url, timeout) {
   try {
-    const response = await getDataFromURL(url, timeout);
+    const response = await getDataFromURL(url, timeout, "arraybuffer");
 
     return {
       data: response.data,
@@ -763,7 +763,7 @@ export async function downloadMBTilesTile(
     await retry(async () => {
       try {
         // Get data from URL
-        const response = await getDataFromURL(url, timeout);
+        const response = await getDataFromURL(url, timeout, "arraybuffer");
 
         // Store data
         if (

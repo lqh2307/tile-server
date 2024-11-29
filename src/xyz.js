@@ -534,7 +534,7 @@ export async function getXYZTile(sourcePath, z, x, y, format) {
  */
 export async function getXYZTileFromURL(url, timeout) {
   try {
-    const response = await getDataFromURL(url, timeout);
+    const response = await getDataFromURL(url, timeout, "arraybuffer");
 
     return {
       data: response.data,
@@ -739,7 +739,7 @@ export async function downloadXYZTileDataFile(
     await retry(async () => {
       try {
         // Get data from URL
-        const response = await getDataFromURL(url, timeout);
+        const response = await getDataFromURL(url, timeout, "arraybuffer");
 
         // Store data to file
         if (

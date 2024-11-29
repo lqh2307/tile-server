@@ -17,15 +17,11 @@ import Ajv from "ajv";
  * @param {string} url URL to fetch data from
  * @param {number} timeout Timeout in milliseconds
  * @param {"arraybuffer"|"json"|"text"|"stream"} responseType Response type
- * @returns {Promise<object>}
+ * @returns {Promise<axios.AxiosResponse>}
  */
-export async function getDataFromURL(
-  url,
-  timeout,
-  responseType = "arraybuffer"
-) {
+export async function getDataFromURL(url, timeout, responseType) {
   try {
-    const response = await axios({
+    return await axios({
       method: "GET",
       url: url,
       timeout: timeout,
@@ -43,8 +39,6 @@ export async function getDataFromURL(
         keepAlive: false,
       }),
     });
-
-    return response;
   } catch (error) {
     if (error.response) {
       error.message = `Status code: ${error.response.status} - ${error.response.statusText}`;
@@ -65,9 +59,6 @@ export async function getDataFromURL(
  */
 export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
   const size = 256 * Math.pow(2, z);
-  const bc = size / 360;
-  const cc = size / (2 * Math.PI);
-  const zc = size / 2;
   const maxTileIndex = Math.pow(2, z) - 1;
 
   if (lon > 180) {
@@ -76,7 +67,7 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
     lon = -180;
   }
 
-  const px = zc + lon * bc;
+  const px = size / 2 + (lon * size) / 360;
   let x = Math.floor(px / 256);
   if (x < 0) {
     x = 0;
@@ -90,7 +81,10 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
     lat = -85.051129;
   }
 
-  let py = zc - cc * Math.log(Math.tan(Math.PI / 4 + lat * (Math.PI / 360)));
+  let py =
+    size / 2 -
+    (size / (2 * Math.PI)) *
+      Math.log(Math.tan(Math.PI / 4 + lat * (Math.PI / 360)));
   if (scheme === "tms") {
     py = size - py;
   }
@@ -110,7 +104,7 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @param {number} z Zoom level
- * @param {"center"|"topLeft"|"bottomRight"} position Tile position: "center", "topLeft", or "bottomRight"
+ * @param {"center"|"topLeft"|"bottomRight"} position Tile position
  * @param {"xyz"|"tms"} scheme Tile scheme
  * @returns {Array<number>} [longitude, latitude] in EPSG:4326
  */
@@ -122,9 +116,6 @@ export function getLonLatFromXYZ(
   scheme = "xyz"
 ) {
   const size = 256 * Math.pow(2, z);
-  const bc = size / 360;
-  const cc = size / (2 * Math.PI);
-  const zc = size / 2;
 
   let px = x * 256;
   let py = y * 256;
@@ -142,35 +133,43 @@ export function getLonLatFromXYZ(
   }
 
   return [
-    (px - zc) / bc,
-    (360 / Math.PI) * (Math.atan(Math.exp((zc - py) / cc)) - Math.PI / 4),
+    (px - size / 2) / size / 360,
+    (360 / Math.PI) *
+      (Math.atan(Math.exp((size / 2 - py) / size / (2 * Math.PI))) -
+        Math.PI / 4),
   ];
 }
 
 /**
- * Get tile bounds for specific zoom levels intersecting a bounding box
- * @param {Array<number>} bbox [west, south, east, north] in EPSG:4326
+ * Get tile bounds for specific zoom levels intersecting multiple bounding boxes
+ * @param {Array<Array<number>>} bboxs Array of bounding boxes [[west, south, east, north]] in EPSG:4326
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {"xyz"|"tms"} scheme Tile scheme
- * @returns {number,Object} Total tiles and Object with keys as zoom levels and values as {x: [min, max], y: [min, max]}
+ * @returns {{ total: number, tilesSummaries: Array<Object<string,object>> }} Object containing total tiles and an array of tile summaries (one per bbox)
  */
-export function getTileBoundsFromBBox(bbox, zooms, scheme) {
-  const tilesSummary = {};
+export function getTilesBoundsFromBBoxs(bboxs, zooms, scheme) {
+  const tilesSummaries = [];
   let total = 0;
 
-  for (const zoom of zooms) {
-    const [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], zoom, scheme);
-    const [xMax, yMax] = getXYZFromLonLatZ(bbox[2], bbox[1], zoom, scheme);
+  for (const bbox of bboxs) {
+    const tilesSummary = {};
 
-    tilesSummary[`${zoom}`] = {
-      x: [xMin, xMax],
-      y: [yMin, yMax],
-    };
+    for (const zoom of zooms) {
+      const [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], zoom, scheme);
+      const [xMax, yMax] = getXYZFromLonLatZ(bbox[2], bbox[1], zoom, scheme);
 
-    total += (xMax - xMin + 1) * (yMax - yMin + 1);
+      tilesSummary[`${zoom}`] = {
+        x: [xMin, xMax],
+        y: [yMin, yMax],
+      };
+
+      total += (xMax - xMin + 1) * (yMax - yMin + 1);
+    }
+
+    tilesSummaries.push(tilesSummary);
   }
 
-  return { total, tilesSummary };
+  return { total, tilesSummaries };
 }
 
 /**
@@ -204,13 +203,15 @@ export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
  * @returns {Array<string>} Array values as z/x/y
  */
 export function getXYZTileFromBBox(bbox, zooms) {
-  const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
   const tiles = [];
 
-  for (const z in tilesSummary) {
-    for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-      for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-        tiles.push(`/${z}/${x}/${y}`);
+  for (const zoom of zooms) {
+    const [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], zoom, scheme);
+    const [xMax, yMax] = getXYZFromLonLatZ(bbox[2], bbox[1], zoom, scheme);
+
+    for (let x = xMin; x <= xMax; x++) {
+      for (let y = yMin; y <= yMax; y++) {
+        tiles.push(`/${zoom}/${x}/${y}`);
       }
     }
   }
@@ -224,7 +225,7 @@ export function getXYZTileFromBBox(bbox, zooms) {
  * @returns {Promise<void>}
  */
 export function delay(ms) {
-  if (ms) {
+  if (ms >= 0) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

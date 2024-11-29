@@ -24,7 +24,7 @@ import {
   openMBTilesDB,
 } from "./mbtiles.js";
 import {
-  getTileBoundsFromBBox,
+  getTilesBoundsFromBBoxs,
   removeEmptyFolders,
   getDataFromURL,
   validateJSON,
@@ -385,7 +385,7 @@ export async function readSeedFile(isValidate) {
  * @param {string} sourcePath MBTiles folder path
  * @param {object} metadata Metadata object
  * @param {string} tileURL Tile URL to download
- * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {number} concurrency Concurrency download
  * @param {number} maxTry Number of retry attempts on failure
@@ -399,7 +399,7 @@ export async function seedMBTilesTiles(
   sourcePath,
   metadata,
   tileURL,
-  bbox = [-180, -85.051129, 180, 85.051129],
+  bboxs = [[-180, -85.051129, 180, 85.051129]],
   zooms = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
     21, 22,
@@ -414,16 +414,15 @@ export async function seedMBTilesTiles(
   const startTime = Date.now();
 
   const id = path.basename(sourcePath);
-  const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
-  const totalTasks = Object.values(tilesSummary).reduce(
-    (total, tile) =>
-      total + (tile.x[1] - tile.x[0] + 1) * (tile.y[1] - tile.y[0] + 1),
-    0
+  const { totalTasks, tilesSummaries } = getTilesBoundsFromBBoxs(
+    bboxs,
+    zooms,
+    "xyz"
   );
   let refreshTimestamp;
   let log = `Seeding ${totalTasks} tiles of mbtiles data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
-  )}]\n\tBBox: [${bbox.join(", ")}]`;
+  )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
   if (typeof refreshBefore === "string") {
     refreshTimestamp = new Date(refreshBefore).getTime();
@@ -462,102 +461,99 @@ export async function seedMBTilesTiles(
   // Download tiles
   const mutex = new Mutex();
 
-  async function updateActiveTasks(action) {
-    return await mutex.runExclusive(async () => {
-      return action();
-    });
-  }
-
   let activeTasks = 0;
   let remainingTasks = totalTasks;
 
-  for (const z in tilesSummary) {
-    for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-      for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-        /* Wait slot for a task */
-        while (activeTasks >= concurrency) {
-          await delay(50);
-        }
+  for (const tilesSummary of tilesSummaries) {
+    for (const z in tilesSummary) {
+      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+          /* Wait slot for a task */
+          while (activeTasks >= concurrency) {
+            await delay(50);
+          }
 
-        await mutex.runExclusive(() => {
-          activeTasks++;
+          await mutex.runExclusive(() => {
+            activeTasks++;
 
-          remainingTasks--;
-        });
+            remainingTasks--;
+          });
 
-        /* Run a task */
-        (async () => {
-          const tileName = `${z}/${x}/${y}`;
-          let needDownload = false;
+          /* Run a task */
+          (async () => {
+            const tileName = `${z}/${x}/${y}`;
+            let needDownload = false;
 
-          try {
-            if (refreshTimestamp === true) {
-              try {
-                const [response, md5] = await Promise.all([
-                  getDataFromURL(
-                    tileURL.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
-                    timeout
-                  ),
-                  getMBTilesTileMD5(mbtilesSource, z, x, y),
-                ]);
+            try {
+              if (refreshTimestamp === true) {
+                try {
+                  const [response, md5] = await Promise.all([
+                    getDataFromURL(
+                      tileURL.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
+                      timeout,
+                      "arraybuffer"
+                    ),
+                    getMBTilesTileMD5(mbtilesSource, z, x, y),
+                  ]);
 
-                if (response.headers["Etag"] !== md5) {
-                  needDownload = true;
+                  if (response.headers["Etag"] !== md5) {
+                    needDownload = true;
+                  }
+                } catch (error) {
+                  if (error.message === "Tile MD5 does not exist") {
+                    needDownload = true;
+                  } else {
+                    throw error;
+                  }
                 }
-              } catch (error) {
-                if (error.message === "Tile MD5 does not exist") {
-                  needDownload = true;
-                } else {
-                  throw error;
+              } else if (refreshTimestamp !== undefined) {
+                try {
+                  const created = await getMBTilesTileCreated(
+                    mbtilesSource,
+                    z,
+                    x,
+                    y
+                  );
+
+                  if (!created || created < refreshTimestamp) {
+                    needDownload = true;
+                  }
+                } catch (error) {
+                  if (error.message === "Tile created does not exist") {
+                    needDownload = true;
+                  } else {
+                    throw error;
+                  }
                 }
+              } else {
+                needDownload = true;
               }
-            } else if (refreshTimestamp !== undefined) {
-              try {
-                const created = await getMBTilesTileCreated(
+
+              if (needDownload === true) {
+                await downloadMBTilesTile(
+                  tileURL.replaceAll("{z}/{x}/{y}", tileName),
                   mbtilesSource,
                   z,
                   x,
-                  y
+                  y,
+                  maxTry,
+                  timeout,
+                  storeMD5,
+                  storeTransparent
                 );
-
-                if (!created || created < refreshTimestamp) {
-                  needDownload = true;
-                }
-              } catch (error) {
-                if (error.message === "Tile created does not exist") {
-                  needDownload = true;
-                } else {
-                  throw error;
-                }
               }
-            } else {
-              needDownload = true;
-            }
-
-            if (needDownload === true) {
-              await downloadMBTilesTile(
-                tileURL.replaceAll("{z}/{x}/{y}", tileName),
-                mbtilesSource,
-                z,
-                x,
-                y,
-                maxTry,
-                timeout,
-                storeMD5,
-                storeTransparent
+            } catch (error) {
+              printLog(
+                "error",
+                `Failed to seed tile data "${tileName}": ${error}`
               );
+            } finally {
+              await mutex.runExclusive(() => {
+                activeTasks--;
+              });
             }
-          } catch (error) {
-            printLog(
-              "error",
-              `Failed to seed tile data "${tileName}": ${error}`
-            );
-          } finally {
-            await updateActiveTasks(() => {
-              activeTasks--;
-            });
-          }
-        })();
+          })();
+        }
       }
     }
   }
@@ -601,7 +597,7 @@ export async function seedXYZTiles(
   sourcePath,
   metadata,
   tileURL,
-  bbox = [-180, -85.051129, 180, 85.051129],
+  bboxs = [[-180, -85.051129, 180, 85.051129]],
   zooms = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
     21, 22,
@@ -616,16 +612,15 @@ export async function seedXYZTiles(
   const startTime = Date.now();
 
   const id = path.basename(sourcePath);
-  const tilesSummary = getTileBoundsFromBBox(bbox, zooms, "xyz");
-  const totalTasks = Object.values(tilesSummary).reduce(
-    (total, tile) =>
-      total + (tile.x[1] - tile.x[0] + 1) * (tile.y[1] - tile.y[0] + 1),
-    0
+  const { totalTasks, tilesSummaries } = getTilesBoundsFromBBoxs(
+    bboxs,
+    zooms,
+    "xyz"
   );
   let refreshTimestamp;
   let log = `Seeding ${totalTasks} tiles of xyz data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
-  )}]\n\tBBox: [${bbox.join(", ")}]`;
+  )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
   if (typeof refreshBefore === "string") {
     refreshTimestamp = new Date(refreshBefore).getTime();
@@ -666,101 +661,98 @@ export async function seedXYZTiles(
   // Download tile files
   const mutex = new Mutex();
 
-  async function updateActiveTasks(action) {
-    return await mutex.runExclusive(async () => {
-      return action();
-    });
-  }
-
   let activeTasks = 0;
   let remainingTasks = totalTasks;
 
-  for (const z in tilesSummary) {
-    for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-      for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-        /* Wait slot for a task */
-        while (activeTasks >= concurrency) {
-          await delay(50);
-        }
-
-        await mutex.runExclusive(() => {
-          activeTasks++;
-
-          remainingTasks--;
-        });
-
-        /* Run a task */
-        (async () => {
-          const tileName = `${z}/${x}/${y}`;
-          let needDownload = false;
-
-          try {
-            if (refreshTimestamp === true) {
-              try {
-                const [response, md5] = await Promise.all([
-                  getDataFromURL(
-                    tileURL.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
-                    timeout
-                  ),
-                  getXYZTileMD5(xyzSource, z, x, y),
-                ]);
-
-                if (response.headers["Etag"] !== md5) {
-                  needDownload = true;
-                }
-              } catch (error) {
-                if (error.message === "Tile MD5 does not exist") {
-                  needDownload = true;
-                } else {
-                  throw error;
-                }
-              }
-            } else if (refreshTimestamp !== undefined) {
-              try {
-                const created = await getXYZTileCreated(
-                  `${sourcePath}/${tileName}.${metadata.format}`
-                );
-
-                if (!created || created < refreshTimestamp) {
-                  needDownload = true;
-                }
-              } catch (error) {
-                if (error.message === "Tile created does not exist") {
-                  needDownload = true;
-                } else {
-                  throw error;
-                }
-              }
-            } else {
-              needDownload = true;
-            }
-
-            if (needDownload === true) {
-              await downloadXYZTileDataFile(
-                tileURL.replaceAll("{z}/{x}/{y}", tileName),
-                sourcePath,
-                xyzSource,
-                z,
-                x,
-                y,
-                metadata.format,
-                maxTry,
-                timeout,
-                storeMD5,
-                storeTransparent
-              );
-            }
-          } catch (error) {
-            printLog(
-              "error",
-              `Failed to seed tile data "${tileName}": ${error}`
-            );
-          } finally {
-            await updateActiveTasks(() => {
-              activeTasks--;
-            });
+  for (const tilesSummary of tilesSummaries) {
+    for (const z in tilesSummary) {
+      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+          /* Wait slot for a task */
+          while (activeTasks >= concurrency) {
+            await delay(50);
           }
-        })();
+
+          await mutex.runExclusive(() => {
+            activeTasks++;
+
+            remainingTasks--;
+          });
+
+          /* Run a task */
+          (async () => {
+            const tileName = `${z}/${x}/${y}`;
+            let needDownload = false;
+
+            try {
+              if (refreshTimestamp === true) {
+                try {
+                  const [response, md5] = await Promise.all([
+                    getDataFromURL(
+                      tileURL.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
+                      timeout,
+                      "arraybuffer"
+                    ),
+                    getXYZTileMD5(xyzSource, z, x, y),
+                  ]);
+
+                  if (response.headers["Etag"] !== md5) {
+                    needDownload = true;
+                  }
+                } catch (error) {
+                  if (error.message === "Tile MD5 does not exist") {
+                    needDownload = true;
+                  } else {
+                    throw error;
+                  }
+                }
+              } else if (refreshTimestamp !== undefined) {
+                try {
+                  const created = await getXYZTileCreated(
+                    `${sourcePath}/${tileName}.${metadata.format}`
+                  );
+
+                  if (!created || created < refreshTimestamp) {
+                    needDownload = true;
+                  }
+                } catch (error) {
+                  if (error.message === "Tile created does not exist") {
+                    needDownload = true;
+                  } else {
+                    throw error;
+                  }
+                }
+              } else {
+                needDownload = true;
+              }
+
+              if (needDownload === true) {
+                await downloadXYZTileDataFile(
+                  tileURL.replaceAll("{z}/{x}/{y}", tileName),
+                  sourcePath,
+                  xyzSource,
+                  z,
+                  x,
+                  y,
+                  metadata.format,
+                  maxTry,
+                  timeout,
+                  storeMD5,
+                  storeTransparent
+                );
+              }
+            } catch (error) {
+              printLog(
+                "error",
+                `Failed to seed tile data "${tileName}": ${error}`
+              );
+            } finally {
+              await mutex.runExclusive(() => {
+                activeTasks--;
+              });
+            }
+          })();
+        }
       }
     }
   }

@@ -1255,7 +1255,8 @@ export const serve_style = {
 
                               const dataTile = await getDataFromURL(
                                 url,
-                                60000 // 1 mins
+                                60000, // 1 mins,
+                                "arraybuffer"
                               );
 
                               /* Unzip pbf data */
