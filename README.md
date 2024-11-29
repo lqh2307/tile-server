@@ -63,9 +63,8 @@ source ~/.bashrc;
 Install packages:
 
 ```bash
-npm install -g yarn
-
-NODE_ENV=production yarn install
+npm install -g yarn; \
+NODE_ENV=production yarn install;
 ```
 
 Run (without nginx):
@@ -77,9 +76,8 @@ USE_NGINX=false yarn run server -d path_to_data_folder
 Run (with nginx):
 
 ```bash
-cp nginx.conf /etc/nginx/nginx.conf
-
-yarn run server -d path_to_data_folder
+cp nginx.conf /etc/nginx/nginx.conf; \
+yarn run server -d path_to_data_folder;
 ```
 
 ### Run with docker
