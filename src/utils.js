@@ -455,11 +455,13 @@ export async function removeFilesOrFolders(fileOrFolders) {
 
 /**
  * Get request host
- * @param {Request} req
+ * @param {Request} req Request object
  * @returns {string}
  */
 export function getRequestHost(req) {
-  return `${req.protocol}://${req.headers.host}/`;
+  return `${req.headers["X-Forwarded-Proto"] || req.protoco}://${
+    req.headers["Host"]
+  }${req.headers["X-Forwarded-Prefix"] || ""}/`;
 }
 
 /**
