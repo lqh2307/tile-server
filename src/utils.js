@@ -59,6 +59,9 @@ export async function getDataFromURL(url, timeout, responseType) {
  */
 export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
   const size = 256 * Math.pow(2, z);
+  const bc = size / 360;
+  const cc = size / (2 * Math.PI);
+  const zc = size / 2;
   const maxTileIndex = Math.pow(2, z) - 1;
 
   if (lon > 180) {
@@ -67,7 +70,7 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
     lon = -180;
   }
 
-  const px = size / 2 + (lon * size) / 360;
+  const px = zc + lon * bc;
   let x = Math.floor(px / 256);
   if (x < 0) {
     x = 0;
@@ -81,10 +84,7 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
     lat = -85.051129;
   }
 
-  let py =
-    size / 2 -
-    (size / (2 * Math.PI)) *
-      Math.log(Math.tan(Math.PI / 4 + lat * (Math.PI / 360)));
+  let py = zc - cc * Math.log(Math.tan(Math.PI / 4 + lat * (Math.PI / 360)));
   if (scheme === "tms") {
     py = size - py;
   }
@@ -104,7 +104,7 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @param {number} z Zoom level
- * @param {"center"|"topLeft"|"bottomRight"} position Tile position
+ * @param {"center"|"topLeft"|"bottomRight"} position Tile position: "center", "topLeft", or "bottomRight"
  * @param {"xyz"|"tms"} scheme Tile scheme
  * @returns {Array<number>} [longitude, latitude] in EPSG:4326
  */
@@ -116,6 +116,9 @@ export function getLonLatFromXYZ(
   scheme = "xyz"
 ) {
   const size = 256 * Math.pow(2, z);
+  const bc = size / 360;
+  const cc = size / (2 * Math.PI);
+  const zc = size / 2;
 
   let px = x * 256;
   let py = y * 256;
@@ -133,10 +136,8 @@ export function getLonLatFromXYZ(
   }
 
   return [
-    (px - size / 2) / size / 360,
-    (360 / Math.PI) *
-      (Math.atan(Math.exp((size / 2 - py) / size / (2 * Math.PI))) -
-        Math.PI / 4),
+    (px - zc) / bc,
+    (360 / Math.PI) * (Math.atan(Math.exp((zc - py) / cc)) - Math.PI / 4),
   ];
 }
 
