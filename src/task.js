@@ -101,7 +101,7 @@ async function runCleanUpTask(cleanUpData, seedData) {
             `${process.env.DATA_DIR}/caches/xyzs/${id}`,
             seedDataItem.metadata.format,
             cleanUpDataItem.zooms,
-            cleanUpDataItem.bbox,
+            cleanUpDataItem.bboxs,
             seedDataItem.concurrency,
             seedDataItem.maxTry,
             cleanUpBefore
@@ -110,7 +110,7 @@ async function runCleanUpTask(cleanUpData, seedData) {
           await cleanUpMBTilesTiles(
             `${process.env.DATA_DIR}/caches/mbtiles/${id}`,
             cleanUpDataItem.zooms,
-            cleanUpDataItem.bbox,
+            cleanUpDataItem.bboxs,
             seedDataItem.concurrency,
             seedDataItem.maxTry,
             cleanUpBefore
@@ -199,7 +199,7 @@ async function runSeedTask(seedData) {
             `${process.env.DATA_DIR}/caches/xyzs/${id}`,
             seedDataItem.metadata,
             seedDataItem.url,
-            seedDataItem.bbox,
+            seedDataItem.bboxs,
             seedDataItem.zooms,
             seedDataItem.concurrency,
             seedDataItem.maxTry,
@@ -213,7 +213,7 @@ async function runSeedTask(seedData) {
             `${process.env.DATA_DIR}/caches/mbtiles/${id}`,
             seedDataItem.metadata,
             seedDataItem.url,
-            seedDataItem.bbox,
+            seedDataItem.bboxs,
             seedDataItem.zooms,
             seedDataItem.concurrency,
             seedDataItem.maxTry,
