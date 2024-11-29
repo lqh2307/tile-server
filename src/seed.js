@@ -414,13 +414,13 @@ export async function seedMBTilesTiles(
   const startTime = Date.now();
 
   const id = path.basename(sourcePath);
-  const { totalTasks, tilesSummaries } = getTilesBoundsFromBBoxs(
+  const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
     bboxs,
     zooms,
     "xyz"
   );
   let refreshTimestamp;
-  let log = `Seeding ${totalTasks} tiles of mbtiles data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
+  let log = `Seeding ${total} tiles of mbtiles data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
@@ -462,7 +462,7 @@ export async function seedMBTilesTiles(
   const mutex = new Mutex();
 
   let activeTasks = 0;
-  let remainingTasks = totalTasks;
+  let remainingTasks = total;
 
   for (const tilesSummary of tilesSummaries) {
     for (const z in tilesSummary) {
@@ -572,7 +572,7 @@ export async function seedMBTilesTiles(
 
   printLog(
     "info",
-    `Completed seed ${totalTasks} tiles of mbtiles data "${id}" after ${
+    `Completed seed ${total} tiles of mbtiles data "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );
@@ -612,13 +612,13 @@ export async function seedXYZTiles(
   const startTime = Date.now();
 
   const id = path.basename(sourcePath);
-  const { totalTasks, tilesSummaries } = getTilesBoundsFromBBoxs(
+  const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
     bboxs,
     zooms,
     "xyz"
   );
   let refreshTimestamp;
-  let log = `Seeding ${totalTasks} tiles of xyz data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
+  let log = `Seeding ${total} tiles of xyz data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
@@ -662,7 +662,7 @@ export async function seedXYZTiles(
   const mutex = new Mutex();
 
   let activeTasks = 0;
-  let remainingTasks = totalTasks;
+  let remainingTasks = total;
 
   for (const tilesSummary of tilesSummaries) {
     for (const z in tilesSummary) {
@@ -777,7 +777,7 @@ export async function seedXYZTiles(
 
   printLog(
     "info",
-    `Completed seed ${totalTasks} tiles of xyz data "${id}" after ${
+    `Completed seed ${total} tiles of xyz data "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );

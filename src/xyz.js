@@ -26,14 +26,6 @@ import {
  * @returns {Promise<Array<string>>}
  */
 async function getXYZLayersFromTiles(sourcePath) {
-  const mutex = new Mutex();
-
-  async function updateActiveTasks(action) {
-    return await mutex.runExclusive(async () => {
-      return action();
-    });
-  }
-
   const pbfFilePaths = await findFiles(sourcePath, /^\d+\.pbf$/, true);
   let totalTasks = pbfFilePaths.length;
   const layerNames = new Set();
@@ -42,6 +34,8 @@ async function getXYZLayersFromTiles(sourcePath) {
   const vectorTileProto = protobuf(
     await fsPromise.readFile("public/protos/vector_tile.proto")
   );
+
+  const mutex = new Mutex();
 
   for (const pbfFilePath of pbfFilePaths) {
     /* Wait slot for a task */
@@ -65,8 +59,10 @@ async function getXYZLayersFromTiles(sourcePath) {
       } catch (error) {
         throw error;
       } finally {
-        await updateActiveTasks(() => {
+        await mutex.runExclusive(() => {
           activeTasks--;
+
+          totalTasks--;
         });
       }
     })();

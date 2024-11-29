@@ -199,13 +199,9 @@ export async function cleanUpMBTilesTiles(
   const startTime = Date.now();
 
   const id = path.basename(sourcePath);
-  let { totalTasks, tilesSummaries } = getTilesBoundsFromBBoxs(
-    bboxs,
-    zooms,
-    "xyz"
-  );
+  let { total, tilesSummaries } = getTilesBoundsFromBBoxs(bboxs, zooms, "xyz");
   let cleanUpTimestamp;
-  let log = `Cleaning up ${totalTasks} tiles of mbtiles data "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${total} tiles of mbtiles data "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
@@ -234,7 +230,7 @@ export async function cleanUpMBTilesTiles(
   const mutex = new Mutex();
 
   let activeTasks = 0;
-  let remainingTasks = totalTasks;
+  let remainingTasks = total;
 
   for (const tilesSummary of tilesSummaries) {
     for (const z in tilesSummary) {
@@ -320,7 +316,7 @@ export async function cleanUpMBTilesTiles(
 
   printLog(
     "info",
-    `Completed clean up ${totalTasks} tiles of mbtiles data "${id}" after ${
+    `Completed clean up ${total} tiles of mbtiles data "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );
@@ -352,13 +348,9 @@ export async function cleanUpXYZTiles(
   const startTime = Date.now();
 
   const id = path.basename(sourcePath);
-  let { totalTasks, tilesSummaries } = getTilesBoundsFromBBoxs(
-    bboxs,
-    zooms,
-    "xyz"
-  );
+  let { total, tilesSummaries } = getTilesBoundsFromBBoxs(bboxs, zooms, "xyz");
   let cleanUpTimestamp;
-  let log = `Cleaning up ${totalTasks} tiles of xyz data "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${total} tiles of xyz data "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
@@ -387,7 +379,7 @@ export async function cleanUpXYZTiles(
   const mutex = new Mutex();
 
   let activeTasks = 0;
-  let remainingTasks = totalTasks;
+  let remainingTasks = total;
 
   for (const tilesSummary of tilesSummaries) {
     for (const z in tilesSummary) {
@@ -478,7 +470,7 @@ export async function cleanUpXYZTiles(
 
   printLog(
     "info",
-    `Completed clean up ${totalTasks} tiles of xyz data "${id}" after ${
+    `Completed clean up ${total} tiles of xyz data "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );
