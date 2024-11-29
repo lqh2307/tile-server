@@ -426,24 +426,15 @@ async function upsertXYZTileMD5(xyzSource, z, x, y, hash) {
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @param {Buffer} buffer The data buffer
- * @param {string} hash MD5 hash value
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function createXYZTileMD5WithLock(
-  xyzSource,
-  z,
-  x,
-  y,
-  buffer,
-  hash,
-  timeout
-) {
+async function createXYZTileMD5WithLock(xyzSource, z, x, y, buffer, timeout) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
     try {
-      await upsertXYZTileMD5(xyzSource, z, x, y, hash ?? calculateMD5(buffer));
+      await upsertXYZTileMD5(xyzSource, z, x, y, calculateMD5(buffer));
 
       return;
     } catch (error) {
@@ -535,7 +526,6 @@ export async function getXYZTileFromURL(url, timeout) {
     return {
       data: response.data,
       headers: detectFormatAndHeaders(response.data).headers,
-      etag: response.headers["Etag"],
     };
   } catch (error) {
     if (error.statusCode !== undefined) {
@@ -758,7 +748,6 @@ export async function downloadXYZTileDataFile(
               x,
               y,
               response.data,
-              response.headers["Etag"],
               300000 // 5 mins
             );
           }
@@ -855,7 +844,6 @@ export async function removeXYZTileDataFile(
  * @param {number} y Y tile index
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {Buffer} data Tile data buffer
- * @param {string} hash MD5 hash string
  * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {boolean} storeTransparent Is store transparent tile?
  * @returns {Promise<void>}
@@ -868,7 +856,6 @@ export async function cacheXYZTileDataFile(
   y,
   format,
   data,
-  hash,
   storeMD5,
   storeTransparent
 ) {
@@ -896,7 +883,6 @@ export async function cacheXYZTileDataFile(
           x,
           y,
           data,
-          hash,
           300000 // 5 mins
         );
       }

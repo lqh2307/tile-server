@@ -307,7 +307,7 @@ async function upsertMBTilesTile(mbtilesSource, z, x, y, hash, data) {
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
- * @param {string} hash MD5 hash value
+ * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {Buffer} data Tile data buffer
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
@@ -317,7 +317,7 @@ async function createMBTilesTileWithLock(
   z,
   x,
   y,
-  hash,
+  storeMD5,
   data,
   timeout
 ) {
@@ -325,7 +325,14 @@ async function createMBTilesTileWithLock(
 
   while (Date.now() - startTime <= timeout) {
     try {
-      await upsertMBTilesTile(mbtilesSource, z, x, y, hash, data);
+      await upsertMBTilesTile(
+        mbtilesSource,
+        z,
+        x,
+        y,
+        storeMD5 === true ? calculateMD5(response.data) : undefined,
+        data
+      );
 
       return;
     } catch (error) {
@@ -713,7 +720,6 @@ export async function getMBTilesTileFromURL(url, timeout) {
     return {
       data: response.data,
       headers: detectFormatAndHeaders(response.data).headers,
-      etag: response.headers["Etag"],
     };
   } catch (error) {
     if (error.statusCode !== undefined) {
@@ -772,22 +778,12 @@ export async function downloadMBTilesTile(
         ) {
           return;
         } else {
-          let md5;
-
-          if (storeMD5 === true) {
-            if (response.headers["Etag"]) {
-              md5 = response.headers["Etag"];
-            } else {
-              md5 = calculateMD5(response.data);
-            }
-          }
-
           await createMBTilesTileWithLock(
             mbtilesSource,
             z,
             x,
             y,
-            md5,
+            storeMD5,
             response.data,
             300000 // 5 mins
           );
@@ -863,7 +859,6 @@ export async function removeMBTilesTileData(
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @param {Buffer} data Tile data buffer
- * @param {string} hash MD5 hash string
  * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {boolean} storeTransparent Is store transparent tile?
  * @returns {Promise<void>}
@@ -874,7 +869,6 @@ export async function cacheMBtilesTileData(
   x,
   y,
   data,
-  hash,
   storeMD5,
   storeTransparent
 ) {
@@ -889,22 +883,12 @@ export async function cacheMBtilesTileData(
     ) {
       return;
     } else {
-      let md5;
-
-      if (storeMD5 === true) {
-        if (hash) {
-          md5 = hash;
-        } else {
-          md5 = calculateMD5(data);
-        }
-      }
-
       await createMBTilesTileWithLock(
         mbtilesSource,
         z,
         x,
         y,
-        md5,
+        storeMD5,
         data,
         300000 // 5 mins
       );

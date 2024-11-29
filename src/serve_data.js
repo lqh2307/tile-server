@@ -169,7 +169,6 @@ function getDataTileHandler() {
                 x,
                 y,
                 dataTile.data,
-                dataTile.etag,
                 item.storeMD5,
                 item.storeTransparent
               );
@@ -217,7 +216,6 @@ function getDataTileHandler() {
                 y,
                 item.tileJSON.format,
                 dataTile.data,
-                dataTile.etag,
                 item.storeMD5,
                 item.storeTransparent
               );

@@ -1120,7 +1120,6 @@ export const serve_style = {
                                       x,
                                       y,
                                       dataTile.data,
-                                      dataTile.etag,
                                       sourceData.storeMD5,
                                       sourceData.storeTransparent
                                     );
@@ -1208,7 +1207,6 @@ export const serve_style = {
                                       y,
                                       sourceData.tileJSON.format,
                                       dataTile.data,
-                                      dataTile.etag,
                                       sourceData.storeMD5,
                                       sourceData.storeTransparent
                                     );
