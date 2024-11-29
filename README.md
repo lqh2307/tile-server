@@ -31,6 +31,7 @@ apt-get -y install \
   pkg-config \
   build-essential \
   ca-certificates \
+  nginx \
   wget \
   xvfb \
   libglfw3-dev \
@@ -55,14 +56,29 @@ echo 'export PATH=/usr/local/lib/nodejs/bin:$PATH' >> ~/.bashrc; \
 source ~/.bashrc;
 ```
 
+### Run with nodejs
+
+Install packages:
+
 ```bash
 npm install -g yarn
 ```
 
-### Run with nodejs
+```bash
+NODE_ENV=production yarn install
+```
+
+Run (without nginx):
 
 ```bash
-NODE_ENV=production yarn install; \
+USE_NGINX=false yarn run server -d path_to_data_folder
+```
+
+Run (with nginx):
+
+```bash
+cp nginx.conf /etc/nginx/nginx.conf
+
 yarn run server -d path_to_data_folder
 ```
 
@@ -74,10 +90,16 @@ Build image:
 docker build -t tile-server:0.0.1 .
 ```
 
-Run container:
+Run container (without nginx):
 
 ```bash
-docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile-server/data tile-server:0.0.1
+docker run --rm -it -p 8080:8080 --name tile-server -e USE_NGINX=false -v path_to_data_folder:/tile-server/data tile-server:0.0.1
+```
+
+Run container (with nginx):
+
+```bash
+docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-server/data tile-server:0.0.1
 ```
 
 ## Example config.json
@@ -202,7 +224,7 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
         "maxzoom": 15
       },
       "url": "http://localhost:8080/datas/asia_vietnam/{z}/{x}/{y}.png",
-      "bbox": [96, 4, 120, 28],
+      "bboxs": [[96, 4, 120, 28]],
       "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
@@ -233,7 +255,7 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
         ]
       },
       "url": "http://localhost:8080/datas/asia_cambodia/{z}/{x}/{y}.pbf",
-      "bbox": [96, 4, 120, 28],
+      "bboxs": [[96, 4, 120, 28]],
       "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
@@ -304,14 +326,14 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
         "time": "2024-10-10T00:00:00"
       },
       "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      "bounds": [96, 4, 120, 28]
+      "bboxs": [[96, 4, 120, 28]]
     },
     "asia_cambodia_cache": {
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
       },
       "zooms": [0, 1, 2, 3, 4, 5, 9, 10],
-      "bounds": [96, 4, 120, 28]
+      "bboxs": [[96, 4, 120, 28]]
     }
   },
   "sprites": {
