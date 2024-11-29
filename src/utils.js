@@ -454,21 +454,7 @@ export async function removeFilesOrFolders(fileOrFolders) {
  * @returns {string}
  */
 export function getRequestHost(req) {
-  const protocol = req.headers["x-forwarded-proto"] || req.protocol;
-  const host = req.headers["x-forwarded-host"] || req.headers.host;
-  const port = Number(
-    req.headers["x-forwarded-port"] || req.connection.localPort
-  );
-
-  if (
-    host.includes(":") === true ||
-    (protocol === "https" && port === 443) ||
-    (protocol === "http" && port === 80)
-  ) {
-    return `${protocol}://${host}/`;
-  }
-
-  return `${protocol}://${host}:${port}/`;
+  return `${req.protocol}://${req.headers.host}/`;
 }
 
 /**
