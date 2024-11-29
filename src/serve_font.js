@@ -24,10 +24,10 @@ function getFontHandler() {
 
       /* Gzip pbf font */
       const headers = detectFormatAndHeaders(data).headers;
-      if (headers["Content-Encoding"] === undefined) {
+      if (headers["content-encoding"] === undefined) {
         data = await gzipAsync(data);
 
-        res.header("Content-Encoding", "gzip");
+        res.header("content-encoding", "gzip");
       }
 
       res.set(headers);

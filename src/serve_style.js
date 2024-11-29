@@ -1011,9 +1011,9 @@ export const serve_style = {
                                 detectFormatAndHeaders(data).headers;
 
                               if (
-                                headers["Content-Type"] ===
+                                headers["content-type"] ===
                                   "application/x-protobuf" &&
-                                headers["Content-Encoding"] !== undefined
+                                headers["content-encoding"] !== undefined
                               ) {
                                 data = await unzipAsync(data);
                               }
@@ -1047,9 +1047,9 @@ export const serve_style = {
 
                               /* Unzip pbf rendered tile */
                               if (
-                                dataTile.headers["Content-Type"] ===
+                                dataTile.headers["content-type"] ===
                                   "application/x-protobuf" &&
-                                dataTile.headers["Content-Encoding"] !==
+                                dataTile.headers["content-encoding"] !==
                                   undefined
                               ) {
                                 dataTile.data = await unzipAsync(dataTile.data);
@@ -1131,9 +1131,9 @@ export const serve_style = {
 
                               /* Unzip pbf rendered tile */
                               if (
-                                dataTile.headers["Content-Type"] ===
+                                dataTile.headers["content-type"] ===
                                   "application/x-protobuf" &&
-                                dataTile.headers["Content-Encoding"] !==
+                                dataTile.headers["content-encoding"] !==
                                   undefined
                               ) {
                                 dataTile.data = await unzipAsync(dataTile.data);
@@ -1218,9 +1218,9 @@ export const serve_style = {
 
                               /* Unzip pbf rendered tile */
                               if (
-                                dataTile.headers["Content-Type"] ===
+                                dataTile.headers["content-type"] ===
                                   "application/x-protobuf" &&
-                                dataTile.headers["Content-Encoding"] !==
+                                dataTile.headers["content-encoding"] !==
                                   undefined
                               ) {
                                 dataTile.data = await unzipAsync(dataTile.data);
@@ -1263,9 +1263,9 @@ export const serve_style = {
                               ).headers;
 
                               if (
-                                headers["Content-Type"] ===
+                                headers["content-type"] ===
                                   "application/x-protobuf" &&
-                                headers["Content-Encoding"] !== undefined
+                                headers["content-encoding"] !== undefined
                               ) {
                                 dataTile.data = await unzipAsync(dataTile.data);
                               }

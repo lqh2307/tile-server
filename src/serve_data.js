@@ -228,12 +228,12 @@ function getDataTileHandler() {
 
       /* Gzip pbf data tile */
       if (
-        dataTile.headers["Content-Type"] === "application/x-protobuf" &&
-        dataTile.headers["Content-Encoding"] === undefined
+        dataTile.headers["content-type"] === "application/x-protobuf" &&
+        dataTile.headers["content-encoding"] === undefined
       ) {
         dataTile.data = await gzipAsync(dataTile.data);
 
-        dataTile.headers["Content-Encoding"] = "gzip";
+        dataTile.headers["content-encoding"] = "gzip";
       }
 
       res.set(dataTile.headers);
@@ -353,7 +353,7 @@ function getDataTileMD5Handler() {
 
       /* Add MD5 to header */
       res.set({
-        Etag: md5,
+        etag: md5,
       });
 
       return res.status(StatusCodes.OK).send();

@@ -576,7 +576,7 @@ export function detectFormatAndHeaders(buffer) {
     buffer[7] === 0x0a
   ) {
     format = "png";
-    headers["Content-Type"] = "image/png";
+    headers["content-type"] = "image/png";
   } else if (
     buffer[0] === 0xff &&
     buffer[1] === 0xd8 &&
@@ -584,7 +584,7 @@ export function detectFormatAndHeaders(buffer) {
     buffer[buffer.length - 1] === 0xd9
   ) {
     format = "jpeg"; // equivalent jpg
-    headers["Content-Type"] = "image/jpeg"; // equivalent image/jpg
+    headers["content-type"] = "image/jpeg"; // equivalent image/jpg
   } else if (
     buffer[0] === 0x47 &&
     buffer[1] === 0x49 &&
@@ -594,7 +594,7 @@ export function detectFormatAndHeaders(buffer) {
     buffer[5] === 0x61
   ) {
     format = "gif";
-    headers["Content-Type"] = "image/gif";
+    headers["content-type"] = "image/gif";
   } else if (
     buffer[0] === 0x52 &&
     buffer[1] === 0x49 &&
@@ -606,15 +606,15 @@ export function detectFormatAndHeaders(buffer) {
     buffer[11] === 0x50
   ) {
     format = "webp";
-    headers["Content-Type"] = "image/webp";
+    headers["content-type"] = "image/webp";
   } else {
     format = "pbf";
-    headers["Content-Type"] = "application/x-protobuf";
+    headers["content-type"] = "application/x-protobuf";
 
     if (buffer[0] === 0x78 && buffer[1] === 0x9c) {
-      headers["Content-Encoding"] = "deflate";
+      headers["content-encoding"] = "deflate";
     } else if (buffer[0] === 0x1f && buffer[1] === 0x8b) {
-      headers["Content-Encoding"] = "gzip";
+      headers["content-encoding"] = "gzip";
     }
   }
 
