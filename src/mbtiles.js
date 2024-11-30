@@ -330,7 +330,7 @@ async function createMBTilesTileWithLock(
         z,
         x,
         y,
-        storeMD5 === true ? calculateMD5(response.data) : undefined,
+        storeMD5 === true ? calculateMD5(data) : undefined,
         data
       );
 
