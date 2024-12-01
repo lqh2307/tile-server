@@ -75,7 +75,9 @@ async function runCleanUpTask(cleanUpData, seedData) {
 
     printLog(
       "info",
-      `Completed clean up styles after: ${(doneTime - startTime) / 1000}s!`
+      `Completed clean up ${ids.length} styles after: ${
+        (doneTime - startTime) / 1000
+      }s!`
     );
   } catch (error) {
     printLog("error", `Failed to clean up styles: ${error}. Exited!`);
@@ -128,7 +130,9 @@ async function runCleanUpTask(cleanUpData, seedData) {
 
     printLog(
       "info",
-      `Completed clean up datas after: ${(doneTime - startTime) / 1000}s!`
+      `Completed clean up ${ids.length} datas after: ${
+        (doneTime - startTime) / 1000
+      }s!`
     );
   } catch (error) {
     printLog("error", `Failed to clean up datas: ${error}. Exited!`);
@@ -173,7 +177,9 @@ async function runSeedTask(seedData) {
 
     printLog(
       "info",
-      `Completed seed styles after: ${(doneTime - startTime) / 1000}s!`
+      `Completed seed ${ids.length} styles after: ${
+        (doneTime - startTime) / 1000
+      }s!`
     );
   } catch (error) {
     printLog("error", `Failed to seed styles: ${error}. Exited!`);
@@ -232,7 +238,9 @@ async function runSeedTask(seedData) {
 
     printLog(
       "info",
-      `Completed seed datas after: ${(doneTime - startTime) / 1000}s!`
+      `Completed seed ${ids.length} datas after: ${
+        (doneTime - startTime) / 1000
+      }s!`
     );
   } catch (error) {
     printLog("error", `Failed to seed datas: ${error}. Exited!`);
