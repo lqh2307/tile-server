@@ -108,7 +108,7 @@ export async function readSeedFile(isValidate) {
                   minimum: 1,
                 },
               },
-              required: ["url"],
+              required: ["metadata", "url"],
               additionalProperties: true,
             },
           },
