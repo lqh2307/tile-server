@@ -326,11 +326,7 @@ export async function validateStyle(styleJSON) {
           source.url.startsWith("mbtiles://") === true ||
           source.url.startsWith("xyz://") === true
         ) {
-          const queryIndex = source.url.lastIndexOf("?");
-          const sourceID =
-            queryIndex === -1
-              ? source.url.split("/")[2]
-              : source.url.split("/")[2].slice(0, queryIndex);
+          const sourceID = source.url.split("/")[2];
 
           if (config.repo.datas[sourceID] === undefined) {
             throw new Error(
@@ -356,11 +352,7 @@ export async function validateStyle(styleJSON) {
             url.startsWith("mbtiles://") === true ||
             url.startsWith("xyz://") === true
           ) {
-            const queryIndex = url.lastIndexOf("?");
-            const sourceID =
-              queryIndex === -1
-                ? url.split("/")[2]
-                : url.split("/")[2].slice(0, queryIndex);
+            const sourceID = url.split("/")[2];
 
             if (config.repo.datas[sourceID] === undefined) {
               throw new Error(
@@ -387,11 +379,7 @@ export async function validateStyle(styleJSON) {
             tile.startsWith("mbtiles://") === true ||
             tile.startsWith("xyz://") === true
           ) {
-            const queryIndex = tile.lastIndexOf("?");
-            const sourceID =
-              queryIndex === -1
-                ? tile.split("/")[2]
-                : tile.split("/")[2].slice(0, queryIndex);
+            const sourceID = tile.split("/")[2];
 
             if (config.repo.datas[sourceID] === undefined) {
               throw new Error(

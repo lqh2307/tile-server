@@ -112,15 +112,9 @@ function getStyleHandler() {
                 source.url.startsWith("pmtiles://") === true ||
                 source.url.startsWith("xyz://") === true
               ) {
-                const queryIndex = source.url.lastIndexOf("?");
-                const sourceID =
-                  queryIndex === -1
-                    ? source.url.split("/")[2]
-                    : source.url.split("/")[2].slice(0, queryIndex);
+                const sourceID = source.url.split("/")[2];
 
-                source.url = `${getRequestHost(req)}/datas/${sourceID}.json${
-                  queryIndex === -1 ? "" : source.url.slice(queryIndex)
-                }`;
+                source.url = `${getRequestHost(req)}/datas/${sourceID}.json`;
               }
             }
 
@@ -133,15 +127,9 @@ function getStyleHandler() {
                     url.startsWith("mbtiles://") === true ||
                     url.startsWith("xyz://") === true
                   ) {
-                    const queryIndex = url.lastIndexOf("?");
-                    const sourceID =
-                      queryIndex === -1
-                        ? url.split("/")[2]
-                        : url.split("/")[2].slice(0, queryIndex);
+                    const sourceID = url.split("/")[2];
 
-                    url = `${getRequestHost(req)}/datas/${sourceID}.json${
-                      queryIndex === -1 ? "" : url.slice(queryIndex)
-                    }`;
+                    url = `${getRequestHost(req)}/datas/${sourceID}.json`;
                   }
 
                   return url;
@@ -160,17 +148,14 @@ function getStyleHandler() {
                     tile.startsWith("mbtiles://") === true ||
                     tile.startsWith("xyz://") === true
                   ) {
-                    const queryIndex = tile.lastIndexOf("?");
-                    const sourceID =
-                      queryIndex === -1
-                        ? tile.split("/")[2]
-                        : tile.split("/")[2].slice(0, queryIndex);
+                    const sourceID = tile.split("/")[2];
+                    const sourceData = config.repo.datas[sourceID];
 
                     tile = `${getRequestHost(
                       req
                     )}datas/${sourceID}/{z}/{x}/{y}.${
-                      config.repo.datas[sourceID].tileJSON.format
-                    }${queryIndex === -1 ? "" : tile.slice(queryIndex)}`;
+                      sourceData.tileJSON.format
+                    }`;
                   }
 
                   return tile;
@@ -700,6 +685,7 @@ export const serve_style = {
   },
 
   add: async () => {
+    /* Serve style */
     const seed = await readSeedFile(process.env.DATA_DIR, true);
 
     await Promise.all(
@@ -714,6 +700,7 @@ export const serve_style = {
           ) {
             styleInfo.path = `${process.env.DATA_DIR}/styles/${id}/style.json`;
 
+            /* Download style.json file */
             if ((await isExistFile(styleInfo.path)) === false) {
               await downloadStyleFile(
                 item.style,
@@ -723,12 +710,10 @@ export const serve_style = {
               );
             }
           } else {
-            let cacheSource;
-
             if (item.cache !== undefined) {
               styleInfo.path = `${process.env.DATA_DIR}/caches/styles/${item.style}/style.json`;
 
-              cacheSource = seed.styles[item.style];
+              const cacheSource = seed.styles[item.style];
 
               if (cacheSource === undefined) {
                 throw new Error(`Cache style "${item.style}" is invalid`);
@@ -781,6 +766,7 @@ export const serve_style = {
       })
     );
 
+    /* Serve rendered */
     if (config.options.serveRendered === true) {
       /* Register mlgl events */
       mlgl.on("message", (error) => {
@@ -848,18 +834,10 @@ export const serve_style = {
                         tile.startsWith("mbtiles://") === true ||
                         tile.startsWith("xyz://") === true
                       ) {
-                        const queryIndex = tile.lastIndexOf("?");
-                        const sourceID =
-                          queryIndex === -1
-                            ? tile.split("/")[2]
-                            : tile.split("/")[2].slice(0, queryIndex);
+                        const sourceID = tile.split("/")[2];
                         const sourceData = config.repo.datas[sourceID];
 
-                        tile = `${
-                          sourceData.sourceType
-                        }://${sourceID}/{z}/{x}/{y}.${
-                          sourceData.tileJSON.format
-                        }${queryIndex === -1 ? "" : tile.slice(queryIndex)}`;
+                        tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
                       }
 
                       return tile;
@@ -878,18 +856,10 @@ export const serve_style = {
                       url.startsWith("mbtiles://") === true ||
                       url.startsWith("xyz://") === true
                     ) {
-                      const queryIndex = url.lastIndexOf("?");
-                      const sourceID =
-                        queryIndex === -1
-                          ? url.split("/")[2]
-                          : url.split("/")[2].slice(0, queryIndex);
+                      const sourceID = url.split("/")[2];
                       const sourceData = config.repo.datas[sourceID];
 
-                      const tile = `${
-                        sourceData.sourceType
-                      }://${sourceID}/{z}/{x}/{y}.${
-                        sourceData.tileJSON.format
-                      }${queryIndex === -1 ? "" : url.slice(queryIndex)}`;
+                      const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
 
                       if (source.tiles !== undefined) {
                         if (source.tiles.includes(tile) === false) {
@@ -918,18 +888,10 @@ export const serve_style = {
                     source.url.startsWith("mbtiles://") === true ||
                     source.url.startsWith("xyz://") === true
                   ) {
-                    const queryIndex = source.url.lastIndexOf("?");
-                    const sourceID =
-                      queryIndex === -1
-                        ? source.url.split("/")[2]
-                        : source.url.split("/")[2].slice(0, queryIndex);
+                    const sourceID = source.url.split("/")[2];
                     const sourceData = config.repo.datas[sourceID];
 
-                    const tile = `${
-                      sourceData.sourceType
-                    }://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}${
-                      queryIndex === -1 ? "" : source.url.slice(queryIndex)
-                    }`;
+                    const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
 
                     if (source.tiles !== undefined) {
                       if (source.tiles.includes(tile) === false) {
@@ -1284,17 +1246,11 @@ export const serve_style = {
                                 `Failed to get data tile from "${url}": ${error}. Serving empty tile...`
                               );
 
-                              const queryIndex = url.lastIndexOf("?");
-                              const format =
-                                queryIndex === -1
-                                  ? url.slice(url.lastIndexOf(".") + 1)
-                                  : url.slice(
-                                      url.lastIndexOf(".") + 1,
-                                      queryIndex
-                                    );
-
                               callback(null, {
-                                data: emptyDatas[format] || emptyDatas.other,
+                                data:
+                                  emptyDatas[
+                                    url.slice(url.lastIndexOf(".") + 1)
+                                  ] || emptyDatas.other,
                               });
                             }
                           }

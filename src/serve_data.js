@@ -730,6 +730,7 @@ export const serve_data = {
             ) {
               dataInfo.path = `${process.env.DATA_DIR}/mbtiles/${id}/${id}.mbtiles`;
 
+              /* Download MBTiles file */
               if ((await isExistFile(dataInfo.path)) === false) {
                 await downloadMBTilesFile(
                   item.mbtiles,
