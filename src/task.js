@@ -54,14 +54,14 @@ async function runCleanUpTask(cleanUpData, seedData) {
 
     for (const id of ids) {
       const cleanUpStyleItem = cleanUpData.styles[id];
-      const cleanUpData =
+      const cleanUpBefore =
         cleanUpStyleItem.refreshBefore?.time ||
         cleanUpStyleItem.refreshBefore?.day;
 
       try {
         await cleanUpStyle(
           `${process.env.DATA_DIR}/caches/styles/${id}`,
-          cleanUpData
+          cleanUpBefore
         );
       } catch (error) {
         printLog(

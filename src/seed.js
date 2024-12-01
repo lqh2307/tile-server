@@ -821,6 +821,7 @@ export async function seedStyle(
 
   // Download style.json file
   const filePath = `${sourcePath}/style.json`;
+  let needDownload = false;
 
   try {
     if (refreshTimestamp !== undefined) {
