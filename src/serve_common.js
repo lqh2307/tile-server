@@ -58,7 +58,7 @@ function serveFrontPageHandler() {
 
             styles[id] = {
               name: name,
-              xyz: `${getRequestHost(req)}styles/${id}/{z}/{x}/{y}.png`,
+              xyz: `${getRequestHost(req)}/styles/${id}/{z}/{x}/{y}.png`,
               viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
               thumbnail: `${getRequestHost(
                 req
@@ -93,7 +93,7 @@ function serveFrontPageHandler() {
 
         datas[id] = {
           name: name,
-          xyz: `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${format}`,
+          xyz: `${getRequestHost(req)}/datas/${id}/{z}/{x}/{y}.${format}`,
           viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
           thumbnail: thumbnail,
           source_type: data.sourceType,
@@ -103,14 +103,14 @@ function serveFrontPageHandler() {
       ...Object.keys(config.repo.fonts).map(async (id) => {
         fonts[id] = {
           name: id,
-          font: `${getRequestHost(req)}fonts/${id}/{range}.pbf`,
+          font: `${getRequestHost(req)}/fonts/${id}/{range}.pbf`,
         };
       }),
       ...Object.keys(config.repo.sprites).map(async (id) => {
         sprites[id] = {
           name: id,
-          sprite: `${getRequestHost(req)}sprites/${id}/sprite`,
-          thumbnail: `${getRequestHost(req)}sprites/${id}/sprite.png`,
+          sprite: `${getRequestHost(req)}/sprites/${id}/sprite`,
+          thumbnail: `${getRequestHost(req)}/sprites/${id}/sprite.png`,
         };
       }),
     ]);

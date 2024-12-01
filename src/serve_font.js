@@ -54,7 +54,7 @@ function getFontsListHandler() {
         Object.keys(config.repo.fonts).map(async (id) => {
           return {
             name: id,
-            url: `${getRequestHost(req)}fonts/${id}/{range}.pbf`,
+            url: `${getRequestHost(req)}/fonts/${id}/{range}.pbf`,
           };
         })
       );

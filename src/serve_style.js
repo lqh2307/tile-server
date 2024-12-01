@@ -85,7 +85,7 @@ function getStyleHandler() {
           if (styleJSON.sprite.startsWith("sprites://") === true) {
             styleJSON.sprite = styleJSON.sprite.replaceAll(
               "sprites://",
-              `${getRequestHost(req)}sprites/`
+              `${getRequestHost(req)}/sprites/`
             );
           }
         }
@@ -95,7 +95,7 @@ function getStyleHandler() {
           if (styleJSON.glyphs.startsWith("fonts://") === true) {
             styleJSON.glyphs = styleJSON.glyphs.replaceAll(
               "fonts://",
-              `${getRequestHost(req)}fonts/`
+              `${getRequestHost(req)}/fonts/`
             );
           }
         }
@@ -118,7 +118,7 @@ function getStyleHandler() {
                     ? source.url.split("/")[2]
                     : source.url.split("/")[2].slice(0, queryIndex);
 
-                source.url = `${getRequestHost(req)}datas/${sourceID}.json${
+                source.url = `${getRequestHost(req)}/datas/${sourceID}.json${
                   queryIndex === -1 ? "" : source.url.slice(queryIndex)
                 }`;
               }
@@ -139,7 +139,7 @@ function getStyleHandler() {
                         ? url.split("/")[2]
                         : url.split("/")[2].slice(0, queryIndex);
 
-                    url = `${getRequestHost(req)}datas/${sourceID}.json${
+                    url = `${getRequestHost(req)}/datas/${sourceID}.json${
                       queryIndex === -1 ? "" : url.slice(queryIndex)
                     }`;
                   }
@@ -208,7 +208,7 @@ function getStylesListHandler() {
           return {
             id: id,
             name: config.repo.styles[id].name,
-            url: `${getRequestHost(req)}styles/${id}/style.json`,
+            url: `${getRequestHost(req)}/styles/${id}/style.json`,
           };
         })
       );
@@ -304,7 +304,7 @@ function getRenderedHandler() {
         tilejson: "2.2.0",
         scheme: "xyz",
         tiles: [
-          `${getRequestHost(req)}styles/${id}/${
+          `${getRequestHost(req)}/styles/${id}/${
             req.params.tileSize || 256
           }/{z}/{x}/{y}.png`,
         ],
@@ -332,8 +332,8 @@ function getRenderedsListHandler() {
             id: id,
             name: config.repo.rendereds[id].tileJSON.name,
             url: [
-              `${getRequestHost(req)}styles/256/${id}.json`,
-              `${getRequestHost(req)}styles/512/${id}.json`,
+              `${getRequestHost(req)}/styles/256/${id}.json`,
+              `${getRequestHost(req)}/styles/512/${id}.json`,
             ],
           };
         })
@@ -364,7 +364,7 @@ function getRenderedTileJSONsListHandler() {
             id: id,
             tilejson: "2.2.0",
             scheme: "xyz",
-            tiles: [`${getRequestHost(req)}styles/${id}/{z}/{x}/{y}.png`],
+            tiles: [`${getRequestHost(req)}/styles/${id}/{z}/{x}/{y}.png`],
           };
         })
       );

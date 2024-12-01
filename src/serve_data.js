@@ -277,7 +277,7 @@ function getDataHandler() {
         tilejson: "2.2.0",
         scheme: "xyz",
         tiles: [
-          `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
+          `${getRequestHost(req)}/datas/${id}/{z}/{x}/{y}.${
             item.tileJSON.format
           }`,
         ],
@@ -389,7 +389,7 @@ function getDatasListHandler() {
           return {
             id: id,
             name: config.repo.datas[id].tileJSON.name,
-            url: `${getRequestHost(req)}datas/${id}.json`,
+            url: `${getRequestHost(req)}/datas/${id}.json`,
           };
         })
       );
@@ -422,7 +422,7 @@ function getDataTileJSONsListHandler() {
             scheme: "xyz",
             id: id,
             tiles: [
-              `${getRequestHost(req)}datas/${id}/{z}/{x}/{y}.${
+              `${getRequestHost(req)}/datas/${id}/{z}/{x}/{y}.${
                 item.tileJSON.format
               }`,
             ],
@@ -717,7 +717,7 @@ export const serve_data = {
           const dataInfo = {};
 
           if (item.mbtiles !== undefined) {
-            let cacheSource;
+            dataInfo.sourceType = "mbtiles";
 
             if (
               item.mbtiles.startsWith("https://") === true ||
@@ -733,11 +733,19 @@ export const serve_data = {
                   3600000 // 1 hour
                 );
               }
+
+              dataInfo.source = await openMBTilesDB(
+                dataInfo.path,
+                sqlite3.OPEN_READONLY,
+                false
+              );
+
+              dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
             } else {
               if (item.cache !== undefined) {
                 dataInfo.path = `${process.env.DATA_DIR}/caches/mbtiles/${item.mbtiles}/${item.mbtiles}.mbtiles`;
 
-                cacheSource = seed.datas[item.mbtiles];
+                const cacheSource = seed.datas[item.mbtiles];
 
                 if (
                   cacheSource === undefined ||
@@ -754,47 +762,45 @@ export const serve_data = {
                   dataInfo.storeMD5 = cacheSource.storeMD5;
                   dataInfo.storeTransparent = cacheSource.storeTransparent;
                 }
-              } else {
-                dataInfo.path = `${process.env.DATA_DIR}/mbtiles/${item.mbtiles}`;
-              }
-            }
 
-            dataInfo.sourceType = "mbtiles";
+                let openMode;
 
-            if (item.cache !== undefined) {
-              if (dataInfo.storeCache === true) {
+                if (dataInfo.storeCache === true) {
+                  if ((await isExistFile(dataInfo.path)) === false) {
+                    openMode = sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE;
+                  } else {
+                    openMode = sqlite3.OPEN_READWRITE;
+                  }
+                } else {
+                  if ((await isExistFile(dataInfo.path)) === false) {
+                    openMode = sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE;
+                  } else {
+                    openMode = sqlite3.OPEN_READONLY;
+                  }
+                }
+
                 dataInfo.source = await openMBTilesDB(
                   dataInfo.path,
-                  sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+                  openMode,
                   false
                 );
+
+                dataInfo.tileJSON = createMetadata(cacheSource.metadata);
               } else {
-                if ((await isExistFile(dataInfo.path)) === true) {
-                  dataInfo.source = await openMBTilesDB(
-                    dataInfo.path,
-                    sqlite3.OPEN_READONLY,
-                    false
-                  );
-                } else {
-                  dataInfo.source = await openMBTilesDB(
-                    dataInfo.path,
-                    sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
-                    false
-                  );
-                }
+                dataInfo.path = `${process.env.DATA_DIR}/mbtiles/${item.mbtiles}`;
+
+                dataInfo.source = await openMBTilesDB(
+                  dataInfo.path,
+                  sqlite3.OPEN_READONLY,
+                  false
+                );
+
+                dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
               }
-
-              dataInfo.tileJSON = createMetadata(cacheSource.metadata);
-            } else {
-              dataInfo.source = await openMBTilesDB(
-                dataInfo.path,
-                sqlite3.OPEN_READONLY,
-                false
-              );
-
-              dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
             }
           } else if (item.pmtiles !== undefined) {
+            dataInfo.sourceType = "pmtiles";
+
             if (
               item.pmtiles.startsWith("https://") === true ||
               item.pmtiles.startsWith("http://") === true
@@ -804,16 +810,16 @@ export const serve_data = {
               dataInfo.path = `${process.env.DATA_DIR}/pmtiles/${item.pmtiles}`;
             }
 
-            dataInfo.sourceType = "pmtiles";
             dataInfo.source = openPMTiles(dataInfo.path);
+
             dataInfo.tileJSON = await getPMTilesInfos(dataInfo.source);
           } else if (item.xyz !== undefined) {
-            let cacheSource;
+            dataInfo.sourceType = "xyz";
 
             if (item.cache !== undefined) {
               dataInfo.path = `${process.env.DATA_DIR}/caches/xyzs/${item.xyz}`;
 
-              cacheSource = seed.datas[item.xyz];
+              const cacheSource = seed.datas[item.xyz];
 
               if (
                 cacheSource === undefined ||
@@ -828,25 +834,39 @@ export const serve_data = {
                 dataInfo.storeMD5 = cacheSource.storeMD5;
                 dataInfo.storeTransparent = cacheSource.storeTransparent;
               }
-            } else {
-              dataInfo.path = `${process.env.DATA_DIR}/xyzs/${item.xyz}`;
-            }
 
-            dataInfo.sourceType = "xyz";
+              let openMode;
 
-            if (item.cache !== undefined) {
-              if (dataInfo.storeMD5 === true) {
-                dataInfo.md5Source = await openXYZMD5DB(
-                  dataInfo.source,
-                  sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
-                  false
-                );
+              if (dataInfo.storeCache === true) {
+                if (
+                  (await isExistFile(`${dataInfo.path}/md5.sqlite`)) === false
+                ) {
+                  openMode = sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE;
+                } else {
+                  openMode = sqlite3.OPEN_READWRITE;
+                }
               } else {
-                dataInfo.source = dataInfo.path;
+                if (
+                  (await isExistFile(`${dataInfo.path}/md5.sqlite`)) === false
+                ) {
+                  openMode = sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE;
+                } else {
+                  openMode = sqlite3.OPEN_READONLY;
+                }
               }
+
+              dataInfo.source = dataInfo.path;
+
+              dataInfo.md5Source = await openXYZMD5DB(
+                dataInfo.source,
+                openMode,
+                false
+              );
 
               dataInfo.tileJSON = createMetadata(cacheSource.metadata);
             } else {
+              dataInfo.path = `${process.env.DATA_DIR}/xyzs/${item.xyz}`;
+
               dataInfo.source = dataInfo.path;
 
               dataInfo.tileJSON = await getXYZInfos(dataInfo.source);

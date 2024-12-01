@@ -331,7 +331,7 @@ export async function removeOldCacheLocks() {
 
 /**
  * Check folder is exist?
- * @param {string} dirPath
+ * @param {string} dirPath Directory path
  * @returns {Promise<boolean>}
  */
 export async function isExistFolder(dirPath) {
@@ -350,7 +350,7 @@ export async function isExistFolder(dirPath) {
 
 /**
  * Check file is exist?
- * @param {string} filePath
+ * @param {string} filePath File path
  * @returns {Promise<boolean>}
  */
 export async function isExistFile(filePath) {
@@ -461,7 +461,7 @@ export async function removeFilesOrFolders(fileOrFolders) {
 export function getRequestHost(req) {
   return `${req.headers["x-forwarded-proto"] || req.protocol}://${
     req.headers["host"]
-  }${req.headers["x-forwarded-prefix"] || ""}/`;
+  }${req.headers["x-forwarded-prefix"] || ""}`;
 }
 
 /**

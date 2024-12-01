@@ -56,8 +56,8 @@ function getSpritesListHandler() {
           return {
             name: id,
             urls: [
-              `${getRequestHost(req)}sprites/${id}/sprite.json`,
-              `${getRequestHost(req)}sprites/${id}/sprite.png`,
+              `${getRequestHost(req)}/sprites/${id}/sprite.json`,
+              `${getRequestHost(req)}/sprites/${id}/sprite.png`,
             ],
           };
         })
