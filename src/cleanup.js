@@ -479,10 +479,11 @@ export async function cleanUpXYZTiles(
 /**
  * Clean up style
  * @param {string} sourcePath Style folder path
+ * @param {number} maxTry Number of retry attempts on failure
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-export async function cleanUpStyle(sourcePath, cleanUpBefore) {
+export async function cleanUpStyle(sourcePath, maxTry = 5, cleanUpBefore) {
   const startTime = Date.now();
 
   const id = path.basename(sourcePath);

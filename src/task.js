@@ -61,6 +61,7 @@ async function runCleanUpTask(cleanUpData, seedData) {
       try {
         await cleanUpStyle(
           `${process.env.DATA_DIR}/caches/styles/${id}`,
+          cleanUpStyleItem.maxTry,
           cleanUpBefore
         );
       } catch (error) {
