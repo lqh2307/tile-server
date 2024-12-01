@@ -221,7 +221,7 @@ export async function cleanUpMBTilesTiles(
 
   // Open MBTiles SQLite database
   const mbtilesSource = await openMBTilesDB(
-    `${sourcePath}/${path.basename(sourcePath)}.mbtiles`,
+    `${sourcePath}/${id}.mbtiles`,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     false
   );
@@ -370,7 +370,7 @@ export async function cleanUpXYZTiles(
 
   // Open XYZ MD5 SQLite database
   const xyzSource = await openXYZMD5DB(
-    sourcePath,
+    `${sourcePath}/${id}.sqlite`,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     false
   );

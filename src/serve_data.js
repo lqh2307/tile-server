@@ -270,7 +270,7 @@ function getDataHandler() {
     }
 
     try {
-      res.header("Content-Type", "application/json");
+      res.header("content-type", "application/json");
 
       return res.status(StatusCodes.OK).send({
         ...item.tileJSON,
@@ -536,6 +536,7 @@ export const serve_data = {
      *         required: true
      *         schema:
      *           type: string
+     *           example: id
      *         description: Data ID
      *     responses:
      *       200:
@@ -574,6 +575,7 @@ export const serve_data = {
      *         required: true
      *         schema:
      *           type: string
+     *           example: id
      *         description: Data ID
      *       - in: path
      *         name: z
@@ -602,6 +604,7 @@ export const serve_data = {
      *         schema:
      *           type: string
      *           enum: [jpeg, jpg, pbf, png, webp, gif]
+     *           example: png
      *         description: Tile format
      *     responses:
      *       200:
@@ -647,6 +650,7 @@ export const serve_data = {
      *         required: true
      *         schema:
      *           type: string
+     *           example: id
      *         description: Data ID
      *       - in: path
      *         name: z
@@ -675,6 +679,7 @@ export const serve_data = {
      *         schema:
      *           type: string
      *           enum: [jpeg, jpg, pbf, png, webp, gif]
+     *           example: png
      *         description: Tile format
      *     responses:
      *       200:
@@ -836,19 +841,16 @@ export const serve_data = {
               }
 
               let openMode;
+              const md5FilePath = `${dataInfo.path}/${item.xyz}.sqlite`;
 
               if (dataInfo.storeCache === true) {
-                if (
-                  (await isExistFile(`${dataInfo.path}/md5.sqlite`)) === false
-                ) {
+                if ((await isExistFile(md5FilePath)) === false) {
                   openMode = sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE;
                 } else {
                   openMode = sqlite3.OPEN_READWRITE;
                 }
               } else {
-                if (
-                  (await isExistFile(`${dataInfo.path}/md5.sqlite`)) === false
-                ) {
+                if ((await isExistFile(md5FilePath)) === false) {
                   openMode = sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE;
                 } else {
                   openMode = sqlite3.OPEN_READONLY;
@@ -858,7 +860,7 @@ export const serve_data = {
               dataInfo.source = dataInfo.path;
 
               dataInfo.md5Source = await openXYZMD5DB(
-                dataInfo.source,
+                md5FilePath,
                 openMode,
                 false
               );

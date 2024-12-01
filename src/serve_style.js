@@ -183,7 +183,7 @@ function getStyleHandler() {
         );
       }
 
-      res.header("Content-Type", "application/json");
+      res.header("content-type", "application/json");
 
       return res.status(StatusCodes.OK).send(styleJSON);
     } catch (error) {
@@ -265,7 +265,7 @@ function getRenderedTileHandler() {
         z
       );
 
-      res.header("Content-Type", `image/png`);
+      res.header("content-type", `image/png`);
 
       return res.status(StatusCodes.OK).send(image);
     } catch (error) {
@@ -297,7 +297,7 @@ function getRenderedHandler() {
 
     /* Get render info */
     try {
-      res.header("Content-Type", "application/json");
+      res.header("content-type", "application/json");
 
       return res.status(StatusCodes.OK).send({
         ...item.tileJSON,
@@ -439,6 +439,7 @@ export const serve_style = {
      *         name: id
      *         schema:
      *           type: string
+     *           example: id
      *         required: true
      *         description: ID of the style
      *       - in: query
@@ -576,12 +577,14 @@ export const serve_style = {
        *         schema:
        *           type: integer
        *           enum: [256, 512]
+       *           example: 256
        *         required: false
        *         description: Tile size (256 or 512)
        *       - in: path
        *         name: id
        *         schema:
        *           type: string
+       *           example: id
        *         required: true
        *         description: ID of the style rendered
        *     responses:
@@ -631,6 +634,7 @@ export const serve_style = {
        *         name: id
        *         schema:
        *           type: string
+       *           example: id
        *         required: true
        *         description: ID of the style
        *       - in: path
@@ -638,6 +642,7 @@ export const serve_style = {
        *         schema:
        *           type: integer
        *           enum: [256, 512]
+       *           example: 256
        *         required: false
        *         description: Tile size (256 or 512)
        *       - in: path
@@ -662,6 +667,7 @@ export const serve_style = {
        *         name: scale
        *         schema:
        *           type: string
+       *           example: @1x
        *         required: false
        *         description: Scale of the tile (e.g., @2x)
        *     responses:

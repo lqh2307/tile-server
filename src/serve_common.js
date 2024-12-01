@@ -219,7 +219,7 @@ function serveWMTSHandler() {
         base_url: getRequestHost(req),
       });
 
-      res.header("Content-Type", "text/xml");
+      res.header("content-type", "text/xml");
 
       return res.status(StatusCodes.OK).send(compiled);
     } catch (error) {
@@ -265,7 +265,7 @@ function serveConfigHandler() {
         await fsPromise.readFile(`${process.env.DATA_DIR}/config.json`, "utf8")
       );
 
-      res.header("Content-Type", "application/json");
+      res.header("content-type", "application/json");
 
       return res.status(StatusCodes.OK).send(configJSON);
     } catch (error) {
@@ -289,7 +289,7 @@ function serveSeedHandler() {
         await fsPromise.readFile(`${process.env.DATA_DIR}/seed.json`, "utf8")
       );
 
-      res.header("Content-Type", "application/json");
+      res.header("content-type", "application/json");
 
       return res.status(StatusCodes.OK).send(seedJSON);
     } catch (error) {
@@ -313,7 +313,7 @@ function serveCleanUpHandler() {
         await fsPromise.readFile(`${process.env.DATA_DIR}/cleanup.json`, "utf8")
       );
 
-      res.header("Content-Type", "application/json");
+      res.header("content-type", "application/json");
 
       return res.status(StatusCodes.OK).send(cleanUpJSON);
     } catch (error) {
@@ -477,7 +477,7 @@ function serveSummaryHandler() {
         result.rendered.count = Object.keys(config.repo.rendereds).length;
       }
 
-      res.header("Content-Type", "application/json");
+      res.header("content-type", "application/json");
 
       return res.status(StatusCodes.OK).send(result);
     } catch (error) {
@@ -804,6 +804,7 @@ export const serve_common = {
        *         name: id
        *         schema:
        *           type: string
+       *           example: id
        *         required: true
        *         description: ID of the style
        *     responses:
@@ -848,6 +849,7 @@ export const serve_common = {
        *         name: id
        *         schema:
        *           type: string
+       *           example: id
        *         required: true
        *         description: ID of the style
        *     responses:
@@ -887,6 +889,7 @@ export const serve_common = {
        *         name: id
        *         schema:
        *           type: string
+       *           example: id
        *         required: true
        *         description: ID of the data
        *     responses:

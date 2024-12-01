@@ -28,9 +28,9 @@ function getSpriteHandler() {
       );
 
       if (req.params.format === "json") {
-        res.header("Content-Type", "application/json");
+        res.header("content-type", "application/json");
       } else {
-        res.header("Content-Type", "image/png");
+        res.header("content-type", "image/png");
       }
 
       return res.status(StatusCodes.OK).send(data);
@@ -133,12 +133,14 @@ export const serve_sprite = {
      *         name: id
      *         schema:
      *           type: string
+     *           example: id
      *         required: true
      *         description: ID of the sprite
      *       - in: path
      *         name: scale
      *         schema:
      *           type: string
+     *           example: @1x
      *         required: false
      *         description: Scale of the sprite (e.g., @2x)
      *       - in: path
@@ -146,6 +148,7 @@ export const serve_sprite = {
      *         schema:
      *           type: string
      *           enum: [json, png]
+     *           example: json
      *         required: true
      *         description: Format of the sprite
      *     responses:

@@ -16,10 +16,16 @@ import Ajv from "ajv";
  * Get data from URL
  * @param {string} url URL to fetch data from
  * @param {number} timeout Timeout in milliseconds
- * @param {"arraybuffer"|"json"|"text"|"stream"} responseType Response type
+ * @param {"arraybuffer"|"json"|"text"|"stream"|"blob"|"document"|"formdata"} responseType Response type
+ * @param {boolean} keepAlive Whether to keep the connection alive
  * @returns {Promise<axios.AxiosResponse>}
  */
-export async function getDataFromURL(url, timeout, responseType) {
+export async function getDataFromURL(
+  url,
+  timeout,
+  responseType,
+  keepAlive = false
+) {
   try {
     return await axios({
       method: "GET",
@@ -33,10 +39,10 @@ export async function getDataFromURL(url, timeout, responseType) {
         return status === StatusCodes.OK;
       },
       httpAgent: new http.Agent({
-        keepAlive: false,
+        keepAlive: keepAlive,
       }),
       httpsAgent: new https.Agent({
-        keepAlive: false,
+        keepAlive: keepAlive,
       }),
     });
   } catch (error) {
@@ -656,12 +662,10 @@ export const inflateAsync = util.promisify(zlib.inflate);
  */
 export async function validateJSON(schema, jsonData) {
   try {
-    const ajv = new Ajv({
+    const validate = new Ajv({
       allErrors: true,
       useDefaults: true,
-    });
-
-    const validate = ajv.compile(schema);
+    }).compile(schema);
 
     if (!validate(jsonData)) {
       throw validate.errors
@@ -717,7 +721,7 @@ export async function cancelTask() {
 }
 
 /**
- * Get version
+ * Get version of server
  * @returns {string}
  */
 export function getVersion() {

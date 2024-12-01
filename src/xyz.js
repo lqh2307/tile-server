@@ -894,17 +894,17 @@ export async function cacheXYZTileDataFile(
 
 /**
  * Open XYZ MD5 SQLite database
- * @param {string} sourcePath XYZ folder path
+ * @param {string} filePath MD5 file path
  * @param {number} mode SQLite mode (e.g: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE | sqlite3.OPEN_READONLY)
  * @param {boolean} wal Use WAL
  * @returns {Promise<sqlite3.Database>}
  */
 export async function openXYZMD5DB(
-  sourcePath,
+  filePath,
   mode = sqlite3.OPEN_READONLY,
   wal = false
 ) {
-  const xyzSource = await openSQLite(`${sourcePath}/md5.sqlite`, mode, wal);
+  const xyzSource = await openSQLite(filePath, mode, wal);
 
   if (mode & sqlite3.OPEN_CREATE) {
     await initializeXYZMD5Tables(xyzSource);

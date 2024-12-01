@@ -128,6 +128,7 @@ export const serve_font = {
      *         required: true
      *         schema:
      *           type: string
+     *           example: id
      *         description: Font ID
      *       - in: path
      *         name: range
@@ -135,6 +136,7 @@ export const serve_font = {
      *         schema:
      *           type: string
      *           pattern: "\\d{1,5}-\\d{1,5}"
+     *           example: 0-255
      *         description: Font range
      *     responses:
      *       200:

@@ -444,7 +444,7 @@ export async function seedMBTilesTiles(
 
   // Open MBTiles SQLite database
   const mbtilesSource = await openMBTilesDB(
-    `${sourcePath}/${path.basename(sourcePath)}.mbtiles`,
+    `${sourcePath}/${id}.mbtiles`,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     false
   );
@@ -642,7 +642,7 @@ export async function seedXYZTiles(
 
   // Open MD5 SQLite database
   const xyzSource = await openXYZMD5DB(
-    sourcePath,
+    `${sourcePath}/${id}.sqlite`,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     false
   );
