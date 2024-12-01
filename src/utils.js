@@ -466,7 +466,7 @@ export function getRequestHost(req) {
 
 /**
  * Create new tileJSON
- * @param {object} metadata
+ * @param {object} metadata Metadata object
  * @returns
  */
 export function createMetadata(metadata) {
@@ -558,7 +558,7 @@ export function createMetadata(metadata) {
 /**
  * Return either a format as an extension: png, pbf, jpg, webp, gif and
  * headers - Content-Type and Content-Encoding - for a response containing this kind of image
- * @param {Buffer} buffer input
+ * @param {Buffer} buffer Input data
  * @returns {object}
  */
 export function detectFormatAndHeaders(buffer) {
@@ -625,17 +625,26 @@ export function detectFormatAndHeaders(buffer) {
 }
 
 /**
- *
+ * Compress data using gzip algorithm asynchronously
+ * @param {Buffer|string} input The data to compress
+ * @param {zlib.ZlibOptions} options Optional zlib compression options
+ * @returns {Promise<Buffer>} A Promise that resolves to the compressed data as a Buffer
  */
 export const gzipAsync = util.promisify(zlib.gzip);
 
 /**
- *
+ * Decompress gzip-compressed data asynchronously
+ * @param {Buffer|string} input The compressed data to decompress
+ * @param {zlib.ZlibOptions} options Optional zlib decompression options
+ * @returns {Promise<Buffer>} A Promise that resolves to the decompressed data as a Buffer
  */
 export const unzipAsync = util.promisify(zlib.unzip);
 
 /**
- *
+ * Decompress deflate-compressed data asynchronously
+ * @param {Buffer|string} input The compressed data to decompress
+ * @param {zlib.ZlibOptions} options Optional zlib decompression options
+ * @returns {Promise<Buffer>} A Promise that resolves to the decompressed data as a Buffer
  */
 export const inflateAsync = util.promisify(zlib.inflate);
 
