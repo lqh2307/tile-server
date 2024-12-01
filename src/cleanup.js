@@ -201,7 +201,7 @@ export async function cleanUpMBTilesTiles(
   const id = path.basename(sourcePath);
   let { total, tilesSummaries } = getTilesBoundsFromBBoxs(bboxs, zooms, "xyz");
   let cleanUpTimestamp;
-  let log = `Cleaning up ${total} tiles of mbtiles data "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${total} tiles of mbtiles data "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
@@ -350,7 +350,7 @@ export async function cleanUpXYZTiles(
   const id = path.basename(sourcePath);
   let { total, tilesSummaries } = getTilesBoundsFromBBoxs(bboxs, zooms, "xyz");
   let cleanUpTimestamp;
-  let log = `Cleaning up ${total} tiles of xyz data "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${total} tiles of xyz data "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
@@ -487,7 +487,7 @@ export async function cleanUpStyle(sourcePath, cleanUpBefore) {
 
   const id = path.basename(sourcePath);
   let cleanUpTimestamp;
-  let log = `Cleaning up style "${id}" with:\n\tMax tries: ${maxTry}`;
+  let log = `Cleaning up style "${id}" with:\n\tMax try: ${maxTry}`;
 
   if (typeof cleanUpBefore === "string") {
     cleanUpTimestamp = new Date(cleanUpBefore).getTime();

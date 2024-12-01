@@ -262,7 +262,7 @@ export async function retry(fn, maxTry, after = 0) {
       if (remainingAttempts > 0) {
         printLog(
           "warning",
-          `${error}. ${remainingAttempts} tries remaining - After ${after} ms...`
+          `${error}. ${remainingAttempts} try remaining - After ${after} ms...`
         );
 
         await delay(after);

@@ -420,7 +420,7 @@ export async function seedMBTilesTiles(
     "xyz"
   );
   let refreshTimestamp;
-  let log = `Seeding ${total} tiles of mbtiles data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
+  let log = `Seeding ${total} tiles of mbtiles data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
@@ -618,7 +618,7 @@ export async function seedXYZTiles(
     "xyz"
   );
   let refreshTimestamp;
-  let log = `Seeding ${total} tiles of xyz data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
+  let log = `Seeding ${total} tiles of xyz data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
@@ -803,7 +803,7 @@ export async function seedStyle(
 
   const id = path.basename(sourcePath);
   let refreshTimestamp;
-  let log = `Seeding style "${id}" with:\n\tMax tries: ${maxTry}\n\tTimeout: ${timeout}`;
+  let log = `Seeding style "${id}" with:\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}`;
 
   if (typeof refreshBefore === "string") {
     refreshTimestamp = new Date(refreshBefore).getTime();
