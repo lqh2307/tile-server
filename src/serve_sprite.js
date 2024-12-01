@@ -76,7 +76,7 @@ function getSpritesListHandler() {
 
 export const serve_sprite = {
   init: () => {
-    const app = express();
+    const app = express().disable('x-powered-by');
 
     /**
      * @swagger

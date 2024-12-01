@@ -558,7 +558,9 @@ function serveKillHandler() {
 
 export const serve_common = {
   init: () => {
-    const app = express().use("/", express.static("public/resources"));
+    const app = express()
+      .use("/", express.static("public/resources"))
+      .disable("x-powered-by");
 
     if (config.options.serveSwagger === true) {
       app.use("/swagger/index.html", swaggerUi.serve, serveSwagger());

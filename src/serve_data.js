@@ -443,7 +443,7 @@ function getDataTileJSONsListHandler() {
 
 export const serve_data = {
   init: () => {
-    const app = express();
+    const app = express().disable("x-powered-by");
 
     /**
      * @swagger

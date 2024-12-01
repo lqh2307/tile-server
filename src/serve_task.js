@@ -56,7 +56,7 @@ function cancelTaskHandler() {
 
 export const serve_task = {
   init: () => {
-    const app = express();
+    const app = express().disable("x-powered-by");
 
     /**
      * @swagger

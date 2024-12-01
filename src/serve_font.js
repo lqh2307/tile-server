@@ -72,7 +72,7 @@ function getFontsListHandler() {
 
 export const serve_font = {
   init: () => {
-    const app = express();
+    const app = express().disable('x-powered-by');
 
     /**
      * @swagger
