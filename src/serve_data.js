@@ -713,7 +713,7 @@ export const serve_data = {
   },
 
   add: async () => {
-    const seed = await readSeedFile(process.env.DATA_DIR, true);
+    const seed = await readSeedFile(true);
 
     await Promise.all(
       Object.keys(config.datas).map(async (id) => {

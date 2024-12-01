@@ -686,7 +686,7 @@ export const serve_style = {
 
   add: async () => {
     /* Serve style */
-    const seed = await readSeedFile(process.env.DATA_DIR, true);
+    const seed = await readSeedFile(true);
 
     await Promise.all(
       Object.keys(config.styles).map(async (id) => {
