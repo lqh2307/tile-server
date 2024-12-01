@@ -140,7 +140,6 @@ export const serve_sprite = {
      *         name: scale
      *         schema:
      *           type: string
-     *           example: @1x
      *         required: false
      *         description: Scale of the sprite (e.g., @2x)
      *       - in: path
