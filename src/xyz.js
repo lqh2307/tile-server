@@ -382,7 +382,7 @@ async function removeXYZTileMD5(xyzSource, z, x, y) {
     DELETE FROM
       md5s
     WHERE
-      z = ? AND x = ? AND y = ?;
+      zoom_level = ? AND tile_column = ? AND tile_row = ?;
     `,
     z,
     x,
@@ -939,7 +939,7 @@ export async function getXYZTileMD5(xyzSource, z, x, y) {
     FROM
       md5s
     WHERE
-      z = ? AND x = ? AND y = ?;
+      zoom_level = ? AND tile_column = ? AND tile_row = ?;
     `,
     z,
     x,
