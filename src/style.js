@@ -443,7 +443,7 @@ export async function getStyleCreated(filePath) {
 
     return stats.ctimeMs;
   } catch (error) {
-    if (error === "ENOENT") {
+    if (error.code === "ENOENT") {
       throw new Error("Style created does not exist");
     } else {
       throw error;

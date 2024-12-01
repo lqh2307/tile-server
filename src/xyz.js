@@ -964,7 +964,7 @@ export async function getXYZTileCreated(filePath) {
 
     return stats.ctimeMs;
   } catch (error) {
-    if (error === "ENOENT") {
+    if (error.code === "ENOENT") {
       throw new Error("Tile created does not exist");
     } else {
       throw error;
