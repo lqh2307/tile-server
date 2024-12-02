@@ -153,7 +153,7 @@ function getStyleHandler() {
 
                     tile = `${getRequestHost(
                       req
-                    )}datas/${sourceID}/{z}/{x}/{y}.${
+                    )}/datas/${sourceID}/{z}/{x}/{y}.${
                       sourceData.tileJSON.format
                     }`;
                   }
