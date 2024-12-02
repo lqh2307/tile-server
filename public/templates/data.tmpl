@@ -6,10 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{name}} - Tile Server</title>
   {{#if is_vector}}
-  <link rel="stylesheet" type="text/css" href="/maplibre-gl.css" />
-  <link rel="stylesheet" type="text/css" href="/maplibre-gl-inspect.css" />
-  <script src="/maplibre-gl.js"></script>
-  <script src="/maplibre-gl-inspect.js"></script>
+  <link rel="stylesheet" type="text/css" href="{{base_url}}/maplibre-gl.css" />
+  <link rel="stylesheet" type="text/css" href="{{base_url}}/maplibre-gl-inspect.css" />
+  <script src="{{base_url}}/maplibre-gl.js"></script>
+  <script src="{{base_url}}/maplibre-gl-inspect.js"></script>
   <style>
     body {
       margin: 0;
@@ -56,9 +56,9 @@
     }
   </style>
   {{else}}
-  <link rel="stylesheet" type="text/css" href="/leaflet.css" />
-  <script src="/leaflet.js"></script>
-  <script src="/leaflet-hash.js"></script>
+  <link rel="stylesheet" type="text/css" href="{{base_url}}/leaflet.css" />
+  <script src="{{base_url}}/leaflet.js"></script>
+  <script src="{{base_url}}/leaflet-hash.js"></script>
   <style>
     body {
       margin: 0;
@@ -73,19 +73,19 @@
     }
 
     .leaflet-control-layers-toggle {
-      background-image: url(/images/layers.png);
+      background-image: url({{base_url}}/images/layers.png);
       width: 36px;
       height: 36px;
     }
 
     .leaflet-retina .leaflet-control-layers-toggle {
-      background-image: url(/images/layers-2x.png);
+      background-image: url({{base_url}}/images/layers-2x.png);
       background-size: 26px 26px;
     }
 
     .leaflet-default-icon-path {
       /* used only in path-guessing heuristic, see L.Icon.Default */
-      background-image: url(/images/marker-icon.png);
+      background-image: url({{base_url}}/images/marker-icon.png);
     }
   </style>
   {{/if}}
@@ -99,15 +99,15 @@
   <pre id="propertyList"></pre>
   <script>
     const map = new maplibregl.Map({
-      container: 'map',
+      container: "map",
       hash: true,
       maxPitch: 85,
       style: {
         version: 8,
         sources: {
-          'vector_layer_': {
-            type: 'vector',
-            url: '/datas/{{id}}.json'
+          "vector_layer_": {
+            type: "vector",
+            url: "{{base_url}}/datas/{{id}}.json"
           }
         },
         layers: []
@@ -123,16 +123,16 @@
 
     map.addControl(inspect);
 
-    map.on('styledata', function () {
-      const layerList = document.getElementById('layerList');
+    map.on("styledata", function () {
+      const layerList = document.getElementById("layerList");
 
-      layerList.innerHTML = '';
+      layerList.innerHTML = "";
 
       Object.keys(inspect.sources).forEach(function (sourceId) {
         inspect.sources[sourceId].forEach(function (layerId) {
-          const item = document.createElement('div');
+          const item = document.createElement("div");
           item.innerHTML = '<div style="' +
-            'background:' + inspect.assignLayerColor(layerId) + ';' +
+            "background:" + inspect.assignLayerColor(layerId) + ";" +
             '"></div> ' + layerId;
 
           layerList.appendChild(item);
@@ -142,21 +142,21 @@
   </script>
   {{else}}
   <h1 style="display:none;">{{tileJSON.name}}</h1>
-  <div id='map'></div>
+  <div id="map"></div>
   <script>
-    const map = L.map('map', {
+    const map = L.map("map", {
       zoomControl: false,
     });
 
     new L.Control.Zoom({
-      position: 'topright',
+      position: "topright",
     }).addTo(map);
 
     let tile_urls = [], tile_attribution, tile_minzoom, tile_maxzoom;
 
     const req = new XMLHttpRequest();
     req.overrideMimeType("application/json");
-    req.open('GET', '/datas/{{id}}.json', true);
+    req.open("GET", "{{base_url}}/datas/{{id}}.json", true);
     req.onload = function () {
       const jsonResponse = JSON.parse(req.responseText);
       for (key in jsonResponse) {
@@ -187,7 +187,7 @@
 
       map.eachLayer(function (layer) {
         // do not add scale prefix even if retina display is detected
-        layer.scalePrefix = '.';
+        layer.scalePrefix = ".";
       });
     };
 

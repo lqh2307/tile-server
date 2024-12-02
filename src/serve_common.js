@@ -125,6 +125,7 @@ function serveFrontPageHandler() {
         data_count: Object.keys(datas).length,
         font_count: Object.keys(fonts).length,
         sprite_count: Object.keys(sprites).length,
+        base_url: getRequestHost(req),
       });
 
       return res.status(StatusCodes.OK).send(compiled);
@@ -155,6 +156,7 @@ function serveStyleHandler() {
       const compiled = await compileTemplate("viewer", {
         id: id,
         name: item.name,
+        base_url: getRequestHost(req),
       });
 
       return res.status(StatusCodes.OK).send(compiled);
@@ -186,6 +188,7 @@ function serveDataHandler() {
         id: id,
         name: item.tileJSON.name,
         is_vector: item.tileJSON.format === "pbf",
+        base_url: getRequestHost(req),
       });
 
       return res.status(StatusCodes.OK).send(compiled);

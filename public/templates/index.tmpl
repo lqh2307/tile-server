@@ -5,27 +5,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Preview - Tile Server</title>
-  <link rel="stylesheet" type="text/css" href="/index.css" />
+  <link rel="stylesheet" type="text/css" href="{{base_url}}/index.css" />
   <script>
     function toggleURL(id, event) {
       event.preventDefault();
 
       const el = document.getElementById(id);
 
-      if (el.style.display === 'none') {
-        el.style.display = 'inline-block';
+      if (el.style.display === "none") {
+        el.style.display = "inline-block";
       } else {
-        el.style.display = 'none';
+        el.style.display = "none";
       }
     }
 
     function copyToClipboard(el) {
       el.select();
 
-      document.execCommand('copy');
+      document.execCommand("copy");
 
       setTimeout(() => {
-        el.style.display = 'none';
+        el.style.display = "none";
       }, 200);
     }
 
@@ -34,37 +34,37 @@
 
       window.scrollTo({
         top: 0,
-        behavior: 'smooth',
+        behavior: "smooth",
       });
     }
 
     function switchTab(event, tabId) {
-      document.querySelectorAll('.tab').forEach(tab => {
-        tab.classList.remove('active');
+      document.querySelectorAll(".tab").forEach(tab => {
+        tab.classList.remove("active");
       });
 
-      document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
+      document.querySelectorAll(".tab-content").forEach(content => {
+        content.classList.remove("active");
       });
 
-      event.currentTarget.classList.add('active');
+      event.currentTarget.classList.add("active");
 
-      document.getElementById(tabId).classList.add('active');
+      document.getElementById(tabId).classList.add("active");
 
-      if (tabId === 'styles-tab' && !document.querySelector('#styles-tab').innerHTML.trim()) {
-        renderDatas('styles-tab');
-      } else if (tabId === 'datas-tab' && !document.querySelector('#datas-tab').innerHTML.trim()) {
-        renderDatas('datas-tab');
-      } else if (tabId === 'fonts-tab' && !document.querySelector('#fonts-tab').innerHTML.trim()) {
-        renderDatas('fonts-tab');
-      } else if (tabId === 'sprites-tab' && !document.querySelector('#sprites-tab').innerHTML.trim()) {
-        renderDatas('sprites-tab');
+      if (tabId === "styles-tab" && !document.querySelector("#styles-tab").innerHTML.trim()) {
+        renderDatas("styles-tab");
+      } else if (tabId === "datas-tab" && !document.querySelector("#datas-tab").innerHTML.trim()) {
+        renderDatas("datas-tab");
+      } else if (tabId === "fonts-tab" && !document.querySelector("#fonts-tab").innerHTML.trim()) {
+        renderDatas("fonts-tab");
+      } else if (tabId === "sprites-tab" && !document.querySelector("#sprites-tab").innerHTML.trim()) {
+        renderDatas("sprites-tab");
       }
     }
 
     function renderDatas(tabId) {
-      if (tabId === 'styles-tab') {
-        document.querySelector('#styles-tab').innerHTML = `
+      if (tabId === "styles-tab") {
+        document.querySelector("#styles-tab").innerHTML = `
           <div class="box">
             {{#each styles}}
               <div class="item">
@@ -73,29 +73,29 @@
                   <h3 class="name">{{name}}</h3>
                   <p class="identifier">identifier: {{@key}}</p>
                   <p class="services">
-                    services: <a href="/styles/{{@key}}/style.json">Style</a>
+                    services: <a href="{{base_url}}/styles/{{@key}}/style.json">Style</a>
                     {{#if serve_rendered}}
-                      | <a href="/styles/{{@key}}.json">TileJSON</a>
-                      | <a href="/styles/{{@key}}/wmts.xml">WMTS</a>
+                      | <a href="{{base_url}}/styles/{{@key}}.json">TileJSON</a>
+                      | <a href="{{base_url}}/styles/{{@key}}/wmts.xml">WMTS</a>
                     {{/if}}
                     {{#if xyz}}
-                      | <a href="#" onclick="toggleURL('xyz_style_{{@key}}', event)">XYZ</a>
+                      | <a href="#" onclick="toggleURL("xyz_style_{{@key}}", event)">XYZ</a>
                       <input id="xyz_style_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz}}" onclick="copyToClipboard(this)" />
                     {{/if}}
                   </p>
                 </div>
                 <div class="viewers">
-                    <a class="btn" href="/styles/{{@key}}/?vector{{viewer_hash}}">Client Render</a>
+                    <a class="btn" href="{{base_url}}/styles/{{@key}}/?vector{{viewer_hash}}">Client Render</a>
                     {{#if serve_rendered}}
-                      <a class="btn" href="/styles/{{@key}}/?raster{{viewer_hash}}">Backend Render</a>
+                      <a class="btn" href="{{base_url}}/styles/{{@key}}/?raster{{viewer_hash}}">Backend Render</a>
                     {{/if}}
                 </div>
               </div>
             {{/each}}
           </div>
         `;
-      } else if (tabId === 'datas-tab') {
-        document.querySelector('#datas-tab').innerHTML = `
+      } else if (tabId === "datas-tab") {
+        document.querySelector("#datas-tab").innerHTML = `
           <div class="box">
             {{#each datas}}
               <div class="item">
@@ -106,35 +106,35 @@
                   <div class="identifier">type: {{#if is_vector}}vector{{else}}raster{{/if}}</div>
                   <div class="identifier">ext: {{source_type}}</div>
                   <p class="services">
-                    services: <a href="/datas/{{@key}}.json">TileJSON</a>
+                    services: <a href="{{base_url}}/datas/{{@key}}.json">TileJSON</a>
                     {{#if xyz}}
-                      | <a href="#" onclick="toggleURL('xyz_data_{{@key}}', event)">XYZ</a>
+                      | <a href="#" onclick="toggleURL("xyz_data_{{@key}}", event)">XYZ</a>
                       <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz}}" onclick="copyToClipboard(this)" />
                     {{/if}}
                   </p>
                 </div>
                 <div class="viewers">
                   {{#if is_vector}}
-                      <a class="btn" href="/datas/{{@key}}/{{viewer_hash}}">Inspect</a>
+                      <a class="btn" href="{{base_url}}/datas/{{@key}}/{{viewer_hash}}">Inspect</a>
                   {{else}}
-                      <a class="btn" href="/datas/{{@key}}/{{viewer_hash}}">View</a>
+                      <a class="btn" href="{{base_url}}/datas/{{@key}}/{{viewer_hash}}">View</a>
                   {{/if}}
                 </div>
               </div>
             {{/each}}
           </div>
         `;
-      } else if (tabId === 'fonts-tab') {
-        document.querySelector('#fonts-tab').innerHTML = `
+      } else if (tabId === "fonts-tab") {
+        document.querySelector("#fonts-tab").innerHTML = `
           <div class="box">
             {{#each fonts}}
               <div class="item">
-                <img src="/images/placeholder.png" alt="{{name}} preview" />
+                <img src="{{base_url}}/images/placeholder.png" alt="{{name}} preview" />
                 <div class="details">
                   <h3 class="name">{{name}}</h3>
                   <div class="identifier">identifier: {{@key}}</div>
                   <p class="services">
-                    <a href="#" onclick="toggleURL('font_{{@key}}', event)">URL</a>
+                    <a href="#" onclick="toggleURL("font_{{@key}}", event)">URL</a>
                     <input id="font_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{font}}" onclick="copyToClipboard(this)" />
                   </p>
                 </div>
@@ -142,8 +142,8 @@
             {{/each}}
           </div>
         `;
-      } else if (tabId === 'sprites-tab') {
-        document.querySelector('#sprites-tab').innerHTML = `
+      } else if (tabId === "sprites-tab") {
+        document.querySelector("#sprites-tab").innerHTML = `
           <div class="box">
             {{#each sprites}}
               <div class="item">
@@ -152,8 +152,8 @@
                   <h3 class="name">{{name}}</h3>
                   <div class="identifier">identifier: {{@key}}</div>
                   <p class="services">
-                    services: <a href="/sprites/{{@key}}/sprite.json">JSON</a>
-                    | <a href="#" onclick="toggleURL('sprite_{{@key}}', event)">URL</a>
+                    services: <a href="{{base_url}}/sprites/{{@key}}/sprite.json">JSON</a>
+                    | <a href="#" onclick="toggleURL("sprite_{{@key}}", event)">URL</a>
                     <input id="sprite_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{sprite}}" onclick="copyToClipboard(this)" />
                   </p>
                 </div>
@@ -165,16 +165,16 @@
     }
 
     window.onload = function () {
-      renderDatas('styles-tab');
+      renderDatas("styles-tab");
     };
 
-    window.addEventListener('scroll', () => {
-      const backToTopButton = document.querySelector('.back-to-top');
+    window.addEventListener("scroll", () => {
+      const backToTopButton = document.querySelector(".back-to-top");
 
       if (window.scrollY > 200) {
-        backToTopButton.style.display = 'flex';
+        backToTopButton.style.display = "flex";
       } else {
-        backToTopButton.style.display = 'none';
+        backToTopButton.style.display = "none";
       }
     });
   </script>
@@ -184,10 +184,10 @@
   <section>
     <h1 class="title">Tile server preview</h1>
     <div class="tabs">
-      <div class="tab active" onclick="switchTab(event, 'styles-tab')">STYLES ({{style_count}})</div>
-      <div class="tab" onclick="switchTab(event, 'datas-tab')">DATAS ({{data_count}})</div>
-      <div class="tab" onclick="switchTab(event, 'fonts-tab')">FONTS ({{font_count}})</div>
-      <div class="tab" onclick="switchTab(event, 'sprites-tab')">SPRITES ({{sprite_count}})</div>
+      <div class="tab active" onclick="switchTab(event, "styles-tab")">STYLES ({{style_count}})</div>
+      <div class="tab" onclick="switchTab(event, "datas-tab")">DATAS ({{data_count}})</div>
+      <div class="tab" onclick="switchTab(event, "fonts-tab")">FONTS ({{font_count}})</div>
+      <div class="tab" onclick="switchTab(event, "sprites-tab")">SPRITES ({{sprite_count}})</div>
     </div>
     <div id="styles-tab" class="tab-content active"></div>
     <div id="datas-tab" class="tab-content"></div>
