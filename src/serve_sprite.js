@@ -51,13 +51,15 @@ function getSpriteHandler() {
 function getSpritesListHandler() {
   return async (req, res, next) => {
     try {
+      const requestHost = getRequestHost(req);
+
       const result = await Promise.all(
         Object.keys(config.repo.sprites).map(async (id) => {
           return {
             name: id,
             urls: [
-              `${getRequestHost(req)}/sprites/${id}/sprite.json`,
-              `${getRequestHost(req)}/sprites/${id}/sprite.png`,
+              `${requestHost}/sprites/${id}/sprite.json`,
+              `${requestHost}/sprites/${id}/sprite.png`,
             ],
           };
         })
@@ -76,7 +78,7 @@ function getSpritesListHandler() {
 
 export const serve_sprite = {
   init: () => {
-    const app = express().disable('x-powered-by');
+    const app = express().disable("x-powered-by");
 
     /**
      * @swagger

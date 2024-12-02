@@ -80,12 +80,14 @@ function getStyleHandler() {
       }
 
       if (req.query.raw !== "true") {
+        const requestHost = getRequestHost(req);
+
         /* Fix sprite url */
         if (styleJSON.sprite !== undefined) {
           if (styleJSON.sprite.startsWith("sprites://") === true) {
             styleJSON.sprite = styleJSON.sprite.replaceAll(
               "sprites://",
-              `${getRequestHost(req)}/sprites/`
+              `${requestHost}/sprites/`
             );
           }
         }
@@ -95,7 +97,7 @@ function getStyleHandler() {
           if (styleJSON.glyphs.startsWith("fonts://") === true) {
             styleJSON.glyphs = styleJSON.glyphs.replaceAll(
               "fonts://",
-              `${getRequestHost(req)}/fonts/`
+              `${requestHost}/fonts/`
             );
           }
         }
@@ -114,7 +116,7 @@ function getStyleHandler() {
               ) {
                 const sourceID = source.url.split("/")[2];
 
-                source.url = `${getRequestHost(req)}/datas/${sourceID}.json`;
+                source.url = `${requestHost}/datas/${sourceID}.json`;
               }
             }
 
@@ -129,7 +131,7 @@ function getStyleHandler() {
                   ) {
                     const sourceID = url.split("/")[2];
 
-                    url = `${getRequestHost(req)}/datas/${sourceID}.json`;
+                    url = `${requestHost}/datas/${sourceID}.json`;
                   }
 
                   return url;
@@ -151,11 +153,7 @@ function getStyleHandler() {
                     const sourceID = tile.split("/")[2];
                     const sourceData = config.repo.datas[sourceID];
 
-                    tile = `${getRequestHost(
-                      req
-                    )}/datas/${sourceID}/{z}/{x}/{y}.${
-                      sourceData.tileJSON.format
-                    }`;
+                    tile = `${requestHost}/datas/${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
                   }
 
                   return tile;
@@ -188,12 +186,14 @@ function getStyleHandler() {
 function getStylesListHandler() {
   return async (req, res, next) => {
     try {
+      const requestHost = getRequestHost(req);
+
       const result = await Promise.all(
         Object.keys(config.repo.styles).map(async (id) => {
           return {
             id: id,
             name: config.repo.styles[id].name,
-            url: `${getRequestHost(req)}/styles/${id}/style.json`,
+            url: `${requestHost}/styles/${id}/style.json`,
           };
         })
       );
@@ -311,14 +311,16 @@ function getRenderedHandler() {
 function getRenderedsListHandler() {
   return async (req, res, next) => {
     try {
+      const requestHost = getRequestHost(req);
+
       const result = await Promise.all(
         Object.keys(config.repo.rendereds).map(async (id) => {
           return {
             id: id,
             name: config.repo.rendereds[id].tileJSON.name,
             url: [
-              `${getRequestHost(req)}/styles/256/${id}.json`,
-              `${getRequestHost(req)}/styles/512/${id}.json`,
+              `${requestHost}/styles/256/${id}.json`,
+              `${requestHost}/styles/512/${id}.json`,
             ],
           };
         })
@@ -342,6 +344,8 @@ function getRenderedsListHandler() {
 function getRenderedTileJSONsListHandler() {
   return async (req, res, next) => {
     try {
+      const requestHost = getRequestHost(req);
+
       const result = await Promise.all(
         Object.keys(config.repo.rendereds).map(async (id) => {
           return {
@@ -349,7 +353,7 @@ function getRenderedTileJSONsListHandler() {
             id: id,
             tilejson: "2.2.0",
             scheme: "xyz",
-            tiles: [`${getRequestHost(req)}/styles/${id}/{z}/{x}/{y}.png`],
+            tiles: [`${requestHost}/styles/${id}/{z}/{x}/{y}.png`],
           };
         })
       );

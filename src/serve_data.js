@@ -384,12 +384,14 @@ function getDataTileMD5Handler() {
 function getDatasListHandler() {
   return async (req, res, next) => {
     try {
+      const requestHost = getRequestHost(req);
+
       const result = await Promise.all(
         Object.keys(config.repo.datas).map(async (id) => {
           return {
             id: id,
             name: config.repo.datas[id].tileJSON.name,
-            url: `${getRequestHost(req)}/datas/${id}.json`,
+            url: `${requestHost}/datas/${id}.json`,
           };
         })
       );
@@ -412,6 +414,8 @@ function getDatasListHandler() {
 function getDataTileJSONsListHandler() {
   return async (req, res, next) => {
     try {
+      const requestHost = getRequestHost(req);
+
       const result = await Promise.all(
         Object.keys(config.repo.datas).map(async (id) => {
           const item = config.repo.datas[id];
@@ -422,9 +426,7 @@ function getDataTileJSONsListHandler() {
             scheme: "xyz",
             id: id,
             tiles: [
-              `${getRequestHost(req)}/datas/${id}/{z}/{x}/{y}.${
-                item.tileJSON.format
-              }`,
+              `${requestHost}/datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}`,
             ],
           };
         })

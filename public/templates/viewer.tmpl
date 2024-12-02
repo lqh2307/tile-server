@@ -29,14 +29,16 @@
   <h1 style="display:none;">{{name}}</h1>
   <div id="map"></div>
   <script>
+    const baseURL = "{{base_url}}";
+
     const preference = location.search.indexOf("raster") >= 0 ? "raster" : "vector";
 
     if (preference === "vector") {
-      maplibregl.setRTLTextPlugin("{{base_url}}/mapbox-gl-rtl-text.js");
+      maplibregl.setRTLTextPlugin(`${baseURL}/mapbox-gl-rtl-text.js`);
 
       const map = new maplibregl.Map({
         container: "map",
-        style: "{{base_url}}/styles/{{id}}/style.json",
+        style: `${baseURL}/styles/{{id}}/style.json`,
         hash: true,
         maxPitch: 85
       });
@@ -59,7 +61,7 @@
 
       const req = new XMLHttpRequest();
       req.overrideMimeType("application/json");
-      req.open("GET", "{{base_url}}/styles/{{id}}.json", true);
+      req.open("GET", `${baseURL}/styles/{{id}}.json`, true);
       req.onload = function () {
         const jsonResponse = JSON.parse(req.responseText);
         for (key in jsonResponse) {

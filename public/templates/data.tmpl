@@ -82,6 +82,8 @@
   <div id="layerList"></div>
   <pre id="propertyList"></pre>
   <script>
+    const baseURL = "{{base_url}}";
+
     const map = new maplibregl.Map({
       container: "map",
       hash: true,
@@ -91,7 +93,7 @@
         sources: {
           "vector_layer_": {
             type: "vector",
-            url: "{{base_url}}/datas/{{id}}.json"
+            url: `${baseURL}/datas/{{id}}.json`
           }
         },
         layers: []
@@ -128,6 +130,8 @@
   <h1 style="display:none;">{{tileJSON.name}}</h1>
   <div id="map"></div>
   <script>
+    const baseURL = "{{base_url}}";
+
     const map = L.map("map", {
       zoomControl: false,
     });
@@ -140,7 +144,7 @@
 
     const req = new XMLHttpRequest();
     req.overrideMimeType("application/json");
-    req.open("GET", "{{base_url}}/datas/{{id}}.json", true);
+    req.open("GET", `${baseURL}/datas/{{id}}.json`, true);
     req.onload = function () {
       const jsonResponse = JSON.parse(req.responseText);
       for (key in jsonResponse) {

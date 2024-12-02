@@ -50,11 +50,13 @@ function getFontHandler() {
 function getFontsListHandler() {
   return async (req, res, next) => {
     try {
+      const requestHost = getRequestHost(req);
+
       const result = await Promise.all(
         Object.keys(config.repo.fonts).map(async (id) => {
           return {
             name: id,
-            url: `${getRequestHost(req)}/fonts/${id}/{range}.pbf`,
+            url: `${requestHost}/fonts/${id}/{range}.pbf`,
           };
         })
       );
@@ -72,7 +74,7 @@ function getFontsListHandler() {
 
 export const serve_font = {
   init: () => {
-    const app = express().disable('x-powered-by');
+    const app = express().disable("x-powered-by");
 
     /**
      * @swagger

@@ -7,6 +7,8 @@
   <title>Preview - Tile Server</title>
   <link rel="stylesheet" type="text/css" href="{{base_url}}/index.css" />
   <script>
+    const baseURL = "{{base_url}}";
+
     function toggleURL(id, event) {
       event.preventDefault();
 
@@ -73,10 +75,10 @@
                   <h3 class="name">{{name}}</h3>
                   <p class="identifier">identifier: {{@key}}</p>
                   <p class="services">
-                    services: <a href="{{base_url}}/styles/{{@key}}/style.json">Style</a>
+                    services: <a href="${baseURL}/styles/{{@key}}/style.json">Style</a>
                     {{#if serve_rendered}}
-                      | <a href="{{base_url}}/styles/{{@key}}.json">TileJSON</a>
-                      | <a href="{{base_url}}/styles/{{@key}}/wmts.xml">WMTS</a>
+                      | <a href="${baseURL}/styles/{{@key}}.json">TileJSON</a>
+                      | <a href="${baseURL}/styles/{{@key}}/wmts.xml">WMTS</a>
                     {{/if}}
                     {{#if xyz}}
                       | <a href="#" onclick="toggleURL('xyz_style_{{@key}}', event)">XYZ</a>
@@ -85,9 +87,9 @@
                   </p>
                 </div>
                 <div class="viewers">
-                    <a class="btn" href="{{base_url}}/styles/{{@key}}/?vector{{viewer_hash}}">Client Render</a>
+                    <a class="btn" href="${baseURL}/styles/{{@key}}/?vector{{viewer_hash}}">Client Render</a>
                     {{#if serve_rendered}}
-                      <a class="btn" href="{{base_url}}/styles/{{@key}}/?raster{{viewer_hash}}">Backend Render</a>
+                      <a class="btn" href="${baseURL}/styles/{{@key}}/?raster{{viewer_hash}}">Backend Render</a>
                     {{/if}}
                 </div>
               </div>
@@ -106,7 +108,7 @@
                   <div class="identifier">type: {{#if is_vector}}vector{{else}}raster{{/if}}</div>
                   <div class="identifier">ext: {{source_type}}</div>
                   <p class="services">
-                    services: <a href="{{base_url}}/datas/{{@key}}.json">TileJSON</a>
+                    services: <a href="${baseURL}/datas/{{@key}}.json">TileJSON</a>
                     {{#if xyz}}
                       | <a href="#" onclick="toggleURL('xyz_data_{{@key}}', event)">XYZ</a>
                       <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz}}" onclick="copyToClipboard(this)" />
@@ -115,9 +117,9 @@
                 </div>
                 <div class="viewers">
                   {{#if is_vector}}
-                      <a class="btn" href="{{base_url}}/datas/{{@key}}/{{viewer_hash}}">Inspect</a>
+                      <a class="btn" href="${baseURL}/datas/{{@key}}/{{viewer_hash}}">Inspect</a>
                   {{else}}
-                      <a class="btn" href="{{base_url}}/datas/{{@key}}/{{viewer_hash}}">View</a>
+                      <a class="btn" href="${baseURL}/datas/{{@key}}/{{viewer_hash}}">View</a>
                   {{/if}}
                 </div>
               </div>
@@ -152,7 +154,7 @@
                   <h3 class="name">{{name}}</h3>
                   <div class="identifier">identifier: {{@key}}</div>
                   <p class="services">
-                    services: <a href="{{base_url}}/sprites/{{@key}}/sprite.json">JSON</a>
+                    services: <a href="${baseURL}/sprites/{{@key}}/sprite.json">JSON</a>
                     | <a href="#" onclick="toggleURL('sprite_{{@key}}', event)">URL</a>
                     <input id="sprite_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{sprite}}" onclick="copyToClipboard(this)" />
                   </p>
