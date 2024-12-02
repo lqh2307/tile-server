@@ -44,6 +44,8 @@ function serveFrontPageHandler() {
     const fonts = {};
     const sprites = {};
 
+    const requestHost = getRequestHost(req);
+
     await Promise.all([
       ...(() => {
         if (config.options.serveRendered === true) {
@@ -58,11 +60,9 @@ function serveFrontPageHandler() {
 
             styles[id] = {
               name: name,
-              xyz: `${getRequestHost(req)}/styles/${id}/{z}/{x}/{y}.png`,
+              xyz: `${requestHost}/styles/${id}/{z}/{x}/{y}.png`,
               viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
-              thumbnail: `${getRequestHost(
-                req
-              )}/styles/${id}/${z}/${x}/${y}.png`,
+              thumbnail: `${requestHost}/styles/${id}/${z}/${x}/${y}.png`,
               serve_rendered: config.options.serveRendered === true,
             };
           });
@@ -73,7 +73,7 @@ function serveFrontPageHandler() {
             styles[id] = {
               name: name,
               viewer_hash: `#${zoom}/${center[1]}/${center[0]}`,
-              thumbnail: "/images/placeholder.png",
+              thumbnail: `${requestHost}/images/placeholder.png`,
             };
           });
         }
@@ -82,18 +82,16 @@ function serveFrontPageHandler() {
         const data = config.repo.datas[id];
         const { name, center, format } = data.tileJSON;
 
-        let thumbnail = "/images/placeholder.png";
+        let thumbnail = `${requestHost}/images/placeholder.png`;
         if (format !== "pbf") {
           const [x, y, z] = getXYZFromLonLatZ(center[0], center[1], center[2]);
 
-          thumbnail = `${getRequestHost(
-            req
-          )}/datas/${id}/${z}/${x}/${y}.${format}`;
+          thumbnail = `${requestHost}/datas/${id}/${z}/${x}/${y}.${format}`;
         }
 
         datas[id] = {
           name: name,
-          xyz: `${getRequestHost(req)}/datas/${id}/{z}/{x}/{y}.${format}`,
+          xyz: `${requestHost}/datas/${id}/{z}/{x}/{y}.${format}`,
           viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
           thumbnail: thumbnail,
           source_type: data.sourceType,
@@ -103,14 +101,15 @@ function serveFrontPageHandler() {
       ...Object.keys(config.repo.fonts).map(async (id) => {
         fonts[id] = {
           name: id,
-          font: `${getRequestHost(req)}/fonts/${id}/{range}.pbf`,
+          font: `${requestHost}/fonts/${id}/{range}.pbf`,
+          thumbnail: `${requestHost}/images/placeholder.png`,
         };
       }),
       ...Object.keys(config.repo.sprites).map(async (id) => {
         sprites[id] = {
           name: id,
-          sprite: `${getRequestHost(req)}/sprites/${id}/sprite`,
-          thumbnail: `${getRequestHost(req)}/sprites/${id}/sprite.png`,
+          sprite: `${requestHost}/sprites/${id}/sprite`,
+          thumbnail: `${requestHost}/sprites/${id}/sprite.png`,
         };
       }),
     ]);
@@ -125,7 +124,7 @@ function serveFrontPageHandler() {
         data_count: Object.keys(datas).length,
         font_count: Object.keys(fonts).length,
         sprite_count: Object.keys(sprites).length,
-        base_url: getRequestHost(req),
+        base_url: requestHost,
       });
 
       return res.status(StatusCodes.OK).send(compiled);
