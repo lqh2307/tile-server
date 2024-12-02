@@ -79,7 +79,7 @@
                       | <a href="{{base_url}}/styles/{{@key}}/wmts.xml">WMTS</a>
                     {{/if}}
                     {{#if xyz}}
-                      | <a href="#" onclick="toggleURL("xyz_style_{{@key}}", event)">XYZ</a>
+                      | <a href="#" onclick="toggleURL('xyz_style_{{@key}}', event)">XYZ</a>
                       <input id="xyz_style_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz}}" onclick="copyToClipboard(this)" />
                     {{/if}}
                   </p>
@@ -108,7 +108,7 @@
                   <p class="services">
                     services: <a href="{{base_url}}/datas/{{@key}}.json">TileJSON</a>
                     {{#if xyz}}
-                      | <a href="#" onclick="toggleURL("xyz_data_{{@key}}", event)">XYZ</a>
+                      | <a href="#" onclick="toggleURL('xyz_data_{{@key}}', event)">XYZ</a>
                       <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz}}" onclick="copyToClipboard(this)" />
                     {{/if}}
                   </p>
@@ -134,7 +134,7 @@
                   <h3 class="name">{{name}}</h3>
                   <div class="identifier">identifier: {{@key}}</div>
                   <p class="services">
-                    <a href="#" onclick="toggleURL("font_{{@key}}", event)">URL</a>
+                    <a href="#" onclick="toggleURL('font_{{@key}}', event)">URL</a>
                     <input id="font_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{font}}" onclick="copyToClipboard(this)" />
                   </p>
                 </div>
@@ -153,7 +153,7 @@
                   <div class="identifier">identifier: {{@key}}</div>
                   <p class="services">
                     services: <a href="{{base_url}}/sprites/{{@key}}/sprite.json">JSON</a>
-                    | <a href="#" onclick="toggleURL("sprite_{{@key}}", event)">URL</a>
+                    | <a href="#" onclick="toggleURL('sprite_{{@key}}', event)">URL</a>
                     <input id="sprite_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{sprite}}" onclick="copyToClipboard(this)" />
                   </p>
                 </div>
@@ -184,10 +184,10 @@
   <section>
     <h1 class="title">Tile server preview</h1>
     <div class="tabs">
-      <div class="tab active" onclick="switchTab(event, "styles-tab")">STYLES ({{style_count}})</div>
-      <div class="tab" onclick="switchTab(event, "datas-tab")">DATAS ({{data_count}})</div>
-      <div class="tab" onclick="switchTab(event, "fonts-tab")">FONTS ({{font_count}})</div>
-      <div class="tab" onclick="switchTab(event, "sprites-tab")">SPRITES ({{sprite_count}})</div>
+      <div class="tab active" onclick="switchTab(event, 'styles-tab')">STYLES ({{style_count}})</div>
+      <div class="tab" onclick="switchTab(event, 'datas-tab')">DATAS ({{data_count}})</div>
+      <div class="tab" onclick="switchTab(event, 'fonts-tab')">FONTS ({{font_count}})</div>
+      <div class="tab" onclick="switchTab(event, 'sprites-tab')">SPRITES ({{sprite_count}})</div>
     </div>
     <div id="styles-tab" class="tab-content active"></div>
     <div id="datas-tab" class="tab-content"></div>
