@@ -240,12 +240,7 @@ export async function cleanUpMBTilesTiles(
 
       if (cleanUpTimestamp !== undefined) {
         try {
-          const created = await getMBTilesTileCreated(
-            mbtilesSource,
-            z,
-            x,
-            y
-          );
+          const created = await getMBTilesTileCreated(mbtilesSource, z, x, y);
 
           if (!created || created < cleanUpTimestamp) {
             needRemove = true;
@@ -295,15 +290,11 @@ export async function cleanUpMBTilesTiles(
           });
 
           /* Run a task */
-          (async () => {
-            try {
-              cleanUpMBTilesTileData(z, x, y)
-            } finally {
-              await mutex.runExclusive(() => {
-                activeTasks--;
-              });
-            }
-          })();
+          cleanUpMBTilesTileData(z, x, y).finally(async () => {
+            await mutex.runExclusive(() => {
+              activeTasks--;
+            });
+          });
         }
       }
     }
@@ -323,7 +314,8 @@ export async function cleanUpMBTilesTiles(
 
   printLog(
     "info",
-    `Completed clean up ${total} tiles of mbtiles data "${id}" after ${(doneTime - startTime) / 1000
+    `Completed clean up ${total} tiles of mbtiles data "${id}" after ${
+      (doneTime - startTime) / 1000
     }s!`
   );
 }
@@ -449,15 +441,11 @@ export async function cleanUpXYZTiles(
           });
 
           /* Run a task */
-          (async () => {
-            try {
-              cleanUpXYZTileData(z, x, y)
-            } finally {
-              await mutex.runExclusive(() => {
-                activeTasks--;
-              });
-            }
-          })();
+          cleanUpXYZTileData(z, x, y).finally(async () => {
+            await mutex.runExclusive(() => {
+              activeTasks--;
+            });
+          });
         }
       }
     }
@@ -483,7 +471,8 @@ export async function cleanUpXYZTiles(
 
   printLog(
     "info",
-    `Completed clean up ${total} tiles of xyz data "${id}" after ${(doneTime - startTime) / 1000
+    `Completed clean up ${total} tiles of xyz data "${id}" after ${
+      (doneTime - startTime) / 1000
     }s!`
   );
 }

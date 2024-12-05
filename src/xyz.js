@@ -352,7 +352,7 @@ async function removeXYZTileDataFileWithLock(filePath, timeout) {
  * @returns {Promise<void>}
  */
 async function initializeXYZMD5Tables(xyzSource) {
-  return await runSQL(
+  await runSQL(
     xyzSource,
     `
     CREATE TABLE IF NOT EXISTS
@@ -376,7 +376,7 @@ async function initializeXYZMD5Tables(xyzSource) {
  * @returns {Promise<void>}
  */
 async function removeXYZTileMD5(xyzSource, z, x, y) {
-  return await runSQL(
+  await runSQL(
     xyzSource,
     `
     DELETE FROM
@@ -400,7 +400,7 @@ async function removeXYZTileMD5(xyzSource, z, x, y) {
  * @returns {Promise<void>}
  */
 async function upsertXYZTileMD5(xyzSource, z, x, y, hash) {
-  return await runSQL(
+  await runSQL(
     xyzSource,
     `
     INSERT INTO
@@ -919,7 +919,7 @@ export async function openXYZMD5DB(
  * @returns {Promise<void>}
  */
 export async function closeXYZMD5DB(xyzSource) {
-  return await closeSQLite(xyzSource);
+  await closeSQLite(xyzSource);
 }
 
 /**

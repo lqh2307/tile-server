@@ -57,8 +57,8 @@ export async function openSQLite(filePath, mode, wal) {
  * @param {...any} params Parameters for the SQL command
  * @returns {Promise<void>}
  */
-export function runSQL(db, sql, ...params) {
-  return new Promise((resolve, reject) => {
+export async function runSQL(db, sql, ...params) {
+  new Promise((resolve, reject) => {
     db.run(sql, params, (error) => {
       if (error) {
         return reject(error);
@@ -76,7 +76,7 @@ export function runSQL(db, sql, ...params) {
  * @param {...any} params Parameters for the SQL query
  * @returns {Promise<object>} The first row of the query result
  */
-export function fetchOne(db, sql, ...params) {
+export async function fetchOne(db, sql, ...params) {
   return new Promise((resolve, reject) => {
     db.get(sql, params, (error, row) => {
       if (error) {
@@ -95,7 +95,7 @@ export function fetchOne(db, sql, ...params) {
  * @param {...any} params Parameters for the SQL query
  * @returns {Promise<Array<object>>} An array of rows
  */
-export function fetchAll(db, sql, ...params) {
+export async function fetchAll(db, sql, ...params) {
   return new Promise((resolve, reject) => {
     db.all(sql, params, (error, rows) => {
       if (error) {
@@ -113,7 +113,7 @@ export function fetchAll(db, sql, ...params) {
  * @returns {Promise<void>}
  */
 export async function closeSQLite(db) {
-  return new Promise((resolve, reject) => {
+  new Promise((resolve, reject) => {
     db.get("PRAGMA journal_mode;", async (error, row) => {
       if (error) {
         return reject(error);

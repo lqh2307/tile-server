@@ -91,7 +91,7 @@ async function createMBTilesIndex(
   tableName,
   columnNames
 ) {
-  return await runSQL(
+  await runSQL(
     mbtilesSource,
     `CREATE UNIQUE INDEX ? ON ? (${columnNames.join(", ")});`,
     indexName,
@@ -117,7 +117,7 @@ async function initializeMBTilesTables(mbtilesSource) {
       `
   );
 
-  return await runSQL(
+  await runSQL(
     mbtilesSource,
     `
       CREATE TABLE IF NOT EXISTS
@@ -252,7 +252,7 @@ async function getMBTilesFormatFromTiles(mbtilesSource) {
  * @returns {Promise<void>}
  */
 async function upsertMBTilesMetadata(mbtilesSource, metadataAdds) {
-  return await Promise.all(
+  await Promise.all(
     Object.keys(metadataAdds).map((key) =>
       runSQL(
         mbtilesSource,
@@ -282,7 +282,7 @@ async function upsertMBTilesMetadata(mbtilesSource, metadataAdds) {
  * @returns {Promise<void>}
  */
 async function upsertMBTilesTile(mbtilesSource, z, x, y, hash, data) {
-  return await runSQL(
+  await runSQL(
     mbtilesSource,
     `
     INSERT INTO
@@ -356,7 +356,7 @@ async function createMBTilesTileWithLock(
  * @returns {Promise<void>}
  */
 async function removeMBTilesTile(mbtilesSource, z, x, y) {
-  return await runSQL(
+  await runSQL(
     mbtilesSource,
     `
     DELETE FROM
@@ -600,7 +600,7 @@ export async function getMBTilesInfos(mbtilesSource) {
  * @returns {Promise<void>}
  */
 export async function closeMBTilesDB(mbtilesSource) {
-  return await closeSQLite(mbtilesSource);
+  await closeSQLite(mbtilesSource);
 }
 
 /**

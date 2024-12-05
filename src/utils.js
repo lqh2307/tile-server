@@ -231,9 +231,9 @@ export function getXYZTileFromBBox(bbox, zooms) {
  * @param {number} ms Time to wait in milliseconds
  * @returns {Promise<void>}
  */
-export function delay(ms) {
+export async function delay(ms) {
   if (ms >= 0) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
