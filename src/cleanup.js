@@ -232,6 +232,53 @@ export async function cleanUpMBTilesTiles(
   let activeTasks = 0;
   let remainingTasks = total;
 
+  async function cleanUpMBTilesTileData(z, x, y) {
+    const tileName = `${z}/${x}/${y}`;
+
+    try {
+      let needRemove = false;
+
+      if (cleanUpTimestamp !== undefined) {
+        try {
+          const created = await getMBTilesTileCreated(
+            mbtilesSource,
+            z,
+            x,
+            y
+          );
+
+          if (!created || created < cleanUpTimestamp) {
+            needRemove = true;
+          }
+        } catch (error) {
+          if (error.message === "Tile created does not exist") {
+            needRemove = true;
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        needRemove = true;
+      }
+
+      if (needRemove === true) {
+        await removeMBTilesTileData(
+          mbtilesSource,
+          z,
+          x,
+          y,
+          maxTry,
+          300000 // 5 mins
+        );
+      }
+    } catch (error) {
+      printLog(
+        "error",
+        `Failed to clean up data "${id}" - Tile "${tileName}": ${error}`
+      );
+    }
+  }
+
   for (const tilesSummary of tilesSummaries) {
     for (const z in tilesSummary) {
       for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
@@ -249,48 +296,8 @@ export async function cleanUpMBTilesTiles(
 
           /* Run a task */
           (async () => {
-            const tileName = `${z}/${x}/${y}`;
-            let needRemove = false;
-
             try {
-              if (cleanUpTimestamp !== undefined) {
-                try {
-                  const created = await getMBTilesTileCreated(
-                    mbtilesSource,
-                    z,
-                    x,
-                    y
-                  );
-
-                  if (!created || created < cleanUpTimestamp) {
-                    needRemove = true;
-                  }
-                } catch (error) {
-                  if (error.message === "Tile created does not exist") {
-                    needRemove = true;
-                  } else {
-                    throw error;
-                  }
-                }
-              } else {
-                needRemove = true;
-              }
-
-              if (needRemove === true) {
-                await removeMBTilesTileData(
-                  mbtilesSource,
-                  z,
-                  x,
-                  y,
-                  maxTry,
-                  300000 // 5 mins
-                );
-              }
-            } catch (error) {
-              printLog(
-                "error",
-                `Failed to clean up tile data "${tileName}": ${error}`
-              );
+              cleanUpMBTilesTileData(z, x, y)
             } finally {
               await mutex.runExclusive(() => {
                 activeTasks--;
@@ -316,8 +323,7 @@ export async function cleanUpMBTilesTiles(
 
   printLog(
     "info",
-    `Completed clean up ${total} tiles of mbtiles data "${id}" after ${
-      (doneTime - startTime) / 1000
+    `Completed clean up ${total} tiles of mbtiles data "${id}" after ${(doneTime - startTime) / 1000
     }s!`
   );
 }
@@ -381,6 +387,52 @@ export async function cleanUpXYZTiles(
   let activeTasks = 0;
   let remainingTasks = total;
 
+  async function cleanUpXYZTileData(z, x, y) {
+    const tileName = `${z}/${x}/${y}`;
+
+    try {
+      let needRemove = false;
+
+      if (cleanUpTimestamp !== undefined) {
+        try {
+          const created = await getXYZTileCreated(
+            `${sourcePath}/${tileName}.${format}`
+          );
+
+          if (!created || created < cleanUpTimestamp) {
+            needRemove = true;
+          }
+        } catch (error) {
+          if (error.message === "Tile created does not exist") {
+            needRemove = true;
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        needRemove = true;
+      }
+
+      if (needRemove === true) {
+        await removeXYZTileDataFile(
+          sourcePath,
+          xyzSource,
+          z,
+          x,
+          y,
+          format,
+          maxTry,
+          300000 // 5 mins
+        );
+      }
+    } catch (error) {
+      printLog(
+        "error",
+        `Failed to clean up data "${id}" - Tile "${tileName}": ${error}`
+      );
+    }
+  }
+
   for (const tilesSummary of tilesSummaries) {
     for (const z in tilesSummary) {
       for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
@@ -398,47 +450,8 @@ export async function cleanUpXYZTiles(
 
           /* Run a task */
           (async () => {
-            const tileName = `${z}/${x}/${y}`;
-            let needRemove = false;
-
             try {
-              if (cleanUpTimestamp !== undefined) {
-                try {
-                  const created = await getXYZTileCreated(
-                    `${sourcePath}/${tileName}.${format}`
-                  );
-
-                  if (!created || created < cleanUpTimestamp) {
-                    needRemove = true;
-                  }
-                } catch (error) {
-                  if (error.message === "Tile created does not exist") {
-                    needRemove = true;
-                  } else {
-                    throw error;
-                  }
-                }
-              } else {
-                needRemove = true;
-              }
-
-              if (needRemove === true) {
-                await removeXYZTileDataFile(
-                  sourcePath,
-                  xyzSource,
-                  z,
-                  x,
-                  y,
-                  format,
-                  maxTry,
-                  300000 // 5 mins
-                );
-              }
-            } catch (error) {
-              printLog(
-                "error",
-                `Failed to clean up tile "${tileName}": ${error}`
-              );
+              cleanUpXYZTileData(z, x, y)
             } finally {
               await mutex.runExclusive(() => {
                 activeTasks--;
@@ -470,8 +483,7 @@ export async function cleanUpXYZTiles(
 
   printLog(
     "info",
-    `Completed clean up ${total} tiles of xyz data "${id}" after ${
-      (doneTime - startTime) / 1000
+    `Completed clean up ${total} tiles of xyz data "${id}" after ${(doneTime - startTime) / 1000
     }s!`
   );
 }
@@ -506,9 +518,10 @@ export async function cleanUpStyle(sourcePath, maxTry = 5, cleanUpBefore) {
 
   // Remove style file
   const filePath = `${sourcePath}/style.json`;
-  let needRemove = false;
 
   try {
+    let needRemove = false;
+
     if (cleanUpTimestamp !== undefined) {
       try {
         const created = await getStyleCreated(filePath);
