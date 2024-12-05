@@ -250,6 +250,12 @@ function serveSwagger() {
             description: "API for tile server",
           },
         },
+        servers: [
+          {
+            url: getRequestHost(req),
+            description: "Tile server",
+          },
+        ],
         apis: ["src/*.js"],
       })
     )(req, res, next);

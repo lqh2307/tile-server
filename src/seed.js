@@ -464,6 +464,72 @@ export async function seedMBTilesTiles(
   let activeTasks = 0;
   let remainingTasks = total;
 
+  async function seedMBTilesTileData(z, x, y) {
+    const tileName = `${z}/${x}/${y}`;
+
+    try {
+      let needDownload = false;
+
+      if (refreshTimestamp === true) {
+        try {
+          const [response, md5] = await Promise.all([
+            getDataFromURL(
+              tileURL.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
+              timeout,
+              "arraybuffer"
+            ),
+            getMBTilesTileMD5(mbtilesSource, z, x, y),
+          ]);
+
+          if (response.headers["etag"] !== md5) {
+            needDownload = true;
+          }
+        } catch (error) {
+          if (error.message === "Tile MD5 does not exist") {
+            needDownload = true;
+          } else {
+            throw error;
+          }
+        }
+      } else if (refreshTimestamp !== undefined) {
+        try {
+          const created = await getMBTilesTileCreated(mbtilesSource, z, x, y);
+
+          if (!created || created < refreshTimestamp) {
+            needDownload = true;
+          }
+        } catch (error) {
+          if (error.message === "Tile created does not exist") {
+            needDownload = true;
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        needDownload = true;
+      }
+
+      if (needDownload === true) {
+        await downloadMBTilesTile(
+          tileURL.replaceAll("{z}/{x}/{y}", tileName),
+          mbtilesSource,
+          z,
+          x,
+          y,
+          maxTry,
+          timeout,
+          storeMD5,
+          storeTransparent
+        );
+      }
+    } catch (error) {
+      printLog(
+        "error",
+        `Failed to seed data "${id}" - Tile "${tileName}": ${error}`
+      );
+    }
+  }
+
   for (const tilesSummary of tilesSummaries) {
     for (const z in tilesSummary) {
       for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
@@ -481,72 +547,8 @@ export async function seedMBTilesTiles(
 
           /* Run a task */
           (async () => {
-            const tileName = `${z}/${x}/${y}`;
-            let needDownload = false;
-
             try {
-              if (refreshTimestamp === true) {
-                try {
-                  const [response, md5] = await Promise.all([
-                    getDataFromURL(
-                      tileURL.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
-                      timeout,
-                      "arraybuffer"
-                    ),
-                    getMBTilesTileMD5(mbtilesSource, z, x, y),
-                  ]);
-
-                  if (response.headers["etag"] !== md5) {
-                    needDownload = true;
-                  }
-                } catch (error) {
-                  if (error.message === "Tile MD5 does not exist") {
-                    needDownload = true;
-                  } else {
-                    throw error;
-                  }
-                }
-              } else if (refreshTimestamp !== undefined) {
-                try {
-                  const created = await getMBTilesTileCreated(
-                    mbtilesSource,
-                    z,
-                    x,
-                    y
-                  );
-
-                  if (!created || created < refreshTimestamp) {
-                    needDownload = true;
-                  }
-                } catch (error) {
-                  if (error.message === "Tile created does not exist") {
-                    needDownload = true;
-                  } else {
-                    throw error;
-                  }
-                }
-              } else {
-                needDownload = true;
-              }
-
-              if (needDownload === true) {
-                await downloadMBTilesTile(
-                  tileURL.replaceAll("{z}/{x}/{y}", tileName),
-                  mbtilesSource,
-                  z,
-                  x,
-                  y,
-                  maxTry,
-                  timeout,
-                  storeMD5,
-                  storeTransparent
-                );
-              }
-            } catch (error) {
-              printLog(
-                "error",
-                `Failed to seed tile data "${tileName}": ${error}`
-              );
+              seedMBTilesTileData(z, x, y);
             } finally {
               await mutex.runExclusive(() => {
                 activeTasks--;
@@ -664,6 +666,76 @@ export async function seedXYZTiles(
   let activeTasks = 0;
   let remainingTasks = total;
 
+  async function seedXYZTileData(z, x, y) {
+    const tileName = `${z}/${x}/${y}`;
+
+    try {
+      let needDownload = false;
+
+      if (refreshTimestamp === true) {
+        try {
+          const [response, md5] = await Promise.all([
+            getDataFromURL(
+              tileURL.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
+              timeout,
+              "arraybuffer"
+            ),
+            getXYZTileMD5(xyzSource, z, x, y),
+          ]);
+
+          if (response.headers["etag"] !== md5) {
+            needDownload = true;
+          }
+        } catch (error) {
+          if (error.message === "Tile MD5 does not exist") {
+            needDownload = true;
+          } else {
+            throw error;
+          }
+        }
+      } else if (refreshTimestamp !== undefined) {
+        try {
+          const created = await getXYZTileCreated(
+            `${sourcePath}/${tileName}.${metadata.format}`
+          );
+
+          if (!created || created < refreshTimestamp) {
+            needDownload = true;
+          }
+        } catch (error) {
+          if (error.message === "Tile created does not exist") {
+            needDownload = true;
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        needDownload = true;
+      }
+
+      if (needDownload === true) {
+        await downloadXYZTileDataFile(
+          tileURL.replaceAll("{z}/{x}/{y}", tileName),
+          sourcePath,
+          xyzSource,
+          z,
+          x,
+          y,
+          metadata.format,
+          maxTry,
+          timeout,
+          storeMD5,
+          storeTransparent
+        );
+      }
+    } catch (error) {
+      printLog(
+        "error",
+        `Failed to seed data "${id}" - Tile "${tileName}": ${error}`
+      );
+    }
+  }
+
   for (const tilesSummary of tilesSummaries) {
     for (const z in tilesSummary) {
       for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
@@ -681,71 +753,8 @@ export async function seedXYZTiles(
 
           /* Run a task */
           (async () => {
-            const tileName = `${z}/${x}/${y}`;
-            let needDownload = false;
-
             try {
-              if (refreshTimestamp === true) {
-                try {
-                  const [response, md5] = await Promise.all([
-                    getDataFromURL(
-                      tileURL.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
-                      timeout,
-                      "arraybuffer"
-                    ),
-                    getXYZTileMD5(xyzSource, z, x, y),
-                  ]);
-
-                  if (response.headers["etag"] !== md5) {
-                    needDownload = true;
-                  }
-                } catch (error) {
-                  if (error.message === "Tile MD5 does not exist") {
-                    needDownload = true;
-                  } else {
-                    throw error;
-                  }
-                }
-              } else if (refreshTimestamp !== undefined) {
-                try {
-                  const created = await getXYZTileCreated(
-                    `${sourcePath}/${tileName}.${metadata.format}`
-                  );
-
-                  if (!created || created < refreshTimestamp) {
-                    needDownload = true;
-                  }
-                } catch (error) {
-                  if (error.message === "Tile created does not exist") {
-                    needDownload = true;
-                  } else {
-                    throw error;
-                  }
-                }
-              } else {
-                needDownload = true;
-              }
-
-              if (needDownload === true) {
-                await downloadXYZTileDataFile(
-                  tileURL.replaceAll("{z}/{x}/{y}", tileName),
-                  sourcePath,
-                  xyzSource,
-                  z,
-                  x,
-                  y,
-                  metadata.format,
-                  maxTry,
-                  timeout,
-                  storeMD5,
-                  storeTransparent
-                );
-              }
-            } catch (error) {
-              printLog(
-                "error",
-                `Failed to seed tile data "${tileName}": ${error}`
-              );
+              seedXYZTileData(z, x, y);
             } finally {
               await mutex.runExclusive(() => {
                 activeTasks--;
@@ -821,9 +830,10 @@ export async function seedStyle(
 
   // Download style.json file
   const filePath = `${sourcePath}/style.json`;
-  let needDownload = false;
 
   try {
+    let needDownload = false;
+
     if (refreshTimestamp !== undefined) {
       try {
         const created = await getStyleCreated(filePath);
