@@ -13,11 +13,7 @@ import express from "express";
 function startTaskHandler() {
   return async (req, res, next) => {
     try {
-      setTimeout(() => {
-        startTask().catch((error) =>
-          printLog("error", `Failed to start task: ${error}`)
-        );
-      }, 0);
+      setTimeout(() => startTask(), 0);
 
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
@@ -37,11 +33,7 @@ function startTaskHandler() {
 function cancelTaskHandler() {
   return async (req, res, next) => {
     try {
-      setTimeout(() => {
-        cancelTask().catch((error) =>
-          printLog("error", `Failed to cancel task: ${error}`)
-        );
-      }, 0);
+      setTimeout(() => cancelTask(), 0);
 
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {

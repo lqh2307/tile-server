@@ -690,33 +690,33 @@ export function deepClone(obj) {
 
 /**
  * Restart server
- * @returns {Promise<void>}
+ * @returns {void}
  */
-export async function restartServer() {
+export function restartServer() {
   process.kill(process.env.MAIN_PID, "SIGTERM");
 }
 
 /**
  * Kill server
- * @returns {Promise<void>}
+ * @returns {void}
  */
-export async function killServer() {
+export function killServer() {
   process.kill(process.env.MAIN_PID, "SIGINT");
 }
 
 /**
  * Start task
- * @returns {Promise<void>}
+ * @returns {void}
  */
-export async function startTask() {
+export function startTask() {
   process.kill(process.env.MAIN_PID, "SIGUSR1");
 }
 
 /**
  * Cancel task
- * @returns {Promise<void>}
+ * @returns {void}
  */
-export async function cancelTask() {
+export function cancelTask() {
   process.kill(process.env.MAIN_PID, "SIGUSR2");
 }
 

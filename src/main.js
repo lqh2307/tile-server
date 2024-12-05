@@ -103,9 +103,7 @@ async function startClusterServer(opts) {
         .on("change", () => {
           printLog("info", "Config file has changed. Restarting server...");
 
-          restartServer().catch((error) =>
-            printLog("error", `Failed to restart server: ${error}`)
-          );
+          restartServer();
         });
     }
 
@@ -116,11 +114,7 @@ async function startClusterServer(opts) {
         `Schedule run seed and clean up tasks at: "${config.options.taskSchedule}"`
       );
 
-      cron.schedule(config.options.taskSchedule, () =>
-        startTask().catch((error) =>
-          printLog("error", `Failed to start task: ${error}`)
-        )
-      );
+      cron.schedule(config.options.taskSchedule, () => startTask());
     }
 
     /* Fork servers */

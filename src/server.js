@@ -130,9 +130,7 @@ async function loadData() {
   } catch (error) {
     printLog("error", `Failed to load data: ${error}. Exited!`);
 
-    killServer().catch((error) =>
-      printLog("error", `Failed to kill server: ${error}`)
-    );
+    killServer();
   }
 }
 
@@ -164,8 +162,6 @@ export async function startServer() {
   } catch (error) {
     printLog("error", `Failed to start server: ${error}. Exited!`);
 
-    killServer().catch((error) =>
-      printLog("error", `Failed to kill server: ${error}`)
-    );
+    killServer();
   }
 }

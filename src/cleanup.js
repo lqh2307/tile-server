@@ -290,11 +290,15 @@ export async function cleanUpMBTilesTiles(
           });
 
           /* Run a task */
-          cleanUpMBTilesTileData(z, x, y).finally(async () => {
-            await mutex.runExclusive(() => {
-              activeTasks--;
-            });
-          });
+          (async () => {
+            try {
+              cleanUpMBTilesTileData(z, x, y);
+            } finally {
+              await mutex.runExclusive(() => {
+                activeTasks--;
+              });
+            }
+          })();
         }
       }
     }
@@ -441,11 +445,15 @@ export async function cleanUpXYZTiles(
           });
 
           /* Run a task */
-          cleanUpXYZTileData(z, x, y).finally(async () => {
-            await mutex.runExclusive(() => {
-              activeTasks--;
-            });
-          });
+          (async () => {
+            try {
+              cleanUpXYZTileData(z, x, y);
+            } finally {
+              await mutex.runExclusive(() => {
+                activeTasks--;
+              });
+            }
+          })();
         }
       }
     }
