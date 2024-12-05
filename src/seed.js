@@ -546,11 +546,11 @@ export async function seedMBTilesTiles(
           });
 
           /* Run a task */
-          seedMBTilesTileData(z, x, y).finally(async () => {
-            await mutex.runExclusive(() => {
+          seedMBTilesTileData(z, x, y).finally(() =>
+            mutex.runExclusive(() => {
               activeTasks--;
-            });
-          });
+            })
+          );
         }
       }
     }
@@ -748,11 +748,11 @@ export async function seedXYZTiles(
           });
 
           /* Run a task */
-          seedXYZTileData(z, x, y).finally(async () => {
-            await mutex.runExclusive(() => {
+          seedXYZTileData(z, x, y).finally(() =>
+            mutex.runExclusive(() => {
               activeTasks--;
-            });
-          });
+            })
+          );
         }
       }
     }
