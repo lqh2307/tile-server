@@ -75,7 +75,7 @@
                   <h3 class="name">{{name}}</h3>
                   <p class="identifier">identifier: {{@key}}</p>
                   <p class="services">
-                    services: <a href="${baseURL}/styles/{{@key}}/style.json">Style</a>
+                    services: <a href="${baseURL}/styles/{{@key}}/style.json">StyleJSON</a>
                     {{#if serve_rendered}}
                       | <a href="${baseURL}/styles/{{@key}}.json">TileJSON</a>
                       | <a href="${baseURL}/styles/{{@key}}/wmts.xml">WMTS</a>
@@ -155,6 +155,7 @@
                   <div class="identifier">identifier: {{@key}}</div>
                   <p class="services">
                     services: <a href="${baseURL}/sprites/{{@key}}/sprite.json">JSON</a>
+                    | <a href="${baseURL}/sprites/{{@key}}/sprite.png">PNG</a>
                     | <a href="#" onclick="toggleURL('sprite_{{@key}}', event)">URL</a>
                     <input id="sprite_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{sprite}}" onclick="copyToClipboard(this)" />
                   </p>
