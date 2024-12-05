@@ -566,6 +566,13 @@ export const serve_style = {
      *     tags:
      *       - Style
      *     summary: Get all styleJSONs
+     *     parameters:
+     *       - in: query
+     *         name: raw
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Use raw
      *     responses:
      *       200:
      *         description: List of all styleJSONs
