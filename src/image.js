@@ -5,7 +5,7 @@ import sharp from "sharp";
 
 /**
  * Create empty data
- * @returns {Promise<object>}
+ * @returns {object}
  */
 export function createEmptyData() {
   return {
