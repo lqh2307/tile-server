@@ -27,12 +27,12 @@
     "pmtiles": "4.0.1",
     "sqlite3": "5.1.7",
     "sharp": "0.33.5",
-    "axios": "1.7.8",
+    "axios": "1.7.9",
     "cors": "2.8.5",
     "ajv": "8.17.1"
   },
   "devDependencies": {
-    "prettier": "3.4.1"
+    "prettier": "3.4.2"
   },
   "engines": {
     "node": ">=22 <23"
