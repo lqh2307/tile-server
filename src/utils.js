@@ -233,7 +233,7 @@ export function getXYZTileFromBBox(bbox, zooms) {
  */
 export async function delay(ms) {
   if (ms >= 0) {
-    new Promise((resolve) => setTimeout(resolve, ms));
+    await new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 

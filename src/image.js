@@ -120,7 +120,7 @@ export async function renderData(item, scale, tileSize, x, y, z) {
 
   const renderer = await item.renderers[scale - 1].acquire();
 
-  return new Promise((resolve, reject) => {
+  return await new Promise((resolve, reject) => {
     renderer.render(params, (error, data) => {
       item.renderers[scale - 1].release(renderer);
 

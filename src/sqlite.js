@@ -20,7 +20,7 @@ export async function openSQLite(filePath, mode, wal) {
   }
 
   // Open DB
-  return new Promise((resolve, reject) => {
+  return await new Promise((resolve, reject) => {
     const db = new sqlite3.Database(filePath, mode, async (error) => {
       if (error) {
         return reject(error);
@@ -58,7 +58,7 @@ export async function openSQLite(filePath, mode, wal) {
  * @returns {Promise<void>}
  */
 export async function runSQL(db, sql, ...params) {
-  new Promise((resolve, reject) => {
+  await new Promise((resolve, reject) => {
     db.run(sql, params, (error) => {
       if (error) {
         return reject(error);
@@ -77,7 +77,7 @@ export async function runSQL(db, sql, ...params) {
  * @returns {Promise<object>} The first row of the query result
  */
 export async function fetchOne(db, sql, ...params) {
-  return new Promise((resolve, reject) => {
+  return await new Promise((resolve, reject) => {
     db.get(sql, params, (error, row) => {
       if (error) {
         return reject(error);
@@ -96,7 +96,7 @@ export async function fetchOne(db, sql, ...params) {
  * @returns {Promise<Array<object>>} An array of rows
  */
 export async function fetchAll(db, sql, ...params) {
-  return new Promise((resolve, reject) => {
+  return await new Promise((resolve, reject) => {
     db.all(sql, params, (error, rows) => {
       if (error) {
         return reject(error);
@@ -113,7 +113,7 @@ export async function fetchAll(db, sql, ...params) {
  * @returns {Promise<void>}
  */
 export async function closeSQLite(db) {
-  new Promise((resolve, reject) => {
+  await new Promise((resolve, reject) => {
     db.get("PRAGMA journal_mode;", async (error, row) => {
       if (error) {
         return reject(error);

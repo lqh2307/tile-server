@@ -629,7 +629,7 @@ export async function downloadMBTilesFile(url, filePath, maxTry, timeout) {
 
         response.data.pipe(writer);
 
-        return new Promise((resolve, reject) => {
+        return await new Promise((resolve, reject) => {
           writer
             .on("finish", async () => {
               await fsPromise.rename(tempFilePath, filePath);
