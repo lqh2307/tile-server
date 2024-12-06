@@ -53,18 +53,14 @@
 
       document.getElementById(tabId).classList.add("active");
 
-      if (tabId === "restart-tab") {
-        restartServer(event);
-      } else {
-        if (tabId === "styles-tab" && !document.querySelector("#styles-tab").innerHTML.trim()) {
-          renderDatas("styles-tab");
-        } else if (tabId === "datas-tab" && !document.querySelector("#datas-tab").innerHTML.trim()) {
-          renderDatas("datas-tab");
-        } else if (tabId === "fonts-tab" && !document.querySelector("#fonts-tab").innerHTML.trim()) {
-          renderDatas("fonts-tab");
-        } else if (tabId === "sprites-tab" && !document.querySelector("#sprites-tab").innerHTML.trim()) {
-          renderDatas("sprites-tab");
-        }
+      if (tabId === "styles-tab" && !document.querySelector("#styles-tab").innerHTML.trim()) {
+        renderDatas("styles-tab");
+      } else if (tabId === "datas-tab" && !document.querySelector("#datas-tab").innerHTML.trim()) {
+        renderDatas("datas-tab");
+      } else if (tabId === "fonts-tab" && !document.querySelector("#fonts-tab").innerHTML.trim()) {
+        renderDatas("fonts-tab");
+      } else if (tabId === "sprites-tab" && !document.querySelector("#sprites-tab").innerHTML.trim()) {
+        renderDatas("sprites-tab");
       }
     }
 
@@ -184,9 +180,7 @@
             alert(`Failed to restart server: Status code: ${response.status} - ${response.statusText}`);
           }
         })
-        .catch((error) => {
-          alert(`Failed to restart server: ${error.message}`);
-        });
+        .catch((error) => alert(`Failed to restart server: ${error.message}`))
     }
 
     window.onload = function () {
@@ -213,15 +207,12 @@
       <div class="tab" onclick="switchTab(event, 'datas-tab')">DATAS ({{data_count}})</div>
       <div class="tab" onclick="switchTab(event, 'fonts-tab')">FONTS ({{font_count}})</div>
       <div class="tab" onclick="switchTab(event, 'sprites-tab')">SPRITES ({{sprite_count}})</div>
-      <div class="tab" onclick="switchTab(event, 'restart-tab')">RESTART</div>
+      <div class="tab" onclick="restartServer(event)">RESTART</div>
     </div>
     <div id="styles-tab" class="tab-content active"></div>
     <div id="datas-tab" class="tab-content"></div>
     <div id="fonts-tab" class="tab-content"></div>
     <div id="sprites-tab" class="tab-content"></div>
-    <div id="restart-tab" class="tab-content">
-      <h2>Send a restart request to the server...</h2>
-    </div>
   </section>
   <a href="#" class="back-to-top" onclick="scrollToTop(event)">Back to top</a>
 </body>
