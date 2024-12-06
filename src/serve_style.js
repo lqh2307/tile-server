@@ -882,10 +882,10 @@ export const serve_style = {
 
     await Promise.all(
       Object.keys(config.styles).map(async (id) => {
-        /* Serve style */
         let serveRendered = config.options.serveRendered;
         const styleInfo = {};
 
+        /* Serve style */
         try {
           const item = config.styles[id];
 
