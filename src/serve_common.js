@@ -63,7 +63,7 @@ function serveFrontPageHandler() {
               xyz: `${requestHost}/styles/${id}/{z}/{x}/{y}.png`,
               viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
               thumbnail: `${requestHost}/styles/${id}/${z}/${x}/${y}.png`,
-              serve_rendered: config.options.serveRendered === true,
+              serve_rendered: true,
             };
           });
         } else {

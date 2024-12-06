@@ -289,8 +289,7 @@ function getRenderedHandler() {
         tilejson: "2.2.0",
         scheme: "xyz",
         tiles: [
-          `${getRequestHost(req)}/styles/${id}/${
-            req.params.tileSize || 256
+          `${getRequestHost(req)}/styles/${id}/${req.params.tileSize || 256
           }/{z}/{x}/{y}.png`,
         ],
       });
@@ -874,14 +873,19 @@ export const serve_style = {
   },
 
   add: async () => {
-    /* Serve style */
     const seed = await readSeedFile(true);
+
+    /* Create empty tiles */
+    const emptyDatas = config.options.serveRendered === true ? createEmptyData() : {};
 
     await Promise.all(
       Object.keys(config.styles).map(async (id) => {
+        /* Serve style */
+        let serveRendered = config.options.serveRendered;
+        const styleInfo = {};
+
         try {
           const item = config.styles[id];
-          const styleInfo = {};
 
           if (
             item.style.startsWith("https://") === true ||
@@ -939,6 +943,8 @@ export const serve_style = {
               styleInfo.center = seed.styles[item.style].metadata.center || [
                 0, 0, 0,
               ];
+
+              serveRendered = false;
             } else {
               throw error;
             }
@@ -952,54 +958,19 @@ export const serve_style = {
             `Failed to load style "${id}": ${error}. Skipping...`
           );
         }
-      })
-    );
 
-    /* Serve rendered */
-    if (config.options.serveRendered === true) {
-      /* Register mlgl events */
-      mlgl.on("message", (error) => {
-        if (error.severity === "ERROR") {
-          printLog("error", `mlgl: ${JSON.stringify(error)}`);
-        } else if (error.severity === "WARNING") {
-          printLog("warning", `mlgl: ${JSON.stringify(error)}`);
-        }
-      });
-
-      /* Create empty tiles */
-      const emptyDatas = createEmptyData();
-
-      /* Register render callback */
-      await Promise.all(
-        Object.keys(config.repo.styles).map(async (id) => {
+        /* Serve rendered */
+        if (serveRendered === true) {
           try {
-            const item = config.repo.styles[id];
             const rendered = {
               tileJSON: createMetadata({
-                name: item.name,
-                description: item.name,
+                name: styleInfo.name,
+                description: styleInfo.name,
               }),
               renderers: [],
             };
 
-            /* Read style.json file */
-            let styleJSON;
-
-            try {
-              styleJSON = await getStyle(item.path);
-            } catch (error) {
-              if (
-                item.sourceURL !== undefined &&
-                error.message === "Style does not exist"
-              ) {
-                /* Add to repo */
-                config.repo.rendereds[id] = rendered;
-
-                return;
-              } else {
-                throw error;
-              }
-            }
+            const styleJSON = await getStyle(styleInfo.path);
 
             /* Fix center */
             if (styleJSON.center?.length >= 2 && styleJSON.zoom) {
@@ -1121,7 +1092,7 @@ export const serve_style = {
                 if (
                   source.attribution &&
                   rendered.tileJSON.attribution.includes(source.attribution) ===
-                    false
+                  false
                 ) {
                   rendered.tileJSON.attribution += ` | ${source.attribution}`;
                 }
@@ -1168,7 +1139,7 @@ export const serve_style = {
 
                               if (
                                 headers["content-type"] ===
-                                  "application/x-protobuf" &&
+                                "application/x-protobuf" &&
                                 headers["content-encoding"] !== undefined
                               ) {
                                 data = await unzipAsync(data);
@@ -1204,9 +1175,9 @@ export const serve_style = {
                               /* Unzip pbf rendered tile */
                               if (
                                 dataTile.headers["content-type"] ===
-                                  "application/x-protobuf" &&
+                                "application/x-protobuf" &&
                                 dataTile.headers["content-encoding"] !==
-                                  undefined
+                                undefined
                               ) {
                                 dataTile.data = await unzipAsync(dataTile.data);
                               }
@@ -1288,9 +1259,9 @@ export const serve_style = {
                               /* Unzip pbf rendered tile */
                               if (
                                 dataTile.headers["content-type"] ===
-                                  "application/x-protobuf" &&
+                                "application/x-protobuf" &&
                                 dataTile.headers["content-encoding"] !==
-                                  undefined
+                                undefined
                               ) {
                                 dataTile.data = await unzipAsync(dataTile.data);
                               }
@@ -1375,9 +1346,9 @@ export const serve_style = {
                               /* Unzip pbf rendered tile */
                               if (
                                 dataTile.headers["content-type"] ===
-                                  "application/x-protobuf" &&
+                                "application/x-protobuf" &&
                                 dataTile.headers["content-encoding"] !==
-                                  undefined
+                                undefined
                               ) {
                                 dataTile.data = await unzipAsync(dataTile.data);
                               }
@@ -1420,7 +1391,7 @@ export const serve_style = {
 
                               if (
                                 headers["content-type"] ===
-                                  "application/x-protobuf" &&
+                                "application/x-protobuf" &&
                                 headers["content-encoding"] !== undefined
                               ) {
                                 dataTile.data = await unzipAsync(dataTile.data);
@@ -1438,7 +1409,7 @@ export const serve_style = {
                               callback(null, {
                                 data:
                                   emptyDatas[
-                                    url.slice(url.lastIndexOf(".") + 1)
+                                  url.slice(url.lastIndexOf(".") + 1)
                                   ] || emptyDatas.other,
                               });
                             }
@@ -1468,8 +1439,8 @@ export const serve_style = {
               `Failed to load rendered "${id}": ${error}. Skipping...`
             );
           }
-        })
-      );
-    }
+        }
+      })
+    );
   },
 };
