@@ -2,9 +2,9 @@
 
 import { cacheXYZTileDataFile, getXYZTileFromURL, getXYZTile } from "./xyz.js";
 import { createEmptyData, processImage, renderData } from "./image.js";
+import { Map, MapMode } from "@maplibre/maplibre-gl-native";
 import { checkReadyMiddleware } from "./middleware.js";
 import { StatusCodes } from "http-status-codes";
-import mlgl from "@maplibre/maplibre-gl-native";
 import { getPMTilesTile } from "./pmtiles.js";
 import { createPool } from "generic-pool";
 import { readSeedFile } from "./seed.js";
@@ -1114,8 +1114,8 @@ export const serve_style = {
                 createPool(
                   {
                     create: () => {
-                      const renderer = new mlgl.Map({
-                        mode: mlgl.MapMode.Tile,
+                      const renderer = new Map({
+                        mode: MapMode.Tile,
                         ratio: scale,
                         request: async (req, callback) => {
                           const url = decodeURIComponent(req.url);
