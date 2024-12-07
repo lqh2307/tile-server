@@ -289,9 +289,11 @@ function getRenderedHandler() {
         tilejson: "2.2.0",
         scheme: "xyz",
         tiles: [
-          `${getRequestHost(req)}/styles/${id}/${
-            req.params.tileSize || 256
-          }/{z}/{x}/{y}.png`,
+          req.params.tileSize === undefined
+            ? `${getRequestHost(req)}/styles/${id}/{z}/{x}/{y}.png`
+            : `${getRequestHost(req)}/styles/${id}/${
+                req.params.tileSize
+              }/{z}/{x}/{y}.png`,
         ],
       });
     } catch (error) {
@@ -882,7 +884,7 @@ export const serve_style = {
 
     await Promise.all(
       Object.keys(config.styles).map(async (id) => {
-        let serveRendered = config.options.serveRendered;
+        let serveRendered = false;
         const styleInfo = {};
 
         /* Serve style */
@@ -945,8 +947,6 @@ export const serve_style = {
               styleInfo.center = seed.styles[item.style].metadata.center || [
                 0, 0, 0,
               ];
-
-              serveRendered = false;
             } else {
               throw error;
             }
@@ -954,6 +954,9 @@ export const serve_style = {
 
           /* Add to repo */
           config.repo.styles[id] = styleInfo;
+
+          /* Mark to serve rendered */
+          serveRendered = config.options.serveRendered;
         } catch (error) {
           printLog(
             "error",
@@ -1112,7 +1115,7 @@ export const serve_style = {
                   {
                     create: () => {
                       const renderer = new mlgl.Map({
-                        mode: "tile",
+                        mode: mlgl.MapMode.Tile,
                         ratio: scale,
                         request: async (req, callback) => {
                           const url = decodeURIComponent(req.url);
