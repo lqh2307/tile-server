@@ -47,35 +47,29 @@ function serveFrontPageHandler() {
     const requestHost = getRequestHost(req);
 
     await Promise.all([
-      ...(() => {
-        return Object.keys(config.repo.styles).map(async (id) => {
-          if (config.repo.rendereds[id] !== undefined) {
-            const { name, center } = config.repo.rendereds[id].tileJSON;
+      ...Object.keys(config.repo.styles).map(async (id) => {
+        if (config.repo.rendereds[id] !== undefined) {
+          const { name, center } = config.repo.rendereds[id].tileJSON;
 
-            const [x, y, z] = getXYZFromLonLatZ(
-              center[0],
-              center[1],
-              center[2]
-            );
+          const [x, y, z] = getXYZFromLonLatZ(center[0], center[1], center[2]);
 
-            styles[id] = {
-              name: name,
-              xyz: `${requestHost}/styles/${id}/{z}/{x}/{y}.png`,
-              viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
-              thumbnail: `${requestHost}/styles/${id}/${z}/${x}/${y}.png`,
-              serve_rendered: true,
-            };
-          } else {
-            const { name, zoom, center } = config.repo.styles[id];
+          styles[id] = {
+            name: name,
+            xyz: `${requestHost}/styles/${id}/{z}/{x}/{y}.png`,
+            viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
+            thumbnail: `${requestHost}/styles/${id}/${z}/${x}/${y}.png`,
+            serve_rendered: true,
+          };
+        } else {
+          const { name, zoom, center } = config.repo.styles[id];
 
-            styles[id] = {
-              name: name,
-              viewer_hash: `#${zoom}/${center[1]}/${center[0]}`,
-              thumbnail: `${requestHost}/images/placeholder.png`,
-            };
-          }
-        });
-      })(),
+          styles[id] = {
+            name: name,
+            viewer_hash: `#${zoom}/${center[1]}/${center[0]}`,
+            thumbnail: `${requestHost}/images/placeholder.png`,
+          };
+        }
+      }),
       ...Object.keys(config.repo.datas).map(async (id) => {
         const data = config.repo.datas[id];
         const { name, center, format } = data.tileJSON;
