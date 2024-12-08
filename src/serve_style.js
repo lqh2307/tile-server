@@ -967,6 +967,7 @@ export const serve_style = {
         /* Serve rendered */
         if (serveRendered === true) {
           try {
+            /* Rendered info */
             const rendered = {
               tileJSON: createMetadata({
                 name: styleInfo.name,
@@ -975,6 +976,7 @@ export const serve_style = {
               renderers: [],
             };
 
+            /* Get styleJSON */
             const styleJSON = await getStyle(styleInfo.path);
 
             /* Fix center */
@@ -986,8 +988,8 @@ export const serve_style = {
               ];
             }
 
+            /* Fix sources */
             await Promise.all(
-              // Fix source urls
               Object.keys(styleJSON.sources).map(async (id) => {
                 const source = styleJSON.sources[id];
 
@@ -1113,29 +1115,35 @@ export const serve_style = {
               rendered.renderers.push(
                 createPool(
                   {
-                    create: () => {
-                      const renderer = new mlgl.Map({
+                    create: () =>
+                      new mlgl.Map({
                         mode: "tile",
                         ratio: scale,
                         request: async (req, callback) => {
                           const url = decodeURIComponent(req.url);
                           const parts = url.split("/");
-                          const protocol = parts[0];
 
-                          if (protocol === "sprites:") {
+                          if (parts[0] === "sprites:") {
                             try {
+                              /* Get sprite */
                               const data = await getSprite(parts[2], parts[3]);
 
                               callback(null, {
                                 data: data,
                               });
                             } catch (error) {
+                              printLog(
+                                "warning",
+                                `Failed to get sprite "${parts[2]}" - File "${parts[3]}": ${error}. Serving empty sprite...`
+                              );
+
                               callback(error, {
                                 data: null,
                               });
                             }
-                          } else if (protocol === "fonts:") {
+                          } else if (parts[0] === "fonts:") {
                             try {
+                              /* Get font */
                               let data = await getFonts(parts[2], parts[3]);
 
                               /* Unzip pbf font */
@@ -1154,19 +1162,23 @@ export const serve_style = {
                                 data: data,
                               });
                             } catch (error) {
+                              printLog(
+                                "warning",
+                                `Failed to get font "${parts[2]}" - File "${parts[3]}": ${error}. Serving empty font...`
+                              );
+
                               callback(error, {
                                 data: null,
                               });
                             }
-                          } else if (protocol === "pmtiles:") {
-                            const sourceID = parts[2];
+                          } else if (parts[0] === "pmtiles:") {
                             const z = Number(parts[3]);
                             const x = Number(parts[4]);
                             const y = Number(
                               parts[5].slice(0, parts[5].indexOf("."))
                             );
                             const tileName = `${z}/${x}/${y}`;
-                            const sourceData = config.repo.datas[sourceID];
+                            const sourceData = config.repo.datas[parts[2]];
 
                             try {
                               /* Get rendered tile */
@@ -1193,7 +1205,7 @@ export const serve_style = {
                             } catch (error) {
                               printLog(
                                 "warning",
-                                `Failed to get data "${sourceID}" - Tile "${tileName}": ${error}. Serving empty tile...`
+                                `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
                               );
 
                               callback(null, {
@@ -1202,15 +1214,14 @@ export const serve_style = {
                                   emptyDatas.other,
                               });
                             }
-                          } else if (protocol === "mbtiles:") {
-                            const sourceID = parts[2];
+                          } else if (parts[0] === "mbtiles:") {
                             const z = Number(parts[3]);
                             const x = Number(parts[4]);
                             const y = Number(
                               parts[5].slice(0, parts[5].indexOf("."))
                             );
                             const tileName = `${z}/${x}/${y}`;
-                            const sourceData = config.repo.datas[sourceID];
+                            const sourceData = config.repo.datas[parts[2]];
 
                             try {
                               /* Get rendered tile */
@@ -1277,7 +1288,7 @@ export const serve_style = {
                             } catch (error) {
                               printLog(
                                 "warning",
-                                `Failed to get data "${sourceID}" - Tile "${tileName}": ${error}. Serving empty tile...`
+                                `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
                               );
 
                               callback(null, {
@@ -1286,15 +1297,14 @@ export const serve_style = {
                                   emptyDatas.other,
                               });
                             }
-                          } else if (protocol === "xyz:") {
-                            const sourceID = parts[2];
+                          } else if (parts[0] === "xyz:") {
                             const z = Number(parts[3]);
                             const x = Number(parts[4]);
                             const y = Number(
                               parts[5].slice(0, parts[5].indexOf("."))
                             );
                             const tileName = `${z}/${x}/${y}`;
-                            const sourceData = config.repo.datas[sourceID];
+                            const sourceData = config.repo.datas[parts[2]];
 
                             try {
                               /* Get rendered tile */
@@ -1364,7 +1374,7 @@ export const serve_style = {
                             } catch (error) {
                               printLog(
                                 "warning",
-                                `Failed to get data "${sourceID}" - Tile "${tileName}": ${error}. Serving empty tile...`
+                                `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
                               );
 
                               callback(null, {
@@ -1374,8 +1384,8 @@ export const serve_style = {
                               });
                             }
                           } else if (
-                            protocol === "http:" ||
-                            protocol === "https:"
+                            parts[0] === "http:" ||
+                            parts[0] === "https:"
                           ) {
                             try {
                               printLog(
@@ -1420,12 +1430,7 @@ export const serve_style = {
                             }
                           }
                         },
-                      });
-
-                      renderer.load(styleJSON);
-
-                      return renderer;
-                    },
+                      }).load(styleJSON),
                     destroy: (renderer) => renderer.release(),
                   },
                   {
