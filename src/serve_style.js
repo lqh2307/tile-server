@@ -1111,7 +1111,7 @@ export const serve_style = {
                 length: config.options.maxScaleRender,
               },
               (_, index) => {
-                return (
+                return createPool(
                   {
                     create: () => {
                       const renderer = new mlgl.Map({
