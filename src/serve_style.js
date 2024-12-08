@@ -1115,8 +1115,8 @@ export const serve_style = {
               rendered.renderers.push(
                 createPool(
                   {
-                    create: () =>
-                      new mlgl.Map({
+                    create: () => {
+                      const renderer = new mlgl.Map({
                         mode: "tile",
                         ratio: scale,
                         request: async (req, callback) => {
@@ -1430,7 +1430,12 @@ export const serve_style = {
                             }
                           }
                         },
-                      }).load(styleJSON),
+                      });
+
+                      renderer.load(styleJSON);
+
+                      return renderer;
+                    },
                     destroy: (renderer) => renderer.release(),
                   },
                   {
