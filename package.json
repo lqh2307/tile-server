@@ -22,7 +22,7 @@
     "handlebars": "4.7.8",
     "node-cron": "3.0.3",
     "chokidar": "4.0.1",
-    "express": "4.21.2",
+    "express": "4.21.1",
     "morgan": "1.10.0",
     "pmtiles": "4.0.1",
     "sqlite3": "5.1.7",
