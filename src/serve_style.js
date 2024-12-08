@@ -886,6 +886,7 @@ export const serve_style = {
       Object.keys(config.styles).map(async (id) => {
         let serveRendered = false;
         const styleInfo = {};
+        let styleJSON;
 
         /* Serve style */
         try {
@@ -925,9 +926,9 @@ export const serve_style = {
             }
           }
 
-          /* Read style.json file */
           try {
-            const styleJSON = await getStyle(styleInfo.path);
+            /* Read style.json file */
+            styleJSON = await getStyle(styleInfo.path);
 
             /* Validate style */
             await validateStyle(styleJSON);
@@ -977,9 +978,6 @@ export const serve_style = {
                 description: styleInfo.name,
               }),
             };
-
-            /* Get styleJSON */
-            const styleJSON = await getStyle(styleInfo.path);
 
             /* Fix center */
             if (styleJSON.center?.length >= 2 && styleJSON.zoom) {
