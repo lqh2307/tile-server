@@ -48,8 +48,8 @@ function serveFrontPageHandler() {
 
     await Promise.all([
       ...(() => {
-        if (config.options.serveRendered === true) {
-          return Object.keys(config.repo.rendereds).map(async (id) => {
+        return Object.keys(config.repo.styles).map(async (id) => {
+          if (config.repo.rendereds[id] !== undefined) {
             const { name, center } = config.repo.rendereds[id].tileJSON;
 
             const [x, y, z] = getXYZFromLonLatZ(
@@ -65,9 +65,7 @@ function serveFrontPageHandler() {
               thumbnail: `${requestHost}/styles/${id}/${z}/${x}/${y}.png`,
               serve_rendered: true,
             };
-          });
-        } else {
-          return Object.keys(config.repo.styles).map(async (id) => {
+          } else {
             const { name, zoom, center } = config.repo.styles[id];
 
             styles[id] = {
@@ -75,8 +73,8 @@ function serveFrontPageHandler() {
               viewer_hash: `#${zoom}/${center[1]}/${center[0]}`,
               thumbnail: `${requestHost}/images/placeholder.png`,
             };
-          });
-        }
+          }
+        });
       })(),
       ...Object.keys(config.repo.datas).map(async (id) => {
         const data = config.repo.datas[id];
