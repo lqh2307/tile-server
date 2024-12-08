@@ -973,7 +973,6 @@ export const serve_style = {
                 name: styleInfo.name,
                 description: styleInfo.name,
               }),
-              renderers: [],
             };
 
             /* Get styleJSON */
@@ -1107,18 +1106,17 @@ export const serve_style = {
             );
 
             /* Create pools */
-            for (
-              let scale = 1;
-              scale <= config.options.maxScaleRender;
-              scale++
-            ) {
-              rendered.renderers.push(
-                createPool(
+            rendered.renderers = Array.from(
+              {
+                length: config.options.maxScaleRender,
+              },
+              (_, index) => {
+                return (
                   {
                     create: () => {
                       const renderer = new mlgl.Map({
                         mode: "tile",
-                        ratio: scale,
+                        ratio: index + 1,
                         request: async (req, callback) => {
                           const url = decodeURIComponent(req.url);
                           const parts = url.split("/");
@@ -1442,9 +1440,9 @@ export const serve_style = {
                     min: config.options.minRenderedPoolSize,
                     max: config.options.maxRenderedPoolSize,
                   }
-                )
-              );
-            }
+                );
+              }
+            );
 
             /* Add to repo */
             config.repo.rendereds[id] = rendered;
