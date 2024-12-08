@@ -936,6 +936,9 @@ export const serve_style = {
             styleInfo.name = styleJSON.name || "Unknown";
             styleInfo.zoom = styleJSON.zoom || 0;
             styleInfo.center = styleJSON.center || [0, 0, 0];
+
+            /* Mark to serve rendered */
+            serveRendered = config.options.serveRendered;
           } catch (error) {
             if (
               item.cache !== undefined &&
@@ -947,6 +950,9 @@ export const serve_style = {
               styleInfo.center = seed.styles[item.style].metadata.center || [
                 0, 0, 0,
               ];
+
+              /* Mark to serve rendered */
+              serveRendered = false;
             } else {
               throw error;
             }
@@ -954,9 +960,6 @@ export const serve_style = {
 
           /* Add to repo */
           config.repo.styles[id] = styleInfo;
-
-          /* Mark to serve rendered */
-          serveRendered = config.options.serveRendered;
         } catch (error) {
           printLog(
             "error",
