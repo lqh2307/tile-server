@@ -288,6 +288,7 @@ function getRenderedHandler() {
         ...item.tileJSON,
         tilejson: "2.2.0",
         scheme: "xyz",
+        id: id,
         tiles: [
           req.params.tileSize === undefined
             ? `${getRequestHost(req)}/styles/${id}/{z}/{x}/{y}.png`
@@ -884,14 +885,13 @@ export const serve_style = {
 
     await Promise.all(
       Object.keys(config.styles).map(async (id) => {
+        const item = config.styles[id];
         let serveRendered = false;
         const styleInfo = {};
         let styleJSON;
 
         /* Serve style */
         try {
-          const item = config.styles[id];
-
           if (
             item.style.startsWith("https://") === true ||
             item.style.startsWith("http://") === true

@@ -117,6 +117,7 @@
       Object.keys(inspect.sources).forEach(function (sourceId) {
         inspect.sources[sourceId].forEach(function (layerId) {
           const item = document.createElement("div");
+
           item.innerHTML = '<div style="' +
             "background:" + inspect.assignLayerColor(layerId) + ";" +
             '"></div> ' + layerId;
