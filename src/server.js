@@ -25,17 +25,6 @@ export function startTaskInWorker(opts) {
     currentTaskWorker = new Worker("./src/task_worker.js", {
       workerData: opts,
     })
-      .on("message", (message) => {
-        if (message.error) {
-          printLog("error", `Task worker error: ${message.error}`);
-        }
-
-        if (message.action === "restartServer") {
-          process.exit(1);
-        }
-
-        currentTaskWorker = undefined;
-      })
       .on("error", (error) => {
         printLog("error", `Task worker error: ${error}`);
 
@@ -47,6 +36,17 @@ export function startTaskInWorker(opts) {
         if (code !== 0) {
           printLog("error", `Task worker exited with code: ${code}`);
         }
+      })
+      .on("message", (message) => {
+        if (message.error) {
+          printLog("error", `Task worker error: ${message.error}`);
+        }
+
+        if (message.action === "restartServer") {
+          process.exit(1);
+        }
+
+        currentTaskWorker = undefined;
       });
   } else {
     printLog("warning", "A task is already running. Skipping start task...");
