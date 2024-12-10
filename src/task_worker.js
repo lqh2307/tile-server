@@ -15,7 +15,7 @@ import { runTasks } from "./task.js";
     if (workerData.restartServerAfterTask === true) {
       printLog(
         "info",
-        `Completed seed and clean up task. Sending "restartServer" signal...`
+        "Completed seed and clean up task. Restarting server..."
       );
 
       parentPort.postMessage({

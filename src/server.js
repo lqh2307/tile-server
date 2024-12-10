@@ -26,14 +26,12 @@ export function startTaskInWorker(opts) {
       workerData: opts,
     })
       .on("message", (message) => {
-        if (message.action === "restartServer") {
-          process.send({
-            action: "restartServer",
-          });
-        }
-
         if (message.error) {
           printLog("error", `Task worker error: ${message.error}`);
+        }
+
+        if (message.action === "restartServer") {
+          process.exit(1);
         }
 
         currentTaskWorker = undefined;
