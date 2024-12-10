@@ -689,38 +689,6 @@ export function deepClone(obj) {
 }
 
 /**
- * Restart server
- * @returns {void}
- */
-export function restartServer() {
-  process.kill(process.env.MAIN_PID, "SIGTERM");
-}
-
-/**
- * Kill server
- * @returns {void}
- */
-export function killServer() {
-  process.kill(process.env.MAIN_PID, "SIGINT");
-}
-
-/**
- * Start task
- * @returns {void}
- */
-export function startTask() {
-  process.kill(process.env.MAIN_PID, "SIGUSR1");
-}
-
-/**
- * Cancel task
- * @returns {void}
- */
-export function cancelTask() {
-  process.kill(process.env.MAIN_PID, "SIGUSR2");
-}
-
-/**
  * Get version of server
  * @returns {string}
  */

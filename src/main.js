@@ -1,17 +1,12 @@
 "use strict";
 
+import { removeOldCacheLocks, getVersion } from "./utils.js";
 import { readConfigFile } from "./config.js";
 import { printLog } from "./logger.js";
 import { program } from "commander";
 import chokidar from "chokidar";
 import cluster from "cluster";
 import cron from "node-cron";
-import {
-  removeOldCacheLocks,
-  restartServer,
-  getVersion,
-  startTask,
-} from "./utils.js";
 import {
   cancelTaskInWorker,
   startTaskInWorker,
@@ -50,33 +45,6 @@ async function startClusterServer(opts) {
     /* Setup envs */
     process.env.UV_THREADPOOL_SIZE = config.options.thread; // For libuv
 
-    /* Setup events */
-    process.on("SIGINT", () => {
-      printLog("info", `Received "SIGINT" signal. Killing server...`);
-
-      process.exit(0);
-    });
-
-    process.on("SIGTERM", () => {
-      printLog("info", `Received "SIGTERM" signal. Restarting server...`);
-
-      process.exit(1);
-    });
-
-    process.on("SIGUSR1", () => {
-      printLog("info", `Received "SIGUSR1" signal. Starting task...`);
-
-      startTaskInWorker({
-        restartServerAfterTask: config.options.restartServerAfterTask,
-      });
-    });
-
-    process.on("SIGUSR2", () => {
-      printLog("info", `Received "SIGUSR2" signal. Canceling task...`);
-
-      cancelTaskInWorker();
-    });
-
     /* Remove old cache locks */
     printLog(
       "info",
@@ -103,7 +71,7 @@ async function startClusterServer(opts) {
         .on("change", () => {
           printLog("info", "Config file has changed. Restarting server...");
 
-          restartServer();
+          process.exit(1);
         });
     }
 
@@ -114,7 +82,20 @@ async function startClusterServer(opts) {
         `Schedule run seed and clean up tasks at: "${config.options.taskSchedule}"`
       );
 
-      cron.schedule(config.options.taskSchedule, () => startTask());
+      cron.schedule(config.options.taskSchedule, () => {
+        printLog(
+          "info",
+          `Seed and clean up tasks triggered by schedule. Starting task...`
+        );
+
+        startTaskInWorker({
+          restartServerAfterTask: config.options.restartServerAfterTask,
+          cleanUpStyles: true,
+          cleanUpDatas: true,
+          seedStyles: true,
+          seedDatas: true,
+        });
+      });
     }
 
     /* Fork servers */
@@ -124,14 +105,69 @@ async function startClusterServer(opts) {
       cluster.fork();
     }
 
-    cluster.on("exit", (worker, code, signal) => {
-      printLog(
-        "info",
-        `PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
-      );
+    cluster
+      .on("exit", (worker, code, signal) => {
+        printLog(
+          "info",
+          `Worker with PID = ${worker.process.pid} is died - Code: ${code} - Signal: ${signal}. Creating new one...`
+        );
 
-      cluster.fork();
-    });
+        cluster.fork();
+      })
+      .on("message", (worker, message) => {
+        switch (message.action) {
+          case "killServer": {
+            printLog(
+              "warning",
+              `Received "killServer" message from worker with PID = ${worker.process.pid}. Killing server...`
+            );
+
+            process.exit(0);
+          }
+          case "restartServer": {
+            printLog(
+              "warning",
+              `Received "restartServer" message from worker with PID = ${worker.process.pid}. Restarting server...`
+            );
+
+            process.exit(1);
+          }
+          case "startTask": {
+            printLog(
+              "warning",
+              `Received "startTask" message from worker with PID = ${worker.process.pid}. Starting task...`
+            );
+
+            startTaskInWorker({
+              restartServerAfterTask: config.options.restartServerAfterTask,
+              cleanUpStyles: message.cleanUpStyles,
+              cleanUpDatas: message.cleanUpDatas,
+              seedStyles: message.seedStyles,
+              seedDatas: message.seedDatas,
+            });
+
+            break;
+          }
+          case "cancelTask": {
+            printLog(
+              "warning",
+              `Received "cancelTask" message from worker with PID = ${worker.process.pid}. Canceling task...`
+            );
+
+            cancelTaskInWorker();
+
+            break;
+          }
+          default: {
+            printLog(
+              "warning",
+              `Received unknown message "${message.action}" from worker with PID = ${worker.process.pid}. Skipping...`
+            );
+
+            break;
+          }
+        }
+      });
   } else {
     startServer();
   }

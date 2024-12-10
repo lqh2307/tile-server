@@ -1,7 +1,6 @@
 "use strict";
 
 import { parentPort, workerData } from "node:worker_threads";
-import { restartServer } from "./utils.js";
 import { printLog } from "./logger.js";
 import { runTasks } from "./task.js";
 
@@ -19,7 +18,9 @@ import { runTasks } from "./task.js";
         "Completed seed and clean up task. Restarting server..."
       );
 
-      restartServer();
+      process.send({
+        action: "restartServer",
+      });
     }
   } catch (error) {
     parentPort.postMessage({

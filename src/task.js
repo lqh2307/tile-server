@@ -20,230 +20,234 @@ import {
  * @returns {Promise<void>}
  */
 export async function runTasks(opts) {
-  /* Read cleanup.json and seed.json files */
-  printLog(
-    "info",
-    `Loading "seed.json" and "cleanup.json" files at "${process.env.DATA_DIR}"...`
-  );
-
-  const [cleanUpData, seedData] = await Promise.all([
-    readCleanUpFile(true),
-    readSeedFile(true),
-  ]);
-
-  /* Run clean up task */
-  await runCleanUpTask(cleanUpData, seedData);
-
-  /* Run seed task */
-  await runSeedTask(seedData);
-}
-
-/**
- * Run clean up task
- * @param {object} cleanUpData Clean up object
- * @param {object} seedData Seed object
- * @returns {Promise<void>}
- */
-async function runCleanUpTask(cleanUpData, seedData) {
-  try {
-    const ids = Object.keys(cleanUpData.styles);
-
-    printLog("info", `Starting clean up ${ids.length} styles...`);
-
-    const startTime = Date.now();
-
-    for (const id of ids) {
-      const cleanUpStyleItem = cleanUpData.styles[id];
-      const cleanUpBefore =
-        cleanUpStyleItem.refreshBefore?.time ||
-        cleanUpStyleItem.refreshBefore?.day;
-
-      try {
-        await cleanUpStyle(
-          `${process.env.DATA_DIR}/caches/styles/${id}`,
-          cleanUpStyleItem.maxTry,
-          cleanUpBefore
-        );
-      } catch (error) {
-        printLog(
-          "error",
-          `Failed to clean up style "${id}": ${error}. Skipping...`
-        );
-      }
-    }
-
-    const doneTime = Date.now();
-
+  if (
+    opts.cleanUpStyles === true ||
+    opts.cleanUpDatas === true ||
+    opts.seedStyles === true ||
+    opts.seedDatas === true
+  ) {
+    /* Read cleanup.json and seed.json files */
     printLog(
       "info",
-      `Completed clean up ${ids.length} styles after: ${
-        (doneTime - startTime) / 1000
-      }s!`
+      `Loading "seed.json" and "cleanup.json" files at "${process.env.DATA_DIR}"...`
     );
-  } catch (error) {
-    printLog("error", `Failed to clean up styles: ${error}. Exited!`);
-  }
 
-  try {
-    const ids = Object.keys(cleanUpData.datas);
+    const [cleanUpData, seedData] = await Promise.all([
+      readCleanUpFile(true),
+      readSeedFile(true),
+    ]);
 
-    printLog("info", `Starting clean up ${ids.length} datas...`);
-
-    const startTime = Date.now();
-
-    for (const id of ids) {
-      const seedDataItem = seedData.datas[id];
-      const cleanUpDataItem = cleanUpData.datas[id];
-      const cleanUpBefore =
-        cleanUpDataItem.cleanUpBefore?.time ||
-        cleanUpDataItem.cleanUpBefore?.day;
-
+    /* Clean up styles */
+    if (opts.cleanUpStyles === true) {
       try {
-        if (seedDataItem.storeType === "xyz") {
-          await cleanUpXYZTiles(
-            `${process.env.DATA_DIR}/caches/xyzs/${id}`,
-            seedDataItem.metadata.format,
-            cleanUpDataItem.zooms,
-            cleanUpDataItem.bboxs,
-            seedDataItem.concurrency,
-            seedDataItem.maxTry,
-            cleanUpBefore
-          );
-        } else if (seedDataItem.storeType === "mbtiles") {
-          await cleanUpMBTilesTiles(
-            `${process.env.DATA_DIR}/caches/mbtiles/${id}`,
-            cleanUpDataItem.zooms,
-            cleanUpDataItem.bboxs,
-            seedDataItem.concurrency,
-            seedDataItem.maxTry,
-            cleanUpBefore
-          );
+        const ids = Object.keys(cleanUpData.styles);
+
+        printLog("info", `Starting clean up ${ids.length} styles...`);
+
+        const startTime = Date.now();
+
+        for (const id of ids) {
+          const cleanUpStyleItem = cleanUpData.styles[id];
+          const cleanUpBefore =
+            cleanUpStyleItem.refreshBefore?.time ||
+            cleanUpStyleItem.refreshBefore?.day;
+
+          try {
+            await cleanUpStyle(
+              `${process.env.DATA_DIR}/caches/styles/${id}`,
+              cleanUpStyleItem.maxTry,
+              cleanUpBefore
+            );
+          } catch (error) {
+            printLog(
+              "error",
+              `Failed to clean up style "${id}": ${error}. Skipping...`
+            );
+          }
         }
-      } catch (error) {
+
+        const doneTime = Date.now();
+
         printLog(
-          "error",
-          `Failed to clean up data "${id}": ${error}. Skipping...`
+          "info",
+          `Completed clean up ${ids.length} styles after: ${
+            (doneTime - startTime) / 1000
+          }s!`
         );
+      } catch (error) {
+        printLog("error", `Failed to clean up styles: ${error}. Exited!`);
       }
     }
 
-    const doneTime = Date.now();
-
-    printLog(
-      "info",
-      `Completed clean up ${ids.length} datas after: ${
-        (doneTime - startTime) / 1000
-      }s!`
-    );
-  } catch (error) {
-    printLog("error", `Failed to clean up datas: ${error}. Exited!`);
-  }
-}
-
-/**
- * Run seed task
- * @param {object} seedData Seed object
- * @returns {Promise<void>}
- */
-async function runSeedTask(seedData) {
-  try {
-    const ids = Object.keys(seedData.styles);
-
-    printLog("info", `Starting seed ${ids.length} styles...`);
-
-    const startTime = Date.now();
-
-    for (const id of ids) {
-      const seedStyleItem = seedData.styles[id];
-      const refreshBefore =
-        seedStyleItem.refreshBefore?.time || seedStyleItem.refreshBefore?.day;
-
+    /* Clean up datas */
+    if (opts.cleanUpDatas === true) {
       try {
-        await seedStyle(
-          `${process.env.DATA_DIR}/caches/styles/${id}`,
-          seedStyleItem.url,
-          seedStyleItem.maxTry,
-          seedStyleItem.timeout,
-          refreshBefore
-        );
-      } catch (error) {
-        printLog(
-          "error",
-          `Failed to seed style "${id}": ${error}. Skipping...`
-        );
-      }
-    }
+        const ids = Object.keys(cleanUpData.datas);
 
-    const doneTime = Date.now();
+        printLog("info", `Starting clean up ${ids.length} datas...`);
 
-    printLog(
-      "info",
-      `Completed seed ${ids.length} styles after: ${
-        (doneTime - startTime) / 1000
-      }s!`
-    );
-  } catch (error) {
-    printLog("error", `Failed to seed styles: ${error}. Exited!`);
-  }
+        const startTime = Date.now();
 
-  try {
-    const ids = Object.keys(seedData.datas);
+        for (const id of ids) {
+          const seedDataItem = seedData.datas[id];
+          const cleanUpDataItem = cleanUpData.datas[id];
+          const cleanUpBefore =
+            cleanUpDataItem.cleanUpBefore?.time ||
+            cleanUpDataItem.cleanUpBefore?.day;
 
-    printLog("info", `Starting seed ${ids.length} datas...`);
-
-    const startTime = Date.now();
-
-    for (const id of ids) {
-      const seedDataItem = seedData.datas[id];
-      const refreshBefore =
-        seedDataItem.refreshBefore?.time ||
-        seedDataItem.refreshBefore?.day ||
-        seedDataItem.refreshBefore?.md5;
-
-      try {
-        if (seedDataItem.storeType === "xyz") {
-          await seedXYZTiles(
-            `${process.env.DATA_DIR}/caches/xyzs/${id}`,
-            seedDataItem.metadata,
-            seedDataItem.url,
-            seedDataItem.bboxs,
-            seedDataItem.zooms,
-            seedDataItem.concurrency,
-            seedDataItem.maxTry,
-            seedDataItem.timeout,
-            seedDataItem.storeMD5,
-            seedDataItem.storeTransparent,
-            refreshBefore
-          );
-        } else if (seedDataItem.storeType === "mbtiles") {
-          await seedMBTilesTiles(
-            `${process.env.DATA_DIR}/caches/mbtiles/${id}`,
-            seedDataItem.metadata,
-            seedDataItem.url,
-            seedDataItem.bboxs,
-            seedDataItem.zooms,
-            seedDataItem.concurrency,
-            seedDataItem.maxTry,
-            seedDataItem.timeout,
-            seedDataItem.storeMD5,
-            seedDataItem.storeTransparent,
-            refreshBefore
-          );
+          try {
+            if (seedDataItem.storeType === "xyz") {
+              await cleanUpXYZTiles(
+                `${process.env.DATA_DIR}/caches/xyzs/${id}`,
+                seedDataItem.metadata.format,
+                cleanUpDataItem.zooms,
+                cleanUpDataItem.bboxs,
+                seedDataItem.concurrency,
+                seedDataItem.maxTry,
+                cleanUpBefore
+              );
+            } else if (seedDataItem.storeType === "mbtiles") {
+              await cleanUpMBTilesTiles(
+                `${process.env.DATA_DIR}/caches/mbtiles/${id}`,
+                cleanUpDataItem.zooms,
+                cleanUpDataItem.bboxs,
+                seedDataItem.concurrency,
+                seedDataItem.maxTry,
+                cleanUpBefore
+              );
+            }
+          } catch (error) {
+            printLog(
+              "error",
+              `Failed to clean up data "${id}": ${error}. Skipping...`
+            );
+          }
         }
+
+        const doneTime = Date.now();
+
+        printLog(
+          "info",
+          `Completed clean up ${ids.length} datas after: ${
+            (doneTime - startTime) / 1000
+          }s!`
+        );
       } catch (error) {
-        printLog("error", `Failed to seed data "${id}": ${error}. Skipping...`);
+        printLog("error", `Failed to clean up datas: ${error}. Exited!`);
       }
     }
 
-    const doneTime = Date.now();
+    /* Run seed styles */
+    if (opts.seedStyles === true) {
+      try {
+        const ids = Object.keys(seedData.styles);
 
-    printLog(
-      "info",
-      `Completed seed ${ids.length} datas after: ${
-        (doneTime - startTime) / 1000
-      }s!`
-    );
-  } catch (error) {
-    printLog("error", `Failed to seed datas: ${error}. Exited!`);
+        printLog("info", `Starting seed ${ids.length} styles...`);
+
+        const startTime = Date.now();
+
+        for (const id of ids) {
+          const seedStyleItem = seedData.styles[id];
+          const refreshBefore =
+            seedStyleItem.refreshBefore?.time ||
+            seedStyleItem.refreshBefore?.day;
+
+          try {
+            await seedStyle(
+              `${process.env.DATA_DIR}/caches/styles/${id}`,
+              seedStyleItem.url,
+              seedStyleItem.maxTry,
+              seedStyleItem.timeout,
+              refreshBefore
+            );
+          } catch (error) {
+            printLog(
+              "error",
+              `Failed to seed style "${id}": ${error}. Skipping...`
+            );
+          }
+        }
+
+        const doneTime = Date.now();
+
+        printLog(
+          "info",
+          `Completed seed ${ids.length} styles after: ${
+            (doneTime - startTime) / 1000
+          }s!`
+        );
+      } catch (error) {
+        printLog("error", `Failed to seed styles: ${error}. Exited!`);
+      }
+    }
+
+    /* Run seed datas */
+    if (opts.seedDatas === true) {
+      try {
+        const ids = Object.keys(seedData.datas);
+
+        printLog("info", `Starting seed ${ids.length} datas...`);
+
+        const startTime = Date.now();
+
+        for (const id of ids) {
+          const seedDataItem = seedData.datas[id];
+          const refreshBefore =
+            seedDataItem.refreshBefore?.time ||
+            seedDataItem.refreshBefore?.day ||
+            seedDataItem.refreshBefore?.md5;
+
+          try {
+            if (seedDataItem.storeType === "xyz") {
+              await seedXYZTiles(
+                `${process.env.DATA_DIR}/caches/xyzs/${id}`,
+                seedDataItem.metadata,
+                seedDataItem.url,
+                seedDataItem.bboxs,
+                seedDataItem.zooms,
+                seedDataItem.concurrency,
+                seedDataItem.maxTry,
+                seedDataItem.timeout,
+                seedDataItem.storeMD5,
+                seedDataItem.storeTransparent,
+                refreshBefore
+              );
+            } else if (seedDataItem.storeType === "mbtiles") {
+              await seedMBTilesTiles(
+                `${process.env.DATA_DIR}/caches/mbtiles/${id}`,
+                seedDataItem.metadata,
+                seedDataItem.url,
+                seedDataItem.bboxs,
+                seedDataItem.zooms,
+                seedDataItem.concurrency,
+                seedDataItem.maxTry,
+                seedDataItem.timeout,
+                seedDataItem.storeMD5,
+                seedDataItem.storeTransparent,
+                refreshBefore
+              );
+            }
+          } catch (error) {
+            printLog(
+              "error",
+              `Failed to seed data "${id}": ${error}. Skipping...`
+            );
+          }
+        }
+
+        const doneTime = Date.now();
+
+        printLog(
+          "info",
+          `Completed seed ${ids.length} datas after: ${
+            (doneTime - startTime) / 1000
+          }s!`
+        );
+      } catch (error) {
+        printLog("error", `Failed to seed datas: ${error}. Exited!`);
+      }
+    }
+  } else {
+    printLog("info", "No task assigned!");
   }
 }

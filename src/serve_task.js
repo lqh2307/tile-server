@@ -1,7 +1,6 @@
 "use strict";
 
 import { checkReadyMiddleware } from "./middleware.js";
-import { cancelTask, startTask } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import { printLog } from "./logger.js";
 import express from "express";
@@ -13,7 +12,17 @@ import express from "express";
 function startTaskHandler() {
   return async (req, res, next) => {
     try {
-      setTimeout(() => startTask(), 0);
+      setTimeout(
+        () =>
+          process.send({
+            action: "startTask",
+            cleanUpStyles: req.query.cleanUpStyles === "true",
+            cleanUpDatas: req.query.cleanUpDatas === "true",
+            seedStyles: req.query.seedStyles === "true",
+            seedDatas: req.query.seedDatas === "true",
+          }),
+        0
+      );
 
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
@@ -33,7 +42,13 @@ function startTaskHandler() {
 function cancelTaskHandler() {
   return async (req, res, next) => {
     try {
-      setTimeout(() => cancelTask(), 0);
+      setTimeout(
+        () =>
+          process.send({
+            action: "cancelTask",
+          }),
+        0
+      );
 
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
@@ -60,6 +75,31 @@ export const serve_task = {
      *     tags:
      *       - Task
      *     summary: Start task
+     *     parameters:
+     *       - in: query
+     *         name: cleanUpStyles
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Run clean up styles
+     *       - in: query
+     *         name: cleanUpDatas
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Run clean up datas
+     *       - in: query
+     *         name: seedStyles
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Run seed styles
+     *       - in: query
+     *         name: seedDatas
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Run seed datas
      *     responses:
      *       200:
      *         description: Task started successfully

@@ -8,7 +8,6 @@ import { Worker } from "node:worker_threads";
 import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
 import { serve_task } from "./serve_task.js";
-import { killServer } from "./utils.js";
 import { printLog } from "./logger.js";
 import express from "express";
 import morgan from "morgan";
@@ -130,7 +129,9 @@ async function loadData() {
   } catch (error) {
     printLog("error", `Failed to load data: ${error}. Exited!`);
 
-    killServer();
+    process.send({
+      action: "killServer",
+    });
   }
 }
 
@@ -162,6 +163,8 @@ export async function startServer() {
   } catch (error) {
     printLog("error", `Failed to start server: ${error}. Exited!`);
 
-    killServer();
+    process.send({
+      action: "killServer",
+    });
   }
 }

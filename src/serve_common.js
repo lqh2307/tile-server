@@ -12,8 +12,6 @@ import express from "express";
 import {
   getXYZFromLonLatZ,
   getRequestHost,
-  restartServer,
-  killServer,
   getVersion,
   findFiles,
 } from "./utils.js";
@@ -515,7 +513,13 @@ function serveHealthHandler() {
 function serveRestartHandler() {
   return async (req, res, next) => {
     try {
-      setTimeout(() => restartServer(), 0);
+      setTimeout(
+        () =>
+          process.send({
+            action: "restartServer",
+          }),
+        0
+      );
 
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
@@ -535,7 +539,13 @@ function serveRestartHandler() {
 function serveKillHandler() {
   return async (req, res, next) => {
     try {
-      setTimeout(() => killServer(), 0);
+      setTimeout(
+        () =>
+          process.send({
+            action: "killServer",
+          }),
+        0
+      );
 
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
