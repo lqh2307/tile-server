@@ -183,7 +183,7 @@
         .catch((error) => alert(`Failed to restart server: ${error.message}`))
     }
 
-    function syncStylesAndDatas(event) {
+    function startSyncStylesAndDatas(event) {
       event.preventDefault();
 
       fetch(`${baseURL}/tasks/start?seedStyles=true&cleanUpStyles=true&cleanUpDatas=true&seedDatas=true`, {
@@ -191,12 +191,28 @@
       })
         .then((response) => {
           if (response.status === 200) {
-            alert("Starting sync styles and datas");
+            alert("Starting sync styles and datas...");
           } else {
             alert(`Failed to sync styles and datas: Status code: ${response.status} - ${response.statusText}`);
           }
         })
         .catch((error) => alert(`Failed to sync styles and datas: ${error.message}`))
+    }
+
+    function cancelSyncStylesAndDatas(event) {
+      event.preventDefault();
+
+      fetch(`${baseURL}/tasks/cancel`, {
+        method: "GET",
+      })
+        .then((response) => {
+          if (response.status === 200) {
+            alert("Canceling sync styles and datas...");
+          } else {
+            alert(`Failed to cancel styles and datas: Status code: ${response.status} - ${response.statusText}`);
+          }
+        })
+        .catch((error) => alert(`Failed to cancel styles and datas: ${error.message}`))
     }
 
     window.onload = function () {
@@ -224,7 +240,8 @@
       <div class="tab" onclick="switchTab(event, 'fonts-tab')">FONTS ({{font_count}})</div>
       <div class="tab" onclick="switchTab(event, 'sprites-tab')">SPRITES ({{sprite_count}})</div>
       <div class="tab" onclick="restartServer(event)">RESTART</div>
-      <div class="tab" onclick="syncStylesAndDatas(event)">SYNC</div>
+      <div class="tab" onclick="startSyncStylesAndDatas(event)">START SYNC</div>
+      <div class="tab" onclick="cancelSyncStylesAndDatas(event)">CANCEL SYNC</div>
     </div>
     <div id="styles-tab" class="tab-content active"></div>
     <div id="datas-tab" class="tab-content"></div>
