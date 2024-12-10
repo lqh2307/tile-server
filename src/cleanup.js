@@ -274,6 +274,8 @@ export async function cleanUpMBTilesTiles(
     }
   }
 
+  printLog("info", "Removing datas...");
+
   for (const tilesSummary of tilesSummaries) {
     for (const z in tilesSummary) {
       for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
@@ -424,6 +426,8 @@ export async function cleanUpXYZTiles(
       );
     }
   }
+
+  printLog("info", "Removing datas...");
 
   for (const tilesSummary of tilesSummaries) {
     for (const z in tilesSummary) {

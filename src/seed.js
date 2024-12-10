@@ -450,7 +450,7 @@ export async function seedMBTilesTiles(
   );
 
   // Update metadata
-  printLog("info", `Updating metadata...`);
+  printLog("info", "Updating metadata...");
 
   await updateMBTilesMetadataWithLock(
     mbtilesSource,
@@ -529,6 +529,8 @@ export async function seedMBTilesTiles(
       );
     }
   }
+
+  printLog("info", "Downloading datas...");
 
   for (const tilesSummary of tilesSummaries) {
     for (const z in tilesSummary) {
@@ -648,7 +650,7 @@ export async function seedXYZTiles(
   // Update metadata.json file
   const metadataFilePath = `${sourcePath}/metadata.json`;
 
-  printLog("info", `Updating metadata...`);
+  printLog("info", "Updating metadata...");
 
   await updateXYZMetadataFileWithLock(
     metadataFilePath,
@@ -731,6 +733,8 @@ export async function seedXYZTiles(
       );
     }
   }
+
+  printLog("info", "Downloading datas...");
 
   for (const tilesSummary of tilesSummaries) {
     for (const z in tilesSummary) {

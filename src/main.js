@@ -85,7 +85,7 @@ async function startClusterServer(opts) {
       cron.schedule(config.options.taskSchedule, () => {
         printLog(
           "info",
-          `Seed and clean up tasks triggered by schedule. Starting task...`
+          "Seed and clean up tasks triggered by schedule. Starting task..."
         );
 
         startTaskInWorker({
