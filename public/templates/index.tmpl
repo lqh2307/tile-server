@@ -61,6 +61,8 @@
         renderDatas("fonts-tab");
       } else if (tabId === "sprites-tab" && !document.querySelector("#sprites-tab").innerHTML.trim()) {
         renderDatas("sprites-tab");
+      } else if (tabId === "sync-tab" && !document.querySelector("#sync-tab").innerHTML.trim()) {
+        renderDatas("sync-tab");
       }
     }
 
@@ -164,6 +166,63 @@
             {{/each}}
           </div>
         `;
+      } else if (tabId === "sync-tab") {
+        document.querySelector("#sync-tab").innerHTML = `
+          <div class="box">
+            <div class="details">
+              <h3 class="name">Cancel sync</h3>
+              <div class="identifier">Cancel clean up or seed styles and datas</div>
+            </div>
+            <div class="viewers">
+              <a class="btn" href="#" onclick="synchronousManager(event, 'cancel')">Cancel sync</a>
+            </div>
+          </div>
+          <div class="box">
+            <div class="details">
+              <h3 class="name">Sync all</h3>
+              <div class="identifier">Start clean up styles and datas then seed styles and datas</div>
+            </div>
+            <div class="viewers">
+              <a class="btn" href="#" onclick="synchronousManager(event, 'all')">Sync all</a>
+            </div>
+          </div>
+          <div class="box">
+            <div class="details">
+              <h3 class="name">Clean styles</h3>
+              <div class="identifier">Start clean up styles</div>
+            </div>
+            <div class="viewers">
+              <a class="btn" href="#" onclick="synchronousManager(event, 'cleanUpStyles')">Clean styles</a>
+            </div>
+          </div>
+          <div class="box">
+            <div class="details">
+              <h3 class="name">Clean datas</h3>
+              <div class="identifier">Start clean up datas</div>
+            </div>
+            <div class="viewers">
+              <a class="btn" href="#" onclick="synchronousManager(event, 'cleanUpDatas')">Clean datas</a>
+            </div>
+          </div>
+          <div class="box">
+            <div class="details">
+              <h3 class="name">Seed styles</h3>
+              <div class="identifier">Start seed styles</div>
+            </div>
+            <div class="viewers">
+              <a class="btn" href="#" onclick="synchronousManager(event, 'seedStyles')">Seed styles</a>
+            </div>
+          </div>
+          <div class="box">
+            <div class="details">
+              <h3 class="name">Seed datas</h3>
+              <div class="identifier">Start seed datas</div>
+            </div>
+            <div class="viewers">
+              <a class="btn" href="#" onclick="synchronousManager(event, 'seedDatas')">Seed datas</a>
+            </div>
+          </div>
+        `;
       }
     }
 
@@ -183,36 +242,82 @@
         .catch((error) => alert(`Failed to restart server: ${error.message}`))
     }
 
-    function startSyncStylesAndDatas(event) {
+    function synchronousManager(event, action) {
       event.preventDefault();
 
-      fetch(`${baseURL}/tasks/start?seedStyles=true&cleanUpStyles=true&cleanUpDatas=true&seedDatas=true`, {
-        method: "GET",
-      })
-        .then((response) => {
-          if (response.status === 200) {
-            alert("Starting sync styles and datas...");
-          } else {
-            alert(`Failed to sync styles and datas: Status code: ${response.status} - ${response.statusText}`);
-          }
+      if (action === "all") {
+        fetch(`${baseURL}/tasks/start?seedStyles=true&cleanUpStyles=true&cleanUpDatas=true&seedDatas=true`, {
+          method: "GET",
         })
-        .catch((error) => alert(`Failed to sync styles and datas: ${error.message}`))
-    }
-
-    function cancelSyncStylesAndDatas(event) {
-      event.preventDefault();
-
-      fetch(`${baseURL}/tasks/cancel`, {
-        method: "GET",
-      })
-        .then((response) => {
-          if (response.status === 200) {
-            alert("Canceling sync styles and datas...");
-          } else {
-            alert(`Failed to cancel styles and datas: Status code: ${response.status} - ${response.statusText}`);
-          }
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Starting clean up styles and datas then seed styles and datas...");
+            } else {
+              alert(`Failed to clean up styles and datas then seed styles and datas: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => alert(`Failed to seed styles and datas: ${error.message}`))
+      } else if (action === "cleanUpStyles") {
+        fetch(`${baseURL}/tasks/start?cleanUpStyles=true`, {
+          method: "GET",
         })
-        .catch((error) => alert(`Failed to cancel styles and datas: ${error.message}`))
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Starting clean up styles...");
+            } else {
+              alert(`Failed to clean up styles: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => alert(`Failed to clean up styles: ${error.message}`))
+      } else if (action === "cleanUpDatas") {
+        fetch(`${baseURL}/tasks/start?cleanUpDatas=true`, {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Starting clean up datas...");
+            } else {
+              alert(`Failed to clean up datas: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => alert(`Failed to clean up datas: ${error.message}`))
+      } else if (action === "seedStyles") {
+        fetch(`${baseURL}/tasks/start?seedStyles=true`, {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Starting seed styles...");
+            } else {
+              alert(`Failed to seed styles: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => alert(`Failed to seed styles: ${error.message}`))
+      } else if (action === "seedDatas") {
+        fetch(`${baseURL}/tasks/start?seedDatas=true`, {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Starting seed datas...");
+            } else {
+              alert(`Failed to seed datas: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => alert(`Failed to seed datas: ${error.message}`))
+      } else if (action === "cancel") {
+        fetch(`${baseURL}/tasks/cancel`, {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Canceling clean up or seed styles and datas...");
+            } else {
+              alert(`Failed to cancel clean up or seed styles and datas: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => alert(`Failed to clean up or seed styles and datas: ${error.message}`))
+      }
     }
 
     window.onload = function () {
@@ -239,14 +344,14 @@
       <div class="tab" onclick="switchTab(event, 'datas-tab')">DATAS ({{data_count}})</div>
       <div class="tab" onclick="switchTab(event, 'fonts-tab')">FONTS ({{font_count}})</div>
       <div class="tab" onclick="switchTab(event, 'sprites-tab')">SPRITES ({{sprite_count}})</div>
+      <div class="tab" onclick="switchTab(event, 'sync-tab')">SYNCHRONOUS MANAGER</div>
       <div class="tab" onclick="restartServer(event)">RESTART</div>
-      <div class="tab" onclick="startSyncStylesAndDatas(event)">START SYNC</div>
-      <div class="tab" onclick="cancelSyncStylesAndDatas(event)">CANCEL SYNC</div>
     </div>
     <div id="styles-tab" class="tab-content active"></div>
     <div id="datas-tab" class="tab-content"></div>
     <div id="fonts-tab" class="tab-content"></div>
     <div id="sprites-tab" class="tab-content"></div>
+    <div id="sync-tab" class="tab-content"></div>
   </section>
   <a href="#" class="back-to-top" onclick="scrollToTop(event)">Back to top</a>
 </body>
