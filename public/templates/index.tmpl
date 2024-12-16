@@ -133,7 +133,7 @@
           <div class="box">
             {{#each fonts}}
               <div class="item">
-                <img src="{{thumbnail}}" alt="{{name}} preview" />
+                <img src="${baseURL}/images/placeholder.png" alt="Empty image" />
                 <div class="details">
                   <h3 class="name">{{name}}</h3>
                   <div class="identifier">identifier: {{@key}}</div>
@@ -169,57 +169,75 @@
       } else if (tabId === "sync-tab") {
         document.querySelector("#sync-tab").innerHTML = `
           <div class="box">
-            <div class="details">
-              <h3 class="name">Cancel sync</h3>
-              <div class="identifier">Cancel clean up or seed styles and datas</div>
-            </div>
-            <div class="viewers">
-              <a class="btn" href="#" onclick="synchronousManager(event, 'cancel')">Cancel sync</a>
-            </div>
-          </div>
-          <div class="box">
-            <div class="details">
-              <h3 class="name">Sync all</h3>
-              <div class="identifier">Start clean up styles and datas then seed styles and datas</div>
-            </div>
-            <div class="viewers">
-              <a class="btn" href="#" onclick="synchronousManager(event, 'all')">Sync all</a>
+            <div class="item">
+              <img src="${baseURL}/images/placeholder.png" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Cancel sync</h3>
+                <div class="identifier">Cancel clean up or seed styles and datas</div>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="synchronousManager(event, 'cancel')">Cancel sync</a>
+              </div>
             </div>
           </div>
           <div class="box">
-            <div class="details">
-              <h3 class="name">Clean styles</h3>
-              <div class="identifier">Start clean up styles</div>
-            </div>
-            <div class="viewers">
-              <a class="btn" href="#" onclick="synchronousManager(event, 'cleanUpStyles')">Clean styles</a>
+            <div class="item">
+              <img src="${baseURL}/images/placeholder.png" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Sync all</h3>
+                <div class="identifier">Start clean up styles and datas then seed styles and datas</div>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="synchronousManager(event, 'all')">Sync all</a>
+              </div>
+            </div>  
+          </div>
+          <div class="box">
+            <div class="item">
+              <img src="${baseURL}/images/placeholder.png" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Clean styles</h3>
+                <div class="identifier">Start clean up styles</div>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="synchronousManager(event, 'cleanUpStyles')">Clean styles</a>
+              </div>
             </div>
           </div>
           <div class="box">
-            <div class="details">
-              <h3 class="name">Clean datas</h3>
-              <div class="identifier">Start clean up datas</div>
-            </div>
-            <div class="viewers">
-              <a class="btn" href="#" onclick="synchronousManager(event, 'cleanUpDatas')">Clean datas</a>
-            </div>
-          </div>
-          <div class="box">
-            <div class="details">
-              <h3 class="name">Seed styles</h3>
-              <div class="identifier">Start seed styles</div>
-            </div>
-            <div class="viewers">
-              <a class="btn" href="#" onclick="synchronousManager(event, 'seedStyles')">Seed styles</a>
+            <div class="item">
+              <img src="${baseURL}/images/placeholder.png" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Clean datas</h3>
+                <div class="identifier">Start clean up datas</div>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="synchronousManager(event, 'cleanUpDatas')">Clean datas</a>
+              </div>
             </div>
           </div>
           <div class="box">
-            <div class="details">
-              <h3 class="name">Seed datas</h3>
-              <div class="identifier">Start seed datas</div>
+            <div class="item">
+              <img src="${baseURL}/images/placeholder.png" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Seed styles</h3>
+                <div class="identifier">Start seed styles</div>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="synchronousManager(event, 'seedStyles')">Seed styles</a>
+              </div>
             </div>
-            <div class="viewers">
-              <a class="btn" href="#" onclick="synchronousManager(event, 'seedDatas')">Seed datas</a>
+          </div>
+          <div class="box">
+            <div class="item">
+              <img src="${baseURL}/images/placeholder.png" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Seed datas</h3>
+                <div class="identifier">Start seed datas</div>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="synchronousManager(event, 'seedDatas')">Seed datas</a>
+              </div>
             </div>
           </div>
         `;
@@ -344,7 +362,7 @@
       <div class="tab" onclick="switchTab(event, 'datas-tab')">DATAS ({{data_count}})</div>
       <div class="tab" onclick="switchTab(event, 'fonts-tab')">FONTS ({{font_count}})</div>
       <div class="tab" onclick="switchTab(event, 'sprites-tab')">SPRITES ({{sprite_count}})</div>
-      <div class="tab" onclick="switchTab(event, 'sync-tab')">SYNCHRONOUS MANAGER</div>
+      <div class="tab" onclick="switchTab(event, 'sync-tab')">SYNCHRONOUS</div>
       <div class="tab" onclick="restartServer(event)">RESTART</div>
     </div>
     <div id="styles-tab" class="tab-content active"></div>
