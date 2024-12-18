@@ -291,7 +291,7 @@ function getStyleMD5Handler() {
 
       /* Add MD5 to header */
       res.set({
-        etag: calculateMD5(Buffer.from(JSON.stringify(styleJSON), "utf8"));,
+        etag: calculateMD5(Buffer.from(JSON.stringify(styleJSON), "utf8")),
       });
 
       return res.status(StatusCodes.OK).send();
@@ -819,7 +819,11 @@ export const serve_style = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/:id/md5/style.json", checkReadyMiddleware(), getStyleMD5Handler());
+    app.get(
+      "/:id/md5/style.json",
+      checkReadyMiddleware(),
+      getStyleMD5Handler()
+    );
 
     if (config.options.serveRendered === true) {
       /**
