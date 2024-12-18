@@ -7,7 +7,7 @@
 Clone source:
 
 ```bash
-git clone --single-branch -b 0.0.1 https://github.com/lqh2307/tile-server.git
+git clone --single-branch -b 0.0.4 https://github.com/lqh2307/tile-server.git
 ```
 
 Jump to folder:
@@ -16,10 +16,10 @@ Jump to folder:
 cd tile-server
 ```
 
-Switch to 0.0.1:
+Switch to 0.0.4:
 
 ```bash
-git checkout 0.0.1
+git checkout 0.0.4
 ```
 
 ### Run with nodejs (on ubuntu)
@@ -85,19 +85,19 @@ yarn run server -d path_to_data_folder;
 Build image:
 
 ```bash
-docker build -t tile-server:0.0.1 .
+docker build -t tile-server:0.0.4 .
 ```
 
 Run container (without nginx):
 
 ```bash
-docker run --rm -it -p 8080:8080 --name tile-server -e USE_NGINX=false -v path_to_data_folder:/tile-server/data tile-server:0.0.1
+docker run --rm -it -p 8080:8080 --name tile-server -e USE_NGINX=false -v path_to_data_folder:/tile-server/data tile-server:0.0.4
 ```
 
 Run container (with nginx):
 
 ```bash
-docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-server/data tile-server:0.0.1
+docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-server/data tile-server:0.0.4
 ```
 
 ## Example config.json
@@ -122,14 +122,14 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
     "thread": 8
   },
   "styles": {
-    "vietnam": {
-      "style": "vietnam/style.json"
+    "asia_vietnam": {
+      "style": "asia_vietnam/style.json"
     },
-    "cambodia": {
-      "style": "cambodia/style.json",
+    "asia_cambodia": {
+      "style": "asia_cambodia",
       "cache": {
         "forward": true,
-        "store": false
+        "store": true
       }
     },
     "zurich_switzerland": {
@@ -137,32 +137,33 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
     }
   },
   "datas": {
-    "asia_vietnam": {
+    "asia_china": {
       "mbtiles": "asia_vietnam/asia_vietnam.mbtiles"
     },
-    "asia_cambodia": {
-      "mbtiles": "asia_cambodia/asia_cambodia.mbtiles"
+    "asia_korea": {
+      "pmtiles": "asia_korea/asia_korea.pmtiles"
     },
-    "planet": {
-      "pmtiles": "https://data.source.coop/protomaps/openstreetmap/tiles/v3.pmtiles"
+    "asia_myanmar": {
+      "pmtiles": "http://localhost:9999/datas/asia_myanmar.pmtiles"
     },
-    "building_footprints": {
-      "pmtiles": "https://data.source.coop/vida/google-microsoft-open-buildings/pmtiles/go_ms_building_footprints.pmtiles"
-    },
-    "ODbL_firenze": {
-      "pmtiles": "ODbL_firenze/ODbL_firenze.pmtiles"
+    "asia_japan": {
+      "mbtiles": "http://localhost:9999/datas/asia_japan.mbtiles"
     },
     "zurich_switzerland": {
-      "mbtiles": "https://github.com/acalcutt/tileserver-gl/releases/download/test_data/zurich_switzerland.mbtiles"
+      "mbtiles": "zurich_switzerland_cache",
+      "cache": {
+        "forward": false,
+        "store": false
+      }
     },
-    "asia_vietnam_cache": {
-      "xyz": "asia_vietnam_cache",
+    "asia_vietnam": {
+      "mbtiles": "asia_vietnam_cache",
       "cache": {
         "forward": true,
         "store": true
       }
     },
-    "asia_cambodia_cache": {
+    "asia_cambodia": {
       "xyz": "asia_cambodia_cache",
       "cache": {
         "forward": true,
@@ -186,27 +187,15 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
 ```json
 {
   "styles": {
-    "vietnam": {
-      "url": "http://localhost:8080/styles/vietnam/style.json",
-      "refreshBefore": {
-        "time": "2024-10-10T00:00:00"
-      }
-    },
-    "cambodia": {
+    "asia_cambodia": {
       "metadata": {
-        "name": "cambodia",
+        "name": "asia_cambodia",
         "zoom": 10,
         "center": [120, 20, 3]
       },
-      "url": "http://localhost:8080/styles/cambodia/style.json",
+      "url": "http://localhost:9999/styles/asia_cambodia/style.json",
       "refreshBefore": {
-        "time": "2024-10-10T00:00:00"
-      }
-    },
-    "zurich_switzerland": {
-      "url": "http://localhost:8080/styles/zurich_switzerland/style.json",
-      "refreshBefore": {
-        "time": "2024-10-10T00:00:00"
+        "day": 2
       }
     }
   },
@@ -221,13 +210,13 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
         "minzoom": 0,
         "maxzoom": 15
       },
-      "url": "http://localhost:8080/datas/asia_vietnam/{z}/{x}/{y}.png",
+      "url": "http://localhost:9999/datas/asia_vietnam/{z}/{x}/{y}.png",
       "bboxs": [[96, 4, 120, 28]],
       "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
       },
-      "storeType": "xyz",
+      "storeType": "mbtiles",
       "storeTransparent": true,
       "storeMD5": true,
       "timeout": 60000,
@@ -252,11 +241,42 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
           }
         ]
       },
-      "url": "http://localhost:8080/datas/asia_cambodia/{z}/{x}/{y}.pbf",
+      "url": "http://localhost:9999/datas/asia_cambodia/{z}/{x}/{y}.pbf",
       "bboxs": [[96, 4, 120, 28]],
       "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
       "refreshBefore": {
-        "time": "2024-10-10T00:00:00"
+        "day": 2
+      },
+      "storeType": "xyz",
+      "storeTransparent": false,
+      "storeMD5": true,
+      "timeout": 60000,
+      "concurrency": 100,
+      "maxTry": 5
+    },
+    "zurich_switzerland_cache": {
+      "metadata": {
+        "name": "zurich_switzerland",
+        "description": "zurich_switzerland",
+        "format": "pbf",
+        "bounds": [96, 4, 120, 28],
+        "center": [108, 16, 10],
+        "minzoom": 0,
+        "maxzoom": 15,
+        "vector_layers": [
+          {
+            "id": "landuse"
+          },
+          {
+            "id": "waterway"
+          }
+        ]
+      },
+      "url": "http://localhost:9999/datas/zurich_switzerland/{z}/{x}/{y}.pbf",
+      "bboxs": [[96, 4, 120, 28]],
+      "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      "refreshBefore": {
+        "md5": true
       },
       "storeType": "mbtiles",
       "storeTransparent": false,
@@ -268,13 +288,13 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
   },
   "sprites": {
     "liberty": {
-      "url": "http://localhost:8080/sprites/liberty/sprite",
+      "url": "http://localhost:9999/sprites/liberty/sprite",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
       }
     },
     "basic": {
-      "url": "http://localhost:8080/sprites/basic/sprite",
+      "url": "http://localhost:9999/sprites/basic/sprite",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
       }
@@ -282,13 +302,13 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
   },
   "fonts": {
     "Open Sans Regular": {
-      "url": "http://localhost:8080/fonts/Open Sans Regular/{range}.pbf",
+      "url": "http://localhost:9999/fonts/Open Sans Regular/{range}.pbf",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
       }
     },
     "Times New Roman": {
-      "url": "http://localhost:8080/fonts/Times New Roman/{range}.pbf",
+      "url": "http://localhost:9999/fonts/Times New Roman/{range}.pbf",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
       }
@@ -302,19 +322,19 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
 ```json
 {
   "styles": {
-    "vietnam": {
+    "asia_vietnam": {
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
       }
     },
-    "cambodia": {
+    "asia_cambodia": {
       "cleanUpBefore": {
-        "time": "2024-10-10T00:00:00"
+        "day": 2
       }
     },
     "zurich_switzerland": {
       "cleanUpBefore": {
-        "time": "2024-10-10T00:00:00"
+        "day": 3
       }
     }
   },
@@ -328,9 +348,16 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
     },
     "asia_cambodia_cache": {
       "cleanUpBefore": {
-        "time": "2024-10-10T00:00:00"
+        "day": 2
       },
       "zooms": [0, 1, 2, 3, 4, 5, 9, 10],
+      "bboxs": [[96, 4, 120, 28]]
+    },
+    "zurich_switzerland_cache": {
+      "cleanUpBefore": {
+        "day": 3
+      },
+      "zooms": [10],
       "bboxs": [[96, 4, 120, 28]]
     }
   },
