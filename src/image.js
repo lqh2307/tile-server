@@ -155,8 +155,8 @@ export async function renderImage(
       return await sharp(data, {
         raw: {
           premultiplied: true,
-          width: size * tileScale,
-          height: size * tileScale,
+          width: tileSize * tileScale,
+          height: tileSize * tileScale,
           channels: 4,
         },
       })
