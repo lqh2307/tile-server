@@ -686,7 +686,7 @@ export const serve_data = {
      *         description: Tile format
      *     responses:
      *       200:
-     *         description: Data tile
+     *         description: Data tile MD5
      *         content:
      *           application/octet-stream:
      *             schema:

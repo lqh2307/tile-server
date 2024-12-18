@@ -118,7 +118,7 @@ async function startClusterServer(opts) {
         switch (message.action) {
           case "killServer": {
             printLog(
-              "warning",
+              "info",
               `Received "killServer" message from worker with PID = ${worker.process.pid}. Killing server...`
             );
 
@@ -126,7 +126,7 @@ async function startClusterServer(opts) {
           }
           case "restartServer": {
             printLog(
-              "warning",
+              "info",
               `Received "restartServer" message from worker with PID = ${worker.process.pid}. Restarting server...`
             );
 
@@ -134,7 +134,7 @@ async function startClusterServer(opts) {
           }
           case "startTask": {
             printLog(
-              "warning",
+              "info",
               `Received "startTask" message from worker with PID = ${worker.process.pid}. Starting task...`
             );
 
@@ -150,7 +150,7 @@ async function startClusterServer(opts) {
           }
           case "cancelTask": {
             printLog(
-              "warning",
+              "info",
               `Received "cancelTask" message from worker with PID = ${worker.process.pid}. Canceling task...`
             );
 

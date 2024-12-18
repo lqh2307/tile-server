@@ -243,7 +243,7 @@ export async function cacheStyleFile(filePath, data) {
 }
 
 /**
- * Get style JSON from a URL
+ * Get styleJSON from a URL
  * @param {string} url The URL to fetch data from
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<object>}
@@ -271,7 +271,7 @@ export async function getStyleJSONFromURL(url, timeout) {
 
 /**
  * Validate style
- * @param {object} styleJSON Style JSON
+ * @param {object} styleJSON StyleJSON
  * @returns {Promise<void>}
  */
 export async function validateStyle(styleJSON) {

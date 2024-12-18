@@ -90,91 +90,87 @@ export function createEmptyData() {
 }
 
 /**
- * Render data
+ * Render image
  * @param {object} item Rendered item object
- * @param {number} scale Scale
- * @param {256|512} tileSize Image size
+ * @param {number} tileScale Tile scale
+ * @param {256|512} tileSize Tile size
+ * @param {number} tileCompression Tile compression level
+ * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
- * @param {number} z Zoom level
  * @returns {Promise<Buffer>}
  */
-export async function renderData(item, scale, tileSize, x, y, z) {
-  const params = {
-    zoom: z,
-    center: getLonLatFromXYZ(x, y, z, "center", "xyz"),
-    width: tileSize,
-    height: tileSize,
-  };
+export async function renderImage(
+  item,
+  tileScale,
+  tileSize,
+  tileCompression,
+  z,
+  x,
+  y
+) {
+  const renderer = await item.renderers[tileScale - 1].acquire();
 
-  if (tileSize === 256) {
-    if (z !== 0) {
-      params.zoom = z - 1;
-    } else {
-      // HACK1: This hack allows tile-server to support zoom level 0 - 256px tiles, which would actually be zoom -1 in maplibre-gl-native
-      params.width = 512;
-      params.height = 512;
-      // END HACK1
-    }
-  }
+  try {
+    const data = await new Promise((resolve, reject) => {
+      renderer.render(
+        {
+          zoom: z !== 0 && tileSize === 256 ? z - 1 : z,
+          center: getLonLatFromXYZ(x, y, z, "center", "xyz"),
+          width: z === 0 && tileSize === 256 ? 512 : tileSize,
+          height: z === 0 && tileSize === 256 ? 512 : tileSize,
+        },
+        (error, data) => {
+          item.renderers[tileScale - 1].release(renderer);
 
-  const renderer = await item.renderers[scale - 1].acquire();
+          if (error) {
+            return reject(error);
+          }
 
-  return await new Promise((resolve, reject) => {
-    renderer.render(params, (error, data) => {
-      item.renderers[scale - 1].release(renderer);
-
-      if (error) {
-        return reject(error);
-      }
-
-      resolve(data);
+          resolve(data);
+        }
+      );
     });
-  });
-}
 
-/**
- * Render image
- * @param {Buffer} data Image data buffer
- * @param {number} scale Scale
- * @param {number} compression Compression level
- * @param {256|512} size Image size
- * @param {number} z Zoom level
- * @returns {Promise<Buffer>}
- */
-export async function processImage(data, scale, compression, size, z) {
-  if (z === 0 && size === 256) {
-    // HACK2: This hack allows tile-server to support zoom level 0 - 256px tiles, which would actually be zoom -1 in maplibre-gl-native
-    return await sharp(data, {
-      raw: {
-        premultiplied: true,
-        width: 512 * scale,
-        height: 512 * scale,
-        channels: 4,
-      },
-    })
-      .resize({
-        width: 256 * scale,
-        height: 256 * scale,
+    if (z === 0 && tileSize === 256) {
+      // HACK2: This hack allows tile-server to support zoom level 0 - 256px tiles, which would actually be zoom -1 in maplibre-gl-native
+      return await sharp(data, {
+        raw: {
+          premultiplied: true,
+          width: 512 * tileScale,
+          height: 512 * tileScale,
+          channels: 4,
+        },
       })
-      .png({
-        compressionLevel: compression,
+        .resize({
+          width: 256 * tileScale,
+          height: 256 * tileScale,
+        })
+        .png({
+          compressionLevel: tileCompression,
+        })
+        .toBuffer();
+      // END HACK2
+    } else {
+      return await sharp(data, {
+        raw: {
+          premultiplied: true,
+          width: size * tileScale,
+          height: size * tileScale,
+          channels: 4,
+        },
       })
-      .toBuffer();
-    // END HACK2
-  } else {
-    return await sharp(data, {
-      raw: {
-        premultiplied: true,
-        width: size * scale,
-        height: size * scale,
-        channels: 4,
-      },
-    })
-      .png({
-        compressionLevel: compression,
-      })
-      .toBuffer();
+        .png({
+          compressionLevel: tileCompression,
+        })
+        .toBuffer();
+    }
+  } catch (error) {
+    if (renderer !== undefined) {
+      item.renderers[tileScale - 1].release(renderer);
+    }
+
+    throw error;
   }
 }
 

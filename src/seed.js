@@ -1,6 +1,6 @@
 "use strict";
 
-import { downloadStyleFile, getStyleCreated } from "./style.js";
+import { downloadStyleFile, getStyleCreated, getStyle } from "./style.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
@@ -95,8 +95,15 @@ export async function readSeedFile(isValidate) {
                       type: "integer",
                       minimum: 0,
                     },
+                    md5: {
+                      type: "boolean",
+                    },
                   },
-                  anyOf: [{ required: ["time"] }, { required: ["day"] }],
+                  anyOf: [
+                    { required: ["time"] },
+                    { required: ["day"] },
+                    { required: ["md5"] },
+                  ],
                   additionalProperties: true,
                 },
                 timeout: {
@@ -820,6 +827,10 @@ export async function seedStyle(
     refreshTimestamp = now.setDate(now.getDate() - refreshBefore);
 
     log += `\n\tOld than: ${refreshBefore} days`;
+  } else if (typeof refreshBefore === "boolean") {
+    refreshTimestamp = true;
+
+    log += `\n\tRefresh before: check MD5`;
   }
 
   printLog("info", log);
@@ -830,7 +841,31 @@ export async function seedStyle(
   try {
     let needDownload = false;
 
-    if (refreshTimestamp !== undefined) {
+    if (refreshTimestamp === true) {
+      try {
+        const [response, styleJSON] = await Promise.all([
+          getDataFromURL(
+            styleURL.replaceAll("style.json", `md5/style.json`),
+            timeout,
+            "arraybuffer"
+          ),
+          getStyle(filePath),
+        ]);
+
+        if (
+          response.headers["etag"] !==
+          calculateMD5(Buffer.from(JSON.stringify(styleJSON), "utf8"))
+        ) {
+          needDownload = true;
+        }
+      } catch (error) {
+        if (error.message === "Style does not exist") {
+          needDownload = true;
+        } else {
+          throw error;
+        }
+      }
+    } else if (refreshTimestamp !== undefined) {
       try {
         const created = await getStyleCreated(filePath);
 
