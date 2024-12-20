@@ -9,7 +9,7 @@ import path from "node:path";
  * @param {string} filePath File path
  * @param {number} mode SQLite mode (e.g: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE | sqlite3.OPEN_READONLY)
  * @param {boolean} wal Use WAL
- * @returns {Promise<sqlite3.Database>}
+ * @returns {Promise<sqlite3.Database>} SQLite database instance
  */
 export async function openSQLite(filePath, mode, wal) {
   // Create folder if has sqlite3.OPEN_CREATE mode
