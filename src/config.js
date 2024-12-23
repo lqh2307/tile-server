@@ -75,10 +75,6 @@ async function readConfigFile(isValidate) {
                   "^([0-5]?\\d|\\*)\\s([0-5]?\\d|\\*)\\s([0-1]?\\d|2[0-3]|\\*)\\s([1-9]|[12]\\d|3[01]|\\*)\\s([1-9]|1[0-2]|\\*)\\s([0-7]|\\*)$|^([0-5]?\\d|\\*)\\s([0-5]?\\d|\\*)\\s([0-1]?\\d|2[0-3]|\\*)\\s([1-9]|[12]\\d|3[01]|\\*)\\s([1-9]|1[0-2]|\\*)$",
                 minLength: 1,
               },
-              mongoDBURI: {
-                type: "string",
-                minLength: 1,
-              },
               restartServerAfterTask: {
                 type: "boolean",
               },
@@ -91,7 +87,6 @@ async function readConfigFile(isValidate) {
                 minimum: 1,
               },
             },
-            additionalProperties: true,
           },
           styles: {
             type: "object",
@@ -112,11 +107,9 @@ async function readConfigFile(isValidate) {
                       type: "boolean",
                     },
                   },
-                  additionalProperties: true,
                 },
               },
               required: ["style"],
-              additionalProperties: true,
             },
           },
           datas: {
@@ -136,6 +129,10 @@ async function readConfigFile(isValidate) {
                   type: "string",
                   minLength: 1,
                 },
+                pg: {
+                  type: "string",
+                  minLength: 1,
+                },
                 cache: {
                   type: "object",
                   properties: {
@@ -146,14 +143,13 @@ async function readConfigFile(isValidate) {
                       type: "boolean",
                     },
                   },
-                  additionalProperties: true,
                 },
               },
-              additionalProperties: true,
               anyOf: [
                 { required: ["mbtiles"] },
                 { required: ["pmtiles"] },
                 { required: ["xyz"] },
+                { required: ["pg"] },
               ],
             },
           },
@@ -171,7 +167,6 @@ async function readConfigFile(isValidate) {
           },
         },
         required: ["options", "styles", "datas", "sprites", "fonts"],
-        additionalProperties: true,
       },
       config
     );
@@ -194,7 +189,6 @@ async function readConfigFile(isValidate) {
       config.options.loggerFormat ??
       ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
     taskSchedule: config.options.taskSchedule, // undefined
-    mongoDBURI: config.options.mongoDBURI, // undefined
     restartServerAfterTask: config.options.restartServerAfterTask ?? true,
     process: config.options.process ?? 1,
     thread: config.options.thread ?? os.cpus().length,

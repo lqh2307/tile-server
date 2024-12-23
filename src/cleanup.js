@@ -1,10 +1,10 @@
 "use strict";
 
 import { getStyleCreated, removeStyleFile } from "./style.js";
+import { OPEN_READWRITE, OPEN_CREATE } from "sqlite3";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
-import sqlite3 from "sqlite3";
 import path from "node:path";
 import os from "os";
 import {
@@ -63,10 +63,8 @@ export async function readCleanUpFile(isValidate) {
                     },
                   },
                   anyOf: [{ required: ["time"] }, { required: ["day"] }],
-                  additionalProperties: true,
                 },
               },
-              additionalProperties: true,
             },
           },
           datas: {
@@ -110,10 +108,8 @@ export async function readCleanUpFile(isValidate) {
                     },
                   },
                   anyOf: [{ required: ["time"] }, { required: ["day"] }],
-                  additionalProperties: true,
                 },
               },
-              additionalProperties: true,
             },
           },
           sprites: {
@@ -134,10 +130,8 @@ export async function readCleanUpFile(isValidate) {
                     },
                   },
                   anyOf: [{ required: ["time"] }, { required: ["day"] }],
-                  additionalProperties: true,
                 },
               },
-              additionalProperties: true,
             },
           },
           fonts: {
@@ -158,15 +152,12 @@ export async function readCleanUpFile(isValidate) {
                     },
                   },
                   anyOf: [{ required: ["time"] }, { required: ["day"] }],
-                  additionalProperties: true,
                 },
               },
-              additionalProperties: true,
             },
           },
         },
         required: ["styles", "datas", "sprites", "fonts"],
-        additionalProperties: true,
       },
       cleanUp
     );
@@ -222,7 +213,7 @@ export async function cleanUpMBTilesTiles(
   // Open MBTiles SQLite database
   const source = await openMBTilesDB(
     `${sourcePath}/${id}.mbtiles`,
-    sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+    OPEN_READWRITE | OPEN_CREATE,
     false
   );
 
@@ -371,7 +362,7 @@ export async function cleanUpXYZTiles(
   // Open XYZ MD5 SQLite database
   const source = await openXYZMD5DB(
     `${sourcePath}/${id}.sqlite`,
-    sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+    OPEN_READWRITE | OPEN_CREATE,
     false
   );
 

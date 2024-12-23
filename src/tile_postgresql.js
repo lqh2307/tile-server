@@ -12,7 +12,6 @@ import {
   getDataFromURL,
   calculateMD5,
   retry,
-  delay,
 } from "./utils.js";
 
 /**
@@ -21,30 +20,32 @@ import {
  * @returns {Promise<void>}
  */
 async function initializePostgreSQLTables(source) {
+  // Create metadata table
   await source.query(
     `
-      CREATE TABLE IF NOT EXISTS
-        metadata (
-          name TEXT NOT NULL,
-          value TEXT NOT NULL,
-          PRIMARY KEY (name)
-        );
-      `
+    CREATE TABLE IF NOT EXISTS
+      metadata (
+        name TEXT NOT NULL,
+        value TEXT NOT NULL,
+        PRIMARY KEY (name)
+      );
+    `
   );
 
+  // Create tiles table
   await source.query(
     `
-      CREATE TABLE IF NOT EXISTS
-        tiles (
-          zoom_level INTEGER NOT NULL,
-          tile_column INTEGER NOT NULL,
-          tile_row INTEGER NOT NULL,
-          tile_data BYTEA NOT NULL,
-          hash TEXT,
-          created INTEGER,
-          PRIMARY KEY (zoom_level, tile_column, tile_row)
-        );
-      `
+    CREATE TABLE IF NOT EXISTS
+      tiles (
+        zoom_level INTEGER NOT NULL,
+        tile_column INTEGER NOT NULL,
+        tile_row INTEGER NOT NULL,
+        tile_data BYTEA NOT NULL,
+        hash TEXT,
+        created INTEGER,
+        PRIMARY KEY (zoom_level, tile_column, tile_row)
+      );
+    `
   );
 }
 
@@ -64,9 +65,17 @@ async function getPostgreSQLLayersFromTiles(source) {
 
   while (true) {
     const rows = await source.query(
-      `SELECT tile_data FROM tiles LIMIT ? OFFSET ?;`,
-      batchSize,
-      offset
+      `
+      SELECT
+        tile_data
+      FROM
+        tiles
+      LIMIT
+        $1
+      OFFSET
+        $2;
+      `,
+      [batchSize, offset]
     );
 
     if (rows.rows.length === 0) {
@@ -95,7 +104,11 @@ async function getPostgreSQLBBoxFromTiles(source) {
   const rows = await source.query(
     `
     SELECT
-      zoom_level, MIN(tile_column) AS xMin, MAX(tile_column) AS xMax, MIN(tile_row) AS yMin, MAX(tile_row) AS yMax
+      zoom_level,
+      MIN(tile_column) AS xMin,
+      MAX(tile_column) AS xMax,
+      MIN(tile_row) AS yMin,
+      MAX(tile_row) AS yMax
     FROM
       tiles
     GROUP BY
@@ -182,7 +195,14 @@ async function createPostgreSQLTileWithLock(
     ON CONFLICT (zoom_level, tile_column, tile_row)
     DO UPDATE SET tile_data = excluded.tile_data, hash = excluded.hash, created = excluded.created;
     `,
-    value: [z, x, y, data, hash, Date.now()],
+    value: [
+      z,
+      x,
+      y,
+      data,
+      storeMD5 === true ? calculateMD5(data) : undefined,
+      Date.now(),
+    ],
     statement_timeout: timeout,
   });
 }

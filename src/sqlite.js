@@ -1,19 +1,19 @@
 "use strict";
 
+import { Database, OPEN_CREATE } from "sqlite3";
 import fsPromise from "node:fs/promises";
-import sqlite3 from "sqlite3";
 import path from "node:path";
 
 /**
  * Open SQLite database
  * @param {string} filePath File path
- * @param {number} mode SQLite mode (e.g: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE | sqlite3.OPEN_READONLY)
+ * @param {number} mode SQLite mode (e.g: OPEN_READWRITE | OPEN_CREATE | OPEN_READONLY)
  * @param {boolean} wal Use WAL
- * @returns {Promise<sqlite3.Database>} SQLite database instance
+ * @returns {Promise<Database>} SQLite database instance
  */
 export async function openSQLite(filePath, mode, wal) {
-  // Create folder if has sqlite3.OPEN_CREATE mode
-  if (mode & sqlite3.OPEN_CREATE) {
+  // Create folder if has OPEN_CREATE mode
+  if (mode & OPEN_CREATE) {
     await fsPromise.mkdir(path.dirname(filePath), {
       recursive: true,
     });
@@ -21,7 +21,7 @@ export async function openSQLite(filePath, mode, wal) {
 
   // Open DB
   return await new Promise((resolve, reject) => {
-    const source = new sqlite3.Database(filePath, mode, async (error) => {
+    const source = new Database(filePath, mode, async (error) => {
       if (error) {
         return reject(error);
       }
@@ -52,7 +52,7 @@ export async function openSQLite(filePath, mode, wal) {
 
 /**
  * Run a SQL command in SQLite
- * @param {sqlite3.Database} source SQLite database instance
+ * @param {Database} source SQLite database instance
  * @param {string} sql SQL command to execute
  * @param {...any} params Parameters for the SQL command
  * @returns {Promise<void>}
@@ -71,7 +71,7 @@ export async function runSQL(source, sql, ...params) {
 
 /**
  * Fetch one row from SQLite database
- * @param {sqlite3.Database} source SQLite database instance
+ * @param {Database} source SQLite database instance
  * @param {string} sql SQL query string
  * @param {...any} params Parameters for the SQL query
  * @returns {Promise<object>} The first row of the query result
@@ -90,7 +90,7 @@ export async function fetchOne(source, sql, ...params) {
 
 /**
  * Fetch all rows from SQLite database
- * @param {sqlite3.Database} source SQLite database instance
+ * @param {Database} source SQLite database instance
  * @param {string} sql SQL query string
  * @param {...any} params Parameters for the SQL query
  * @returns {Promise<Array<object>>} An array of rows
@@ -109,7 +109,7 @@ export async function fetchAll(source, sql, ...params) {
 
 /**
  * Close SQLite database
- * @param {sqlite3.Database} source SQLite database instance
+ * @param {Database} source SQLite database instance
  * @returns {Promise<void>}
  */
 export async function closeSQLite(source) {

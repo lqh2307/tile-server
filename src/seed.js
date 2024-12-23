@@ -1,10 +1,10 @@
 "use strict";
 
 import { downloadStyleFile, getStyleCreated, getStyle } from "./style.js";
+import { OPEN_READWRITE, OPEN_CREATE } from "sqlite3";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
-import sqlite3 from "sqlite3";
 import path from "node:path";
 import os from "os";
 import {
@@ -78,7 +78,6 @@ export async function readSeedFile(isValidate) {
                       maxItems: 3,
                     },
                   },
-                  additionalProperties: true,
                 },
                 url: {
                   type: "string",
@@ -104,7 +103,6 @@ export async function readSeedFile(isValidate) {
                     { required: ["day"] },
                     { required: ["md5"] },
                   ],
-                  additionalProperties: true,
                 },
                 timeout: {
                   type: "integer",
@@ -116,7 +114,6 @@ export async function readSeedFile(isValidate) {
                 },
               },
               required: ["metadata", "url"],
-              additionalProperties: true,
             },
           },
           datas: {
@@ -210,7 +207,6 @@ export async function readSeedFile(isValidate) {
                           },
                         },
                         required: ["id"],
-                        additionalProperties: true,
                       },
                     },
                     tilestats: {
@@ -220,11 +216,9 @@ export async function readSeedFile(isValidate) {
                           type: "integer",
                         },
                       },
-                      additionalProperties: true,
                     },
                   },
                   required: ["format"],
-                  additionalProperties: true,
                 },
                 url: {
                   type: "string",
@@ -250,7 +244,6 @@ export async function readSeedFile(isValidate) {
                     { required: ["day"] },
                     { required: ["md5"] },
                   ],
-                  additionalProperties: true,
                 },
                 zooms: {
                   type: "array",
@@ -289,7 +282,7 @@ export async function readSeedFile(isValidate) {
                 },
                 storeType: {
                   type: "string",
-                  enum: ["xyz", "mbtiles"],
+                  enum: ["xyz", "mbtiles", "pg"],
                 },
                 storeMD5: {
                   type: "boolean",
@@ -299,7 +292,6 @@ export async function readSeedFile(isValidate) {
                 },
               },
               required: ["metadata", "storeType", "url"],
-              additionalProperties: true,
             },
           },
           sprites: {
@@ -324,7 +316,6 @@ export async function readSeedFile(isValidate) {
                     },
                   },
                   anyOf: [{ required: ["time"] }, { required: ["day"] }],
-                  additionalProperties: true,
                 },
                 timeout: {
                   type: "integer",
@@ -336,7 +327,6 @@ export async function readSeedFile(isValidate) {
                 },
               },
               required: ["url"],
-              additionalProperties: true,
             },
           },
           fonts: {
@@ -361,7 +351,6 @@ export async function readSeedFile(isValidate) {
                     },
                   },
                   anyOf: [{ required: ["time"] }, { required: ["day"] }],
-                  additionalProperties: true,
                 },
                 timeout: {
                   type: "integer",
@@ -373,12 +362,10 @@ export async function readSeedFile(isValidate) {
                 },
               },
               required: ["url"],
-              additionalProperties: true,
             },
           },
         },
         required: ["styles", "datas", "sprites", "fonts"],
-        additionalProperties: false,
       },
       seed
     );
@@ -452,7 +439,7 @@ export async function seedMBTilesTiles(
   // Open MBTiles SQLite database
   const source = await openMBTilesDB(
     `${sourcePath}/${id}.mbtiles`,
-    sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+    OPEN_READWRITE | OPEN_CREATE,
     false
   );
 
@@ -650,7 +637,7 @@ export async function seedXYZTiles(
   // Open MD5 SQLite database
   const source = await openXYZMD5DB(
     `${sourcePath}/${id}.sqlite`,
-    sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+    OPEN_READWRITE | OPEN_CREATE,
     false
   );
 
