@@ -14,7 +14,7 @@ import {
   closeXYZMD5DB,
   getXYZTileMD5,
   openXYZMD5DB,
-} from "./xyz.js";
+} from "./tile_xyz.js";
 import {
   updateMBTilesMetadataWithLock,
   getMBTilesTileCreated,
@@ -22,7 +22,7 @@ import {
   getMBTilesTileMD5,
   closeMBTilesDB,
   openMBTilesDB,
-} from "./mbtiles.js";
+} from "./tile_mbtiles.js";
 import {
   getTilesBoundsFromBBoxs,
   removeEmptyFolders,
@@ -450,7 +450,7 @@ export async function seedMBTilesTiles(
   printLog("info", log);
 
   // Open MBTiles SQLite database
-  const mbtilesSource = await openMBTilesDB(
+  const source = await openMBTilesDB(
     `${sourcePath}/${id}.mbtiles`,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     false
@@ -460,7 +460,7 @@ export async function seedMBTilesTiles(
   printLog("info", "Updating metadata...");
 
   await updateMBTilesMetadataWithLock(
-    mbtilesSource,
+    source,
     metadata,
     300000 // 5 mins
   );
@@ -485,7 +485,7 @@ export async function seedMBTilesTiles(
               timeout,
               "arraybuffer"
             ),
-            getMBTilesTileMD5(mbtilesSource, z, x, y),
+            getMBTilesTileMD5(source, z, x, y),
           ]);
 
           if (response.headers["etag"] !== md5) {
@@ -500,7 +500,7 @@ export async function seedMBTilesTiles(
         }
       } else if (refreshTimestamp !== undefined) {
         try {
-          const created = await getMBTilesTileCreated(mbtilesSource, z, x, y);
+          const created = await getMBTilesTileCreated(source, z, x, y);
 
           if (!created || created < refreshTimestamp) {
             needDownload = true;
@@ -519,7 +519,7 @@ export async function seedMBTilesTiles(
       if (needDownload === true) {
         await downloadMBTilesTile(
           tileURL.replaceAll("{z}/{x}/{y}", tileName),
-          mbtilesSource,
+          source,
           z,
           x,
           y,
@@ -571,8 +571,8 @@ export async function seedMBTilesTiles(
   }
 
   // Close MBTiles SQLite database
-  if (mbtilesSource !== undefined) {
-    await closeMBTilesDB(mbtilesSource);
+  if (source !== undefined) {
+    await closeMBTilesDB(source);
   }
 
   const doneTime = Date.now();
@@ -648,7 +648,7 @@ export async function seedXYZTiles(
   printLog("info", log);
 
   // Open MD5 SQLite database
-  const xyzSource = await openXYZMD5DB(
+  const source = await openXYZMD5DB(
     `${sourcePath}/${id}.sqlite`,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     false
@@ -685,7 +685,7 @@ export async function seedXYZTiles(
               timeout,
               "arraybuffer"
             ),
-            getXYZTileMD5(xyzSource, z, x, y),
+            getXYZTileMD5(source, z, x, y),
           ]);
 
           if (response.headers["etag"] !== md5) {
@@ -722,7 +722,7 @@ export async function seedXYZTiles(
         await downloadXYZTileDataFile(
           tileURL.replaceAll("{z}/{x}/{y}", tileName),
           sourcePath,
-          xyzSource,
+          source,
           z,
           x,
           y,
@@ -775,8 +775,8 @@ export async function seedXYZTiles(
   }
 
   // Close MD5 SQLite database
-  if (xyzSource !== undefined) {
-    await closeXYZMD5DB(xyzSource);
+  if (source !== undefined) {
+    await closeXYZMD5DB(source);
   }
 
   // Remove parent folders if empty

@@ -12,13 +12,13 @@ import {
   getXYZTileCreated,
   closeXYZMD5DB,
   openXYZMD5DB,
-} from "./xyz.js";
+} from "./tile_xyz.js";
 import {
   removeMBTilesTileData,
   getMBTilesTileCreated,
   closeMBTilesDB,
   openMBTilesDB,
-} from "./mbtiles.js";
+} from "./tile_mbtiles.js";
 import {
   getTilesBoundsFromBBoxs,
   removeEmptyFolders,
@@ -220,7 +220,7 @@ export async function cleanUpMBTilesTiles(
   printLog("info", log);
 
   // Open MBTiles SQLite database
-  const mbtilesSource = await openMBTilesDB(
+  const source = await openMBTilesDB(
     `${sourcePath}/${id}.mbtiles`,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     false
@@ -240,7 +240,7 @@ export async function cleanUpMBTilesTiles(
 
       if (cleanUpTimestamp !== undefined) {
         try {
-          const created = await getMBTilesTileCreated(mbtilesSource, z, x, y);
+          const created = await getMBTilesTileCreated(source, z, x, y);
 
           if (!created || created < cleanUpTimestamp) {
             needRemove = true;
@@ -258,7 +258,7 @@ export async function cleanUpMBTilesTiles(
 
       if (needRemove === true) {
         await removeMBTilesTileData(
-          mbtilesSource,
+          source,
           z,
           x,
           y,
@@ -308,8 +308,8 @@ export async function cleanUpMBTilesTiles(
   }
 
   // Close MBTiles SQLite database
-  if (mbtilesSource !== undefined) {
-    await closeMBTilesDB(mbtilesSource);
+  if (source !== undefined) {
+    await closeMBTilesDB(source);
   }
 
   const doneTime = Date.now();
@@ -369,7 +369,7 @@ export async function cleanUpXYZTiles(
   printLog("info", log);
 
   // Open XYZ MD5 SQLite database
-  const xyzSource = await openXYZMD5DB(
+  const source = await openXYZMD5DB(
     `${sourcePath}/${id}.sqlite`,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     false
@@ -410,7 +410,7 @@ export async function cleanUpXYZTiles(
       if (needRemove === true) {
         await removeXYZTileDataFile(
           sourcePath,
-          xyzSource,
+          source,
           z,
           x,
           y,
@@ -461,8 +461,8 @@ export async function cleanUpXYZTiles(
   }
 
   // Close XYZ MD5 SQLite database
-  if (xyzSource !== undefined) {
-    await closeXYZMD5DB(xyzSource);
+  if (source !== undefined) {
+    await closeXYZMD5DB(source);
   }
 
   // Remove parent folders if empty

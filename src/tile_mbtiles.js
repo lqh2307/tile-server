@@ -25,88 +25,13 @@ import {
 } from "./sqlite.js";
 
 /**
- * Check if a unique index exists on a specified table with given columns
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
- * @param {string} tableName The name of the table to check
- * @param {Array<string>} columnNames The expected column names in the index
- * @returns {Promise<boolean>} Returns true if the index exists with specified columns, otherwise false
- */
-async function isMBTilesExistIndex(mbtilesSource, tableName, columnNames) {
-  const indexes = await fetchAll(
-    mbtilesSource,
-    "PRAGMA index_list (?);",
-    tableName
-  );
-
-  for (const index of indexes) {
-    const columns = await fetchAll(
-      mbtilesSource,
-      "PRAGMA index_info (?);",
-      index.name
-    );
-
-    if (
-      columns.length === columnNames.length &&
-      columns.every((col, i) => col.name === columnNames[i])
-    ) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-/**
- * Check if a columns exists on a specified table
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
- * @param {string} tableName The name of the table to check
- * @param {Array<string>} columnNames The expected column names
- * @returns {Promise<boolean>} Returns true if there columns exist on a specified table, otherwise false
- */
-async function isMBTilesExistColumns(mbtilesSource, tableName, columnNames) {
-  const columns = await fetchAll(
-    mbtilesSource,
-    "PRAGMA table_info (?);",
-    tableName
-  );
-
-  const tableColumnNames = columns.map((column) => column.name);
-
-  return columnNames.every((columnName) =>
-    tableColumnNames.includes(columnName)
-  );
-}
-
-/**
- * Create unique index on the metadata table
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
- * @param {string} indexName The name of the index
- * @param {string} tableName The name of the table to check
- * @param {Array<string>} columnNames The expected column names in the index
- * @returns {Promise<void>}
- */
-async function createMBTilesIndex(
-  mbtilesSource,
-  indexName,
-  tableName,
-  columnNames
-) {
-  await runSQL(
-    mbtilesSource,
-    `CREATE UNIQUE INDEX ? ON ? (${columnNames.join(", ")});`,
-    indexName,
-    tableName
-  );
-}
-
-/**
  * Initialize MBTiles database tables
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} source SQLite database instance
  * @returns {Promise<void>}
  */
-async function initializeMBTilesTables(mbtilesSource) {
+async function initializeMBTilesTables(source) {
   await runSQL(
-    mbtilesSource,
+    source,
     `
       CREATE TABLE IF NOT EXISTS
         metadata (
@@ -118,7 +43,7 @@ async function initializeMBTilesTables(mbtilesSource) {
   );
 
   await runSQL(
-    mbtilesSource,
+    source,
     `
       CREATE TABLE IF NOT EXISTS
         tiles (
@@ -136,10 +61,10 @@ async function initializeMBTilesTables(mbtilesSource) {
 
 /**
  * Get MBTiles layers from tiles
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} source SQLite database instance
  * @returns {Promise<Array<string>>}
  */
-async function getMBTilesLayersFromTiles(mbtilesSource) {
+async function getMBTilesLayersFromTiles(source) {
   const layerNames = new Set();
   const batchSize = 200;
   let offset = 0;
@@ -150,7 +75,7 @@ async function getMBTilesLayersFromTiles(mbtilesSource) {
 
   while (true) {
     const rows = await fetchAll(
-      mbtilesSource,
+      source,
       `SELECT tile_data FROM tiles LIMIT ? OFFSET ?;`,
       batchSize,
       offset
@@ -175,12 +100,12 @@ async function getMBTilesLayersFromTiles(mbtilesSource) {
 
 /**
  * Get MBTiles bounding box from tiles
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} source SQLite database instance
  * @returns {Promise<Array<number>>} Bounding box in format [minLon, minLat, maxLon, maxLat]
  */
-async function getMBTilesBBoxFromTiles(mbtilesSource) {
+async function getMBTilesBBoxFromTiles(source) {
   const rows = await fetchAll(
-    mbtilesSource,
+    source,
     `
     SELECT
       zoom_level, MIN(tile_column) AS xMin, MAX(tile_column) AS xMax, MIN(tile_row) AS yMin, MAX(tile_row) AS yMax
@@ -214,16 +139,13 @@ async function getMBTilesBBoxFromTiles(mbtilesSource) {
 
 /**
  * Get MBTiles zoom level from tiles
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {"minzoom"|"maxzoom"} zoomType
  * @returns {Promise<number>}
  */
-async function getMBTilesZoomLevelFromTiles(
-  mbtilesSource,
-  zoomType = "maxzoom"
-) {
+async function getMBTilesZoomLevelFromTiles(source, zoomType = "maxzoom") {
   const data = await fetchOne(
-    mbtilesSource,
+    source,
     zoomType === "minzoom"
       ? "SELECT MIN(zoom_level) AS zoom FROM tiles;"
       : "SELECT MAX(zoom_level) AS zoom FROM tiles;"
@@ -234,11 +156,11 @@ async function getMBTilesZoomLevelFromTiles(
 
 /**
  * Get MBTiles tile format from tiles
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} source SQLite database instance
  * @returns {Promise<string>}
  */
-async function getMBTilesFormatFromTiles(mbtilesSource) {
-  const data = await fetchOne(mbtilesSource, "SELECT tile_data FROM tiles;");
+async function getMBTilesFormatFromTiles(source) {
+  const data = await fetchOne(source, "SELECT tile_data FROM tiles LIMIT 1;");
 
   if (data !== undefined) {
     return detectFormatAndHeaders(data.tile_data).format;
@@ -246,64 +168,8 @@ async function getMBTilesFormatFromTiles(mbtilesSource) {
 }
 
 /**
- * Upsert MBTiles metadata table
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
- * @param {Object<string,string>} metadataAdds Metadata object
- * @returns {Promise<void>}
- */
-async function upsertMBTilesMetadata(mbtilesSource, metadataAdds) {
-  await Promise.all(
-    Object.keys(metadataAdds).map((key) =>
-      runSQL(
-        mbtilesSource,
-        `
-        INSERT INTO
-          metadata (name, value)
-        VALUES
-          (?, ?)
-        ON CONFLICT (name)
-        DO UPDATE SET value = excluded.value;
-        `,
-        key,
-        JSON.stringify(metadataAdds[key])
-      )
-    )
-  );
-}
-
-/**
- * Upsert MBTiles tile
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {string} hash MD5 hash value
- * @param {Buffer} data Tile data buffer
- * @returns {Promise<void>}
- */
-async function upsertMBTilesTile(mbtilesSource, z, x, y, hash, data) {
-  await runSQL(
-    mbtilesSource,
-    `
-    INSERT INTO
-      tiles (zoom_level, tile_column, tile_row, tile_data, hash, created)
-    VALUES
-      (?, ?, ?, ?, ?, ?)
-    ON CONFLICT (zoom_level, tile_column, tile_row)
-    DO UPDATE SET tile_data = excluded.tile_data, hash = excluded.hash, created = excluded.created;
-    `,
-    z,
-    x,
-    (1 << z) - 1 - y,
-    data,
-    hash,
-    Date.now()
-  );
-}
-
-/**
  * Create MBTiles tile
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -313,7 +179,7 @@ async function upsertMBTilesTile(mbtilesSource, z, x, y, hash, data) {
  * @returns {Promise<void>}
  */
 async function createMBTilesTileWithLock(
-  mbtilesSource,
+  source,
   z,
   x,
   y,
@@ -325,13 +191,22 @@ async function createMBTilesTileWithLock(
 
   while (Date.now() - startTime <= timeout) {
     try {
-      await upsertMBTilesTile(
-        mbtilesSource,
+      await runSQL(
+        source,
+        `
+        INSERT INTO
+          tiles (zoom_level, tile_column, tile_row, tile_data, hash, created)
+        VALUES
+          (?, ?, ?, ?, ?, ?)
+        ON CONFLICT (zoom_level, tile_column, tile_row)
+        DO UPDATE SET tile_data = excluded.tile_data, hash = excluded.hash, created = excluded.created;
+        `,
         z,
         x,
-        y,
+        (1 << z) - 1 - y,
+        data,
         storeMD5 === true ? calculateMD5(data) : undefined,
-        data
+        Date.now()
       );
 
       return;
@@ -349,42 +224,30 @@ async function createMBTilesTileWithLock(
 
 /**
  * Delete a tile from MBTiles tiles table
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @returns {Promise<void>}
- */
-async function removeMBTilesTile(mbtilesSource, z, x, y) {
-  await runSQL(
-    mbtilesSource,
-    `
-    DELETE FROM
-      tiles
-    WHERE
-      zoom_level = ? AND tile_column = ? AND tile_row = ?;
-    `,
-    z,
-    x,
-    (1 << z) - 1 - y
-  );
-}
-
-/**
- * Delete a tile from MBTiles tiles table
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function removeMBTilesTileWithLock(mbtilesSource, z, x, y, timeout) {
+async function removeMBTilesTileWithLock(source, z, x, y, timeout) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
     try {
-      await removeMBTilesTile(mbtilesSource, z, x, y);
+      await runSQL(
+        source,
+        `
+        DELETE FROM
+          tiles
+        WHERE
+          zoom_level = ? AND tile_column = ? AND tile_row = ?;
+        `,
+        z,
+        x,
+        (1 << z) - 1 - y
+      );
 
       return;
     } catch (error) {
@@ -401,7 +264,7 @@ async function removeMBTilesTileWithLock(mbtilesSource, z, x, y, timeout) {
 
 /**
  * Open MBTiles database
- * @param {string} filePath MBTiles file path
+ * @param {string} filePath MBTiles filepath
  * @param {number} mode SQLite mode (e.g: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE | sqlite3.OPEN_READONLY)
  * @param {boolean} wal Use WAL
  * @returns {Promise<object>}
@@ -411,26 +274,26 @@ export async function openMBTilesDB(
   mode = sqlite3.OPEN_READONLY,
   wal = false
 ) {
-  const mbtilesSource = await openSQLite(filePath, mode, wal);
+  const source = await openSQLite(filePath, mode, wal);
 
   if (mode & sqlite3.OPEN_CREATE) {
-    await initializeMBTilesTables(mbtilesSource);
+    await initializeMBTilesTables(source);
   }
 
-  return mbtilesSource;
+  return source;
 }
 
 /**
  * Get MBTiles tile
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @returns {Promise<object>}
  */
-export async function getMBTilesTile(mbtilesSource, z, x, y) {
+export async function getMBTilesTile(source, z, x, y) {
   let data = await fetchOne(
-    mbtilesSource,
+    source,
     `
     SELECT
       tile_data
@@ -458,10 +321,10 @@ export async function getMBTilesTile(mbtilesSource, z, x, y) {
 
 /**
  * Get MBTiles infos
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} source SQLite database instance
  * @returns {Promise<object>}
  */
-export async function getMBTilesInfos(mbtilesSource) {
+export async function getMBTilesInfos(source) {
   const metadata = {
     name: "Unknown",
     description: "Unknown",
@@ -471,10 +334,7 @@ export async function getMBTilesInfos(mbtilesSource) {
   };
 
   /* Get metadatas */
-  const rows = await fetchAll(
-    mbtilesSource,
-    "SELECT name, value FROM metadata;"
-  );
+  const rows = await fetchAll(source, "SELECT name, value FROM metadata;");
 
   rows.forEach((row) => {
     switch (row.name) {
@@ -528,10 +388,7 @@ export async function getMBTilesInfos(mbtilesSource) {
   /* Try get min zoom */
   if (metadata.minzoom === undefined) {
     try {
-      metadata.minzoom = await getMBTilesZoomLevelFromTiles(
-        mbtilesSource,
-        "minzoom"
-      );
+      metadata.minzoom = await getMBTilesZoomLevelFromTiles(source, "minzoom");
     } catch (error) {
       metadata.minzoom = 0;
     }
@@ -540,10 +397,7 @@ export async function getMBTilesInfos(mbtilesSource) {
   /* Try get max zoom */
   if (metadata.maxzoom === undefined) {
     try {
-      metadata.maxzoom = await getMBTilesZoomLevelFromTiles(
-        mbtilesSource,
-        "maxzoom"
-      );
+      metadata.maxzoom = await getMBTilesZoomLevelFromTiles(source, "maxzoom");
     } catch (error) {
       metadata.maxzoom = 22;
     }
@@ -552,7 +406,7 @@ export async function getMBTilesInfos(mbtilesSource) {
   /* Try get tile format */
   if (metadata.format === undefined) {
     try {
-      metadata.format = await getMBTilesFormatFromTiles(mbtilesSource);
+      metadata.format = await getMBTilesFormatFromTiles(source);
     } catch (error) {
       metadata.format = "png";
     }
@@ -561,7 +415,7 @@ export async function getMBTilesInfos(mbtilesSource) {
   /* Try get bounds */
   if (metadata.bounds === undefined) {
     try {
-      metadata.bounds = await getMBTilesBBoxFromTiles(mbtilesSource);
+      metadata.bounds = await getMBTilesBBoxFromTiles(source);
     } catch (error) {
       metadata.bounds = [-180, -85.051129, 180, 85.051129];
     }
@@ -579,7 +433,7 @@ export async function getMBTilesInfos(mbtilesSource) {
   /* Add vector_layers */
   if (metadata.format === "pbf" && metadata.vector_layers === undefined) {
     try {
-      const layers = await getMBTilesLayersFromTiles(mbtilesSource);
+      const layers = await getMBTilesLayersFromTiles(source);
 
       metadata.vector_layers = layers.map((layer) => {
         return {
@@ -596,11 +450,11 @@ export async function getMBTilesInfos(mbtilesSource) {
 
 /**
  * Close MBTiles
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} source SQLite database instance
  * @returns {Promise<void>}
  */
-export async function closeMBTilesDB(mbtilesSource) {
-  await closeSQLite(mbtilesSource);
+export async function closeMBTilesDB(source) {
+  await closeSQLite(source);
 }
 
 /**
@@ -675,13 +529,13 @@ export async function downloadMBTilesFile(url, filePath, maxTry, timeout) {
 
 /**
  * Update MBTiles metadata table
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {Object<string,string>} metadataAdds Metadata object
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
 export async function updateMBTilesMetadataWithLock(
-  mbtilesSource,
+  source,
   metadataAdds,
   timeout
 ) {
@@ -689,10 +543,26 @@ export async function updateMBTilesMetadataWithLock(
 
   while (Date.now() - startTime <= timeout) {
     try {
-      await upsertMBTilesMetadata(mbtilesSource, {
-        ...metadataAdds,
-        scheme: "tms",
-      });
+      await Promise.all(
+        Object.entries({
+          ...metadataAdds,
+          scheme: "tms",
+        }).map(([name, value]) =>
+          runSQL(
+            source,
+            `
+            INSERT INTO
+              metadata (name, value)
+            VALUES
+              (?, ?)
+            ON CONFLICT (name)
+            DO UPDATE SET value = excluded.value;
+            `,
+            name,
+            JSON.stringify(value)
+          )
+        )
+      );
 
       return;
     } catch (error) {
@@ -740,7 +610,7 @@ export async function getMBTilesTileFromURL(url, timeout) {
 /**
  * Download MBTiles tile data
  * @param {string} url The URL to download the file from
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -752,7 +622,7 @@ export async function getMBTilesTileFromURL(url, timeout) {
  */
 export async function downloadMBTilesTile(
   url,
-  mbtilesSource,
+  source,
   z,
   x,
   y,
@@ -779,7 +649,7 @@ export async function downloadMBTilesTile(
           return;
         } else {
           await createMBTilesTileWithLock(
-            mbtilesSource,
+            source,
             z,
             x,
             y,
@@ -819,7 +689,7 @@ export async function downloadMBTilesTile(
 
 /**
  * Remove MBTiles tile data
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -827,34 +697,23 @@ export async function downloadMBTilesTile(
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function removeMBTilesTileData(
-  mbtilesSource,
-  z,
-  x,
-  y,
-  maxTry,
-  timeout
-) {
+export async function removeMBTilesTileData(source, z, x, y, maxTry, timeout) {
   const tileName = `${z}/${x}/${y}`;
 
   printLog("info", `Removing tile data "${tileName}"...`);
 
   try {
-    try {
-      await retry(async () => {
-        await removeMBTilesTileWithLock(mbtilesSource, z, x, y, timeout);
-      }, maxTry);
-    } catch (error) {
-      throw new Error(`Failed to remove tile data "${tileName}": ${error}`);
-    }
+    await retry(async () => {
+      await removeMBTilesTileWithLock(source, z, x, y, timeout);
+    }, maxTry);
   } catch (error) {
-    printLog("error", `${error}`);
+    printLog("error", `Failed to remove tile data "${tileName}": ${error}`);
   }
 }
 
 /**
  * Cache MBTiles tile data
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -864,7 +723,7 @@ export async function removeMBTilesTileData(
  * @returns {Promise<void>}
  */
 export async function cacheMBtilesTileData(
-  mbtilesSource,
+  source,
   z,
   x,
   y,
@@ -884,7 +743,7 @@ export async function cacheMBtilesTileData(
       return;
     } else {
       await createMBTilesTileWithLock(
-        mbtilesSource,
+        source,
         z,
         x,
         y,
@@ -900,15 +759,15 @@ export async function cacheMBtilesTileData(
 
 /**
  * Get MD5 hash of MBTiles tile
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @returns {Promise<string>} Returns the MD5 hash as a string
  */
-export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
+export async function getMBTilesTileMD5(source, z, x, y) {
   const data = await fetchOne(
-    mbtilesSource,
+    source,
     `
     SELECT
       hash
@@ -931,15 +790,15 @@ export async function getMBTilesTileMD5(mbtilesSource, z, x, y) {
 
 /**
  * Get created of MBTiles tile
- * @param {sqlite3.Database} mbtilesSource The MBTiles source object
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @returns {Promise<number>} Returns the created as a number
  */
-export async function getMBTilesTileCreated(mbtilesSource, z, x, y) {
+export async function getMBTilesTileCreated(source, z, x, y) {
   const data = await fetchOne(
-    mbtilesSource,
+    source,
     `
     SELECT
       created

@@ -1,6 +1,5 @@
 "use strict";
 
-import { getPMTilesInfos, getPMTilesTile, openPMTiles } from "./pmtiles.js";
 import { checkReadyMiddleware } from "./middleware.js";
 import { StatusCodes } from "http-status-codes";
 import { readSeedFile } from "./seed.js";
@@ -15,7 +14,7 @@ import {
   openXYZMD5DB,
   getXYZInfos,
   getXYZTile,
-} from "./xyz.js";
+} from "./tile_xyz.js";
 import {
   getMBTilesTileFromURL,
   cacheMBtilesTileData,
@@ -24,7 +23,7 @@ import {
   getMBTilesInfos,
   getMBTilesTile,
   openMBTilesDB,
-} from "./mbtiles.js";
+} from "./tile_mbtiles.js";
 import {
   createMetadata,
   getRequestHost,
@@ -32,6 +31,11 @@ import {
   isExistFile,
   gzipAsync,
 } from "./utils.js";
+import {
+  getPMTilesInfos,
+  getPMTilesTile,
+  openPMTiles,
+} from "./tile_pmtiles.js";
 
 /**
  * Validate data info (no validate json field)

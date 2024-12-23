@@ -1,11 +1,10 @@
 "use strict";
 
-import { cacheXYZTileDataFile, getXYZTileFromURL, getXYZTile } from "./xyz.js";
 import { createEmptyData, renderImage } from "./image.js";
 import { checkReadyMiddleware } from "./middleware.js";
 import { StatusCodes } from "http-status-codes";
 import mlgl from "@maplibre/maplibre-gl-native";
-import { getPMTilesTile } from "./pmtiles.js";
+import { getPMTilesTile } from "./tile_pmtiles.js";
 import { createPool } from "generic-pool";
 import { readSeedFile } from "./seed.js";
 import { getSprite } from "./sprite.js";
@@ -17,7 +16,7 @@ import {
   getMBTilesTileFromURL,
   cacheMBtilesTileData,
   getMBTilesTile,
-} from "./mbtiles.js";
+} from "./tile_mbtiles.js";
 import {
   detectFormatAndHeaders,
   getDataFromURL,
@@ -34,6 +33,11 @@ import {
   validateStyle,
   getStyle,
 } from "./style.js";
+import {
+  cacheXYZTileDataFile,
+  getXYZTileFromURL,
+  getXYZTile,
+} from "./tile_xyz.js";
 
 /**
  * Get styleJSON handler

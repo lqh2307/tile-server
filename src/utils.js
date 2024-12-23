@@ -7,6 +7,7 @@ import https from "node:https";
 import http from "node:http";
 import crypto from "crypto";
 import axios from "axios";
+import proj4 from "proj4";
 import fs from "node:fs";
 import zlib from "zlib";
 import util from "util";
@@ -204,6 +205,55 @@ export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
 }
 
 /**
+ * Get bounding box from center and radius
+ * @param {number} lonCenter Longitude of center (EPSG:4326)
+ * @param {number} latCenter Latitude of center (EPSG:4326)
+ * @param {number} radius Radius in metter (EPSG:3857)
+ * @returns {Array<number>} [minLon, minLat, maxLon, maxLat]
+ */
+function getBBoxFromCircle(lonCenter, latCenter, radius) {
+  const [xCenter, yCenter] = proj4("EPSG:4326", "EPSG:3857", [
+    lonCenter,
+    latCenter,
+  ]);
+
+  let [minLon, minLat] = proj4("EPSG:3857", "EPSG:4326", [
+    xCenter - radius,
+    yCenter - radius,
+  ]);
+  let [maxLon, maxLat] = proj4("EPSG:3857", "EPSG:4326", [
+    xCenter + radius,
+    yCenter + radius,
+  ]);
+
+  if (minLon > 180) {
+    minLon = 180;
+  } else if (minLon < -180) {
+    minLon = -180;
+  }
+
+  if (maxLon > 180) {
+    maxLon = 180;
+  } else if (maxLon < -180) {
+    maxLon = -180;
+  }
+
+  if (minLat > 85.051129) {
+    minLat = 85.051129;
+  } else if (minLat < -85.051129) {
+    minLat = -85.051129;
+  }
+
+  if (maxLat > 85.051129) {
+    maxLat = 85.051129;
+  } else if (maxLat < -85.051129) {
+    maxLat = -85.051129;
+  }
+
+  return [minLon, minLat, maxLon, maxLat];
+}
+
+/**
  * Get XYZ tile from bounding box for specific zoom levels intersecting a bounding box
  * @param {Array<number>} bbox [west, south, east, north] in EPSG:4326
  * @param {Array<number>} zooms Array of specific zoom levels
@@ -378,7 +428,7 @@ export async function isExistFile(filePath) {
  * @param {string} dirPath The directory path to search
  * @param {RegExp} regex The regex to match files
  * @param {boolean} recurse Whether to search recursively in subdirectories
- * @returns {Promise<string>} Array of file paths matching the regex
+ * @returns {Promise<string>} Array of filepaths matching the regex
  */
 export async function findFiles(dirPath, regex, recurse = false) {
   const entries = await fsPromise.readdir(dirPath, {

@@ -21,7 +21,7 @@ export async function openSQLite(filePath, mode, wal) {
 
   // Open DB
   return await new Promise((resolve, reject) => {
-    const db = new sqlite3.Database(filePath, mode, async (error) => {
+    const source = new sqlite3.Database(filePath, mode, async (error) => {
       if (error) {
         return reject(error);
       }
@@ -29,19 +29,19 @@ export async function openSQLite(filePath, mode, wal) {
       try {
         // Enable WAL mode if specified
         if (wal === true) {
-          await runSQL(db, "PRAGMA journal_mode=WAL;");
+          await runSQL(source, "PRAGMA journal_mode=WAL;");
         }
 
         // Set busy timeout
-        await runSQL(db, "PRAGMA busy_timeout = 5000;");
+        await runSQL(source, "PRAGMA busy_timeout = 5000;");
 
         // Disable mmap if specified
-        await runSQL(db, "PRAGMA mmap_size = 0;");
+        await runSQL(source, "PRAGMA mmap_size = 0;");
 
-        resolve(db);
+        resolve(source);
       } catch (error) {
-        if (db !== undefined) {
-          db.close();
+        if (source !== undefined) {
+          source.close();
         }
 
         reject(error);
@@ -52,14 +52,14 @@ export async function openSQLite(filePath, mode, wal) {
 
 /**
  * Run a SQL command in SQLite
- * @param {sqlite3.Database} db SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {string} sql SQL command to execute
  * @param {...any} params Parameters for the SQL command
  * @returns {Promise<void>}
  */
-export async function runSQL(db, sql, ...params) {
+export async function runSQL(source, sql, ...params) {
   await new Promise((resolve, reject) => {
-    db.run(sql, params, (error) => {
+    source.run(sql, params, (error) => {
       if (error) {
         return reject(error);
       }
@@ -71,14 +71,14 @@ export async function runSQL(db, sql, ...params) {
 
 /**
  * Fetch one row from SQLite database
- * @param {sqlite3.Database} db SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {string} sql SQL query string
  * @param {...any} params Parameters for the SQL query
  * @returns {Promise<object>} The first row of the query result
  */
-export async function fetchOne(db, sql, ...params) {
+export async function fetchOne(source, sql, ...params) {
   return await new Promise((resolve, reject) => {
-    db.get(sql, params, (error, row) => {
+    source.get(sql, params, (error, row) => {
       if (error) {
         return reject(error);
       }
@@ -90,14 +90,14 @@ export async function fetchOne(db, sql, ...params) {
 
 /**
  * Fetch all rows from SQLite database
- * @param {sqlite3.Database} db SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {string} sql SQL query string
  * @param {...any} params Parameters for the SQL query
  * @returns {Promise<Array<object>>} An array of rows
  */
-export async function fetchAll(db, sql, ...params) {
+export async function fetchAll(source, sql, ...params) {
   return await new Promise((resolve, reject) => {
-    db.all(sql, params, (error, rows) => {
+    source.all(sql, params, (error, rows) => {
       if (error) {
         return reject(error);
       }
@@ -109,24 +109,24 @@ export async function fetchAll(db, sql, ...params) {
 
 /**
  * Close SQLite database
- * @param {sqlite3.Database} db SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @returns {Promise<void>}
  */
-export async function closeSQLite(db) {
+export async function closeSQLite(source) {
   await new Promise((resolve, reject) => {
-    db.get("PRAGMA journal_mode;", async (error, row) => {
+    source.get("PRAGMA journal_mode;", async (error, row) => {
       if (error) {
         return reject(error);
       }
 
       try {
         if (row.journal_mode === "wal") {
-          await runSQL(db, "PRAGMA wal_checkpoint(PASSIVE);");
+          await runSQL(source, "PRAGMA wal_checkpoint(PASSIVE);");
         }
       } catch (error) {
         reject(error);
       } finally {
-        db.close((error) => {
+        source.close((error) => {
           if (error) {
             return reject(error);
           }

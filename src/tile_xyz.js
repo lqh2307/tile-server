@@ -348,12 +348,12 @@ async function removeXYZTileDataFileWithLock(filePath, timeout) {
 
 /**
  * Initialize XYZ MD5 database tables
- * @param {sqlite3.Database} xyzSource SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @returns {Promise<void>}
  */
-async function initializeXYZMD5Tables(xyzSource) {
+async function initializeXYZMD5Tables(source) {
   await runSQL(
-    xyzSource,
+    source,
     `
     CREATE TABLE IF NOT EXISTS
       md5s (
@@ -369,15 +369,15 @@ async function initializeXYZMD5Tables(xyzSource) {
 
 /**
  * Remove MD5 hash of XYZ tile
- * @param {sqlite3.Database} xyzSource SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @returns {Promise<void>}
  */
-async function removeXYZTileMD5(xyzSource, z, x, y) {
+async function removeXYZTileMD5(source, z, x, y) {
   await runSQL(
-    xyzSource,
+    source,
     `
     DELETE FROM
       md5s
@@ -392,16 +392,16 @@ async function removeXYZTileMD5(xyzSource, z, x, y) {
 
 /**
  * Upsert MD5 hash of XYZ tile
- * @param {sqlite3.Database} xyzSource SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @param {string} hash MD5 hash value
  * @returns {Promise<void>}
  */
-async function upsertXYZTileMD5(xyzSource, z, x, y, hash) {
+async function upsertXYZTileMD5(source, z, x, y, hash) {
   await runSQL(
-    xyzSource,
+    source,
     `
     INSERT INTO
       md5s (zoom_level, tile_column, tile_row, hash)
@@ -421,7 +421,7 @@ async function upsertXYZTileMD5(xyzSource, z, x, y, hash) {
 
 /**
  * Create MD5 hash of XYZ tile
- * @param {sqlite3.Database} xyzSource SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -429,12 +429,12 @@ async function upsertXYZTileMD5(xyzSource, z, x, y, hash) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function createXYZTileMD5WithLock(xyzSource, z, x, y, buffer, timeout) {
+async function createXYZTileMD5WithLock(source, z, x, y, buffer, timeout) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
     try {
-      await upsertXYZTileMD5(xyzSource, z, x, y, calculateMD5(buffer));
+      await upsertXYZTileMD5(source, z, x, y, calculateMD5(buffer));
 
       return;
     } catch (error) {
@@ -451,19 +451,19 @@ async function createXYZTileMD5WithLock(xyzSource, z, x, y, buffer, timeout) {
 
 /**
  * Remove MD5 hash of XYZ tile
- * @param {sqlite3.Database} xyzSource SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function removeXYZTileMD5WithLock(xyzSource, z, x, y, timeout) {
+async function removeXYZTileMD5WithLock(source, z, x, y, timeout) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
     try {
-      await removeXYZTileMD5(xyzSource, z, x, y);
+      await removeXYZTileMD5(source, z, x, y);
 
       return;
     } catch (error) {
@@ -693,7 +693,7 @@ export async function updateXYZMetadataFileWithLock(
  * Download XYZ tile data file
  * @param {string} url The URL to download the file from
  * @param {string} sourcePath XYZ folder path
- * @param {sqlite3.Database} xyzSource SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -707,7 +707,7 @@ export async function updateXYZMetadataFileWithLock(
 export async function downloadXYZTileDataFile(
   url,
   sourcePath,
-  xyzSource,
+  source,
   z,
   x,
   y,
@@ -743,7 +743,7 @@ export async function downloadXYZTileDataFile(
           // Store data md5 hash
           if (storeMD5 === true) {
             await createXYZTileMD5WithLock(
-              xyzSource,
+              source,
               z,
               x,
               y,
@@ -784,7 +784,7 @@ export async function downloadXYZTileDataFile(
 /**
  * Remove XYZ tile data file
  * @param {string} sourcePath XYZ folder path
- * @param {sqlite3.Database} xyzSource SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -795,7 +795,7 @@ export async function downloadXYZTileDataFile(
  */
 export async function removeXYZTileDataFile(
   sourcePath,
-  xyzSource,
+  source,
   z,
   x,
   y,
@@ -808,37 +808,34 @@ export async function removeXYZTileDataFile(
   printLog("info", `Removing tile data file "${tileName}"...`);
 
   try {
-    try {
-      await retry(async () => {
-        await removeXYZTileDataFileWithLock(
-          `${sourcePath}/${tileName}.${format}`,
-          timeout
-        );
-
-        if (xyzSource !== undefined) {
-          await removeXYZTileMD5WithLock(
-            xyzSource,
-            z,
-            x,
-            y,
-            300000 // 5 mins
-          );
-        }
-      }, maxTry);
-    } catch (error) {
-      throw new Error(
-        `Failed to remove tile data file "${tileName}": ${error}`
+    await retry(async () => {
+      await removeXYZTileDataFileWithLock(
+        `${sourcePath}/${tileName}.${format}`,
+        timeout
       );
-    }
+
+      if (source !== undefined) {
+        await removeXYZTileMD5WithLock(
+          source,
+          z,
+          x,
+          y,
+          300000 // 5 mins
+        );
+      }
+    }, maxTry);
   } catch (error) {
-    printLog("error", `${error}`);
+    printLog(
+      "error",
+      `Failed to remove tile data file "${tileName}": ${error}`
+    );
   }
 }
 
 /**
  * Cache XYZ tile data file
  * @param {string} sourcePath XYZ folder path
- * @param {sqlite3.Database} xyzSource SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -850,7 +847,7 @@ export async function removeXYZTileDataFile(
  */
 export async function cacheXYZTileDataFile(
   sourcePath,
-  xyzSource,
+  source,
   z,
   x,
   y,
@@ -878,7 +875,7 @@ export async function cacheXYZTileDataFile(
 
       if (storeMD5 === true) {
         await createXYZTileMD5WithLock(
-          xyzSource,
+          source,
           z,
           x,
           y,
@@ -894,7 +891,7 @@ export async function cacheXYZTileDataFile(
 
 /**
  * Open XYZ MD5 SQLite database
- * @param {string} filePath MD5 file path
+ * @param {string} filePath MD5 filepath
  * @param {number} mode SQLite mode (e.g: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE | sqlite3.OPEN_READONLY)
  * @param {boolean} wal Use WAL
  * @returns {Promise<sqlite3.Database>}
@@ -904,35 +901,35 @@ export async function openXYZMD5DB(
   mode = sqlite3.OPEN_READONLY,
   wal = false
 ) {
-  const xyzSource = await openSQLite(filePath, mode, wal);
+  const source = await openSQLite(filePath, mode, wal);
 
   if (mode & sqlite3.OPEN_CREATE) {
-    await initializeXYZMD5Tables(xyzSource);
+    await initializeXYZMD5Tables(source);
   }
 
-  return xyzSource;
+  return source;
 }
 
 /**
  * Close the XYZ MD5 SQLite database
- * @param {sqlite3.Database} xyzSource SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @returns {Promise<void>}
  */
-export async function closeXYZMD5DB(xyzSource) {
-  await closeSQLite(xyzSource);
+export async function closeXYZMD5DB(source) {
+  await closeSQLite(source);
 }
 
 /**
  * Get MD5 hash of XYZ tile
- * @param {sqlite3.Database} xyzSource SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @returns {Promise<string>} Returns the MD5 hash as a string
  */
-export async function getXYZTileMD5(xyzSource, z, x, y) {
+export async function getXYZTileMD5(source, z, x, y) {
   const data = await fetchOne(
-    xyzSource,
+    source,
     `
     SELECT
       hash
