@@ -30,6 +30,14 @@ import {
   validateJSON,
   delay,
 } from "./utils.js";
+import {
+  updatePostgreSQLMetadataWithLock,
+  getPostgreSQLTileCreated,
+  downloadPostgreSQLTile,
+  getPostgreSQLTileMD5,
+  closePostgreSQLDB,
+  openPostgreSQLDB,
+} from "./tile_postgresql.js";
 
 /**
  * Read seed.json file
@@ -567,6 +575,203 @@ export async function seedMBTilesTiles(
   printLog(
     "info",
     `Completed seed ${total} tiles of mbtiles data "${id}" after ${
+      (doneTime - startTime) / 1000
+    }s!`
+  );
+}
+
+/**
+ * Seed PostgreSQL tiles
+ * @param {string} sourcePath PostgreSQL URI
+ * @param {object} metadata Metadata object
+ * @param {string} tileURL Tile URL to download
+ * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
+ * @param {Array<number>} zooms Array of specific zoom levels
+ * @param {number} concurrency Concurrency download
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
+ * @param {boolean} storeMD5 Is store MD5 hashed?
+ * @param {boolean} storeTransparent Is store transparent tile?
+ * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
+ * @returns {Promise<void>}
+ */
+export async function seedPostgreSQLTiles(
+  sourcePath,
+  metadata,
+  tileURL,
+  bboxs = [[-180, -85.051129, 180, 85.051129]],
+  zooms = [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22,
+  ],
+  concurrency = os.cpus().length,
+  maxTry = 5,
+  timeout = 60000,
+  storeMD5 = false,
+  storeTransparent = false,
+  refreshBefore
+) {
+  const startTime = Date.now();
+
+  const id = path.basename(sourcePath);
+  const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
+    bboxs,
+    zooms,
+    "xyz"
+  );
+  let refreshTimestamp;
+  let log = `Seeding ${total} tiles of postgresql data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
+    ", "
+  )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
+
+  if (typeof refreshBefore === "string") {
+    refreshTimestamp = new Date(refreshBefore).getTime();
+
+    log += `\n\tRefresh before: ${refreshBefore}`;
+  } else if (typeof refreshBefore === "number") {
+    const now = new Date();
+
+    refreshTimestamp = now.setDate(now.getDate() - refreshBefore);
+
+    log += `\n\tOld than: ${refreshBefore} days`;
+  } else if (typeof refreshBefore === "boolean") {
+    refreshTimestamp = true;
+
+    log += `\n\tRefresh before: check MD5`;
+  }
+
+  printLog("info", log);
+
+  // Open PostgreSQL database
+  const source = await openPostgreSQLDB(
+    `${process.env.POSTGRESQL_BASE_URI}/${id}`,
+    true
+  );
+
+  // Update metadata
+  printLog("info", "Updating metadata...")
+
+  await updatePostgreSQLMetadataWithLock(
+    source,
+    metadata,
+    300000 // 5 mins
+  );
+
+  // Download tiles
+  const mutex = new Mutex();
+
+  let activeTasks = 0;
+  let remainingTasks = total;
+
+  async function seedPostgreSQLTileData(z, x, y) {
+    const tileName = `${z}/${x}/${y}`;
+
+    try {
+      let needDownload = false;
+
+      if (refreshTimestamp === true) {
+        try {
+          const [response, md5] = await Promise.all([
+            getDataFromURL(
+              tileURL.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
+              timeout,
+              "arraybuffer"
+            ),
+            getPostgreSQLTileMD5(source, z, x, y),
+          ]);
+
+          if (response.headers["etag"] !== md5) {
+            needDownload = true;
+          }
+        } catch (error) {
+          if (error.message === "Tile MD5 does not exist") {
+            needDownload = true;
+          } else {
+            throw error;
+          }
+        }
+      } else if (refreshTimestamp !== undefined) {
+        try {
+          const created = await getPostgreSQLTileCreated(source, z, x, y);
+
+          if (!created || created < refreshTimestamp) {
+            needDownload = true;
+          }
+        } catch (error) {
+          if (error.message === "Tile created does not exist") {
+            needDownload = true;
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        needDownload = true;
+      }
+
+      if (needDownload === true) {
+        await downloadPostgreSQLTile(
+          tileURL.replaceAll("{z}/{x}/{y}", tileName),
+          source,
+          z,
+          x,
+          y,
+          maxTry,
+          timeout,
+          storeMD5,
+          storeTransparent
+        );
+      }
+    } catch (error) {
+      printLog(
+        "error",
+        `Failed to seed data "${id}" - Tile "${tileName}": ${error}`
+      );
+    }
+  }
+
+  printLog("info", "Downloading datas...");
+
+  for (const tilesSummary of tilesSummaries) {
+    for (const z in tilesSummary) {
+      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+          /* Wait slot for a task */
+          while (activeTasks >= concurrency) {
+            await delay(50);
+          }
+
+          await mutex.runExclusive(() => {
+            activeTasks++;
+
+            remainingTasks--;
+          });
+
+          /* Run a task */
+          seedPostgreSQLTileData(z, x, y).finally(() =>
+            mutex.runExclusive(() => {
+              activeTasks--;
+            })
+          );
+        }
+      }
+    }
+  }
+
+  /* Wait all tasks done */
+  while (activeTasks > 0) {
+    await delay(50);
+  }
+
+  // Close PostgreSQL database
+  if (source !== undefined) {
+    await closePostgreSQLDB(source);
+  }
+
+  const doneTime = Date.now();
+
+  printLog(
+    "info",
+    `Completed seed ${total} tiles of postgresql data "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );

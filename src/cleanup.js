@@ -25,6 +25,12 @@ import {
   validateJSON,
   delay,
 } from "./utils.js";
+import {
+  getPostgreSQLTileCreated,
+  removePostgreSQLTileData,
+  closePostgreSQLDB,
+  openPostgreSQLDB,
+} from "./tile_postgresql.js";
 
 /**
  * Read cleanup.json file
@@ -308,6 +314,152 @@ export async function cleanUpMBTilesTiles(
   printLog(
     "info",
     `Completed clean up ${total} tiles of mbtiles data "${id}" after ${
+      (doneTime - startTime) / 1000
+    }s!`
+  );
+}
+
+/**
+ * Clean up PostgreSQL tiles
+ * @param {string} sourcePath PostgreSQL URI
+ * @param {Array<number>} zooms Array of specific zoom levels
+ * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
+ * @param {number} concurrency Concurrency download
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
+ * @returns {Promise<void>}
+ */
+export async function cleanUpPostgreSQLTiles(
+  sourcePath,
+  zooms = [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22,
+  ],
+  bboxs = [[-180, -85.051129, 180, 85.051129]],
+  concurrency = os.cpus().length,
+  maxTry = 5,
+  cleanUpBefore
+) {
+  const startTime = Date.now();
+
+  const id = path.basename(sourcePath);
+  let { total, tilesSummaries } = getTilesBoundsFromBBoxs(bboxs, zooms, "xyz");
+  let cleanUpTimestamp;
+  let log = `Cleaning up ${total} tiles of postgresql data "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tZoom levels: [${zooms.join(
+    ", "
+  )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
+
+  if (typeof cleanUpBefore === "string") {
+    cleanUpTimestamp = new Date(cleanUpBefore).getTime();
+
+    log += `\n\tClean up before: ${cleanUpBefore}`;
+  } else if (typeof cleanUpBefore === "number") {
+    const now = new Date();
+
+    cleanUpTimestamp = now.setDate(now.getDate() - cleanUpBefore);
+
+    log += `\n\tOld than: ${cleanUpBefore} days`;
+  }
+
+  printLog("info", log);
+
+  // Open PostgreSQL database
+  const source = await openPostgreSQLDB(
+    `${process.env.POSTGRESQL_BASE_URI}/${id}`,
+    true
+  );
+
+  // Remove tiles
+  const mutex = new Mutex();
+
+  let activeTasks = 0;
+  let remainingTasks = total;
+
+  async function cleanUpPostgreSQLTileData(z, x, y) {
+    const tileName = `${z}/${x}/${y}`;
+
+    try {
+      let needRemove = false;
+
+      if (cleanUpTimestamp !== undefined) {
+        try {
+          const created = await getPostgreSQLTileCreated(source, z, x, y);
+
+          if (!created || created < cleanUpTimestamp) {
+            needRemove = true;
+          }
+        } catch (error) {
+          if (error.message === "Tile created does not exist") {
+            needRemove = true;
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        needRemove = true;
+      }
+
+      if (needRemove === true) {
+        await removePostgreSQLTileData(
+          source,
+          z,
+          x,
+          y,
+          maxTry,
+          300000 // 5 mins
+        );
+      }
+    } catch (error) {
+      printLog(
+        "error",
+        `Failed to clean up data "${id}" - Tile "${tileName}": ${error}`
+      );
+    }
+  }
+
+  printLog("info", "Removing datas...");
+
+  for (const tilesSummary of tilesSummaries) {
+    for (const z in tilesSummary) {
+      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+          /* Wait slot for a task */
+          while (activeTasks >= concurrency) {
+            await delay(50);
+          }
+
+          await mutex.runExclusive(() => {
+            activeTasks++;
+
+            remainingTasks--;
+          });
+
+          /* Run a task */
+          cleanUpPostgreSQLTileData(z, x, y).finally(() =>
+            mutex.runExclusive(() => {
+              activeTasks--;
+            })
+          );
+        }
+      }
+    }
+  }
+
+  /* Wait all tasks done */
+  while (activeTasks > 0) {
+    await delay(50);
+  }
+
+  // Close PostgreSQL database
+  if (source !== undefined) {
+    await closePostgreSQLDB(source);
+  }
+
+  const doneTime = Date.now();
+
+  printLog(
+    "info",
+    `Completed clean up ${total} tiles of postgresql data "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );

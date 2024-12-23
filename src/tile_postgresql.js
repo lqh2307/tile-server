@@ -195,7 +195,7 @@ async function createPostgreSQLTileWithLock(
     ON CONFLICT (zoom_level, tile_column, tile_row)
     DO UPDATE SET tile_data = excluded.tile_data, hash = excluded.hash, created = excluded.created;
     `,
-    value: [
+    values: [
       z,
       x,
       y,
@@ -217,14 +217,14 @@ async function createPostgreSQLTileWithLock(
  * @returns {Promise<void>}
  */
 async function removePostgreSQLTileWithLock(source, z, x, y, timeout) {
-  await runSQL({
+  await source.query({
     text: `
     DELETE FROM
       tiles
     WHERE
       zoom_level = $1 AND tile_column = $2 AND tile_row = $3;
     `,
-    value: [z, x, y],
+    values: [z, x, y],
     statement_timeout: timeout,
   });
 }
@@ -448,7 +448,7 @@ export async function updatePostgreSQLMetadataWithLock(
         ON CONFLICT (name)
         DO UPDATE SET value = excluded.value;
         `,
-        value: [name, JSON.stringify(value)],
+        values: [name, JSON.stringify(value)],
         statement_timeout: timeout,
       })
     )

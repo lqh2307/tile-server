@@ -75,6 +75,12 @@ async function readConfigFile(isValidate) {
                   "^([0-5]?\\d|\\*)\\s([0-5]?\\d|\\*)\\s([0-1]?\\d|2[0-3]|\\*)\\s([1-9]|[12]\\d|3[01]|\\*)\\s([1-9]|1[0-2]|\\*)\\s([0-7]|\\*)$|^([0-5]?\\d|\\*)\\s([0-5]?\\d|\\*)\\s([0-1]?\\d|2[0-3]|\\*)\\s([1-9]|[12]\\d|3[01]|\\*)\\s([1-9]|1[0-2]|\\*)$",
                 minLength: 1,
               },
+              postgreSQLBaseURI: {
+                type: "string",
+                pattern:
+                  "^postgres(?:ql)?://(?:(?:[a-zA-Z0-9._~!$&'()*+,;=%-]+)(?::[a-zA-Z0-9._~!$&'()*+,;=%-]+)?@)?(?:[a-zA-Z0-9.-]+|\\[[a-fA-F0-9:]+\\])(?::\\d+)?(?:/[a-zA-Z0-9._~!$&'()*+,;=%-]*)?(?:\\?[a-zA-Z0-9._~!$&'()*+,;=%-]+=[a-zA-Z0-9._~!$&'()*+,;=%-]+(?:&[a-zA-Z0-9._~!$&'()*+,;=%-]+=[a-zA-Z0-9._~!$&'()*+,;=%-]+)*)?$",
+                minLength: 1,
+              },
               restartServerAfterTask: {
                 type: "boolean",
               },
@@ -189,6 +195,7 @@ async function readConfigFile(isValidate) {
       config.options.loggerFormat ??
       ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
     taskSchedule: config.options.taskSchedule, // undefined
+    postgreSQLBaseURI: config.options.postgreSQLBaseURI, // undefined
     restartServerAfterTask: config.options.restartServerAfterTask ?? true,
     process: config.options.process ?? 1,
     thread: config.options.thread ?? os.cpus().length,

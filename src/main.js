@@ -44,6 +44,7 @@ async function startClusterServer(opts) {
 
     /* Setup envs */
     process.env.UV_THREADPOOL_SIZE = config.options.thread; // For libuv
+    process.env.POSTGRESQL_BASE_URI = config.options.postgreSQLBaseURI; // Store postgreSQL base URI
 
     /* Remove old cache locks */
     printLog(
