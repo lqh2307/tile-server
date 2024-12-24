@@ -206,16 +206,12 @@ export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
 
 /**
  * Get bounding box from center and radius
- * @param {number} lonCenter Longitude of center (EPSG:4326)
- * @param {number} latCenter Latitude of center (EPSG:4326)
+ * @param {Array<number>} center [lon, lat] of center (EPSG:4326)
  * @param {number} radius Radius in metter (EPSG:3857)
  * @returns {Array<number>} [minLon, minLat, maxLon, maxLat]
  */
-export function getBBoxFromCircle(lonCenter, latCenter, radius) {
-  const [xCenter, yCenter] = proj4("EPSG:4326", "EPSG:3857", [
-    lonCenter,
-    latCenter,
-  ]);
+export function getBBoxFromCircle(center, radius) {
+  const [xCenter, yCenter] = proj4("EPSG:4326", "EPSG:3857", center);
 
   let [minLon, minLat] = proj4("EPSG:3857", "EPSG:4326", [
     xCenter - radius,

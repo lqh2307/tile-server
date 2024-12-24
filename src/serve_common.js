@@ -582,8 +582,7 @@ function calculateHandler() {
           .status(StatusCodes.OK)
           .send(
             getBBoxFromCircle(
-              parsedCircle.circle[0],
-              parsedCircle.circle[1],
+              parsedCircle.circle.center,
               parsedCircle.radius
             )
           );
