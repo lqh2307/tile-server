@@ -692,7 +692,7 @@ export async function updateXYZMetadataFileWithLock(
 /**
  * Download XYZ tile data file
  * @param {string} url The URL to download the file from
- * @param {string} sourcePath XYZ folder path
+ * @param {string} id XYZ ID
  * @param {Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
@@ -706,7 +706,7 @@ export async function updateXYZMetadataFileWithLock(
  */
 export async function downloadXYZTileDataFile(
   url,
-  sourcePath,
+  id,
   source,
   z,
   x,
@@ -735,7 +735,7 @@ export async function downloadXYZTileDataFile(
           return;
         } else {
           await createXYZTileDataFileWithLock(
-            `${sourcePath}/${tileName}.${format}`,
+            `${process.env.DATA_DIR}/caches/xyzs/${id}/${tileName}.${format}`,
             response.data,
             300000 // 5 mins
           );
@@ -783,7 +783,7 @@ export async function downloadXYZTileDataFile(
 
 /**
  * Remove XYZ tile data file
- * @param {string} sourcePath XYZ folder path
+ * @param {string} id XYZ ID
  * @param {Database} source SQLite database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
@@ -794,7 +794,7 @@ export async function downloadXYZTileDataFile(
  * @returns {Promise<void>}
  */
 export async function removeXYZTileDataFile(
-  sourcePath,
+  id,
   source,
   z,
   x,
@@ -810,7 +810,7 @@ export async function removeXYZTileDataFile(
   try {
     await retry(async () => {
       await removeXYZTileDataFileWithLock(
-        `${sourcePath}/${tileName}.${format}`,
+        `${process.env.DATA_DIR}/caches/xyzs/${id}/${tileName}.${format}`,
         timeout
       );
 

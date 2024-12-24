@@ -5,7 +5,6 @@ import { OPEN_READWRITE, OPEN_CREATE } from "sqlite3";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
-import path from "node:path";
 import os from "os";
 import {
   updateXYZMetadataFileWithLock,
@@ -90,6 +89,9 @@ export async function readSeedFile(isValidate) {
                 url: {
                   type: "string",
                   minLength: 1,
+                },
+                skip: {
+                  type: "boolean",
                 },
                 refreshBefore: {
                   type: "object",
@@ -232,6 +234,9 @@ export async function readSeedFile(isValidate) {
                   type: "string",
                   minLength: 1,
                 },
+                skip: {
+                  type: "boolean",
+                },
                 refreshBefore: {
                   type: "object",
                   properties: {
@@ -333,6 +338,9 @@ export async function readSeedFile(isValidate) {
                   type: "integer",
                   minimum: 1,
                 },
+                skip: {
+                  type: "boolean",
+                },
               },
               required: ["url"],
             },
@@ -368,6 +376,9 @@ export async function readSeedFile(isValidate) {
                   type: "integer",
                   minimum: 1,
                 },
+                skip: {
+                  type: "boolean",
+                },
               },
               required: ["url"],
             },
@@ -384,7 +395,7 @@ export async function readSeedFile(isValidate) {
 
 /**
  * Seed MBTiles tiles
- * @param {string} sourcePath MBTiles folder path
+ * @param {string} id Cache MBTiles ID
  * @param {object} metadata Metadata object
  * @param {string} tileURL Tile URL to download
  * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
@@ -398,7 +409,7 @@ export async function readSeedFile(isValidate) {
  * @returns {Promise<void>}
  */
 export async function seedMBTilesTiles(
-  sourcePath,
+  id,
   metadata,
   tileURL,
   bboxs = [[-180, -85.051129, 180, 85.051129]],
@@ -415,17 +426,17 @@ export async function seedMBTilesTiles(
 ) {
   const startTime = Date.now();
 
-  const id = path.basename(sourcePath);
   const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
     bboxs,
     zooms,
     "xyz"
   );
-  let refreshTimestamp;
+
   let log = `Seeding ${total} tiles of mbtiles data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
+  let refreshTimestamp;
   if (typeof refreshBefore === "string") {
     refreshTimestamp = new Date(refreshBefore).getTime();
 
@@ -446,7 +457,7 @@ export async function seedMBTilesTiles(
 
   // Open MBTiles SQLite database
   const source = await openMBTilesDB(
-    `${sourcePath}/${id}.mbtiles`,
+    `${process.env.DATA_DIR}/caches/mbtiles/${id}/${id}.mbtiles`,
     OPEN_READWRITE | OPEN_CREATE,
     false
   );
@@ -582,7 +593,7 @@ export async function seedMBTilesTiles(
 
 /**
  * Seed PostgreSQL tiles
- * @param {string} sourcePath PostgreSQL URI
+ * @param {string} id Cache PostgreSQL ID
  * @param {object} metadata Metadata object
  * @param {string} tileURL Tile URL to download
  * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
@@ -596,7 +607,7 @@ export async function seedMBTilesTiles(
  * @returns {Promise<void>}
  */
 export async function seedPostgreSQLTiles(
-  sourcePath,
+  id,
   metadata,
   tileURL,
   bboxs = [[-180, -85.051129, 180, 85.051129]],
@@ -613,17 +624,16 @@ export async function seedPostgreSQLTiles(
 ) {
   const startTime = Date.now();
 
-  const id = path.basename(sourcePath);
   const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
     bboxs,
     zooms,
     "xyz"
   );
-  let refreshTimestamp;
   let log = `Seeding ${total} tiles of postgresql data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
+  let refreshTimestamp;
   if (typeof refreshBefore === "string") {
     refreshTimestamp = new Date(refreshBefore).getTime();
 
@@ -649,7 +659,7 @@ export async function seedPostgreSQLTiles(
   );
 
   // Update metadata
-  printLog("info", "Updating metadata...")
+  printLog("info", "Updating metadata...");
 
   await updatePostgreSQLMetadataWithLock(
     source,
@@ -779,7 +789,7 @@ export async function seedPostgreSQLTiles(
 
 /**
  * Seed XYZ tiles
- * @param {string} sourcePath XYZ folder path
+ * @param {string} id Cache XYZ ID
  * @param {object} metadata Metadata object
  * @param {string} tileURL Tile URL
  * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
@@ -793,7 +803,7 @@ export async function seedPostgreSQLTiles(
  * @returns {Promise<void>}
  */
 export async function seedXYZTiles(
-  sourcePath,
+  id,
   metadata,
   tileURL,
   bboxs = [[-180, -85.051129, 180, 85.051129]],
@@ -810,17 +820,17 @@ export async function seedXYZTiles(
 ) {
   const startTime = Date.now();
 
-  const id = path.basename(sourcePath);
   const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
     bboxs,
     zooms,
     "xyz"
   );
-  let refreshTimestamp;
+
   let log = `Seeding ${total} tiles of xyz data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
+  let refreshTimestamp;
   if (typeof refreshBefore === "string") {
     refreshTimestamp = new Date(refreshBefore).getTime();
 
@@ -841,18 +851,16 @@ export async function seedXYZTiles(
 
   // Open MD5 SQLite database
   const source = await openXYZMD5DB(
-    `${sourcePath}/${id}.sqlite`,
+    `${process.env.DATA_DIR}/caches/xyzs/${id}/${id}.sqlite`,
     OPEN_READWRITE | OPEN_CREATE,
     false
   );
 
   // Update metadata.json file
-  const metadataFilePath = `${sourcePath}/metadata.json`;
-
   printLog("info", "Updating metadata...");
 
   await updateXYZMetadataFileWithLock(
-    metadataFilePath,
+    `${process.env.DATA_DIR}/caches/xyzs/${id}/metadata.json`,
     metadata,
     300000 // 5 mins
   );
@@ -893,7 +901,7 @@ export async function seedXYZTiles(
       } else if (refreshTimestamp !== undefined) {
         try {
           const created = await getXYZTileCreated(
-            `${sourcePath}/${tileName}.${metadata.format}`
+            `${process.env.DATA_DIR}/caches/xyzs/${id}/${tileName}.${metadata.format}`
           );
 
           if (!created || created < refreshTimestamp) {
@@ -913,7 +921,7 @@ export async function seedXYZTiles(
       if (needDownload === true) {
         await downloadXYZTileDataFile(
           tileURL.replaceAll("{z}/{x}/{y}", tileName),
-          sourcePath,
+          id,
           source,
           z,
           x,
@@ -973,7 +981,7 @@ export async function seedXYZTiles(
 
   // Remove parent folders if empty
   await removeEmptyFolders(
-    sourcePath,
+    `${process.env.DATA_DIR}/caches/xyzs/${id}`,
     /^.*\.(sqlite|json|gif|png|jpg|jpeg|webp|pbf)$/
   );
 
@@ -989,7 +997,7 @@ export async function seedXYZTiles(
 
 /**
  * Seed style
- * @param {string} sourcePath Style folder path
+ * @param {string} id Cache style ID
  * @param {string} styleURL Style URL
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
@@ -997,7 +1005,7 @@ export async function seedXYZTiles(
  * @returns {Promise<void>}
  */
 export async function seedStyle(
-  sourcePath,
+  id,
   styleURL,
   maxTry = 5,
   timeout = 60000,
@@ -1005,10 +1013,9 @@ export async function seedStyle(
 ) {
   const startTime = Date.now();
 
-  const id = path.basename(sourcePath);
-  let refreshTimestamp;
   let log = `Seeding style "${id}" with:\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}`;
 
+  let refreshTimestamp;
   if (typeof refreshBefore === "string") {
     refreshTimestamp = new Date(refreshBefore).getTime();
 
@@ -1028,7 +1035,7 @@ export async function seedStyle(
   printLog("info", log);
 
   // Download style.json file
-  const filePath = `${sourcePath}/style.json`;
+  const filePath = `${process.env.DATA_DIR}/caches/styles/${id}/style.json`;
 
   try {
     let needDownload = false;
@@ -1083,7 +1090,10 @@ export async function seedStyle(
   }
 
   // Remove parent folders if empty
-  await removeEmptyFolders(sourcePath, /^.*\.json$/);
+  await removeEmptyFolders(
+    `${process.env.DATA_DIR}/caches/styles/${id}`,
+    /^.*\.json$/
+  );
 
   const doneTime = Date.now();
 

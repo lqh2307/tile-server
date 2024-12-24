@@ -5,7 +5,6 @@ import { OPEN_READWRITE, OPEN_CREATE } from "sqlite3";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
-import path from "node:path";
 import os from "os";
 import {
   removeXYZTileDataFile,
@@ -57,6 +56,9 @@ export async function readCleanUpFile(isValidate) {
             additionalProperties: {
               type: "object",
               properties: {
+                skip: {
+                  type: "boolean",
+                },
                 cleanUpBefore: {
                   type: "object",
                   properties: {
@@ -101,6 +103,9 @@ export async function readCleanUpFile(isValidate) {
                   minItems: 0,
                   maxItems: 23,
                 },
+                skip: {
+                  type: "boolean",
+                },
                 cleanUpBefore: {
                   type: "object",
                   properties: {
@@ -123,6 +128,9 @@ export async function readCleanUpFile(isValidate) {
             additionalProperties: {
               type: "object",
               properties: {
+                skip: {
+                  type: "boolean",
+                },
                 cleanUpBefore: {
                   type: "object",
                   properties: {
@@ -145,6 +153,9 @@ export async function readCleanUpFile(isValidate) {
             additionalProperties: {
               type: "object",
               properties: {
+                skip: {
+                  type: "boolean",
+                },
                 cleanUpBefore: {
                   type: "object",
                   properties: {
@@ -174,7 +185,7 @@ export async function readCleanUpFile(isValidate) {
 
 /**
  * Clean up MBTiles tiles
- * @param {string} sourcePath MBTiles folder path
+ * @param {string} id Clean up MBTiles ID
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
  * @param {number} concurrency Concurrency download
@@ -183,7 +194,7 @@ export async function readCleanUpFile(isValidate) {
  * @returns {Promise<void>}
  */
 export async function cleanUpMBTilesTiles(
-  sourcePath,
+  id,
   zooms = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
     21, 22,
@@ -195,13 +206,17 @@ export async function cleanUpMBTilesTiles(
 ) {
   const startTime = Date.now();
 
-  const id = path.basename(sourcePath);
-  let { total, tilesSummaries } = getTilesBoundsFromBBoxs(bboxs, zooms, "xyz");
-  let cleanUpTimestamp;
+  const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
+    bboxs,
+    zooms,
+    "xyz"
+  );
+
   let log = `Cleaning up ${total} tiles of mbtiles data "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
+  let cleanUpTimestamp;
   if (typeof cleanUpBefore === "string") {
     cleanUpTimestamp = new Date(cleanUpBefore).getTime();
 
@@ -218,7 +233,7 @@ export async function cleanUpMBTilesTiles(
 
   // Open MBTiles SQLite database
   const source = await openMBTilesDB(
-    `${sourcePath}/${id}.mbtiles`,
+    `${process.env.DATA_DIR}/caches/mbtiles/${id}/${id}.mbtiles`,
     OPEN_READWRITE | OPEN_CREATE,
     false
   );
@@ -321,7 +336,7 @@ export async function cleanUpMBTilesTiles(
 
 /**
  * Clean up PostgreSQL tiles
- * @param {string} sourcePath PostgreSQL URI
+ * @param {string} id Clean up PostgreSQL ID
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
  * @param {number} concurrency Concurrency download
@@ -330,7 +345,7 @@ export async function cleanUpMBTilesTiles(
  * @returns {Promise<void>}
  */
 export async function cleanUpPostgreSQLTiles(
-  sourcePath,
+  id,
   zooms = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
     21, 22,
@@ -342,13 +357,17 @@ export async function cleanUpPostgreSQLTiles(
 ) {
   const startTime = Date.now();
 
-  const id = path.basename(sourcePath);
-  let { total, tilesSummaries } = getTilesBoundsFromBBoxs(bboxs, zooms, "xyz");
-  let cleanUpTimestamp;
+  const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
+    bboxs,
+    zooms,
+    "xyz"
+  );
+
   let log = `Cleaning up ${total} tiles of postgresql data "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
+  let cleanUpTimestamp;
   if (typeof cleanUpBefore === "string") {
     cleanUpTimestamp = new Date(cleanUpBefore).getTime();
 
@@ -467,7 +486,7 @@ export async function cleanUpPostgreSQLTiles(
 
 /**
  * Clean up XYZ tiles
- * @param {string} sourcePath XYZ folder path
+ * @param {string} id Clean up XYZ ID
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
@@ -477,7 +496,7 @@ export async function cleanUpPostgreSQLTiles(
  * @returns {Promise<void>}
  */
 export async function cleanUpXYZTiles(
-  sourcePath,
+  id,
   format,
   zooms = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
@@ -490,13 +509,17 @@ export async function cleanUpXYZTiles(
 ) {
   const startTime = Date.now();
 
-  const id = path.basename(sourcePath);
-  let { total, tilesSummaries } = getTilesBoundsFromBBoxs(bboxs, zooms, "xyz");
-  let cleanUpTimestamp;
+  const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
+    bboxs,
+    zooms,
+    "xyz"
+  );
+
   let log = `Cleaning up ${total} tiles of xyz data "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
+  let cleanUpTimestamp;
   if (typeof cleanUpBefore === "string") {
     cleanUpTimestamp = new Date(cleanUpBefore).getTime();
 
@@ -513,7 +536,7 @@ export async function cleanUpXYZTiles(
 
   // Open XYZ MD5 SQLite database
   const source = await openXYZMD5DB(
-    `${sourcePath}/${id}.sqlite`,
+    `${process.env.DATA_DIR}/caches/xyzs/${id}/${id}.sqlite`,
     OPEN_READWRITE | OPEN_CREATE,
     false
   );
@@ -533,7 +556,7 @@ export async function cleanUpXYZTiles(
       if (cleanUpTimestamp !== undefined) {
         try {
           const created = await getXYZTileCreated(
-            `${sourcePath}/${tileName}.${format}`
+            `${process.env.DATA_DIR}/caches/xyzs/${id}/${tileName}.${format}`
           );
 
           if (!created || created < cleanUpTimestamp) {
@@ -552,7 +575,7 @@ export async function cleanUpXYZTiles(
 
       if (needRemove === true) {
         await removeXYZTileDataFile(
-          sourcePath,
+          id,
           source,
           z,
           x,
@@ -610,7 +633,7 @@ export async function cleanUpXYZTiles(
 
   // Remove parent folders if empty
   await removeEmptyFolders(
-    sourcePath,
+    `${process.env.DATA_DIR}/caches/xyzs/${id}`,
     /^.*\.(sqlite|json|gif|png|jpg|jpeg|webp|pbf)$/
   );
 
@@ -626,18 +649,17 @@ export async function cleanUpXYZTiles(
 
 /**
  * Clean up style
- * @param {string} sourcePath Style folder path
+ * @param {string} id Clean up style ID
  * @param {number} maxTry Number of retry attempts on failure
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-export async function cleanUpStyle(sourcePath, maxTry = 5, cleanUpBefore) {
+export async function cleanUpStyle(id, maxTry = 5, cleanUpBefore) {
   const startTime = Date.now();
 
-  const id = path.basename(sourcePath);
-  let cleanUpTimestamp;
   let log = `Cleaning up style "${id}" with:\n\tMax try: ${maxTry}`;
 
+  let cleanUpTimestamp;
   if (typeof cleanUpBefore === "string") {
     cleanUpTimestamp = new Date(cleanUpBefore).getTime();
 
@@ -653,7 +675,7 @@ export async function cleanUpStyle(sourcePath, maxTry = 5, cleanUpBefore) {
   printLog("info", log);
 
   // Remove style file
-  const filePath = `${sourcePath}/style.json`;
+  const filePath = `${process.env.DATA_DIR}/caches/styles/${id}/style.json`;
 
   try {
     let needRemove = false;
@@ -688,7 +710,10 @@ export async function cleanUpStyle(sourcePath, maxTry = 5, cleanUpBefore) {
   }
 
   // Remove parent folders if empty
-  await removeEmptyFolders(sourcePath, /^.*\.json$/);
+  await removeEmptyFolders(
+    `${process.env.DATA_DIR}/caches/styles/${id}`,
+    /^.*\.json$/
+  );
 
   const doneTime = Date.now();
 

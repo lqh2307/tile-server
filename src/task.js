@@ -2,12 +2,14 @@
 
 import { printLog } from "./logger.js";
 import {
+  cleanUpPostgreSQLTiles,
   cleanUpMBTilesTiles,
   cleanUpXYZTiles,
   readCleanUpFile,
   cleanUpStyle,
 } from "./cleanup.js";
 import {
+  seedPostgreSQLTiles,
   seedMBTilesTiles,
   readSeedFile,
   seedXYZTiles,
@@ -48,15 +50,19 @@ export async function runTasks(opts) {
 
         for (const id of ids) {
           const cleanUpStyleItem = cleanUpData.styles[id];
-          const cleanUpBefore =
-            cleanUpStyleItem.refreshBefore?.time ||
-            cleanUpStyleItem.refreshBefore?.day;
+
+          if (cleanUpStyleItem.skip === true) {
+            printLog("info", `Skipping clean up style "${id}"...`);
+
+            continue;
+          }
 
           try {
             await cleanUpStyle(
-              `${process.env.DATA_DIR}/caches/styles/${id}`,
+              id,
               cleanUpStyleItem.maxTry,
-              cleanUpBefore
+              cleanUpStyleItem.refreshBefore?.time ||
+                cleanUpStyleItem.refreshBefore?.day
             );
           } catch (error) {
             printLog(
@@ -91,29 +97,44 @@ export async function runTasks(opts) {
         for (const id of ids) {
           const seedDataItem = seedData.datas[id];
           const cleanUpDataItem = cleanUpData.datas[id];
-          const cleanUpBefore =
-            cleanUpDataItem.cleanUpBefore?.time ||
-            cleanUpDataItem.cleanUpBefore?.day;
+
+          if (cleanUpDataItem.skip === true) {
+            printLog("info", `Skipping clean up data "${id}"...`);
+
+            continue;
+          }
 
           try {
             if (seedDataItem.storeType === "xyz") {
               await cleanUpXYZTiles(
-                `${process.env.DATA_DIR}/caches/xyzs/${id}`,
+                id,
                 seedDataItem.metadata.format,
                 cleanUpDataItem.zooms,
                 cleanUpDataItem.bboxs,
                 seedDataItem.concurrency,
                 seedDataItem.maxTry,
-                cleanUpBefore
+                cleanUpDataItem.cleanUpBefore?.time ||
+                  cleanUpDataItem.cleanUpBefore?.day
               );
             } else if (seedDataItem.storeType === "mbtiles") {
               await cleanUpMBTilesTiles(
-                `${process.env.DATA_DIR}/caches/mbtiles/${id}`,
+                id,
                 cleanUpDataItem.zooms,
                 cleanUpDataItem.bboxs,
                 seedDataItem.concurrency,
                 seedDataItem.maxTry,
-                cleanUpBefore
+                cleanUpDataItem.cleanUpBefore?.time ||
+                  cleanUpDataItem.cleanUpBefore?.day
+              );
+            } else if (seedDataItem.storeType === "pg") {
+              await cleanUpPostgreSQLTiles(
+                id,
+                cleanUpDataItem.zooms,
+                cleanUpDataItem.bboxs,
+                seedDataItem.concurrency,
+                seedDataItem.maxTry,
+                cleanUpDataItem.cleanUpBefore?.time ||
+                  cleanUpDataItem.cleanUpBefore?.day
               );
             }
           } catch (error) {
@@ -148,17 +169,22 @@ export async function runTasks(opts) {
 
         for (const id of ids) {
           const seedStyleItem = seedData.styles[id];
-          const refreshBefore =
-            seedStyleItem.refreshBefore?.time ||
-            seedStyleItem.refreshBefore?.day;
+
+          if (seedStyleItem.skip === true) {
+            printLog("info", `Skipping seed style "${id}"...`);
+
+            continue;
+          }
 
           try {
             await seedStyle(
-              `${process.env.DATA_DIR}/caches/styles/${id}`,
+              id,
               seedStyleItem.url,
               seedStyleItem.maxTry,
               seedStyleItem.timeout,
-              refreshBefore
+              seedStyleItem.refreshBefore?.time ||
+                seedStyleItem.refreshBefore?.day ||
+                seedStyleItem.refreshBefore?.md5
             );
           } catch (error) {
             printLog(
@@ -192,15 +218,17 @@ export async function runTasks(opts) {
 
         for (const id of ids) {
           const seedDataItem = seedData.datas[id];
-          const refreshBefore =
-            seedDataItem.refreshBefore?.time ||
-            seedDataItem.refreshBefore?.day ||
-            seedDataItem.refreshBefore?.md5;
+
+          if (seedDataItem.skip === true) {
+            printLog("info", `Skipping seed data "${id}"...`);
+
+            continue;
+          }
 
           try {
             if (seedDataItem.storeType === "xyz") {
               await seedXYZTiles(
-                `${process.env.DATA_DIR}/caches/xyzs/${id}`,
+                id,
                 seedDataItem.metadata,
                 seedDataItem.url,
                 seedDataItem.bboxs,
@@ -210,11 +238,13 @@ export async function runTasks(opts) {
                 seedDataItem.timeout,
                 seedDataItem.storeMD5,
                 seedDataItem.storeTransparent,
-                refreshBefore
+                seedDataItem.refreshBefore?.time ||
+                  seedDataItem.refreshBefore?.day ||
+                  seedDataItem.refreshBefore?.md5
               );
             } else if (seedDataItem.storeType === "mbtiles") {
               await seedMBTilesTiles(
-                `${process.env.DATA_DIR}/caches/mbtiles/${id}`,
+                id,
                 seedDataItem.metadata,
                 seedDataItem.url,
                 seedDataItem.bboxs,
@@ -224,7 +254,25 @@ export async function runTasks(opts) {
                 seedDataItem.timeout,
                 seedDataItem.storeMD5,
                 seedDataItem.storeTransparent,
-                refreshBefore
+                seedDataItem.refreshBefore?.time ||
+                  seedDataItem.refreshBefore?.day ||
+                  seedDataItem.refreshBefore?.md5
+              );
+            } else if (seedDataItem.storeType === "pg") {
+              await seedPostgreSQLTiles(
+                id,
+                seedDataItem.metadata,
+                seedDataItem.url,
+                seedDataItem.bboxs,
+                seedDataItem.zooms,
+                seedDataItem.concurrency,
+                seedDataItem.maxTry,
+                seedDataItem.timeout,
+                seedDataItem.storeMD5,
+                seedDataItem.storeTransparent,
+                seedDataItem.refreshBefore?.time ||
+                  seedDataItem.refreshBefore?.day ||
+                  seedDataItem.refreshBefore?.md5
               );
             }
           } catch (error) {

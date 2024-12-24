@@ -1,5 +1,6 @@
 "use strict";
 
+import { getPostgreSQLSize } from "./tile_postgresql.js";
 import { checkReadyMiddleware } from "./middleware.js";
 import { StatusCodes } from "http-status-codes";
 import swaggerUi from "swagger-ui-express";
@@ -355,6 +356,10 @@ function serveSummaryHandler() {
             count: 0,
             size: 0,
           },
+          pg: {
+            count: 0,
+            size: 0,
+          },
         },
         style: {
           count: 0,
@@ -435,17 +440,22 @@ function serveSummaryHandler() {
           }
 
           result.data.xyz.count += 1;
+        } else if (item.sourceType === "pg") {
+          result.data.pg.size += await getPostgreSQLSize(item.source, id);
+          result.data.pg.count += 1;
         }
       }
 
       result.data.count =
         result.data.mbtiles.count +
         result.data.pmtiles.count +
-        result.data.xyz.count;
+        result.data.xyz.count +
+        result.data.pg.count;
       result.data.size =
         result.data.mbtiles.size +
         result.data.pmtiles.size +
-        result.data.xyz.size;
+        result.data.xyz.size +
+        result.data.pg.size;
 
       // Styles info
       for (const id in config.repo.styles) {
@@ -456,12 +466,7 @@ function serveSummaryHandler() {
 
           result.style.size += stat.size;
         } catch (error) {
-          if (
-            !(
-              item.cache !== undefined &&
-              error.message === "Style does not exist"
-            )
-          ) {
+          if (item.cache === undefined && error.code === "ENOENT") {
             throw error;
           }
         }

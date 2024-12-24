@@ -40,14 +40,17 @@
         container: "map",
         style: `${baseURL}/styles/{{id}}/style.json`,
         hash: true,
-        maxPitch: 85
       });
 
       map.addControl(new maplibregl.NavigationControl({
         visualizePitch: true,
         showZoom: true,
-        showCompass: true
+        showCompass: true,
       }));
+
+      map.on("click", (event) => {
+        alert(`Position: [${event.lngLat.lng}, ${event.lngLat.lat}]`);
+      });
     } else {
       const map = L.map("map", {
         zoomControl: false,
@@ -68,15 +71,19 @@
           switch (key.toLowerCase()) {
             case "tiles":
               tile_urls = jsonResponse[key];
+
               break;
             case "attribution":
               tile_attribution = jsonResponse[key];
+
               break;
             case "minzoom":
               tile_minzoom = jsonResponse[key];
+
               break;
             case "maxzoom":
               tile_maxzoom = jsonResponse[key];
+
               break;
           }
         }
@@ -86,7 +93,7 @@
             tileSize: 256,
             minZoom: tile_minzoom,
             maxZoom: tile_maxzoom,
-            attribution: tile_attribution
+            attribution: tile_attribution,
           }).addTo(map);
         }
 
@@ -101,6 +108,10 @@
       setTimeout(function () {
         new L.Hash(map);
       }, 0);
+
+      map.on("click", (event) => {
+        alert(`Position: [${event.latlng.lng}, ${event.latlng.lat}]`);
+      });
     }
   </script>
 </body>

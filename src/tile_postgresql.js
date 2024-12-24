@@ -150,7 +150,9 @@ async function getPostgreSQLZoomLevelFromTiles(source, zoomType = "maxzoom") {
       : "SELECT MAX(zoom_level) AS zoom FROM tiles;"
   );
 
-  return data.rows[0].zoom;
+  if (data.rows.length !== 0) {
+    return data.rows[0].zoom;
+  }
 }
 
 /**
@@ -607,7 +609,7 @@ export async function removePostgreSQLTileData(
  * @param {boolean} storeTransparent Is store transparent tile?
  * @returns {Promise<void>}
  */
-export async function cacheMBtilesTileData(
+export async function cachePostgreSQLTileData(
   source,
   z,
   x,
@@ -696,4 +698,20 @@ export async function getPostgreSQLTileCreated(source, z, x, y) {
   }
 
   return data.rows[0].created;
+}
+
+/**
+ * Get the size of PostgreSQL database
+ * @param {Client} source PostgreSQL database instance
+ * @param {string} dbName Database name
+ * @returns {Promise<number>}
+ */
+export async function getPostgreSQLSize(source, dbName) {
+  const data = await source.query("SELECT pg_database_size($1) AS size;", [
+    dbName,
+  ]);
+
+  if (data.rows.length !== 0) {
+    return data.rows[0].size;
+  }
 }

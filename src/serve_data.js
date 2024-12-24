@@ -36,6 +36,14 @@ import {
   getPMTilesTile,
   openPMTiles,
 } from "./tile_pmtiles.js";
+import {
+  getPostgreSQLTileFromURL,
+  cachePostgreSQLTileData,
+  getPostgreSQLTileMD5,
+  getPostgreSQLInfos,
+  getPostgreSQLTile,
+  openPostgreSQLDB,
+} from "./tile_postgresql.js";
 
 /**
  * Validate data info (no validate json field)
@@ -228,6 +236,43 @@ function getDataTileHandler() {
             throw error;
           }
         }
+      } else if (item.sourceType === "pg") {
+        try {
+          dataTile = await getPostgreSQLTile(item.source, z, x, y);
+        } catch (error) {
+          if (
+            item.sourceURL !== undefined &&
+            error.message === "Tile does not exist"
+          ) {
+            const url = item.sourceURL.replaceAll("{z}/{x}/{y}", tileName);
+
+            printLog(
+              "info",
+              `Forwarding data "${id}" - Tile "${tileName}" - To "${url}"...`
+            );
+
+            /* Get data */
+            dataTile = await getPostgreSQLTileFromURL(
+              url,
+              60000 // 1 mins
+            );
+
+            /* Cache */
+            if (item.storeCache === true) {
+              cachePostgreSQLTileData(
+                item.source,
+                z,
+                x,
+                y,
+                dataTile.data,
+                item.storeMD5,
+                item.storeTransparent
+              );
+            }
+          } else {
+            throw error;
+          }
+        }
       }
 
       /* Gzip pbf data tile */
@@ -351,6 +396,14 @@ function getDataTileMD5Handler() {
             y,
             item.tileJSON.format
           );
+
+          md5 = calculateMD5(tile.data);
+        }
+      } else if (item.sourceType === "pg") {
+        if (item.storeMD5 === true) {
+          md5 = await getPostgreSQLTileMD5(item.source, z, x, y);
+        } else {
+          const tile = await getPostgreSQLTile(item.source, z, x, y);
 
           md5 = calculateMD5(tile.data);
         }
@@ -880,6 +933,35 @@ export const serve_data = {
               dataInfo.source = dataInfo.path;
 
               dataInfo.tileJSON = await getXYZInfos(dataInfo.source);
+            }
+          } else if (item.pg !== undefined) {
+            dataInfo.sourceType = "pg";
+
+            if (item.cache !== undefined) {
+              dataInfo.path = `${process.env.POSTGRESQL_BASE_URI}/${id}`;
+
+              const cacheSource = seed.datas[item.pg];
+
+              if (cacheSource === undefined || cacheSource.storeType !== "pg") {
+                throw new Error(`Cache pg data "${item.pg}" is invalid`);
+              }
+
+              if (item.cache.forward === true) {
+                dataInfo.sourceURL = cacheSource.url;
+                dataInfo.storeCache = item.cache.store;
+                dataInfo.storeMD5 = cacheSource.storeMD5;
+                dataInfo.storeTransparent = cacheSource.storeTransparent;
+              }
+
+              dataInfo.source = await openPostgreSQLDB(dataInfo.path, true);
+
+              dataInfo.tileJSON = createMetadata(cacheSource.metadata);
+            } else {
+              dataInfo.path = `${process.env.POSTGRESQL_BASE_URI}/${id}`;
+
+              dataInfo.source = await openPostgreSQLDB(dataInfo.path, true);
+
+              dataInfo.tileJSON = await getPostgreSQLInfos(dataInfo.source);
             }
           }
 

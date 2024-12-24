@@ -87,24 +87,23 @@
     const map = new maplibregl.Map({
       container: "map",
       hash: true,
-      maxPitch: 85,
       style: {
-        version: 8,
+        version: "8",
         sources: {
           "vector_layer_": {
             type: "vector",
-            url: `${baseURL}/datas/{{id}}.json`
+            url: `${baseURL}/datas/{{id}}.json`,
           }
         },
-        layers: []
-      }
+        layers: [],
+      },
     });
 
     map.addControl(new maplibregl.NavigationControl());
 
     const inspect = new MaplibreInspect({
       showInspectMap: true,
-      showInspectButton: false
+      showInspectButton: false,
     });
 
     map.addControl(inspect);
@@ -125,6 +124,10 @@
           layerList.appendChild(item);
         });
       })
+    });
+
+    map.on("click", (event) => {
+      alert(`Position: [${event.lngLat.lng}, ${event.lngLat.lat}]`);
     });
   </script>
   {{else}}
@@ -152,15 +155,19 @@
         switch (key.toLowerCase()) {
           case "tiles":
             tile_urls = jsonResponse[key];
+
             break;
           case "attribution":
             tile_attribution = jsonResponse[key];
+
             break;
           case "minzoom":
             tile_minzoom = jsonResponse[key];
+
             break;
           case "maxzoom":
             tile_maxzoom = jsonResponse[key];
+
             break;
         }
       }
@@ -170,7 +177,7 @@
           tileSize: 256,
           minZoom: tile_minzoom,
           maxZoom: tile_maxzoom,
-          attribution: tile_attribution
+          attribution: tile_attribution,
         }).addTo(map);
       }
 
@@ -185,6 +192,10 @@
     setTimeout(function () {
       new L.Hash(map);
     }, 0);
+
+    map.on("click", (event) => {
+      alert(`Position: [${event.latlng.lng}, ${event.latlng.lat}]`);
+    });
   </script>
   {{/if}}
 </body>

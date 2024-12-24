@@ -211,7 +211,7 @@ export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
  * @param {number} radius Radius in metter (EPSG:3857)
  * @returns {Array<number>} [minLon, minLat, maxLon, maxLat]
  */
-function getBBoxFromCircle(lonCenter, latCenter, radius) {
+export function getBBoxFromCircle(lonCenter, latCenter, radius) {
   const [xCenter, yCenter] = proj4("EPSG:4326", "EPSG:3857", [
     lonCenter,
     latCenter,
@@ -225,6 +225,69 @@ function getBBoxFromCircle(lonCenter, latCenter, radius) {
     xCenter + radius,
     yCenter + radius,
   ]);
+
+  if (minLon > 180) {
+    minLon = 180;
+  } else if (minLon < -180) {
+    minLon = -180;
+  }
+
+  if (maxLon > 180) {
+    maxLon = 180;
+  } else if (maxLon < -180) {
+    maxLon = -180;
+  }
+
+  if (minLat > 85.051129) {
+    minLat = 85.051129;
+  } else if (minLat < -85.051129) {
+    minLat = -85.051129;
+  }
+
+  if (maxLat > 85.051129) {
+    maxLat = 85.051129;
+  } else if (maxLat < -85.051129) {
+    maxLat = -85.051129;
+  }
+
+  return [minLon, minLat, maxLon, maxLat];
+}
+
+/**
+ * Get bounding box from an array of points
+ * @param {Array<Array<number>>} points Array of points in the format [[lon, lat], [lon, lat], ...]
+ * @returns {Array<number>} Bounding box in the format [minLon, minLat, maxLon, maxLat]
+ */
+export function getBBoxFromPoint(points) {
+  let minLon = -180;
+  let minLat = -85.051129;
+  let maxLon = 180;
+  let maxLat = 85.051129;
+
+  for (let index = 0; index < points.length; index++) {
+    if (index === 0) {
+      minLon = points[index][0];
+      minLat = points[index][1];
+      maxLon = points[index][0];
+      maxLat = points[index][1];
+    } else {
+      if (points[index][0] < minLon) {
+        minLon = points[index][0];
+      }
+
+      if (points[index][1] < minLat) {
+        minLat = points[index][1];
+      }
+
+      if (points[index][2] > maxLon) {
+        maxLon = points[index][2];
+      }
+
+      if (points[index][3] > maxLat) {
+        maxLat = points[index][3];
+      }
+    }
+  }
 
   if (minLon > 180) {
     minLon = 180;
