@@ -9,7 +9,7 @@ import path from "node:path";
  * @param {string} filePath File path
  * @param {number} mode SQLite mode (e.g: OPEN_READWRITE | OPEN_CREATE | OPEN_READONLY)
  * @param {boolean} wal Use WAL
- * @returns {Promise<Database>} SQLite database instance
+ * @returns {Promise<sqlite3.Database>} SQLite database instance
  */
 export async function openSQLite(filePath, mode, wal) {
   // Create folder if has OPEN_CREATE mode
@@ -52,7 +52,7 @@ export async function openSQLite(filePath, mode, wal) {
 
 /**
  * Run a SQL command in SQLite
- * @param {Database} source SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {string} sql SQL command to execute
  * @param {...any} params Parameters for the SQL command
  * @returns {Promise<void>}
@@ -71,7 +71,7 @@ export async function runSQL(source, sql, ...params) {
 
 /**
  * Fetch one row from SQLite database
- * @param {Database} source SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {string} sql SQL query string
  * @param {...any} params Parameters for the SQL query
  * @returns {Promise<object>} The first row of the query result
@@ -90,7 +90,7 @@ export async function fetchOne(source, sql, ...params) {
 
 /**
  * Fetch all rows from SQLite database
- * @param {Database} source SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @param {string} sql SQL query string
  * @param {...any} params Parameters for the SQL query
  * @returns {Promise<Array<object>>} An array of rows
@@ -109,7 +109,7 @@ export async function fetchAll(source, sql, ...params) {
 
 /**
  * Close SQLite database
- * @param {Database} source SQLite database instance
+ * @param {sqlite3.Database} source SQLite database instance
  * @returns {Promise<void>}
  */
 export async function closeSQLite(source) {

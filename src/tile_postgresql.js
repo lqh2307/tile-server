@@ -16,7 +16,7 @@ import {
 
 /**
  * Initialize PostgreSQL database tables
- * @param {Client} source PostgreSQL database instance
+ * @param {pg.Client} source PostgreSQL database instance
  * @returns {Promise<void>}
  */
 async function initializePostgreSQLTables(source) {
@@ -51,7 +51,7 @@ async function initializePostgreSQLTables(source) {
 
 /**
  * Get PostgreSQL layers from tiles
- * @param {Client} source PostgreSQL database instance
+ * @param {pg.Client} source PostgreSQL database instance
  * @returns {Promise<Array<string>>}
  */
 async function getPostgreSQLLayersFromTiles(source) {
@@ -97,7 +97,7 @@ async function getPostgreSQLLayersFromTiles(source) {
 
 /**
  * Get PostgreSQL bounding box from tiles
- * @param {Client} source PostgreSQL database instance
+ * @param {pg.Client} source PostgreSQL database instance
  * @returns {Promise<Array<number>>} Bounding box in format [minLon, minLat, maxLon, maxLat]
  */
 async function getPostgreSQLBBoxFromTiles(source) {
@@ -139,7 +139,7 @@ async function getPostgreSQLBBoxFromTiles(source) {
 
 /**
  * Get PostgreSQL zoom level from tiles
- * @param {Client} source PostgreSQL database instance
+ * @param {pg.Client} source PostgreSQL database instance
  * @param {"minzoom"|"maxzoom"} zoomType
  * @returns {Promise<number>}
  */
@@ -157,7 +157,7 @@ async function getPostgreSQLZoomLevelFromTiles(source, zoomType = "maxzoom") {
 
 /**
  * Get PostgreSQL tile format from tiles
- * @param {Client} source PostgreSQL database instance
+ * @param {pg.Client} source PostgreSQL database instance
  * @returns {Promise<string>}
  */
 async function getPostgreSQLFormatFromTiles(source) {
@@ -170,7 +170,7 @@ async function getPostgreSQLFormatFromTiles(source) {
 
 /**
  * Create PostgreSQL tile
- * @param {Client} source PostgreSQL database instance
+ * @param {pg.Client} source PostgreSQL database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -211,7 +211,7 @@ async function createPostgreSQLTileWithLock(
 
 /**
  * Delete a tile from PostgreSQL tiles table
- * @param {Client} source PostgreSQL database instance
+ * @param {pg.Client} source PostgreSQL database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -249,7 +249,7 @@ export async function openPostgreSQLDB(uri, isCreate = false) {
 
 /**
  * Get PostgreSQL tile
- * @param {Client} source PostgreSQL database instance
+ * @param {pg.Client} source PostgreSQL database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -282,7 +282,7 @@ export async function getPostgreSQLTile(source, z, x, y) {
 
 /**
  * Get PostgreSQL infos
- * @param {Client} source PostgreSQL database instance
+ * @param {pg.Client} source PostgreSQL database instance
  * @returns {Promise<object>}
  */
 export async function getPostgreSQLInfos(source) {
@@ -417,7 +417,7 @@ export async function getPostgreSQLInfos(source) {
 
 /**
  * Close PostgreSQL
- * @param {Client} source PostgreSQL database instance
+ * @param {pg.Client} source PostgreSQL database instance
  * @returns {Promise<void>}
  */
 export async function closePostgreSQLDB(source) {
@@ -426,7 +426,7 @@ export async function closePostgreSQLDB(source) {
 
 /**
  * Update PostgreSQL metadata table
- * @param {Client} source PostgreSQL database instance
+ * @param {pg.Client} source PostgreSQL database instance
  * @param {Object<string,string>} metadataAdds Metadata object
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
@@ -490,7 +490,7 @@ export async function getPostgreSQLTileFromURL(url, timeout) {
 /**
  * Download PostgreSQL tile data
  * @param {string} url The URL to download the file from
- * @param {Client} source PostgreSQL database instance
+ * @param {pg.Client} source PostgreSQL database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -569,7 +569,7 @@ export async function downloadPostgreSQLTile(
 
 /**
  * Remove PostgreSQL tile data
- * @param {Client} source PostgreSQL database instance
+ * @param {pg.Client} source PostgreSQL database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -600,7 +600,7 @@ export async function removePostgreSQLTileData(
 
 /**
  * Cache PostgreSQL tile data
- * @param {Client} source PostgreSQL database instance
+ * @param {pg.Client} source PostgreSQL database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -646,7 +646,7 @@ export async function cachePostgreSQLTileData(
 
 /**
  * Get MD5 hash of PostgreSQL tile
- * @param {Client} source PostgreSQL database instance
+ * @param {pg.Client} source PostgreSQL database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -674,7 +674,7 @@ export async function getPostgreSQLTileMD5(source, z, x, y) {
 
 /**
  * Get created of PostgreSQL tile
- * @param {Client} source PostgreSQL database instance
+ * @param {pg.Client} source PostgreSQL database instance
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -702,7 +702,7 @@ export async function getPostgreSQLTileCreated(source, z, x, y) {
 
 /**
  * Get the size of PostgreSQL database
- * @param {Client} source PostgreSQL database instance
+ * @param {pg.Client} source PostgreSQL database instance
  * @param {string} dbName Database name
  * @returns {Promise<number>}
  */
