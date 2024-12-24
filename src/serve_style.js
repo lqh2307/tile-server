@@ -1037,6 +1037,8 @@ export const serve_style = {
        *             schema:
        *               type: string
        *               format: binary
+       *       400:
+       *         description: Invalid params
        *       404:
        *         description: Not found
        *       503:

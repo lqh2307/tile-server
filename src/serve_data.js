@@ -605,6 +605,8 @@ export const serve_data = {
      *           application/json:
      *             schema:
      *               type: object
+     *       400:
+     *         description: Invalid params
      *       404:
      *         description: Not found
      *       503:
@@ -751,6 +753,8 @@ export const serve_data = {
      *               format: binary
      *       204:
      *         description: No content
+     *       400:
+     *         description: Invalid params
      *       404:
      *         description: Not found
      *       503:

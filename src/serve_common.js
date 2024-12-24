@@ -12,6 +12,7 @@ import handlebars from "handlebars";
 import express from "express";
 import {
   getXYZFromLonLatZ,
+  getBBoxFromPoint,
   getRequestHost,
   getVersion,
   findFiles,
@@ -562,6 +563,50 @@ function serveKillHandler() {
   };
 }
 
+/**
+ * Calculate handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
+function calculateHandler() {
+  return async (req, res, next) => {
+    try {
+      if (req.query.points) {
+        const parsedPoints = JSON.parse(req.query.points);
+
+        return res.status(StatusCodes.OK).send(getBBoxFromPoint(parsedPoints));
+      } else if (req.query.circle) {
+        const parsedCircle = JSON.parse(req.query.circle);
+
+        return res
+          .status(StatusCodes.OK)
+          .send(
+            getBBoxFromCircle(
+              parsedCircle.circle[0],
+              parsedCircle.circle[1],
+              parsedCircle.radius
+            )
+          );
+      } else {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .send("points or circle query parameter is missing");
+      }
+    } catch (error) {
+      printLog("error", `Failed to calculate bbox: ${error}`);
+
+      if (error instanceof SyntaxError) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .send("points or circle query parameter is invalid");
+      } else {
+        return res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .send("Internal server error");
+      }
+    }
+  };
+}
+
 export const serve_common = {
   init: () => {
     const app = express()
@@ -571,6 +616,40 @@ export const serve_common = {
     if (config.options.serveSwagger === true) {
       app.use("/swagger/index.html", swaggerUi.serve, serveSwagger());
     }
+
+    /**
+     * @swagger
+     * tags:
+     *   - name: Common
+     *     description: Common related endpoints
+     * /calculate-bbox:
+     *   get:
+     *     tags:
+     *       - Common
+     *     summary: Calculate bbox from points or circle
+     *     responses:
+     *       200:
+     *         description: Bounding box
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: OK
+     *       400:
+     *         description: Invalid query params
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/calculate-bbox", calculateHandler());
 
     /**
      * @swagger
