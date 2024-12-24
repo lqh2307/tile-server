@@ -12,6 +12,7 @@
     "maxRenderedPoolSize": 16,
     "loggerFormat": ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
     "taskSchedule": "0 0 0 * * *",
+    "postgreSQLBaseURI": "",
     "restartServerAfterTask": true,
     "process": 1,
     "thead": 8
