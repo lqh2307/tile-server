@@ -1,11 +1,11 @@
 "use strict";
 
 import { isFullTransparentPNGImage } from "./image.js";
-import { OPEN_CREATE, OPEN_READONLY } from "sqlite3";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import protobuf from "protocol-buffers";
 import { printLog } from "./logger.js";
+import sqlite3 from "sqlite3";
 import path from "node:path";
 import fs from "node:fs";
 import {
@@ -280,18 +280,14 @@ async function removeMBTilesTileWithLock(source, z, x, y, timeout) {
 /**
  * Open MBTiles database
  * @param {string} filePath MBTiles filepath
- * @param {number} mode SQLite mode (e.g: OPEN_READWRITE | OPEN_CREATE | OPEN_READONLY)
+ * @param {number} mode SQLite mode (e.g: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE | sqlite3.OPEN_READONLY)
  * @param {boolean} wal Use WAL
  * @returns {Promise<object>}
  */
-export async function openMBTilesDB(
-  filePath,
-  mode = OPEN_READONLY,
-  wal = false
-) {
+export async function openMBTilesDB(filePath, mode, wal = false) {
   const source = await openSQLite(filePath, mode, wal);
 
-  if (mode & OPEN_CREATE) {
+  if (mode & sqlite3.OPEN_CREATE) {
     await initializeMBTilesTables(source);
   }
 

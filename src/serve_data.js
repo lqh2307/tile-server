@@ -1,12 +1,12 @@
 "use strict";
 
-import { OPEN_CREATE, OPEN_READONLY, OPEN_READWRITE } from "sqlite3";
 import { checkReadyMiddleware } from "./middleware.js";
 import { StatusCodes } from "http-status-codes";
 import { readSeedFile } from "./seed.js";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import express from "express";
+import sqlite3 from "sqlite3";
 import {
   cacheXYZTileDataFile,
   getXYZTileFromURL,
@@ -833,15 +833,15 @@ export const serve_data = {
 
                 if (dataInfo.storeCache === true) {
                   if ((await isExistFile(dataInfo.path)) === false) {
-                    openMode = OPEN_READWRITE | OPEN_CREATE;
+                    openMode = sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE;
                   } else {
-                    openMode = OPEN_READWRITE;
+                    openMode = sqlite3.OPEN_READWRITE;
                   }
                 } else {
                   if ((await isExistFile(dataInfo.path)) === false) {
-                    openMode = OPEN_READWRITE | OPEN_CREATE;
+                    openMode = sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE;
                   } else {
-                    openMode = OPEN_READONLY;
+                    openMode = sqlite3.OPEN_READONLY;
                   }
                 }
 
@@ -857,7 +857,7 @@ export const serve_data = {
 
                 dataInfo.source = await openMBTilesDB(
                   dataInfo.path,
-                  OPEN_READONLY,
+                  sqlite3.OPEN_READONLY,
                   false
                 );
 
@@ -906,15 +906,15 @@ export const serve_data = {
 
               if (dataInfo.storeCache === true) {
                 if ((await isExistFile(md5FilePath)) === false) {
-                  openMode = OPEN_READWRITE | OPEN_CREATE;
+                  openMode = sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE;
                 } else {
-                  openMode = OPEN_READWRITE;
+                  openMode = sqlite3.OPEN_READWRITE;
                 }
               } else {
                 if ((await isExistFile(md5FilePath)) === false) {
-                  openMode = OPEN_READWRITE | OPEN_CREATE;
+                  openMode = sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE;
                 } else {
-                  openMode = OPEN_READONLY;
+                  openMode = sqlite3.OPEN_READONLY;
                 }
               }
 

@@ -2,12 +2,12 @@
 
 import { closeSQLite, fetchOne, openSQLite, runSQL } from "./sqlite.js";
 import { isFullTransparentPNGImage } from "./image.js";
-import { OPEN_CREATE, OPEN_READONLY } from "sqlite3";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import protobuf from "protocol-buffers";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
+import sqlite3 from "sqlite3";
 import path from "node:path";
 import {
   detectFormatAndHeaders,
@@ -892,18 +892,14 @@ export async function cacheXYZTileDataFile(
 /**
  * Open XYZ MD5 SQLite database
  * @param {string} filePath MD5 filepath
- * @param {number} mode SQLite mode (e.g: OPEN_READWRITE | OPEN_CREATE | OPEN_READONLY)
+ * @param {number} mode SQLite mode (e.g: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE | sqlite3.OPEN_READONLY)
  * @param {boolean} wal Use WAL
  * @returns {Promise<sqlite3.Database>}
  */
-export async function openXYZMD5DB(
-  filePath,
-  mode = OPEN_READONLY,
-  wal = false
-) {
+export async function openXYZMD5DB(filePath, mode, wal = false) {
   const source = await openSQLite(filePath, mode, wal);
 
-  if (mode & OPEN_CREATE) {
+  if (mode & sqlite3.OPEN_CREATE) {
     await initializeXYZMD5Tables(source);
   }
 

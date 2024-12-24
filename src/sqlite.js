@@ -1,19 +1,19 @@
 "use strict";
 
-import { Database, OPEN_CREATE } from "sqlite3";
 import fsPromise from "node:fs/promises";
+import sqlite3 from "sqlite3";
 import path from "node:path";
 
 /**
  * Open SQLite database
  * @param {string} filePath File path
- * @param {number} mode SQLite mode (e.g: OPEN_READWRITE | OPEN_CREATE | OPEN_READONLY)
+ * @param {number} mode SQLite mode (e.g: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE | sqlite3.OPEN_READONLY)
  * @param {boolean} wal Use WAL
  * @returns {Promise<sqlite3.Database>} SQLite database instance
  */
 export async function openSQLite(filePath, mode, wal) {
-  // Create folder if has OPEN_CREATE mode
-  if (mode & OPEN_CREATE) {
+  // Create folder if has sqlite3.OPEN_CREATE mode
+  if (mode & sqlite3.OPEN_CREATE) {
     await fsPromise.mkdir(path.dirname(filePath), {
       recursive: true,
     });
@@ -21,7 +21,7 @@ export async function openSQLite(filePath, mode, wal) {
 
   // Open DB
   return await new Promise((resolve, reject) => {
-    const source = new Database(filePath, mode, async (error) => {
+    const source = new sqlite3.Database(filePath, mode, async (error) => {
       if (error) {
         return reject(error);
       }

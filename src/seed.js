@@ -1,10 +1,10 @@
 "use strict";
 
 import { downloadStyleFile, getStyleCreated, getStyle } from "./style.js";
-import { OPEN_READWRITE, OPEN_CREATE } from "sqlite3";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
+import sqlite3 from "sqlite3";
 import os from "os";
 import {
   updateXYZMetadataFileWithLock,
@@ -458,7 +458,7 @@ export async function seedMBTilesTiles(
   // Open MBTiles SQLite database
   const source = await openMBTilesDB(
     `${process.env.DATA_DIR}/caches/mbtiles/${id}/${id}.mbtiles`,
-    OPEN_READWRITE | OPEN_CREATE,
+    sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     false
   );
 
@@ -852,7 +852,7 @@ export async function seedXYZTiles(
   // Open MD5 SQLite database
   const source = await openXYZMD5DB(
     `${process.env.DATA_DIR}/caches/xyzs/${id}/${id}.sqlite`,
-    OPEN_READWRITE | OPEN_CREATE,
+    sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     false
   );
 
