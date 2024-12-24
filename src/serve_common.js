@@ -12,6 +12,7 @@ import handlebars from "handlebars";
 import express from "express";
 import {
   getXYZFromLonLatZ,
+  getBBoxFromCircle,
   getBBoxFromPoint,
   getRequestHost,
   getVersion,
