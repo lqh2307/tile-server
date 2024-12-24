@@ -275,12 +275,12 @@ export function getBBoxFromPoint(points) {
         minLat = points[index][1];
       }
 
-      if (points[index][2] > maxLon) {
-        maxLon = points[index][2];
+      if (points[index][0] > maxLon) {
+        maxLon = points[index][0];
       }
 
-      if (points[index][3] > maxLat) {
-        maxLat = points[index][3];
+      if (points[index][1] > maxLat) {
+        maxLat = points[index][1];
       }
     }
   }

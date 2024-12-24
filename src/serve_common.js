@@ -581,10 +581,7 @@ function calculateHandler() {
         return res
           .status(StatusCodes.OK)
           .send(
-            getBBoxFromCircle(
-              parsedCircle.circle.center,
-              parsedCircle.radius
-            )
+            getBBoxFromCircle(parsedCircle.circle.center, parsedCircle.radius)
           );
       } else {
         return res
