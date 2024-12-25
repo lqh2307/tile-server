@@ -72,13 +72,13 @@
           <div class="box">
             {{#each styles}}
               <div class="item">
-                <img src="{{thumbnail}}" alt="{{name}} preview" />
+                {{#if thumbnail}}<img src="{{thumbnail}}" alt="{{name}} preview" />{{else}}<img src="${baseURL}/images/placeholder.png" alt="{{name}} preview" />{{/if}}
                 <div class="details">
                   <h3 class="name">{{name}}</h3>
                   <p class="identifier">identifier: {{@key}}</p>
                   <p class="services">
                     services: <a href="${baseURL}/styles/{{@key}}/style.json">StyleJSON</a>
-                    {{#if serve_rendered}}
+                    {{#if thumbnail}}
                       | <a href="${baseURL}/styles/{{@key}}.json">TileJSON</a>
                       | <a href="${baseURL}/styles/{{@key}}/wmts.xml">WMTS</a>
                     {{/if}}
@@ -90,7 +90,7 @@
                 </div>
                 <div class="viewers">
                     <a class="btn" href="${baseURL}/styles/{{@key}}/?vector{{viewer_hash}}">Client Render</a>
-                    {{#if serve_rendered}}
+                    {{#if thumbnail}}
                       <a class="btn" href="${baseURL}/styles/{{@key}}/?raster{{viewer_hash}}">Backend Render</a>
                     {{/if}}
                 </div>
@@ -103,11 +103,11 @@
           <div class="box">
             {{#each datas}}
               <div class="item">
-                <img src="{{thumbnail}}" alt="{{name}} preview" />
+                {{#if thumbnail}}<img src="{{thumbnail}}" alt="{{name}} preview" />{{else}}<img src="${baseURL}/images/placeholder.png" alt="{{name}} preview" />{{/if}}
                 <div class="details">
                   <h3 class="name">{{name}}</h3>
                   <div class="identifier">identifier: {{@key}}</div>
-                  <div class="identifier">type: {{#if is_vector}}vector{{else}}raster{{/if}}</div>
+                  <div class="identifier">type: {{#if thumbnail}}raster{{else}}vector{{/if}}</div>
                   <div class="identifier">ext: {{source_type}}</div>
                   <p class="services">
                     services: <a href="${baseURL}/datas/{{@key}}.json">TileJSON</a>
@@ -118,10 +118,10 @@
                   </p>
                 </div>
                 <div class="viewers">
-                  {{#if is_vector}}
-                      <a class="btn" href="${baseURL}/datas/{{@key}}/{{viewer_hash}}">Inspect</a>
-                  {{else}}
+                  {{#if thumbnail}}
                       <a class="btn" href="${baseURL}/datas/{{@key}}/{{viewer_hash}}">View</a>
+                  {{else}}
+                      <a class="btn" href="${baseURL}/datas/{{@key}}/{{viewer_hash}}">Inspect</a>
                   {{/if}}
                 </div>
               </div>

@@ -61,7 +61,6 @@ function serveFrontPageHandler() {
             xyz: `${requestHost}/styles/${id}/{z}/{x}/{y}.png`,
             viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
             thumbnail: `${requestHost}/styles/${id}/${z}/${x}/${y}.png`,
-            serve_rendered: true,
           };
         } else {
           const { name, zoom, center } = style;
@@ -69,7 +68,6 @@ function serveFrontPageHandler() {
           styles[id] = {
             name: name,
             viewer_hash: `#${zoom}/${center[1]}/${center[0]}`,
-            thumbnail: `${requestHost}/images/placeholder.png`,
           };
         }
       }),
@@ -77,7 +75,7 @@ function serveFrontPageHandler() {
         const data = config.repo.datas[id];
         const { name, center, format } = data.tileJSON;
 
-        let thumbnail = `${requestHost}/images/placeholder.png`;
+        let thumbnail;
         if (format !== "pbf") {
           const [x, y, z] = getXYZFromLonLatZ(center[0], center[1], center[2]);
 
@@ -90,7 +88,6 @@ function serveFrontPageHandler() {
           viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
           thumbnail: thumbnail,
           source_type: data.sourceType,
-          is_vector: format === "pbf",
         };
       }),
       ...Object.keys(config.repo.fonts).map(async (id) => {
