@@ -806,7 +806,7 @@ export const serve_data = {
 
               dataInfo.source = await openMBTilesDB(
                 dataInfo.path,
-                OPEN_READONLY,
+                sqlite3.OPEN_READONLY,
                 false
               );
 
