@@ -28,7 +28,7 @@ export async function openPostgreSQL(uri, isCreate) {
         await client.end();
       }
 
-      if (error.code !== "42P04") {
+      if (error.code !== "42P04" || error.code !== "23505") {
         throw error;
       }
     }
