@@ -91,25 +91,16 @@ export function createEmptyData() {
 
 /**
  * Render image
- * @param {object} item Rendered item object
+ * @param {object} rendered Rendered item object
  * @param {number} tileScale Tile scale
  * @param {256|512} tileSize Tile size
- * @param {number} tileCompression Tile compression level
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @returns {Promise<Buffer>}
  */
-export async function renderImage(
-  item,
-  tileScale,
-  tileSize,
-  tileCompression,
-  z,
-  x,
-  y
-) {
-  const renderer = await item.renderers[tileScale - 1].acquire();
+export async function renderImage(rendered, tileScale, tileSize, z, x, y) {
+  const renderer = await rendered.renderers[tileScale - 1].acquire();
 
   try {
     const data = await new Promise((resolve, reject) => {
@@ -121,7 +112,7 @@ export async function renderImage(
           height: z === 0 && tileSize === 256 ? 512 : tileSize,
         },
         (error, data) => {
-          item.renderers[tileScale - 1].release(renderer);
+          rendered.renderers[tileScale - 1].release(renderer);
 
           if (error) {
             return reject(error);
@@ -147,7 +138,7 @@ export async function renderImage(
           height: 256 * tileScale,
         })
         .png({
-          compressionLevel: tileCompression,
+          compressionLevel: rendered.compressionLevel,
         })
         .toBuffer();
       // END HACK2
@@ -161,13 +152,13 @@ export async function renderImage(
         },
       })
         .png({
-          compressionLevel: tileCompression,
+          compressionLevel: rendered.compressionLevel,
         })
         .toBuffer();
     }
   } catch (error) {
     if (renderer !== undefined) {
-      item.renderers[tileScale - 1].release(renderer);
+      rendered.renderers[tileScale - 1].release(renderer);
     }
 
     throw error;

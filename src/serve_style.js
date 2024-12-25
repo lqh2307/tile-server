@@ -2,9 +2,9 @@
 
 import { createEmptyData, renderImage } from "./image.js";
 import { checkReadyMiddleware } from "./middleware.js";
+import { getPMTilesTile } from "./tile_pmtiles.js";
 import { StatusCodes } from "http-status-codes";
 import mlgl from "@maplibre/maplibre-gl-native";
-import { getPMTilesTile } from "./tile_pmtiles.js";
 import { createPool } from "generic-pool";
 import { readSeedFile } from "./seed.js";
 import { getSprite } from "./sprite.js";
@@ -51,7 +51,7 @@ function getStyleHandler() {
 
     /* Check style is used? */
     if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Style is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("Style does not exist");
     }
 
     /* Get styleJSON */
@@ -180,11 +180,11 @@ function getStyleHandler() {
 
       if (error.message === "Style does not exist") {
         return res.status(StatusCodes.NO_CONTENT).send(error.message);
+      } else {
+        return res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .send("Internal server error");
       }
-
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send("Internal server error");
     }
   };
 }
@@ -200,7 +200,7 @@ function getStyleMD5Handler() {
 
     /* Check style is used? */
     if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Style is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("Style does not exist");
     }
 
     /* Get styleJSON MD5 */
@@ -305,11 +305,11 @@ function getStyleMD5Handler() {
 
       if (error.message === "Style does not exist") {
         return res.status(StatusCodes.NO_CONTENT).send(error.message);
+      } else {
+        return res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .send("Internal server error");
       }
-
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send("Internal server error");
     }
   };
 }
@@ -351,17 +351,17 @@ function getStylesListHandler() {
 function getRenderedTileHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
-    const item = config.repo.styles[id].rendered;
+    const item = config.repo.styles[id];
 
     /* Check rendered is exist? */
-    if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Rendered is not found");
+    if (item === undefined || item.rendered === undefined) {
+      return res.status(StatusCodes.NOT_FOUND).send("Rendered does not exist");
     }
 
     /* Get and check rendered tile scale (Default: 1). Ex: @2x -> 2 */
     const scale = Number(req.params.scale?.slice(1, -1)) || 1;
 
-    if (scale > item.maxScale) {
+    if (scale > item.rendered.maxScale) {
       return res
         .status(StatusCodes.BAD_REQUEST)
         .send("Rendered tile scale is invalid");
@@ -375,15 +375,7 @@ function getRenderedTileHandler() {
 
     /* Render tile */
     try {
-      const image = await renderImage(
-        item,
-        scale,
-        tileSize,
-        config.options.renderedCompression,
-        z,
-        x,
-        y
-      );
+      const image = await renderImage(item.rendered, scale, tileSize, z, x, y);
 
       res.header("content-type", `image/png`);
 
@@ -408,11 +400,11 @@ function getRenderedTileHandler() {
 function getRenderedHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
-    const item = config.repo.styles[id].rendered;
+    const item = config.repo.styles[id];
 
     /* Check rendered is exist? */
-    if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Rendered is not found");
+    if (item === undefined || item.rendered === undefined) {
+      return res.status(StatusCodes.NOT_FOUND).send("Rendered does not exist");
     }
 
     /* Get render info */
@@ -420,7 +412,7 @@ function getRenderedHandler() {
       res.header("content-type", "application/json");
 
       return res.status(StatusCodes.OK).send({
-        ...item.tileJSON,
+        ...item.rendered.tileJSON,
         tilejson: "2.2.0",
         scheme: "xyz",
         id: id,
@@ -450,19 +442,23 @@ function getRenderedsListHandler() {
   return async (req, res, next) => {
     try {
       const requestHost = getRequestHost(req);
-      const item = config.repo.styles[id].rendered;
+
       const result = [];
 
-      if (item.rendered !== undefined) {
-        result.push({
-          id: id,
-          name: item.tileJSON.name,
-          url: [
-            `${requestHost}/styles/256/${id}.json`,
-            `${requestHost}/styles/512/${id}.json`,
-          ],
-        });
-      }
+      Object.keys(config.repo.styles).map((id) => {
+        const item = config.repo.styles[id].rendered;
+
+        if (item !== undefined) {
+          result.push({
+            id: id,
+            name: item.tileJSON.name,
+            url: [
+              `${requestHost}/styles/256/${id}.json`,
+              `${requestHost}/styles/512/${id}.json`,
+            ],
+          });
+        }
+      });
 
       return res.status(StatusCodes.OK).send(result);
     } catch (error) {
@@ -626,18 +622,22 @@ function getRenderedTileJSONsListHandler() {
   return async (req, res, next) => {
     try {
       const requestHost = getRequestHost(req);
-      const item = config.repo.styles[id].rendered;
+
       const result = [];
 
-      if (item.rendered !== undefined) {
-        result.push({
-          ...item.tileJSON,
-          id: id,
-          tilejson: "2.2.0",
-          scheme: "xyz",
-          tiles: [`${requestHost}/styles/${id}/{z}/{x}/{y}.png`],
-        });
-      }
+      Object.keys(config.repo.styles).map((id) => {
+        const item = config.repo.styles[id].rendered;
+
+        if (item !== undefined) {
+          result.push({
+            ...item.tileJSON,
+            id: id,
+            tilejson: "2.2.0",
+            scheme: "xyz",
+            tiles: [`${requestHost}/styles/${id}/{z}/{x}/{y}.png`],
+          });
+        }
+      });
 
       return res.status(StatusCodes.OK).send(result);
     } catch (error) {

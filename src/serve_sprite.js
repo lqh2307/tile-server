@@ -18,7 +18,7 @@ function getSpriteHandler() {
     const item = config.repo.sprites[id];
 
     if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Sprite is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("Sprite does not exist");
     }
 
     try {

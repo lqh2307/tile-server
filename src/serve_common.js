@@ -142,7 +142,7 @@ function serveStyleHandler() {
     const item = config.repo.styles[id];
 
     if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Style is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("Style does not exist");
     }
 
     try {
@@ -173,7 +173,7 @@ function serveDataHandler() {
     const item = config.repo.datas[id];
 
     if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Data is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("Data does not exist");
     }
 
     try {
@@ -205,7 +205,7 @@ function serveWMTSHandler() {
     const item = config.repo.styles[id].rendered;
 
     if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("WMTS is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("WMTS does not exist");
     }
 
     try {

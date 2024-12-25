@@ -35,7 +35,7 @@ export async function getFonts(ids, fileName) {
       try {
         /* Check font is exist? */
         if (config.repo.fonts[font] === undefined) {
-          throw new Error("Font is not found");
+          throw new Error("Font does not exist");
         }
 
         return await fsPromise.readFile(

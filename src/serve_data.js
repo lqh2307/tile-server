@@ -132,7 +132,7 @@ function getDataTileHandler() {
 
     /* Check data is exist? */
     if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Data is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("Data does not exist");
     }
 
     /* Check data tile format */
@@ -315,7 +315,7 @@ function getDataHandler() {
     const item = config.repo.datas[id];
 
     if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Data is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("Data does not exist");
     }
 
     try {
@@ -353,7 +353,7 @@ function getDataTileMD5Handler() {
 
     /* Check data is exist? */
     if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Data is not found");
+      return res.status(StatusCodes.NOT_FOUND).send("Data does not exist");
     }
 
     /* Check data tile format */
