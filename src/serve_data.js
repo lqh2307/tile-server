@@ -296,11 +296,11 @@ function getDataTileHandler() {
 
       if (error.message === "Tile does not exist") {
         return res.status(StatusCodes.NO_CONTENT).send(error.message);
+      } else {
+        return res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .send("Internal server error");
       }
-
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send("Internal server error");
     }
   };
 }
@@ -426,11 +426,11 @@ function getDataTileMD5Handler() {
         error.message === "Tile does not exist"
       ) {
         return res.status(StatusCodes.NO_CONTENT).send(error.message);
+      } else {
+        return res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .send("Internal server error");
       }
-
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send("Internal server error");
     }
   };
 }

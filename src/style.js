@@ -1,7 +1,7 @@
 "use strict";
 
+import { delay, getDataFromURL, isLocalTileURL, retry } from "./utils.js";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
-import { delay, getDataFromURL, retry } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
@@ -321,11 +321,7 @@ export async function validateStyle(styleJSON) {
       const source = styleJSON.sources[id];
 
       if (source.url !== undefined) {
-        if (
-          source.url.startsWith("pmtiles://") === true ||
-          source.url.startsWith("mbtiles://") === true ||
-          source.url.startsWith("xyz://") === true
-        ) {
+        if (isLocalTileURL(source.url) === true) {
           const sourceID = source.url.split("/")[2];
 
           if (config.repo.datas[sourceID] === undefined) {
@@ -347,11 +343,7 @@ export async function validateStyle(styleJSON) {
         }
 
         source.urls.forEach((url) => {
-          if (
-            url.startsWith("pmtiles://") === true ||
-            url.startsWith("mbtiles://") === true ||
-            url.startsWith("xyz://") === true
-          ) {
+          if (isLocalTileURL(url) === true) {
             const sourceID = url.split("/")[2];
 
             if (config.repo.datas[sourceID] === undefined) {
@@ -374,11 +366,7 @@ export async function validateStyle(styleJSON) {
         }
 
         source.tiles.forEach((tile) => {
-          if (
-            tile.startsWith("pmtiles://") === true ||
-            tile.startsWith("mbtiles://") === true ||
-            tile.startsWith("xyz://") === true
-          ) {
+          if (isLocalTileURL(tile) === true) {
             const sourceID = tile.split("/")[2];
 
             if (config.repo.datas[sourceID] === undefined) {

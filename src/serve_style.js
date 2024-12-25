@@ -19,6 +19,7 @@ import {
 } from "./tile_mbtiles.js";
 import {
   detectFormatAndHeaders,
+  isLocalTileURL,
   getDataFromURL,
   getRequestHost,
   createMetadata,
@@ -38,6 +39,11 @@ import {
   getXYZTileFromURL,
   getXYZTile,
 } from "./tile_xyz.js";
+import {
+  getPostgreSQLTileFromURL,
+  cachePostgreSQLTileData,
+  getPostgreSQLTile,
+} from "./tile_postgresql.js";
 import os from "os";
 
 /**
@@ -115,11 +121,7 @@ function getStyleHandler() {
 
             // Fix tileJSON URL
             if (source.url !== undefined) {
-              if (
-                source.url.startsWith("mbtiles://") === true ||
-                source.url.startsWith("pmtiles://") === true ||
-                source.url.startsWith("xyz://") === true
-              ) {
+              if (isLocalTileURL(source.url) === true) {
                 const sourceID = source.url.split("/")[2];
 
                 source.url = `${requestHost}/datas/${sourceID}.json`;
@@ -130,11 +132,7 @@ function getStyleHandler() {
             if (source.urls !== undefined) {
               const urls = new Set(
                 source.urls.map((url) => {
-                  if (
-                    url.startsWith("pmtiles://") === true ||
-                    url.startsWith("mbtiles://") === true ||
-                    url.startsWith("xyz://") === true
-                  ) {
+                  if (isLocalTileURL(url) === true) {
                     const sourceID = url.split("/")[2];
 
                     url = `${requestHost}/datas/${sourceID}.json`;
@@ -151,11 +149,7 @@ function getStyleHandler() {
             if (source.tiles !== undefined) {
               const tiles = new Set(
                 source.tiles.map((tile) => {
-                  if (
-                    tile.startsWith("pmtiles://") === true ||
-                    tile.startsWith("mbtiles://") === true ||
-                    tile.startsWith("xyz://") === true
-                  ) {
+                  if (isLocalTileURL(tile) === true) {
                     const sourceID = tile.split("/")[2];
                     const sourceData = config.repo.datas[sourceID];
 
@@ -237,11 +231,7 @@ function getStyleMD5Handler() {
 
             // Fix tileJSON URL
             if (source.url !== undefined) {
-              if (
-                source.url.startsWith("mbtiles://") === true ||
-                source.url.startsWith("pmtiles://") === true ||
-                source.url.startsWith("xyz://") === true
-              ) {
+              if (isLocalTileURL(source.url) === true) {
                 const sourceID = source.url.split("/")[2];
 
                 source.url = `${requestHost}/datas/${sourceID}.json`;
@@ -252,11 +242,7 @@ function getStyleMD5Handler() {
             if (source.urls !== undefined) {
               const urls = new Set(
                 source.urls.map((url) => {
-                  if (
-                    url.startsWith("pmtiles://") === true ||
-                    url.startsWith("mbtiles://") === true ||
-                    url.startsWith("xyz://") === true
-                  ) {
+                  if (isLocalTileURL(url) === true) {
                     const sourceID = url.split("/")[2];
 
                     url = `${requestHost}/datas/${sourceID}.json`;
@@ -273,11 +259,7 @@ function getStyleMD5Handler() {
             if (source.tiles !== undefined) {
               const tiles = new Set(
                 source.tiles.map((tile) => {
-                  if (
-                    tile.startsWith("pmtiles://") === true ||
-                    tile.startsWith("mbtiles://") === true ||
-                    tile.startsWith("xyz://") === true
-                  ) {
+                  if (isLocalTileURL(tile) === true) {
                     const sourceID = tile.split("/")[2];
                     const sourceData = config.repo.datas[sourceID];
 
@@ -542,11 +524,7 @@ function getStyleJSONsListHandler() {
 
                 // Fix tileJSON URL
                 if (source.url !== undefined) {
-                  if (
-                    source.url.startsWith("mbtiles://") === true ||
-                    source.url.startsWith("pmtiles://") === true ||
-                    source.url.startsWith("xyz://") === true
-                  ) {
+                  if (isLocalTileURL(source.url) === true) {
                     const sourceID = source.url.split("/")[2];
 
                     source.url = `${requestHost}/datas/${sourceID}.json`;
@@ -557,11 +535,7 @@ function getStyleJSONsListHandler() {
                 if (source.urls !== undefined) {
                   const urls = new Set(
                     source.urls.map((url) => {
-                      if (
-                        url.startsWith("pmtiles://") === true ||
-                        url.startsWith("mbtiles://") === true ||
-                        url.startsWith("xyz://") === true
-                      ) {
+                      if (isLocalTileURL(url) === true) {
                         const sourceID = url.split("/")[2];
 
                         url = `${requestHost}/datas/${sourceID}.json`;
@@ -578,11 +552,7 @@ function getStyleJSONsListHandler() {
                 if (source.tiles !== undefined) {
                   const tiles = new Set(
                     source.tiles.map((tile) => {
-                      if (
-                        tile.startsWith("pmtiles://") === true ||
-                        tile.startsWith("mbtiles://") === true ||
-                        tile.startsWith("xyz://") === true
-                      ) {
+                      if (isLocalTileURL(tile) === true) {
                         const sourceID = tile.split("/")[2];
                         const sourceData = config.repo.datas[sourceID];
 
@@ -1069,8 +1039,11 @@ export const serve_style = {
     await Promise.all(
       Object.keys(config.styles).map(async (id) => {
         const item = config.styles[id];
+
         let isCanServeRendered = false;
+
         const styleInfo = {};
+
         let styleJSON;
 
         /* Serve style */
@@ -1160,10 +1133,8 @@ export const serve_style = {
                 name: styleInfo.name,
                 description: styleInfo.name,
               }),
-              maxScale: item.rendered.maxScale ?? 1,
-              minPoolSize: item.rendered.minPoolSize ?? os.cpus().length,
-              maxPoolSize: item.rendered.maxPoolSize ?? os.cpus().length * 2,
-              compressionLevel: item.rendered.compressionLevel ?? 6,
+              maxScale: item.rendered.maxScale || 1,
+              compressionLevel: item.rendered.compressionLevel || 6,
             };
 
             /* Fix center */
@@ -1183,11 +1154,7 @@ export const serve_style = {
                 if (source.tiles !== undefined) {
                   const tiles = new Set(
                     source.tiles.map((tile) => {
-                      if (
-                        tile.startsWith("pmtiles://") === true ||
-                        tile.startsWith("mbtiles://") === true ||
-                        tile.startsWith("xyz://") === true
-                      ) {
+                      if (isLocalTileURL(tile) === true) {
                         const sourceID = tile.split("/")[2];
                         const sourceData = config.repo.datas[sourceID];
 
@@ -1205,11 +1172,7 @@ export const serve_style = {
                   const otherUrls = [];
 
                   source.urls.forEach((url) => {
-                    if (
-                      url.startsWith("pmtiles://") === true ||
-                      url.startsWith("mbtiles://") === true ||
-                      url.startsWith("xyz://") === true
-                    ) {
+                    if (isLocalTileURL(url) === true) {
                       const sourceID = url.split("/")[2];
                       const sourceData = config.repo.datas[sourceID];
 
@@ -1237,11 +1200,7 @@ export const serve_style = {
                 }
 
                 if (source.url !== undefined) {
-                  if (
-                    source.url.startsWith("pmtiles://") === true ||
-                    source.url.startsWith("mbtiles://") === true ||
-                    source.url.startsWith("xyz://") === true
-                  ) {
+                  if (isLocalTileURL(source.url) === true) {
                     const sourceID = source.url.split("/")[2];
                     const sourceData = config.repo.datas[sourceID];
 
@@ -1265,11 +1224,7 @@ export const serve_style = {
                   source.tiles !== undefined
                 ) {
                   if (source.tiles.length === 1) {
-                    if (
-                      source.tiles[0].startsWith("pmtiles://") === true ||
-                      source.tiles[0].startsWith("mbtiles://") === true ||
-                      source.tiles[0].startsWith("xyz://") === true
-                    ) {
+                    if (isLocalTileURL(source.tiles[0]) === true) {
                       const sourceID = source.tiles[0].split("/")[2];
                       const sourceData = config.repo.datas[sourceID];
 
@@ -1569,6 +1524,89 @@ export const serve_style = {
                                   emptyDatas.other,
                               });
                             }
+                          } else if (parts[0] === "pg:") {
+                            const z = Number(parts[3]);
+                            const x = Number(parts[4]);
+                            const y = Number(
+                              parts[5].slice(0, parts[5].indexOf("."))
+                            );
+                            const tileName = `${z}/${x}/${y}`;
+                            const sourceData = config.repo.datas[parts[2]];
+
+                            try {
+                              /* Get rendered tile */
+                              let dataTile;
+
+                              try {
+                                dataTile = await getPostgreSQLTile(
+                                  sourceData.source,
+                                  z,
+                                  x,
+                                  y
+                                );
+                              } catch (error) {
+                                if (
+                                  sourceData.sourceURL !== undefined &&
+                                  error.message === "Tile does not exist"
+                                ) {
+                                  const url = sourceData.sourceURL.replaceAll(
+                                    "{z}/{x}/{y}",
+                                    tileName
+                                  );
+
+                                  printLog(
+                                    "info",
+                                    `Forwarding data "${id}" - Tile "${tileName}" - To "${url}"...`
+                                  );
+
+                                  /* Get data */
+                                  dataTile = await getPostgreSQLTileFromURL(
+                                    url,
+                                    60000 // 1 mins
+                                  );
+
+                                  /* Cache */
+                                  if (sourceData.storeCache === true) {
+                                    cachePostgreSQLTileData(
+                                      sourceData.source,
+                                      z,
+                                      x,
+                                      y,
+                                      dataTile.data,
+                                      sourceData.storeMD5,
+                                      sourceData.storeTransparent
+                                    );
+                                  }
+                                } else {
+                                  throw error;
+                                }
+                              }
+
+                              /* Unzip pbf rendered tile */
+                              if (
+                                dataTile.headers["content-type"] ===
+                                  "application/x-protobuf" &&
+                                dataTile.headers["content-encoding"] !==
+                                  undefined
+                              ) {
+                                dataTile.data = await unzipAsync(dataTile.data);
+                              }
+
+                              callback(null, {
+                                data: dataTile.data,
+                              });
+                            } catch (error) {
+                              printLog(
+                                "warning",
+                                `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
+                              );
+
+                              callback(null, {
+                                data:
+                                  emptyDatas[sourceData.tileJSON.format] ||
+                                  emptyDatas.other,
+                              });
+                            }
                           } else if (
                             parts[0] === "http:" ||
                             parts[0] === "https:"
@@ -1625,8 +1663,8 @@ export const serve_style = {
                     destroy: (renderer) => renderer.release(),
                   },
                   {
-                    min: rendered.minPoolSize,
-                    max: rendered.maxPoolSize,
+                    min: item.rendered.minPoolSize || os.cpus().length,
+                    max: item.rendered.maxPoolSize || os.cpus().length * 2,
                   }
                 );
               }

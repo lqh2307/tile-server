@@ -57,6 +57,20 @@ export async function getDataFromURL(
 }
 
 /**
+ * Check tile URL is local?
+ * @param {string} url URL tile to check
+ * @returns {boolean}
+ */
+export function isLocalTileURL(url) {
+  return (
+    url.startsWith("mbtiles://") === true ||
+    url.startsWith("pmtiles://") === true ||
+    url.startsWith("xyz://") === true ||
+    url.startsWith("pg://") === true
+  );
+}
+
+/**
  * Get xyz tile indices from longitude, latitude, and zoom level (tile size = 256)
  * @param {number} lon Longitude in EPSG:4326
  * @param {number} lat Latitude in EPSG:4326
