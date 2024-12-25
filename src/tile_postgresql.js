@@ -237,7 +237,7 @@ async function removePostgreSQLTileWithLock(source, z, x, y, timeout) {
  * @param {boolean} isCreate Is create database?
  * @returns {Promise<object>}
  */
-export async function openPostgreSQLDB(uri, isCreate = false) {
+export async function openPostgreSQLDB(uri, isCreate) {
   const source = await openPostgreSQL(uri, isCreate);
 
   if (isCreate === true) {
