@@ -100,7 +100,6 @@ function serveFrontPageHandler() {
         sprites[id] = {
           name: id,
           sprite: `${requestHost}/sprites/${id}/sprite`,
-          thumbnail: `${requestHost}/sprites/${id}/sprite.png`,
         };
       }),
     ]);
