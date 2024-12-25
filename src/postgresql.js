@@ -21,12 +21,12 @@ export async function openPostgreSQL(uri, isCreate) {
       await tmpClient.connect();
 
       const res = await tmpClient.query(
-        "SELECT 1 FROM pg_database WHERE datname = $1",
+        "SELECT FROM pg_database WHERE datname = $1;",
         [dbName]
       );
 
       if (res.rows.length === 0) {
-        await tmpClient.query("CREATE DATABASE $1", [dbName]);
+        await tmpClient.query("CREATE DATABASE $1;", [dbName]);
       }
     } catch (error) {
       if (tmpClient !== undefined) {
