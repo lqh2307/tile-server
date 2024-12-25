@@ -42,7 +42,7 @@ async function initializePostgreSQLTables(source) {
         tile_row INTEGER NOT NULL,
         tile_data BYTEA NOT NULL,
         hash TEXT,
-        created INTEGER,
+        created BIGINT,
         PRIMARY KEY (zoom_level, tile_column, tile_row)
       );
     `

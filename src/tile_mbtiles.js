@@ -54,7 +54,7 @@ async function initializeMBTilesTables(source) {
         tile_row INTEGER NOT NULL,
         tile_data BLOB NOT NULL,
         hash TEXT,
-        created INTEGER,
+        created BIGINT,
         PRIMARY KEY (zoom_level, tile_column, tile_row)
       );
     `
