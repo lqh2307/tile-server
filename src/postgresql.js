@@ -20,9 +20,7 @@ export async function openPostgreSQL(uri, isCreate) {
 
       await client.connect();
 
-      if (res.rows.length === 0) {
-        await client.query(`CREATE DATABASE "${dbName}";`);
-      }
+      await client.query(`CREATE DATABASE "${dbName}";`);
 
       await client.end();
     } catch (error) {
