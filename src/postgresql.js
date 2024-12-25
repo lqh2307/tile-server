@@ -20,19 +20,16 @@ export async function openPostgreSQL(uri, isCreate) {
 
       await client.connect();
 
-      const res = await client.query(
-        `SELECT FROM pg_database WHERE datname = '${dbName}';`
-      );
-
-      if (res.rows.length === 0) {
-        await client.query(`CREATE DATABASE "${dbName}";`);
-      }
+      await client.query(`CREATE DATABASE "${dbName}"`);
     } catch (error) {
       if (client !== undefined) {
         await client.end();
       }
 
-      throw error;
+      // Duplicate key error
+      if (error.code !== "23505") {
+        throw error;
+      }
     }
   }
 
