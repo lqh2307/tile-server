@@ -16,11 +16,9 @@ export async function openPostgreSQL(uri, isCreate) {
     });
 
     try {
-      const dbName = path.basename(uri);
-
       await client.connect();
 
-      await client.query(`CREATE DATABASE "${dbName}";`);
+      await client.query(`CREATE DATABASE "${path.basename(uri)}";`);
 
       await client.end();
     } catch (error) {
