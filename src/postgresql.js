@@ -12,7 +12,7 @@ import pg from "pg";
 export async function openPostgreSQL(uri, isCreate) {
   if (isCreate === true) {
     const tmpClient = new pg.Client({
-      connectionString: path.dirname(uri),
+      connectionString: process.env.POSTGRESQL_BASE_URI,
     });
 
     try {
