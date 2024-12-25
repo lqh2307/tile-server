@@ -20,29 +20,17 @@ export async function openPostgreSQL(uri, isCreate) {
 
       await client.connect();
 
-      await client.query("BEGIN");
-      await client.query("LOCK TABLE pg_database IN EXCLUSIVE MODE");
-
-      const result = await client.query(
-        "SELECT 1 FROM pg_database WHERE datname = $1;",
-        [dbName]
-      );
-
-      if (result.rows.length === 0) {
-        await client.query(`CREATE DATABASE "${dbName}";`);
-      }
-
-      await client.query("COMMIT");
+      await client.query(`CREATE DATABASE "${dbName}";`);
 
       await client.end();
     } catch (error) {
       if (client !== undefined) {
-        await client.query("ROLLBACK");
-
         await client.end();
       }
 
-      throw error;
+      if (error.code !== "42P04" && error.code !== "23505") {
+        throw error;
+      }
     }
   }
 
