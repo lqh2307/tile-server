@@ -11,38 +11,38 @@ import pg from "pg";
  */
 export async function openPostgreSQL(uri, isCreate) {
   if (isCreate === true) {
-    const tmpClient = new pg.Client({
-      connectionString: process.env.POSTGRESQL_BASE_URI,
+    const client = new pg.Client({
+      connectionString: path.dirname(uri),
     });
 
     try {
       const dbName = path.basename(uri);
 
-      await tmpClient.connect();
+      await client.connect();
 
-      const res = await tmpClient.query(
-        `SELECT FROM pg_database WHERE datname = "${dbName}";`
+      const res = await client.query(
+        `SELECT FROM pg_database WHERE datname = '${dbName}';`
       );
 
       if (res.rows.length === 0) {
-        await tmpClient.query(`CREATE DATABASE "${dbName}";`);
+        await client.query(`CREATE DATABASE "${dbName}";`);
       }
     } catch (error) {
-      if (tmpClient !== undefined) {
-        await tmpClient.end();
+      if (client !== undefined) {
+        await client.end();
       }
 
       throw error;
     }
   }
 
-  const client = new pg.Client({
+  const source = new pg.Client({
     connectionString: uri,
   });
 
   await source.connect();
 
-  return client;
+  return source;
 }
 
 /**
