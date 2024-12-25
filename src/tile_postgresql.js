@@ -712,6 +712,6 @@ export async function getPostgreSQLSize(source, dbName) {
   ]);
 
   if (data.rows.length !== 0) {
-    return data.rows[0].size;
+    return Number(data.rows[0].size);
   }
 }
