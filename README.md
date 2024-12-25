@@ -110,21 +110,22 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
     "configEndpoint": true,
     "serveFrontPage": true,
     "serveSwagger": true,
-    "serveRendered": true,
-    "maxScaleRender": 1,
-    "renderedCompression": 1,
-    "minRenderedPoolSize": 8,
-    "maxRenderedPoolSize": 16,
     "loggerFormat": ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
     "taskSchedule": "0 0 0 * * *",
-    "postgreSQLBaseURI": "",
+    "postgreSQLBaseURI": "postgresql://localhost:5432",
     "restartServerAfterTask": true,
     "process": 1,
     "thread": 8
   },
   "styles": {
     "asia_vietnam": {
-      "style": "asia_vietnam/style.json"
+      "style": "asia_vietnam/style.json",
+      "rendered": {
+        "maxScale": 1,
+        "minPoolSize": 8,
+        "maxPoolSize": 16,
+        "compressionLevel": 9
+      }
     },
     "asia_cambodia": {
       "style": "asia_cambodia",
@@ -192,7 +193,11 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
       "metadata": {
         "name": "asia_cambodia",
         "zoom": 10,
-        "center": [120, 20, 3]
+        "center": [
+          120,
+          20,
+          3
+        ]
       },
       "url": "http://localhost:9999/styles/asia_cambodia/style.json",
       "refreshBefore": {
@@ -206,14 +211,42 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
         "name": "asia_vietnam",
         "description": "asia_vietnam",
         "format": "png",
-        "bounds": [96, 4, 120, 28],
-        "center": [108, 16, 10],
+        "bounds": [
+          96,
+          4,
+          120,
+          28
+        ],
+        "center": [
+          108,
+          16,
+          10,
+        ],
         "minzoom": 0,
         "maxzoom": 15
       },
       "url": "http://localhost:9999/datas/asia_vietnam/{z}/{x}/{y}.png",
-      "bboxs": [[96, 4, 120, 28]],
-      "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      "bboxs": [
+        [
+          96,
+          4,
+          120,
+          28
+        ]
+      ],
+      "zooms": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
       },
@@ -229,8 +262,17 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
         "name": "asia_cambodia",
         "description": "asia_cambodia",
         "format": "pbf",
-        "bounds": [96, 4, 120, 28],
-        "center": [108, 16, 10],
+        "bounds": [
+          96,
+          4,
+          120,
+          28
+        ],
+        "center": [
+          108,
+          16,
+          10,
+        ],
         "minzoom": 0,
         "maxzoom": 15,
         "vector_layers": [
@@ -243,8 +285,27 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
         ]
       },
       "url": "http://localhost:9999/datas/asia_cambodia/{z}/{x}/{y}.pbf",
-      "bboxs": [[96, 4, 120, 28]],
-      "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      "bboxs": [
+        [
+          96,
+          4,
+          120,
+          28
+        ]
+      ],
+      "zooms": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
       "refreshBefore": {
         "day": 2
       },
@@ -253,15 +314,25 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
       "storeMD5": true,
       "timeout": 60000,
       "concurrency": 100,
-      "maxTry": 5
+      "maxTry": 5,
+      "skip": true
     },
     "zurich_switzerland_cache": {
       "metadata": {
         "name": "zurich_switzerland",
         "description": "zurich_switzerland",
         "format": "pbf",
-        "bounds": [96, 4, 120, 28],
-        "center": [108, 16, 10],
+        "bounds": [
+          96,
+          4,
+          120,
+          28
+        ],
+        "center": [
+          108,
+          16,
+          10,
+        ],
         "minzoom": 0,
         "maxzoom": 15,
         "vector_layers": [
@@ -274,8 +345,27 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
         ]
       },
       "url": "http://localhost:9999/datas/zurich_switzerland/{z}/{x}/{y}.pbf",
-      "bboxs": [[96, 4, 120, 28]],
-      "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      "bboxs": [
+        [
+          96,
+          4,
+          120,
+          28
+        ]
+      ],
+      "zooms": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
       "refreshBefore": {
         "md5": true
       },
@@ -331,7 +421,8 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
     "asia_cambodia": {
       "cleanUpBefore": {
         "day": 2
-      }
+      },
+      "skip": true
     },
     "zurich_switzerland": {
       "cleanUpBefore": {
@@ -344,22 +435,66 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
       },
-      "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-      "bboxs": [[96, 4, 120, 28]]
+      "zooms": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "bboxs": [
+        [
+          96,
+          4,
+          120,
+          28
+        ]
+      ],
     },
     "asia_cambodia_cache": {
       "cleanUpBefore": {
         "day": 2
       },
-      "zooms": [0, 1, 2, 3, 4, 5, 9, 10],
-      "bboxs": [[96, 4, 120, 28]]
+      "zooms": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        9,
+        10
+      ],
+      "bboxs": [
+        [
+          96,
+          4,
+          120,
+          28
+        ]
+      ],
     },
     "zurich_switzerland_cache": {
       "cleanUpBefore": {
         "day": 3
       },
-      "zooms": [10],
-      "bboxs": [[96, 4, 120, 28]]
+      "zooms": [
+        10
+      ],
+      "bboxs": [
+        [
+          96,
+          4,
+          120,
+          28
+        ]
+      ],
     }
   },
   "sprites": {

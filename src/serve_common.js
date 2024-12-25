@@ -49,8 +49,10 @@ function serveFrontPageHandler() {
 
     await Promise.all([
       ...Object.keys(config.repo.styles).map(async (id) => {
-        if (config.repo.rendereds[id] !== undefined) {
-          const { name, center } = config.repo.rendereds[id].tileJSON;
+        const style = config.repo.styles[id];
+
+        if (style.rendered !== undefined) {
+          const { name, center } = style.rendered.tileJSON;
 
           const [x, y, z] = getXYZFromLonLatZ(center[0], center[1], center[2]);
 
@@ -62,7 +64,7 @@ function serveFrontPageHandler() {
             serve_rendered: true,
           };
         } else {
-          const { name, zoom, center } = config.repo.styles[id];
+          const { name, zoom, center } = style;
 
           styles[id] = {
             name: name,
@@ -200,7 +202,7 @@ function serveDataHandler() {
 function serveWMTSHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
-    const item = config.repo.rendereds[id];
+    const item = config.repo.styles[id].rendered;
 
     if (item === undefined) {
       return res.status(StatusCodes.NOT_FOUND).send("WMTS is not found");
@@ -474,11 +476,11 @@ function serveSummaryHandler() {
         }
 
         result.style.count += 1;
-      }
 
-      // Rendereds info
-      if (config.options.serveRendered === true) {
-        result.rendered.count = Object.keys(config.repo.rendereds).length;
+        // Rendereds info
+        if (item.rendered !== undefined) {
+          result.rendered.count += 1;
+        }
       }
 
       res.header("content-type", "application/json");
@@ -870,50 +872,44 @@ export const serve_common = {
       app.get("/kill", serveKillHandler());
     }
 
-    if (config.options.serveRendered === true) {
-      /**
-       * @swagger
-       * tags:
-       *   - name: WMTS
-       *     description: WMTS related endpoints
-       * /styles/{id}/wmts.xml:
-       *   get:
-       *     tags:
-       *       - WMTS
-       *     summary: Get WMTS XML for style
-       *     parameters:
-       *       - in: path
-       *         name: id
-       *         schema:
-       *           type: string
-       *           example: id
-       *         required: true
-       *         description: ID of the style
-       *     responses:
-       *       200:
-       *         description: WMTS XML for the style
-       *         content:
-       *           text/xml:
-       *             schema:
-       *               type: string
-       *       404:
-       *         description: Not found
-       *       503:
-       *         description: Server is starting up
-       *         content:
-       *           text/plain:
-       *             schema:
-       *               type: string
-       *               example: Starting...
-       *       500:
-       *         description: Internal server error
-       */
-      app.get(
-        "/styles/:id/wmts.xml",
-        checkReadyMiddleware(),
-        serveWMTSHandler()
-      );
-    }
+    /**
+     * @swagger
+     * tags:
+     *   - name: WMTS
+     *     description: WMTS related endpoints
+     * /styles/{id}/wmts.xml:
+     *   get:
+     *     tags:
+     *       - WMTS
+     *     summary: Get WMTS XML for style
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         schema:
+     *           type: string
+     *           example: id
+     *         required: true
+     *         description: ID of the style
+     *     responses:
+     *       200:
+     *         description: WMTS XML for the style
+     *         content:
+     *           text/xml:
+     *             schema:
+     *               type: string
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/styles/:id/wmts.xml", checkReadyMiddleware(), serveWMTSHandler());
 
     if (config.options.serveFrontPage === true) {
       /**

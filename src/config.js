@@ -42,32 +42,12 @@ async function readConfigFile(isValidate) {
               serveFrontPage: {
                 type: "boolean",
               },
-              serveRendered: {
-                type: "boolean",
-              },
-              maxScaleRender: {
-                type: "number",
-                minimum: 1,
-              },
-              renderedCompression: {
-                type: "integer",
-                minimum: 1,
-                maximum: 9,
-              },
               serveSwagger: {
                 type: "boolean",
               },
               loggerFormat: {
                 type: "string",
                 minLength: 1,
-              },
-              minRenderedPoolSize: {
-                type: "integer",
-                minimum: 1,
-              },
-              maxRenderedPoolSize: {
-                type: "integer",
-                minimum: 1,
               },
               taskSchedule: {
                 type: "string",
@@ -111,6 +91,28 @@ async function readConfigFile(isValidate) {
                     },
                     store: {
                       type: "boolean",
+                    },
+                  },
+                },
+                rendered: {
+                  type: "object",
+                  properties: {
+                    maxScale: {
+                      type: "number",
+                      minimum: 1,
+                    },
+                    compressionLevel: {
+                      type: "integer",
+                      minimum: 1,
+                      maximum: 9,
+                    },
+                    minPoolSize: {
+                      type: "integer",
+                      minimum: 1,
+                    },
+                    maxPoolSize: {
+                      type: "integer",
+                      minimum: 1,
                     },
                   },
                 },
@@ -180,34 +182,27 @@ async function readConfigFile(isValidate) {
 
   /* Fix object */
   config.options = {
-    listenPort: config.options.listenPort ?? 8080,
-    serverEndpoint: config.options.serverEndpoint ?? true,
-    configEndpoint: config.options.configEndpoint ?? true,
-    serveFrontPage: config.options.serveFrontPage ?? true,
-    serveSwagger: config.options.serveSwagger ?? true,
-    serveRendered: config.options.serveRendered ?? true,
-    maxScaleRender: config.options.maxScaleRender ?? 1,
-    renderedCompression: config.options.renderedCompression ?? 1,
-    minRenderedPoolSize: config.options.minRenderedPoolSize ?? os.cpus().length,
-    maxRenderedPoolSize:
-      config.options.maxRenderedPoolSize ?? os.cpus().length * 2,
+    listenPort: config.options.listenPort ?? 8080, // default: 8080
+    serverEndpoint: config.options.serverEndpoint ?? true, // default: true
+    configEndpoint: config.options.configEndpoint ?? true, // default: true
+    serveFrontPage: config.options.serveFrontPage ?? true, // default: true
+    serveSwagger: config.options.serveSwagger ?? true, // default: true
     loggerFormat:
       config.options.loggerFormat ??
-      ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
-    taskSchedule: config.options.taskSchedule, // undefined
-    postgreSQLBaseURI: config.options.postgreSQLBaseURI, // undefined
-    restartServerAfterTask: config.options.restartServerAfterTask ?? true,
-    process: config.options.process ?? 1,
-    thread: config.options.thread ?? os.cpus().length,
-    fallbackFont: "Open Sans Regular",
+      ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent", // default: :date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent
+    taskSchedule: config.options.taskSchedule, // default: undefined
+    postgreSQLBaseURI: config.options.postgreSQLBaseURI, // default: undefined
+    restartServerAfterTask: config.options.restartServerAfterTask ?? true, // default: true
+    process: config.options.process ?? 1, // default: 1
+    thread: config.options.thread ?? os.cpus().length, // default: number of cpu
   };
 
-  config.repo = Object.fromEntries(
-    ["styles", "rendereds", "datas", "fonts", "sprites"].map((type) => [
-      type,
-      {},
-    ])
-  );
+  config.repo = {
+    styles: {},
+    datas: {},
+    fonts: {},
+    sprites: {},
+  };
 
   return config;
 }

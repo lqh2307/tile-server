@@ -44,11 +44,11 @@ export async function getFonts(ids, fileName) {
       } catch (error) {
         printLog(
           "warning",
-          `Failed to get font "${font}": ${error}. Using fallback font "${config.options.fallbackFont}"...`
+          `Failed to get font "${font}": ${error}. Using fallback font "${process.env.FALLBACK_FONT}"...`
         );
 
         return await fsPromise.readFile(
-          `public/resources/fonts/${config.options.fallbackFont}/${fileName}`
+          `public/resources/fonts/${process.env.FALLBACK_FONT}/${fileName}`
         );
       }
     })

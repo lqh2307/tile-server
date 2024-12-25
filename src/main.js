@@ -45,6 +45,7 @@ async function startClusterServer(opts) {
     /* Setup envs */
     process.env.UV_THREADPOOL_SIZE = config.options.thread; // For libuv
     process.env.POSTGRESQL_BASE_URI = config.options.postgreSQLBaseURI; // Store postgreSQL base URI
+    process.env.FALLBACK_FONT = "Open Sans Regular"; // Set fallback font
 
     /* Remove old cache locks */
     printLog(
