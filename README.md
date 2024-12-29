@@ -45,7 +45,7 @@ apt-get -y install \
   libgif-dev \
   libpng-dev \
   libwebp-dev \
-  libcurl4-openssl-dev; \
+  libcurl4-openssl-dev \
   gdal-bin; \
 apt-get -y --purge autoremove; \
 apt-get clean; \

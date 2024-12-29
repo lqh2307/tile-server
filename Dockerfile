@@ -62,7 +62,7 @@ RUN \
     libpng16-16 \
     libwebp7 \
     libcurl4 && \
-    gdal-bin && \
+    gdal-bin; \
   apt-get -y --purge autoremove; \
   apt-get clean; \
   rm -rf /var/lib/apt/lists/*;
