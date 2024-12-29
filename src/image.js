@@ -1,7 +1,33 @@
 "use strict";
 
-import { getLonLatFromXYZ } from "./utils.js";
+import { getPMTilesTile } from "./tile_pmtiles.js";
+import mlgl from "@maplibre/maplibre-gl-native";
+import { getSprite } from "./sprite.js";
+import { printLog } from "./logger.js";
+import { getFonts } from "./font.js";
+import { config } from "./config.js";
 import sharp from "sharp";
+import {
+  getPostgreSQLTileFromURL,
+  cachePostgreSQLTileData,
+  getPostgreSQLTile,
+} from "./tile_postgresql.js";
+import {
+  getMBTilesTileFromURL,
+  cacheMBtilesTileData,
+  getMBTilesTile,
+} from "./tile_mbtiles.js";
+import {
+  detectFormatAndHeaders,
+  getLonLatFromXYZ,
+  getDataFromURL,
+  unzipAsync,
+} from "./utils.js";
+import {
+  cacheXYZTileDataFile,
+  getXYZTileFromURL,
+  getXYZTile,
+} from "./tile_xyz.js";
 
 /**
  * Create empty data
@@ -203,4 +229,374 @@ export async function isFullTransparentPNGImage(buffer) {
   } catch (error) {
     return false;
   }
+}
+
+/**
+ * Create a renderer
+ * @param {number} ratio Scale ratio
+ * @param {object} emptyDatas Placeholder data for empty tiles
+ * @param {string} styleJSON Style JSON for the renderer
+ * @returns {mlgl.Map} Renderer instance
+ */
+export function createRenderer(ratio, emptyDatas, styleJSON) {
+  const renderer = new mlgl.Map({
+    mode: "tile",
+    ratio: ratio,
+    request: async (req, callback) => {
+      const url = decodeURIComponent(req.url);
+      const parts = url.split("/");
+
+      if (parts[0] === "sprites:") {
+        try {
+          /* Get sprite */
+          const data = await getSprite(parts[2], parts[3]);
+
+          callback(null, {
+            data: data,
+          });
+        } catch (error) {
+          printLog(
+            "warning",
+            `Failed to get sprite "${parts[2]}" - File "${parts[3]}": ${error}. Serving empty sprite...`
+          );
+
+          callback(error, {
+            data: null,
+          });
+        }
+      } else if (parts[0] === "fonts:") {
+        try {
+          /* Get font */
+          let data = await getFonts(parts[2], parts[3]);
+
+          /* Unzip pbf font */
+          const headers = detectFormatAndHeaders(data).headers;
+
+          if (
+            headers["content-type"] === "application/x-protobuf" &&
+            headers["content-encoding"] !== undefined
+          ) {
+            data = await unzipAsync(data);
+          }
+
+          callback(null, {
+            data: data,
+          });
+        } catch (error) {
+          printLog(
+            "warning",
+            `Failed to get font "${parts[2]}" - File "${parts[3]}": ${error}. Serving empty font...`
+          );
+
+          callback(error, {
+            data: null,
+          });
+        }
+      } else if (parts[0] === "pmtiles:") {
+        const z = Number(parts[3]);
+        const x = Number(parts[4]);
+        const y = Number(parts[5].slice(0, parts[5].indexOf(".")));
+        const tileName = `${z}/${x}/${y}`;
+        const sourceData = config.repo.datas[parts[2]];
+
+        try {
+          /* Get rendered tile */
+          const dataTile = await getPMTilesTile(sourceData.source, z, x, y);
+
+          /* Unzip pbf rendered tile */
+          if (
+            dataTile.headers["content-type"] === "application/x-protobuf" &&
+            dataTile.headers["content-encoding"] !== undefined
+          ) {
+            dataTile.data = await unzipAsync(dataTile.data);
+          }
+
+          callback(null, {
+            data: dataTile.data,
+          });
+        } catch (error) {
+          printLog(
+            "warning",
+            `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
+          );
+
+          callback(null, {
+            data: emptyDatas[sourceData.tileJSON.format] || emptyDatas.other,
+          });
+        }
+      } else if (parts[0] === "mbtiles:") {
+        const z = Number(parts[3]);
+        const x = Number(parts[4]);
+        const y = Number(parts[5].slice(0, parts[5].indexOf(".")));
+        const tileName = `${z}/${x}/${y}`;
+        const sourceData = config.repo.datas[parts[2]];
+
+        try {
+          /* Get rendered tile */
+          let dataTile;
+
+          try {
+            dataTile = await getMBTilesTile(sourceData.source, z, x, y);
+          } catch (error) {
+            if (
+              sourceData.sourceURL !== undefined &&
+              error.message === "Tile does not exist"
+            ) {
+              const url = sourceData.sourceURL.replaceAll(
+                "{z}/{x}/{y}",
+                tileName
+              );
+
+              printLog(
+                "info",
+                `Forwarding data "${id}" - Tile "${tileName}" - To "${url}"...`
+              );
+
+              /* Get data */
+              dataTile = await getMBTilesTileFromURL(
+                url,
+                60000 // 1 mins
+              );
+
+              /* Cache */
+              if (sourceData.storeCache === true) {
+                cacheMBtilesTileData(
+                  sourceData.source,
+                  z,
+                  x,
+                  y,
+                  dataTile.data,
+                  sourceData.storeMD5,
+                  sourceData.storeTransparent
+                );
+              }
+            } else {
+              throw error;
+            }
+          }
+
+          /* Unzip pbf rendered tile */
+          if (
+            dataTile.headers["content-type"] === "application/x-protobuf" &&
+            dataTile.headers["content-encoding"] !== undefined
+          ) {
+            dataTile.data = await unzipAsync(dataTile.data);
+          }
+
+          callback(null, {
+            data: dataTile.data,
+          });
+        } catch (error) {
+          printLog(
+            "warning",
+            `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
+          );
+
+          callback(null, {
+            data: emptyDatas[sourceData.tileJSON.format] || emptyDatas.other,
+          });
+        }
+      } else if (parts[0] === "xyz:") {
+        const z = Number(parts[3]);
+        const x = Number(parts[4]);
+        const y = Number(parts[5].slice(0, parts[5].indexOf(".")));
+        const tileName = `${z}/${x}/${y}`;
+        const sourceData = config.repo.datas[parts[2]];
+
+        try {
+          /* Get rendered tile */
+          let dataTile;
+
+          try {
+            dataTile = await getXYZTile(
+              sourceData.source,
+              z,
+              x,
+              y,
+              sourceData.tileJSON.format
+            );
+          } catch (error) {
+            if (
+              sourceData.sourceURL !== undefined &&
+              error.message === "Tile does not exist"
+            ) {
+              const url = sourceData.sourceURL.replaceAll(
+                "{z}/{x}/{y}",
+                tileName
+              );
+
+              printLog(
+                "info",
+                `Forwarding data "${id}" - Tile "${tileName}" - To "${url}"...`
+              );
+
+              /* Get data */
+              dataTile = await getXYZTileFromURL(
+                url,
+                60000 // 1 mins
+              );
+
+              /* Cache */
+              if (sourceData.storeCache === true) {
+                cacheXYZTileDataFile(
+                  sourceData.source,
+                  sourceData.md5Source,
+                  z,
+                  x,
+                  y,
+                  sourceData.tileJSON.format,
+                  dataTile.data,
+                  sourceData.storeMD5,
+                  sourceData.storeTransparent
+                );
+              }
+            } else {
+              throw error;
+            }
+          }
+
+          /* Unzip pbf rendered tile */
+          if (
+            dataTile.headers["content-type"] === "application/x-protobuf" &&
+            dataTile.headers["content-encoding"] !== undefined
+          ) {
+            dataTile.data = await unzipAsync(dataTile.data);
+          }
+
+          callback(null, {
+            data: dataTile.data,
+          });
+        } catch (error) {
+          printLog(
+            "warning",
+            `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
+          );
+
+          callback(null, {
+            data: emptyDatas[sourceData.tileJSON.format] || emptyDatas.other,
+          });
+        }
+      } else if (parts[0] === "pg:") {
+        const z = Number(parts[3]);
+        const x = Number(parts[4]);
+        const y = Number(parts[5].slice(0, parts[5].indexOf(".")));
+        const tileName = `${z}/${x}/${y}`;
+        const sourceData = config.repo.datas[parts[2]];
+
+        try {
+          /* Get rendered tile */
+          let dataTile;
+
+          try {
+            dataTile = await getPostgreSQLTile(sourceData.source, z, x, y);
+          } catch (error) {
+            if (
+              sourceData.sourceURL !== undefined &&
+              error.message === "Tile does not exist"
+            ) {
+              const url = sourceData.sourceURL.replaceAll(
+                "{z}/{x}/{y}",
+                tileName
+              );
+
+              printLog(
+                "info",
+                `Forwarding data "${id}" - Tile "${tileName}" - To "${url}"...`
+              );
+
+              /* Get data */
+              dataTile = await getPostgreSQLTileFromURL(
+                url,
+                60000 // 1 mins
+              );
+
+              /* Cache */
+              if (sourceData.storeCache === true) {
+                cachePostgreSQLTileData(
+                  sourceData.source,
+                  z,
+                  x,
+                  y,
+                  dataTile.data,
+                  sourceData.storeMD5,
+                  sourceData.storeTransparent
+                );
+              }
+            } else {
+              throw error;
+            }
+          }
+
+          /* Unzip pbf rendered tile */
+          if (
+            dataTile.headers["content-type"] === "application/x-protobuf" &&
+            dataTile.headers["content-encoding"] !== undefined
+          ) {
+            dataTile.data = await unzipAsync(dataTile.data);
+          }
+
+          callback(null, {
+            data: dataTile.data,
+          });
+        } catch (error) {
+          printLog(
+            "warning",
+            `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
+          );
+
+          callback(null, {
+            data: emptyDatas[sourceData.tileJSON.format] || emptyDatas.other,
+          });
+        }
+      } else if (parts[0] === "http:" || parts[0] === "https:") {
+        try {
+          printLog("info", `Getting data tile from "${url}"...`);
+
+          const dataTile = await getDataFromURL(
+            url,
+            60000, // 1 mins,
+            "arraybuffer"
+          );
+
+          /* Unzip pbf data */
+          const headers = detectFormatAndHeaders(dataTile.data).headers;
+
+          if (
+            headers["content-type"] === "application/x-protobuf" &&
+            headers["content-encoding"] !== undefined
+          ) {
+            dataTile.data = await unzipAsync(dataTile.data);
+          }
+
+          callback(null, {
+            data: dataTile.data,
+          });
+        } catch (error) {
+          printLog(
+            "warning",
+            `Failed to get data tile from "${url}": ${error}. Serving empty tile...`
+          );
+
+          callback(null, {
+            data:
+              emptyDatas[url.slice(url.lastIndexOf(".") + 1)] ||
+              emptyDatas.other,
+          });
+        }
+      }
+    },
+  });
+
+  renderer.load(styleJSON);
+
+  return renderer;
+}
+
+/**
+ * Destroy a renderer
+ * @param {mlgl.Map} renderer Renderer instance
+ * @returns {void}
+ */
+export function destroyRenderer(renderer) {
+  renderer.release();
 }
