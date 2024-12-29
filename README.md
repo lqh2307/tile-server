@@ -27,6 +27,7 @@ git checkout 0.0.6
 Install dependencies:
 
 ```bash
+add-apt-repository ppa:ubuntugis/ppa; \
 apt-get -y update; \
 apt-get -y upgrade; \
 apt-get -y install \
@@ -45,6 +46,7 @@ apt-get -y install \
   libpng-dev \
   libwebp-dev \
   libcurl4-openssl-dev; \
+  gdal-bin; \
 apt-get -y --purge autoremove; \
 apt-get clean; \
 rm -rf /var/lib/apt/lists/*;
