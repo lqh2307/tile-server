@@ -27,7 +27,6 @@ git checkout 0.0.6
 Install dependencies:
 
 ```bash
-add-apt-repository ppa:ubuntugis/ppa; \
 apt-get -y update; \
 apt-get -y upgrade; \
 apt-get -y install \

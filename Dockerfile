@@ -47,7 +47,6 @@ FROM ${TARGET_IMAGE} AS final
 
 RUN \
   export DEBIAN_FRONTEND=noninteractive; \
-  add-apt-repository ppa:ubuntugis/ppa; \
   apt-get -y update; \
   apt-get -y upgrade; \
   apt-get -y install \
