@@ -81,12 +81,12 @@ section {
 
 .btn {
   display: block;
-  line-height: 30px;
+  line-height: 25px;
   position: relative;
   overflow: hidden;
   border-radius: 4px;
-  margin-top: 20px;
-  margin-bottom: 20px;
+  margin-top: 15px;
+  margin-bottom: 15px;
   background-color: #499dce;
   background: linear-gradient(90deg, #5aaad8, #4a9ecf);
   color: #fff;
