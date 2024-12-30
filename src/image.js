@@ -627,7 +627,7 @@ export function destroyRenderer(renderer) {
  * @param {object} metadata Metadata object
  * @param {number} tileScale Tile scale
  * @param {256|512} tileSize Tile size
- * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
+ * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {number} maxzoom Max zoom level
  * @param {number} concurrency Concurrency download
  * @param {number} maxTry Number of retry attempts on failure
@@ -643,7 +643,7 @@ export async function renderMBTilesTiles(
   metadata,
   tileScale = 1,
   tileSize = 256,
-  bboxs = [[-180, -85.051129, 180, 85.051129]],
+  bbox = [-180, -85.051129, 180, 85.051129],
   maxzoom = 22,
   concurrency = os.cpus().length,
   maxTry = 5,
@@ -656,16 +656,14 @@ export async function renderMBTilesTiles(
   const startTime = Date.now();
 
   const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
-    bboxs,
+    [bbox],
     [maxzoom],
     "xyz"
   );
 
-  let log = `Rendering ${total} tiles of style "${id}" to mbtiles with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tMax zoom: ${maxzoom}\n\tBBoxs: [${bboxs
-    .map((bbox) => `[${bbox.join(", ")}]`)
-    .join(
-      ", "
-    )}]\n\tTile size: ${tileSize}\n\tTile scale: ${tileScale}\n\tCreate overview: ${createOverview}`;
+  let log = `Rendering ${total} tiles of style "${id}" to mbtiles with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tMax zoom: ${maxzoom}\n\tBBox: [${bbox.join(
+    ", "
+  )}]\n\tTile size: ${tileSize}\n\tTile scale: ${tileScale}\n\tCreate overview: ${createOverview}`;
 
   let refreshTimestamp;
   if (typeof refreshBefore === "string") {
@@ -844,7 +842,7 @@ export async function renderMBTilesTiles(
  * @param {object} metadata Metadata object
  * @param {number} tileScale Tile scale
  * @param {256|512} tileSize Tile size
- * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
+ * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {number} maxzoom Max zoom level
  * @param {number} concurrency Concurrency to download
  * @param {number} maxTry Number of retry attempts on failure
@@ -860,7 +858,7 @@ export async function renderXYZTiles(
   metadata,
   tileScale = 1,
   tileSize = 256,
-  bboxs = [[-180, -85.051129, 180, 85.051129]],
+  bbox = [-180, -85.051129, 180, 85.051129],
   maxzoom = 22,
   concurrency = os.cpus().length,
   maxTry = 5,
@@ -873,16 +871,14 @@ export async function renderXYZTiles(
   const startTime = Date.now();
 
   const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
-    bboxs,
+    [bbox],
     [maxzoom],
     "xyz"
   );
 
-  let log = `Rendering ${total} tiles of style "${id}" to xyz with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tMax zoom: ${maxzoom}\n\tBBoxs: [${bboxs
-    .map((bbox) => `[${bbox.join(", ")}]`)
-    .join(
-      ", "
-    )}]\n\tTile size: ${tileSize}\n\tTile scale: ${tileScale}\n\tCreate overview: ${createOverview}`;
+  let log = `Rendering ${total} tiles of style "${id}" to xyz with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tMax zoom: ${maxzoom}\n\tBBox: [${bbox.join(
+    ", "
+  )}]\n\tTile size: ${tileSize}\n\tTile scale: ${tileScale}\n\tCreate overview: ${createOverview}`;
 
   let refreshTimestamp;
   if (typeof refreshBefore === "string") {
