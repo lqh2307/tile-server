@@ -620,6 +620,19 @@ export const serve_common = {
      *     tags:
      *       - Common
      *     summary: Calculate bbox from points or circle
+     *     parameters:
+     *       - in: query
+     *         name: circle
+     *         schema:
+     *           type: object
+     *         required: false
+     *         description: Circle params
+     *       - in: query
+     *         name: points
+     *         schema:
+     *           type: object
+     *         required: false
+     *         description: Points params
      *     responses:
      *       200:
      *         description: Bounding box

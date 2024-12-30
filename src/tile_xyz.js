@@ -1,7 +1,7 @@
 "use strict";
 
 import { closeSQLite, fetchOne, openSQLite, runSQL } from "./sqlite.js";
-import { isFullTransparentPNGImage } from "./image.js";
+import { isFullTransparentPNGImage, renderImage } from "./image.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import protobuf from "protocol-buffers";
@@ -774,6 +774,82 @@ export async function downloadXYZTileDataFile(
             `Failed to download tile data file "${tileName}" from "${url}": ${error}`
           );
         }
+      }
+    }, maxTry);
+  } catch (error) {
+    printLog("error", `${error}`);
+  }
+}
+
+/**
+ * Render XYZ tile data file
+ * @param {object} rendered Rendered item object
+ * @param {number} tileScale Tile scale
+ * @param {256|512} tileSize Tile size
+ * @param {string} id XYZ ID
+ * @param {sqlite3.Database} source SQLite database instance
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
+ * @param {boolean} storeMD5 Is store MD5 hashed?
+ * @param {boolean} storeTransparent Is store transparent tile?
+ * @returns {Promise<void>}
+ */
+export async function renderXYZTileDataFile(
+  rendered,
+  tileScale,
+  tileSize,
+  id,
+  source,
+  z,
+  x,
+  y,
+  format,
+  maxTry,
+  timeout,
+  storeMD5,
+  storeTransparent
+) {
+  const tileName = `${z}/${x}/${y}`;
+
+  printLog("info", `Rendering tile data "${tileName}"...`);
+
+  try {
+    await retry(async () => {
+      try {
+        // Get rendered data
+        const data = await renderImage(rendered, tileScale, tileSize, z, x, y);
+
+        // Store data to file
+        if (
+          storeTransparent === false &&
+          (await isFullTransparentPNGImage(data)) === true
+        ) {
+          return;
+        } else {
+          await createXYZTileDataFileWithLock(
+            `${process.env.DATA_DIR}/exports/xyzs/${id}/${tileName}.${format}`,
+            data,
+            300000 // 5 mins
+          );
+
+          // Store data md5 hash
+          if (storeMD5 === true) {
+            await createXYZTileMD5WithLock(
+              source,
+              z,
+              x,
+              y,
+              data,
+              300000 // 5 mins
+            );
+          }
+        }
+      } catch (error) {
+        throw new Error(`Failed to render tile data "${tileName}": ${error}`);
       }
     }, maxTry);
   } catch (error) {

@@ -6,6 +6,7 @@ import { getSprite } from "./sprite.js";
 import { printLog } from "./logger.js";
 import { getFonts } from "./font.js";
 import { config } from "./config.js";
+import { Mutex } from "async-mutex";
 import sharp from "sharp";
 import {
   getPostgreSQLTileFromURL,
@@ -13,19 +14,34 @@ import {
   getPostgreSQLTile,
 } from "./tile_postgresql.js";
 import {
+  updateMBTilesMetadataWithLock,
   getMBTilesTileFromURL,
+  getMBTilesTileCreated,
   cacheMBtilesTileData,
+  getMBTilesTileMD5,
+  renderMBTilesTile,
   getMBTilesTile,
+  closeMBTilesDB,
+  openMBTilesDB,
 } from "./tile_mbtiles.js";
 import {
+  getTilesBoundsFromBBoxs,
   detectFormatAndHeaders,
   getLonLatFromXYZ,
   getDataFromURL,
+  calculateMD5,
   unzipAsync,
+  runCommand,
 } from "./utils.js";
 import {
+  updateXYZMetadataFileWithLock,
+  renderXYZTileDataFile,
   cacheXYZTileDataFile,
+  getXYZTileCreated,
   getXYZTileFromURL,
+  getXYZTileMD5,
+  closeXYZMD5DB,
+  openXYZMD5DB,
   getXYZTile,
 } from "./tile_xyz.js";
 
@@ -598,5 +614,427 @@ export function createRenderer(ratio, emptyDatas, styleJSON) {
  * @returns {void}
  */
 export function destroyRenderer(renderer) {
-  renderer.release();
+  if (renderer !== undefined) {
+    renderer.release();
+  }
+}
+
+/**
+ * Render MBTiles tiles
+ * @param {string} id Style ID
+ * @param {object} metadata Metadata object
+ * @param {number} tileScale Tile scale
+ * @param {256|512} tileSize Tile size
+ * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
+ * @param {Array<number>} zooms Array of specific zoom level
+ * @param {number} concurrency Concurrency download
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
+ * @param {boolean} storeMD5 Is store MD5 hashed?
+ * @param {boolean} storeTransparent Is store transparent tile?
+ * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
+ * @returns {Promise<void>}
+ */
+export async function renderMBTilesTiles(
+  id,
+  metadata,
+  tileScale,
+  tileSize,
+  bboxs = [[-180, -85.051129, 180, 85.051129]],
+  zooms = [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22,
+  ],
+  concurrency = os.cpus().length,
+  maxTry = 5,
+  timeout = 60000,
+  storeMD5 = false,
+  storeTransparent = false,
+  refreshBefore
+) {
+  const startTime = Date.now();
+
+  const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
+    bboxs,
+    zooms,
+    "xyz"
+  );
+
+  let log = `Rendering ${total} tiles of style "${id}" to mbtiles with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
+    ", "
+  )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
+
+  let refreshTimestamp;
+  if (typeof refreshBefore === "string") {
+    refreshTimestamp = new Date(refreshBefore).getTime();
+
+    log += `\n\tRefresh before: ${refreshBefore}`;
+  } else if (typeof refreshBefore === "number") {
+    const now = new Date();
+
+    refreshTimestamp = now.setDate(now.getDate() - refreshBefore);
+
+    log += `\n\tOld than: ${refreshBefore} days`;
+  } else if (typeof refreshBefore === "boolean") {
+    refreshTimestamp = true;
+
+    log += `\n\tRefresh before: check MD5`;
+  }
+
+  printLog("info", log);
+
+  /* Open MBTiles SQLite database */
+  const source = await openMBTilesDB(
+    `${process.env.DATA_DIR}/exports/mbtiles/${id}/${id}.mbtiles`,
+    sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+    false
+  );
+
+  /* Update metadata */
+  printLog("info", "Updating metadata...");
+
+  await updateMBTilesMetadataWithLock(
+    source,
+    metadata,
+    300000 // 5 mins
+  );
+
+  /* Render tiles */
+  const mutex = new Mutex();
+
+  let activeTasks = 0;
+  let remainingTasks = total;
+
+  async function renderMBTilesTileData(z, x, y) {
+    const tileName = `${z}/${x}/${y}`;
+    const rendered = config.repo.styles[id].rendered;
+
+    try {
+      let needRender = false;
+
+      if (refreshTimestamp === true) {
+        try {
+          const [data, md5] = await Promise.all([
+            renderImage(rendered, tileScale, tileSize, z, x, y),
+            getMBTilesTileMD5(source, z, x, y),
+          ]);
+
+          if (calculateMD5(data) !== md5) {
+            needRender = true;
+          }
+        } catch (error) {
+          if (error.message === "Tile MD5 does not exist") {
+            needRender = true;
+          } else {
+            throw error;
+          }
+        }
+      } else if (refreshTimestamp !== undefined) {
+        try {
+          const created = await getMBTilesTileCreated(source, z, x, y);
+
+          if (!created || created < refreshTimestamp) {
+            needRender = true;
+          }
+        } catch (error) {
+          if (error.message === "Tile created does not exist") {
+            needRender = true;
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        needRender = true;
+      }
+
+      if (needRender === true) {
+        await renderMBTilesTile(
+          tileScale,
+          tileSize,
+          rendered,
+          source,
+          z,
+          x,
+          y,
+          maxTry,
+          timeout,
+          storeMD5,
+          storeTransparent
+        );
+      }
+    } catch (error) {
+      printLog(
+        "error",
+        `Failed to render style "${id}" - Tile "${tileName}": ${error}`
+      );
+    }
+  }
+
+  printLog("info", "Rendering datas...");
+
+  for (const tilesSummary of tilesSummaries) {
+    for (const z in tilesSummary) {
+      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+          /* Wait slot for a task */
+          while (activeTasks >= concurrency) {
+            await delay(50);
+          }
+
+          await mutex.runExclusive(() => {
+            activeTasks++;
+
+            remainingTasks--;
+          });
+
+          /* Run a task */
+          renderMBTilesTileData(z, x, y).finally(() =>
+            mutex.runExclusive(() => {
+              activeTasks--;
+            })
+          );
+        }
+      }
+    }
+  }
+
+  /* Wait all tasks done */
+  while (activeTasks > 0) {
+    await delay(50);
+  }
+
+  // Close MBTiles SQLite database
+  if (source !== undefined) {
+    await closeMBTilesDB(source);
+  }
+
+  /* Create overviews */
+  printLog("info", "Creating overviews...");
+
+  const command = `gdaladdo -r lanczos -oo ZLEVEL=9 ${process.env.DATA_DIR}/exports/mbtiles/${id}/${id}.mbtiles 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576 2097152 4194304`;
+
+  printLog("info", `Command: ${command}`);
+
+  const commandOutput = runCommand(command);
+
+  printLog("info", `Command output: ${commandOutput}`);
+
+  const doneTime = Date.now();
+
+  printLog(
+    "info",
+    `Completed render ${total} tiles of style "${id}" to mbtiles after ${
+      (doneTime - startTime) / 1000
+    }s!`
+  );
+}
+
+/**
+ * Render XYZ tiles
+ * @param {string} id Style ID
+ * @param {object} metadata Metadata object
+ * @param {string} tileURL Tile URL
+ * @param {number} tileScale Tile scale
+ * @param {256|512} tileSize Tile size
+ * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {Array<number>} zooms Array of specific zoom levels
+ * @param {number} concurrency Concurrency to download
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
+ * @param {boolean} storeMD5 Is store MD5 hashed?
+ * @param {boolean} storeTransparent Is store transparent tile?
+ * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
+ * @returns {Promise<void>}
+ */
+export async function renderXYZTiles(
+  id,
+  metadata,
+  tileScale,
+  tileSize,
+  bboxs = [[-180, -85.051129, 180, 85.051129]],
+  zooms = [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22,
+  ],
+  concurrency = os.cpus().length,
+  maxTry = 5,
+  timeout = 60000,
+  storeMD5 = false,
+  storeTransparent = false,
+  refreshBefore
+) {
+  const startTime = Date.now();
+
+  const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
+    bboxs,
+    zooms,
+    "xyz"
+  );
+
+  let log = `Rendering ${total} tiles of style "${id}" to xyz with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
+    ", "
+  )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
+
+  let refreshTimestamp;
+  if (typeof refreshBefore === "string") {
+    refreshTimestamp = new Date(refreshBefore).getTime();
+
+    log += `\n\tRefresh before: ${refreshBefore}`;
+  } else if (typeof refreshBefore === "number") {
+    const now = new Date();
+
+    refreshTimestamp = now.setDate(now.getDate() - refreshBefore);
+
+    log += `\n\tOld than: ${refreshBefore} days`;
+  } else if (typeof refreshBefore === "boolean") {
+    refreshTimestamp = true;
+
+    log += `\n\tRefresh before: check MD5`;
+  }
+
+  printLog("info", log);
+
+  /* Open MD5 SQLite database */
+  const source = await openXYZMD5DB(
+    `${process.env.DATA_DIR}/exports/xyzs/${id}/${id}.sqlite`,
+    sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+    false
+  );
+
+  /* Update metadata */
+  printLog("info", "Updating metadata...");
+
+  await updateXYZMetadataFileWithLock(
+    `${process.env.DATA_DIR}/exports/xyzs/${id}/metadata.json`,
+    metadata,
+    300000 // 5 mins
+  );
+
+  /* Render tile files */
+  const mutex = new Mutex();
+
+  let activeTasks = 0;
+  let remainingTasks = total;
+
+  async function renderXYZTileData(z, x, y) {
+    const tileName = `${z}/${x}/${y}`;
+    const rendered = config.repo.styles[id].rendered;
+
+    try {
+      let needRender = false;
+
+      if (refreshTimestamp === true) {
+        try {
+          const [data, md5] = await Promise.all([
+            renderImage(rendered, tileScale, tileSize, z, x, y),
+            getXYZTileMD5(source, z, x, y),
+          ]);
+
+          if (calculateMD5(data) !== md5) {
+            needRender = true;
+          }
+        } catch (error) {
+          if (error.message === "Tile MD5 does not exist") {
+            needRender = true;
+          } else {
+            throw error;
+          }
+        }
+      } else if (refreshTimestamp !== undefined) {
+        try {
+          const created = await getXYZTileCreated(
+            `${process.env.DATA_DIR}/exports/xyzs/${id}/${tileName}.${metadata.format}`
+          );
+
+          if (!created || created < refreshTimestamp) {
+            needRender = true;
+          }
+        } catch (error) {
+          if (error.message === "Tile created does not exist") {
+            needRender = true;
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        needRender = true;
+      }
+
+      if (needRender === true) {
+        await renderXYZTileDataFile(
+          rendered,
+          tileScale,
+          tileSize,
+          id,
+          source,
+          z,
+          x,
+          y,
+          metadata.format,
+          maxTry,
+          timeout,
+          storeMD5,
+          storeTransparent
+        );
+      }
+    } catch (error) {
+      printLog(
+        "error",
+        `Failed to render style "${id}" - Tile "${tileName}": ${error}`
+      );
+    }
+  }
+
+  printLog("info", "Rendering datas...");
+
+  for (const tilesSummary of tilesSummaries) {
+    for (const z in tilesSummary) {
+      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+          /* Wait slot for a task */
+          while (activeTasks >= concurrency) {
+            await delay(50);
+          }
+
+          await mutex.runExclusive(() => {
+            activeTasks++;
+
+            remainingTasks--;
+          });
+
+          /* Run a task */
+          renderXYZTileData(z, x, y).finally(() =>
+            mutex.runExclusive(() => {
+              activeTasks--;
+            })
+          );
+        }
+      }
+    }
+  }
+
+  /* Wait all tasks done */
+  while (activeTasks > 0) {
+    await delay(50);
+  }
+
+  /* Close MD5 SQLite database */
+  if (source !== undefined) {
+    await closeXYZMD5DB(source);
+  }
+
+  /* Remove parent folders if empty */
+  await removeEmptyFolders(
+    `${process.env.DATA_DIR}/caches/xyzs/${id}`,
+    /^.*\.(sqlite|json|gif|png|jpg|jpeg|webp|pbf)$/
+  );
+
+  const doneTime = Date.now();
+
+  printLog(
+    "info",
+    `Completed render ${total} tiles of style "${id}" to xyz after ${
+      (doneTime - startTime) / 1000
+    }s!`
+  );
 }

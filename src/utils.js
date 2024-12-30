@@ -3,6 +3,7 @@
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
+import { exec } from "child_process";
 import https from "node:https";
 import http from "node:http";
 import crypto from "crypto";
@@ -817,4 +818,21 @@ export function deepClone(obj) {
  */
 export function getVersion() {
   return JSON.parse(fs.readFileSync("package.json", "utf8")).version;
+}
+
+/**
+ * Run an external command and wait for it to finish
+ * @param {string} command The command to run
+ * @returns {Promise<string>} The command's stdout
+ */
+export function runCommand(command) {
+  return new Promise((resolve, reject) => {
+    exec(command, (error, stdout, stderr) => {
+      if (error) {
+        reject(stderr);
+      } else {
+        resolve(stdout);
+      }
+    });
+  });
 }

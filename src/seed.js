@@ -432,7 +432,7 @@ export async function seedMBTilesTiles(
     "xyz"
   );
 
-  let log = `Seeding ${total} tiles of mbtiles data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
+  let log = `Seeding ${total} tiles of mbtiles "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
@@ -455,14 +455,14 @@ export async function seedMBTilesTiles(
 
   printLog("info", log);
 
-  // Open MBTiles SQLite database
+  /* Open MBTiles SQLite database */
   const source = await openMBTilesDB(
     `${process.env.DATA_DIR}/caches/mbtiles/${id}/${id}.mbtiles`,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     false
   );
 
-  // Update metadata
+  /* Update metadata */
   printLog("info", "Updating metadata...");
 
   await updateMBTilesMetadataWithLock(
@@ -471,7 +471,7 @@ export async function seedMBTilesTiles(
     300000 // 5 mins
   );
 
-  // Download tiles
+  /* Download tiles */
   const mutex = new Mutex();
 
   let activeTasks = 0;
@@ -585,7 +585,7 @@ export async function seedMBTilesTiles(
 
   printLog(
     "info",
-    `Completed seed ${total} tiles of mbtiles data "${id}" after ${
+    `Completed seed ${total} tiles of mbtiles "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );
@@ -629,7 +629,7 @@ export async function seedPostgreSQLTiles(
     zooms,
     "xyz"
   );
-  let log = `Seeding ${total} tiles of postgresql data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
+  let log = `Seeding ${total} tiles of postgresql "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
@@ -652,13 +652,13 @@ export async function seedPostgreSQLTiles(
 
   printLog("info", log);
 
-  // Open PostgreSQL database
+  /* Open PostgreSQL database */
   const source = await openPostgreSQLDB(
     `${process.env.POSTGRESQL_BASE_URI}/${id}`,
     true
   );
 
-  // Update metadata
+  /* Update metadata */
   printLog("info", "Updating metadata...");
 
   await updatePostgreSQLMetadataWithLock(
@@ -667,7 +667,7 @@ export async function seedPostgreSQLTiles(
     300000 // 5 mins
   );
 
-  // Download tiles
+  /* Download tiles */
   const mutex = new Mutex();
 
   let activeTasks = 0;
@@ -772,7 +772,7 @@ export async function seedPostgreSQLTiles(
     await delay(50);
   }
 
-  // Close PostgreSQL database
+  /* Close PostgreSQL database */
   if (source !== undefined) {
     await closePostgreSQLDB(source);
   }
@@ -781,7 +781,7 @@ export async function seedPostgreSQLTiles(
 
   printLog(
     "info",
-    `Completed seed ${total} tiles of postgresql data "${id}" after ${
+    `Completed seed ${total} tiles of postgresql "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );
@@ -826,7 +826,7 @@ export async function seedXYZTiles(
     "xyz"
   );
 
-  let log = `Seeding ${total} tiles of xyz data "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
+  let log = `Seeding ${total} tiles of xyz "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
@@ -849,14 +849,14 @@ export async function seedXYZTiles(
 
   printLog("info", log);
 
-  // Open MD5 SQLite database
+  /* Open MD5 SQLite database */
   const source = await openXYZMD5DB(
     `${process.env.DATA_DIR}/caches/xyzs/${id}/${id}.sqlite`,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     false
   );
 
-  // Update metadata.json file
+  /* Update metadata */
   printLog("info", "Updating metadata...");
 
   await updateXYZMetadataFileWithLock(
@@ -865,7 +865,7 @@ export async function seedXYZTiles(
     300000 // 5 mins
   );
 
-  // Download tile files
+  /* Download tile files */
   const mutex = new Mutex();
 
   let activeTasks = 0;
@@ -974,12 +974,12 @@ export async function seedXYZTiles(
     await delay(50);
   }
 
-  // Close MD5 SQLite database
+  /* Close MD5 SQLite database */
   if (source !== undefined) {
     await closeXYZMD5DB(source);
   }
 
-  // Remove parent folders if empty
+  /* Remove parent folders if empty */
   await removeEmptyFolders(
     `${process.env.DATA_DIR}/caches/xyzs/${id}`,
     /^.*\.(sqlite|json|gif|png|jpg|jpeg|webp|pbf)$/
@@ -989,7 +989,7 @@ export async function seedXYZTiles(
 
   printLog(
     "info",
-    `Completed seed ${total} tiles of xyz data "${id}" after ${
+    `Completed seed ${total} tiles of xyz "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );
@@ -1034,7 +1034,7 @@ export async function seedStyle(
 
   printLog("info", log);
 
-  // Download style.json file
+  /* Download style.json file */
   const filePath = `${process.env.DATA_DIR}/caches/styles/${id}/style.json`;
 
   try {
@@ -1089,7 +1089,7 @@ export async function seedStyle(
     printLog("error", `Failed to seed style "${id}": ${error}`);
   }
 
-  // Remove parent folders if empty
+  /* Remove parent folders if empty */
   await removeEmptyFolders(
     `${process.env.DATA_DIR}/caches/styles/${id}`,
     /^.*\.json$/

@@ -1,6 +1,6 @@
 "use strict";
 
-import { isFullTransparentPNGImage } from "./image.js";
+import { isFullTransparentPNGImage, renderImage } from "./image.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import protobuf from "protocol-buffers";
@@ -691,6 +691,70 @@ export async function downloadMBTilesTile(
             `Failed to download tile data "${tileName}" from "${url}": ${error}`
           );
         }
+      }
+    }, maxTry);
+  } catch (error) {
+    printLog("error", `${error}`);
+  }
+}
+
+/**
+ * Render MBTiles tile data
+ * @param {object} rendered Rendered item object
+ * @param {number} tileScale Tile scale
+ * @param {256|512} tileSize Tile size
+ * @param {sqlite3.Database} source SQLite database instance
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
+ * @param {boolean} storeMD5 Is store MD5 hashed?
+ * @param {boolean} storeTransparent Is store transparent tile?
+ * @returns {Promise<void>}
+ */
+export async function renderMBTilesTile(
+  rendered,
+  tileScale,
+  tileSize,
+  source,
+  z,
+  x,
+  y,
+  maxTry,
+  timeout,
+  storeMD5,
+  storeTransparent
+) {
+  const tileName = `${z}/${x}/${y}`;
+
+  printLog("info", `Rendering tile data "${tileName}"...`);
+
+  try {
+    await retry(async () => {
+      try {
+        // Get rendered data
+        const data = await renderImage(rendered, tileScale, tileSize, z, x, y);
+
+        // Store data
+        if (
+          storeTransparent === false &&
+          (await isFullTransparentPNGImage(data)) === true
+        ) {
+          return;
+        } else {
+          await createMBTilesTileWithLock(
+            source,
+            z,
+            x,
+            y,
+            storeMD5,
+            data,
+            300000 // 5 mins
+          );
+        }
+      } catch (error) {
+        throw new Error(`Failed to render tile data "${tileName}": ${error}`);
       }
     }, maxTry);
   } catch (error) {

@@ -212,7 +212,7 @@ export async function cleanUpMBTilesTiles(
     "xyz"
   );
 
-  let log = `Cleaning up ${total} tiles of mbtiles data "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${total} tiles of mbtiles "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
@@ -231,14 +231,14 @@ export async function cleanUpMBTilesTiles(
 
   printLog("info", log);
 
-  // Open MBTiles SQLite database
+  /* Open MBTiles SQLite database */
   const source = await openMBTilesDB(
     `${process.env.DATA_DIR}/caches/mbtiles/${id}/${id}.mbtiles`,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     false
   );
 
-  // Remove tiles
+  /* Remove tiles */
   const mutex = new Mutex();
 
   let activeTasks = 0;
@@ -319,7 +319,7 @@ export async function cleanUpMBTilesTiles(
     await delay(50);
   }
 
-  // Close MBTiles SQLite database
+  /* Close MBTiles SQLite database */
   if (source !== undefined) {
     await closeMBTilesDB(source);
   }
@@ -328,7 +328,7 @@ export async function cleanUpMBTilesTiles(
 
   printLog(
     "info",
-    `Completed clean up ${total} tiles of mbtiles data "${id}" after ${
+    `Completed clean up ${total} tiles of mbtiles "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );
@@ -363,7 +363,7 @@ export async function cleanUpPostgreSQLTiles(
     "xyz"
   );
 
-  let log = `Cleaning up ${total} tiles of postgresql data "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${total} tiles of postgresql "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
@@ -382,13 +382,13 @@ export async function cleanUpPostgreSQLTiles(
 
   printLog("info", log);
 
-  // Open PostgreSQL database
+  /* Open PostgreSQL database */
   const source = await openPostgreSQLDB(
     `${process.env.POSTGRESQL_BASE_URI}/${id}`,
     true
   );
 
-  // Remove tiles
+  /* Remove tiles */
   const mutex = new Mutex();
 
   let activeTasks = 0;
@@ -469,7 +469,7 @@ export async function cleanUpPostgreSQLTiles(
     await delay(50);
   }
 
-  // Close PostgreSQL database
+  /* Close PostgreSQL database */
   if (source !== undefined) {
     await closePostgreSQLDB(source);
   }
@@ -478,7 +478,7 @@ export async function cleanUpPostgreSQLTiles(
 
   printLog(
     "info",
-    `Completed clean up ${total} tiles of postgresql data "${id}" after ${
+    `Completed clean up ${total} tiles of postgresql "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );
@@ -515,7 +515,7 @@ export async function cleanUpXYZTiles(
     "xyz"
   );
 
-  let log = `Cleaning up ${total} tiles of xyz data "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${total} tiles of xyz "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
@@ -534,14 +534,14 @@ export async function cleanUpXYZTiles(
 
   printLog("info", log);
 
-  // Open XYZ MD5 SQLite database
+  /* Open XYZ MD5 SQLite database */
   const source = await openXYZMD5DB(
     `${process.env.DATA_DIR}/caches/xyzs/${id}/${id}.sqlite`,
     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
     false
   );
 
-  // Remove tile files
+  /* Remove tile files */
   const mutex = new Mutex();
 
   let activeTasks = 0;
@@ -626,12 +626,12 @@ export async function cleanUpXYZTiles(
     await delay(50);
   }
 
-  // Close XYZ MD5 SQLite database
+  /* Close XYZ MD5 SQLite database */
   if (source !== undefined) {
     await closeXYZMD5DB(source);
   }
 
-  // Remove parent folders if empty
+  /* Remove parent folders if empty */
   await removeEmptyFolders(
     `${process.env.DATA_DIR}/caches/xyzs/${id}`,
     /^.*\.(sqlite|json|gif|png|jpg|jpeg|webp|pbf)$/
@@ -641,7 +641,7 @@ export async function cleanUpXYZTiles(
 
   printLog(
     "info",
-    `Completed clean up ${total} tiles of xyz data "${id}" after ${
+    `Completed clean up ${total} tiles of xyz "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );
@@ -674,7 +674,7 @@ export async function cleanUpStyle(id, maxTry = 5, cleanUpBefore) {
 
   printLog("info", log);
 
-  // Remove style file
+  /* Remove style file */
   const filePath = `${process.env.DATA_DIR}/caches/styles/${id}/style.json`;
 
   try {
@@ -709,7 +709,7 @@ export async function cleanUpStyle(id, maxTry = 5, cleanUpBefore) {
     printLog("error", `Failed to clean up style "${id}": ${error}`);
   }
 
-  // Remove parent folders if empty
+  /* Remove parent folders if empty */
   await removeEmptyFolders(
     `${process.env.DATA_DIR}/caches/styles/${id}`,
     /^.*\.json$/

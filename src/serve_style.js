@@ -22,9 +22,11 @@ import {
   getStyle,
 } from "./style.js";
 import {
+  renderMBTilesTiles,
   createEmptyData,
   destroyRenderer,
   createRenderer,
+  renderXYZTiles,
   renderImage,
 } from "./image.js";
 import os from "os";
@@ -280,6 +282,79 @@ function getStyleMD5Handler() {
 }
 
 /**
+ * Render style handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
+function renderStyleHandler() {
+  return async (req, res, next) => {
+    const id = req.params.id;
+    const item = config.repo.styles[id];
+
+    /* Check rendered is exist? */
+    if (item === undefined || item.rendered === undefined) {
+      return res.status(StatusCodes.NOT_FOUND).send("Rendered does not exist");
+    }
+
+    /* Render style */
+    try {
+      const parsedOption = JSON.parse(req.query.option);
+
+      setTimeout(() => {
+        if (parsedOption.storeType === "xyz") {
+          renderXYZTiles(
+            id,
+            parsedOption.metadata,
+            parsedOption.tileScale || 1,
+            parsedOption.tileSize || 256,
+            parsedOption.bboxs,
+            parsedOption.zooms,
+            parsedOption.concurrency,
+            parsedOption.maxTry,
+            parsedOption.timeout,
+            parsedOption.storeMD5,
+            parsedOption.storeTransparent,
+            parsedOption.refreshBefore?.time ||
+              parsedOption.refreshBefore?.day ||
+              parsedOption.refreshBefore?.md5
+          );
+        } else if (parsedOption.storeType === "mbtiles") {
+          renderMBTilesTiles(
+            id,
+            parsedOption.metadata,
+            parsedOption.tileScale || 1,
+            parsedOption.tileSize || 256,
+            parsedOption.bboxs,
+            parsedOption.zooms,
+            parsedOption.concurrency,
+            parsedOption.maxTry,
+            parsedOption.timeout,
+            parsedOption.storeMD5,
+            parsedOption.storeTransparent,
+            parsedOption.refreshBefore?.time ||
+              parsedOption.refreshBefore?.day ||
+              parsedOption.refreshBefore?.md5
+          );
+        }
+      }, 0);
+
+      return res.status(StatusCodes.OK).send("OK");
+    } catch (error) {
+      printLog("error", `Failed to render style "${id}": ${error}`);
+
+      if (error instanceof SyntaxError) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .send("option parameter is invalid");
+      } else {
+        return res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .send("Internal server error");
+      }
+    }
+  };
+}
+
+/**
  * Get style list handler
  * @returns {(req: any, res: any, next: any) => Promise<any>}
  */
@@ -324,9 +399,9 @@ function getRenderedTileHandler() {
     }
 
     /* Get and check rendered tile scale (Default: 1). Ex: @2x -> 2 */
-    const scale = Number(req.params.scale?.slice(1, -1)) || 1;
+    const tileScale = Number(req.params.tileScale?.slice(1, -1)) || 1;
 
-    if (scale > item.rendered.maxScale) {
+    if (tileScale > item.rendered.maxScale) {
       return res
         .status(StatusCodes.BAD_REQUEST)
         .send("Rendered tile scale is invalid");
@@ -340,7 +415,14 @@ function getRenderedTileHandler() {
 
     /* Render tile */
     try {
-      const image = await renderImage(item.rendered, scale, tileSize, z, x, y);
+      const image = await renderImage(
+        item.rendered,
+        tileScale,
+        tileSize,
+        z,
+        x,
+        y
+      );
 
       res.header("content-type", `image/png`);
 
@@ -786,6 +868,49 @@ export const serve_style = {
     /**
      * @swagger
      * tags:
+     *   - name: Style
+     *     description: Style related endpoints
+     * /styles/{id}/export/style.json:
+     *   get:
+     *     tags:
+     *       - Style
+     *     summary: Render style
+     *     parameters:
+     *       - in: query
+     *         name: option
+     *         schema:
+     *           type: object
+     *         required: false
+     *         description: Style render options
+     *     responses:
+     *       200:
+     *         description: Style render is started
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: OK
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get(
+      "/:id/export/style.json",
+      checkReadyMiddleware(),
+      renderStyleHandler()
+    );
+
+    /**
+     * @swagger
+     * tags:
      *   - name: Rendered
      *     description: Rendered related endpoints
      * /styles/rendereds.json:
@@ -937,7 +1062,7 @@ export const serve_style = {
      * tags:
      *   - name: Rendered
      *     description: Rendered related endpoints
-     * /styles/{id}/{tileSize}/{z}/{x}/{y}{scale}.png:
+     * /styles/{id}/{tileSize}/{z}/{x}/{y}{tileScale}.png:
      *   get:
      *     tags:
      *       - Rendered
@@ -977,7 +1102,7 @@ export const serve_style = {
      *         required: true
      *         description: Y coordinate
      *       - in: path
-     *         name: scale
+     *         name: tileScale
      *         schema:
      *           type: string
      *         required: false
@@ -1005,7 +1130,7 @@ export const serve_style = {
      *         description: Internal server error
      */
     app.get(
-      `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):scale(@\\d+x)?.png`,
+      `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):tileScale(@\\d+x)?.png`,
       checkReadyMiddleware(),
       getRenderedTileHandler()
     );
