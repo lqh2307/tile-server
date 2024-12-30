@@ -196,3 +196,70 @@ section {
     padding: 0 20px;
   }
 }
+
+dialog {
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  width: 300px;
+  max-width: 90%;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+dialog h2 {
+  margin: 0 0 10px 0;
+  font-size: 20px;
+}
+
+dialog label {
+  display: block;
+  margin: 10px 0 5px;
+}
+
+dialog input[type="number"] {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+dialog menu {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0;
+}
+
+dialog button {
+  padding: 8px 12px;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+dialog button[type="submit"] {
+  background-color: #007bff;
+  color: white;
+}
+
+dialog button[type="submit"]:hover {
+  background-color: #0056b3;
+}
+
+dialog button[type="button"] {
+  background-color: #f8f9fa;
+  color: black;
+}
+
+dialog button[type="button"]:hover {
+  background-color: #e2e6ea;
+}

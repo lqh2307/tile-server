@@ -61,8 +61,8 @@
         renderDatas("fonts-tab");
       } else if (tabId === "sprites-tab" && !document.querySelector("#sprites-tab").innerHTML.trim()) {
         renderDatas("sprites-tab");
-      } else if (tabId === "sync-tab" && !document.querySelector("#sync-tab").innerHTML.trim()) {
-        renderDatas("sync-tab");
+      } else if (tabId === "action-tab" && !document.querySelector("#action-tab").innerHTML.trim()) {
+        renderDatas("action-tab");
       }
     }
 
@@ -92,6 +92,7 @@
                     <a class="btn" href="${baseURL}/styles/{{@key}}/?vector{{viewer_hash}}">Client Render</a>
                     {{#if thumbnail}}
                       <a class="btn" href="${baseURL}/styles/{{@key}}/?raster{{viewer_hash}}">Backend Render</a>
+                      <a href="#" onclick="showRenderStyleDialog(event, {{@key}})">Export Render</a>
                     {{/if}}
                 </div>
               </div>
@@ -166,8 +167,20 @@
             {{/each}}
           </div>
         `;
-      } else if (tabId === "sync-tab") {
-        document.querySelector("#sync-tab").innerHTML = `
+      } else if (tabId === "action-tab") {
+        document.querySelector("#action-tab").innerHTML = `
+          <div class="box">
+            <div class="item">
+              <img src="${baseURL}/images/placeholder.png" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Restart</h3>
+                <div class="identifier">Restart server</div>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="actionManager(event, 'restart')">Restart server</a>
+              </div>
+            </div>
+          </div>
           <div class="box">
             <div class="item">
               <img src="${baseURL}/images/placeholder.png" alt="Empty image" />
@@ -176,7 +189,7 @@
                 <div class="identifier">Cancel clean up or seed styles and datas</div>
               </div>
               <div class="viewers">
-                <a class="btn" href="#" onclick="synchronousManager(event, 'cancel')">Cancel sync</a>
+                <a class="btn" href="#" onclick="actionManager(event, 'cancel')">Cancel sync</a>
               </div>
             </div>
           </div>
@@ -188,7 +201,7 @@
                 <div class="identifier">Start clean up styles and datas then seed styles and datas</div>
               </div>
               <div class="viewers">
-                <a class="btn" href="#" onclick="synchronousManager(event, 'all')">Sync all</a>
+                <a class="btn" href="#" onclick="actionManager(event, 'all')">Sync all</a>
               </div>
             </div>  
           </div>
@@ -200,7 +213,7 @@
                 <div class="identifier">Start clean up styles</div>
               </div>
               <div class="viewers">
-                <a class="btn" href="#" onclick="synchronousManager(event, 'cleanUpStyles')">Clean styles</a>
+                <a class="btn" href="#" onclick="actionManager(event, 'cleanUpStyles')">Clean styles</a>
               </div>
             </div>
           </div>
@@ -212,7 +225,7 @@
                 <div class="identifier">Start clean up datas</div>
               </div>
               <div class="viewers">
-                <a class="btn" href="#" onclick="synchronousManager(event, 'cleanUpDatas')">Clean datas</a>
+                <a class="btn" href="#" onclick="actionManager(event, 'cleanUpDatas')">Clean datas</a>
               </div>
             </div>
           </div>
@@ -224,7 +237,7 @@
                 <div class="identifier">Start seed styles</div>
               </div>
               <div class="viewers">
-                <a class="btn" href="#" onclick="synchronousManager(event, 'seedStyles')">Seed styles</a>
+                <a class="btn" href="#" onclick="actionManager(event, 'seedStyles')">Seed styles</a>
               </div>
             </div>
           </div>
@@ -236,7 +249,7 @@
                 <div class="identifier">Start seed datas</div>
               </div>
               <div class="viewers">
-                <a class="btn" href="#" onclick="synchronousManager(event, 'seedDatas')">Seed datas</a>
+                <a class="btn" href="#" onclick="actionManager(event, 'seedDatas')">Seed datas</a>
               </div>
             </div>
           </div>
@@ -244,23 +257,7 @@
       }
     }
 
-    function restartServer(event) {
-      event.preventDefault();
-
-      fetch(`${baseURL}/restart`, {
-        method: "GET",
-      })
-        .then((response) => {
-          if (response.status === 200) {
-            alert("Server restarted successfully!");
-          } else {
-            alert(`Failed to restart server: Status code: ${response.status} - ${response.statusText}`);
-          }
-        })
-        .catch((error) => alert(`Failed to restart server: ${error.message}`))
-    }
-
-    function synchronousManager(event, action) {
+    function actionManager(event, action) {
       event.preventDefault();
 
       if (action === "all") {
@@ -271,22 +268,22 @@
             if (response.status === 200) {
               alert("Starting clean up styles and datas then seed styles and datas...");
             } else {
-              alert(`Failed to clean up styles and datas then seed styles and datas: Status code: ${response.status} - ${response.statusText}`);
+              alert(`Failed to start clean up styles and datas then seed styles and datas: Status code: ${response.status} - ${response.statusText}`);
             }
           })
-          .catch((error) => alert(`Failed to seed styles and datas: ${error.message}`))
+          .catch((error) => alert(`Failed to start seed styles and datas: ${error.message}`));
       } else if (action === "cleanUpStyles") {
         fetch(`${baseURL}/tasks/start?cleanUpStyles=true`, {
           method: "GET",
         })
           .then((response) => {
             if (response.status === 200) {
-              alert("Starting clean up styles...");
+              alert("Starting start clean up styles...");
             } else {
-              alert(`Failed to clean up styles: Status code: ${response.status} - ${response.statusText}`);
+              alert(`Failed to start clean up styles: Status code: ${response.status} - ${response.statusText}`);
             }
           })
-          .catch((error) => alert(`Failed to clean up styles: ${error.message}`))
+          .catch((error) => alert(`Failed to clean up styles: ${error.message}`));
       } else if (action === "cleanUpDatas") {
         fetch(`${baseURL}/tasks/start?cleanUpDatas=true`, {
           method: "GET",
@@ -295,10 +292,10 @@
             if (response.status === 200) {
               alert("Starting clean up datas...");
             } else {
-              alert(`Failed to clean up datas: Status code: ${response.status} - ${response.statusText}`);
+              alert(`Failed to start clean up datas: Status code: ${response.status} - ${response.statusText}`);
             }
           })
-          .catch((error) => alert(`Failed to clean up datas: ${error.message}`))
+          .catch((error) => alert(`Failed to start clean up datas: ${error.message}`));
       } else if (action === "seedStyles") {
         fetch(`${baseURL}/tasks/start?seedStyles=true`, {
           method: "GET",
@@ -307,10 +304,10 @@
             if (response.status === 200) {
               alert("Starting seed styles...");
             } else {
-              alert(`Failed to seed styles: Status code: ${response.status} - ${response.statusText}`);
+              alert(`Failed to start seed styles: Status code: ${response.status} - ${response.statusText}`);
             }
           })
-          .catch((error) => alert(`Failed to seed styles: ${error.message}`))
+          .catch((error) => alert(`Failed to start seed styles: ${error.message}`));
       } else if (action === "seedDatas") {
         fetch(`${baseURL}/tasks/start?seedDatas=true`, {
           method: "GET",
@@ -319,10 +316,10 @@
             if (response.status === 200) {
               alert("Starting seed datas...");
             } else {
-              alert(`Failed to seed datas: Status code: ${response.status} - ${response.statusText}`);
+              alert(`Failed to start seed datas: Status code: ${response.status} - ${response.statusText}`);
             }
           })
-          .catch((error) => alert(`Failed to seed datas: ${error.message}`))
+          .catch((error) => alert(`Failed to start seed datas: ${error.message}`));
       } else if (action === "cancel") {
         fetch(`${baseURL}/tasks/cancel`, {
           method: "GET",
@@ -334,8 +331,72 @@
               alert(`Failed to cancel clean up or seed styles and datas: Status code: ${response.status} - ${response.statusText}`);
             }
           })
-          .catch((error) => alert(`Failed to clean up or seed styles and datas: ${error.message}`))
+          .catch((error) => alert(`Failed to cancel clean up or seed styles and datas: ${error.message}`));
+      } else if (action === "restart") {
+        fetch(`${baseURL}/restart`, {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Server restarted successfully!");
+            } else {
+              alert(`Failed to restart server: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => alert(`Failed to restart server: ${error.message}`));
       }
+    }
+
+    function showRenderStyleDialog(event, styleID) {
+      event.preventDefault();
+
+      document.getElementById("renderStyleDialog").showModal();
+
+      const renderStyleForm = document.getElementById("renderStyleForm"); 
+
+      renderStyleForm.onsubmit = (event) => {
+        event.preventDefault();
+
+        const options = parseFormDataToNestedObject(new FormData(renderStyleForm));
+
+        fetch(`${baseURL}/styles/${styleID}/export/style.json{options ? "?${JSON.stringify(options)}" : ""}`, {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Starting render style...");
+            } else {
+              alert(`Failed to start render style: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => alert(`Failed to start render style: ${error.message}`));
+
+          closeRenderStyleDialog();
+      };
+    }
+
+    function closeRenderStyleDialog() {
+      document.getElementById("renderStyleDialog").close();
+    }
+
+    function parseFormDataToNestedObject(formData) {
+      const result = {};
+
+      for (const [key, value] of formData.entries()) {
+        const keys = key.split("."); // Split nested keys (e.g., "options.size.width")
+        let current = result;
+
+        keys.forEach((subKey, index) => {
+          if (index === keys.length - 1) {
+            current[subKey] = value;
+          } else {
+            current[subKey] = current[subKey] || {};
+            current = current[subKey];
+          }
+        });
+      }
+
+      return result;
     }
 
     window.onload = function () {
@@ -362,15 +423,35 @@
       <div class="tab" onclick="switchTab(event, 'datas-tab')">DATAS ({{data_count}})</div>
       <div class="tab" onclick="switchTab(event, 'fonts-tab')">FONTS ({{font_count}})</div>
       <div class="tab" onclick="switchTab(event, 'sprites-tab')">SPRITES ({{sprite_count}})</div>
-      <div class="tab" onclick="switchTab(event, 'sync-tab')">SYNCHRONOUS</div>
-      <div class="tab" onclick="restartServer(event)">RESTART</div>
+      <div class="tab" onclick="switchTab(event, 'action-tab')">ACTIONS</div>
     </div>
     <div id="styles-tab" class="tab-content active"></div>
     <div id="datas-tab" class="tab-content"></div>
     <div id="fonts-tab" class="tab-content"></div>
     <div id="sprites-tab" class="tab-content"></div>
-    <div id="sync-tab" class="tab-content"></div>
+    <div id="action-tab" class="tab-content"></div>
   </section>
+
+  <dialog id="renderStyleDialog">
+    <form id="renderStyleForm" method="dialog">
+      <h2>Render Style Options</h2>
+
+      <label>Width</label>
+      <input type="number" name="options.size.width" required />
+
+      <label>Height</label>
+      <input type="number" name="options.size.height" required />
+
+      <label>Format</label>
+      <input type="text" name="options.format" required />
+
+      <menu>
+        <button type="submit">Start</button>
+        <button type="button" onclick="closeRenderStyleDialog()">Cancel</button>
+      </menu>
+    </form>
+  </dialog>
+
   <a href="#" class="back-to-top" onclick="scrollToTop(event)">Back to top</a>
 </body>
 

@@ -297,42 +297,42 @@ function renderStyleHandler() {
 
     /* Render style */
     try {
-      const parsedOption = JSON.parse(req.query.option);
+      const parsedOptions = JSON.parse(req.query.options);
 
       setTimeout(() => {
-        if (parsedOption.storeType === "xyz") {
+        if (parsedOptions.storeType === "xyz") {
           renderXYZTiles(
             id,
-            parsedOption.metadata,
-            parsedOption.tileScale || 1,
-            parsedOption.tileSize || 256,
-            parsedOption.bboxs,
-            parsedOption.zooms,
-            parsedOption.concurrency,
-            parsedOption.maxTry,
-            parsedOption.timeout,
-            parsedOption.storeMD5,
-            parsedOption.storeTransparent,
-            parsedOption.refreshBefore?.time ||
-              parsedOption.refreshBefore?.day ||
-              parsedOption.refreshBefore?.md5
+            parsedOptions.metadata,
+            parsedOptions.tileScale || 1,
+            parsedOptions.tileSize || 256,
+            parsedOptions.bboxs,
+            parsedOptions.zooms,
+            parsedOptions.concurrency,
+            parsedOptions.maxTry,
+            parsedOptions.timeout,
+            parsedOptions.storeMD5,
+            parsedOptions.storeTransparent,
+            parsedOptions.refreshBefore?.time ||
+              parsedOptions.refreshBefore?.day ||
+              parsedOptions.refreshBefore?.md5
           );
-        } else if (parsedOption.storeType === "mbtiles") {
+        } else if (parsedOptions.storeType === "mbtiles") {
           renderMBTilesTiles(
             id,
-            parsedOption.metadata,
-            parsedOption.tileScale || 1,
-            parsedOption.tileSize || 256,
-            parsedOption.bboxs,
-            parsedOption.zooms,
-            parsedOption.concurrency,
-            parsedOption.maxTry,
-            parsedOption.timeout,
-            parsedOption.storeMD5,
-            parsedOption.storeTransparent,
-            parsedOption.refreshBefore?.time ||
-              parsedOption.refreshBefore?.day ||
-              parsedOption.refreshBefore?.md5
+            parsedOptions.metadata,
+            parsedOptions.tileScale || 1,
+            parsedOptions.tileSize || 256,
+            parsedOptions.bboxs,
+            parsedOptions.zooms,
+            parsedOptions.concurrency,
+            parsedOptions.maxTry,
+            parsedOptions.timeout,
+            parsedOptions.storeMD5,
+            parsedOptions.storeTransparent,
+            parsedOptions.refreshBefore?.time ||
+              parsedOptions.refreshBefore?.day ||
+              parsedOptions.refreshBefore?.md5
           );
         }
       }, 0);
@@ -877,7 +877,7 @@ export const serve_style = {
      *     summary: Render style
      *     parameters:
      *       - in: query
-     *         name: option
+     *         name: options
      *         schema:
      *           type: object
      *         required: false

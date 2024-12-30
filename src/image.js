@@ -7,6 +7,7 @@ import { printLog } from "./logger.js";
 import { getFonts } from "./font.js";
 import { config } from "./config.js";
 import { Mutex } from "async-mutex";
+import sqlite3 from "sqlite3";
 import sharp from "sharp";
 import {
   getPostgreSQLTileFromURL,
