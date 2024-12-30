@@ -296,61 +296,73 @@ function renderStyleHandler() {
     }
 
     /* Render style */
-    try {
-      const parsedOptions = JSON.parse(req.query.options);
-
-      setTimeout(() => {
-        if (parsedOptions.storeType === "xyz") {
-          renderXYZTiles(
-            id,
-            parsedOptions.metadata,
-            parsedOptions.tileScale,
-            parsedOptions.tileSize,
-            parsedOptions.bboxs,
-            parsedOptions.maxzoom,
-            parsedOptions.concurrency,
-            parsedOptions.maxTry,
-            parsedOptions.timeout,
-            parsedOptions.storeMD5,
-            parsedOptions.storeTransparent,
-            parsedOptions.createOverview,
-            parsedOptions.refreshBefore?.time ||
-              parsedOptions.refreshBefore?.day ||
-              parsedOptions.refreshBefore?.md5
-          );
-        } else if (parsedOptions.storeType === "mbtiles") {
-          renderMBTilesTiles(
-            id,
-            parsedOptions.metadata,
-            parsedOptions.tileScale,
-            parsedOptions.tileSize,
-            parsedOptions.bboxs,
-            parsedOptions.maxzoom,
-            parsedOptions.concurrency,
-            parsedOptions.maxTry,
-            parsedOptions.timeout,
-            parsedOptions.storeMD5,
-            parsedOptions.storeTransparent,
-            parsedOptions.createOverview,
-            parsedOptions.refreshBefore?.time ||
-              parsedOptions.refreshBefore?.day ||
-              parsedOptions.refreshBefore?.md5
-          );
-        }
-      }, 0);
+    if (item.rendered.export === true) {
+      printLog("warning", "A render is already running. Skipping render...");
 
       return res.status(StatusCodes.OK).send("OK");
-    } catch (error) {
-      printLog("error", `Failed to render style "${id}": ${error}`);
+    } else {
+      try {
+        const parsedOptions = JSON.parse(req.query.options);
 
-      if (error instanceof SyntaxError) {
-        return res
-          .status(StatusCodes.BAD_REQUEST)
-          .send("option parameter is invalid");
-      } else {
-        return res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
-          .send("Internal server error");
+        setTimeout(() => {
+          item.rendered.export = true;
+
+          if (parsedOptions.storeType === "xyz") {
+            renderXYZTiles(
+              id,
+              parsedOptions.metadata,
+              parsedOptions.tileScale,
+              parsedOptions.tileSize,
+              parsedOptions.bbox,
+              parsedOptions.maxzoom,
+              parsedOptions.concurrency,
+              parsedOptions.maxTry,
+              parsedOptions.timeout,
+              parsedOptions.storeMD5,
+              parsedOptions.storeTransparent,
+              parsedOptions.createOverview,
+              parsedOptions.refreshBefore?.time ||
+                parsedOptions.refreshBefore?.day ||
+                parsedOptions.refreshBefore?.md5
+            ).finally(() => {
+              item.rendered.export = false;
+            });
+          } else if (parsedOptions.storeType === "mbtiles") {
+            renderMBTilesTiles(
+              id,
+              parsedOptions.metadata,
+              parsedOptions.tileScale,
+              parsedOptions.tileSize,
+              parsedOptions.bbox,
+              parsedOptions.maxzoom,
+              parsedOptions.concurrency,
+              parsedOptions.maxTry,
+              parsedOptions.timeout,
+              parsedOptions.storeMD5,
+              parsedOptions.storeTransparent,
+              parsedOptions.createOverview,
+              parsedOptions.refreshBefore?.time ||
+                parsedOptions.refreshBefore?.day ||
+                parsedOptions.refreshBefore?.md5
+            ).finally(() => {
+              item.rendered.export = false;
+            });
+          }
+        }, 0);
+
+        return res.status(StatusCodes.OK).send("OK");
+      } catch (error) {
+        printLog("error", `Failed to render style "${id}": ${error}`);
+
+        if (error instanceof SyntaxError) {
+          return res
+            .status(StatusCodes.BAD_REQUEST)
+            .send("option parameter is invalid");
+        } else {
+          return res
+            .status(StatusCodes.INTERNAL_SERVER_ERROR)
+            .send("Internal server error");
+        }
       }
     }
   };
