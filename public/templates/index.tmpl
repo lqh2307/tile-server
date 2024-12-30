@@ -92,7 +92,7 @@
                     <a class="btn" href="${baseURL}/styles/{{@key}}/?vector{{viewer_hash}}">Client Render</a>
                     {{#if thumbnail}}
                       <a class="btn" href="${baseURL}/styles/{{@key}}/?raster{{viewer_hash}}">Backend Render</a>
-                      <a class="btn" href="#" onclick="showRenderStyleDialog(event, '{{@key}}')">Export Render</a>
+                      <a class="btn" href="#" onclick="showExportRenderDialog(event, '{{@key}}')">Export Render</a>
                     {{/if}}
                 </div>
               </div>
@@ -347,56 +347,40 @@
       }
     }
 
-    function showRenderStyleDialog(event, styleID) {
+    function showExportRenderDialog(event, styleID) {
       event.preventDefault();
 
-      document.getElementById("renderStyleDialog").showModal();
+      document.getElementById("exportRenderDialog").showModal();
 
-      const renderStyleForm = document.getElementById("renderStyleForm"); 
-
-      renderStyleForm.onsubmit = (event) => {
+      document.getElementById("exportRenderForm").onsubmit = (event) => {
         event.preventDefault();
 
-        const options = parseFormDataToNestedObject(new FormData(renderStyleForm));
+        try {
+          const options = JSON.parse(document.getElementById("jsonOptionsInput").value.trim());
 
-        fetch(`${baseURL}/styles/${styleID}/export/style.json{options ? "?${JSON.stringify(options)}" : ""}`, {
-          method: "GET",
-        })
-          .then((response) => {
-            if (response.status === 200) {
-              alert("Starting render style...");
-            } else {
-              alert(`Failed to start render style: Status code: ${response.status} - ${response.statusText}`);
-            }
+          fetch(`${baseURL}/styles/${styleID}/export/style.json?options=${encodeURIComponent(JSON.stringify(options))}`, {
+            method: "GET",
           })
-          .catch((error) => alert(`Failed to start render style: ${error.message}`));
+            .then((response) => {
+              if (response.status === 200) {
+                alert("Starting render style...");
+              } else {
+                alert(`Failed to start render style: Status code: ${response.status} - ${response.statusText}`);
+              }
+            })
+            .catch((error) => {
+              alert(`Failed to start render style: ${error.message}`);
+            });
 
-          closeRenderStyleDialog();
+          closeExportRenderDialog();
+        } catch (error) {
+          alert("Invalid JSON format. Please correct it and try again!");
+        }
       };
     }
 
-    function closeRenderStyleDialog() {
-      document.getElementById("renderStyleDialog").close();
-    }
-
-    function parseFormDataToNestedObject(formData) {
-      const result = {};
-
-      for (const [key, value] of formData.entries()) {
-        const keys = key.split("."); // Split nested keys (e.g., "options.size.width")
-        let current = result;
-
-        keys.forEach((subKey, index) => {
-          if (index === keys.length - 1) {
-            current[subKey] = value;
-          } else {
-            current[subKey] = current[subKey] || {};
-            current = current[subKey];
-          }
-        });
-      }
-
-      return result;
+    function closeExportRenderDialog() {
+      document.getElementById("exportRenderDialog").close();
     }
 
     window.onload = function () {
@@ -432,23 +416,22 @@
     <div id="action-tab" class="tab-content"></div>
   </section>
 
-  <dialog id="renderStyleDialog">
-    <form id="renderStyleForm" method="dialog">
-      <h2>Render Style Options</h2>
+  <dialog id="exportRenderDialog">
+    <form id="exportRenderForm" method="dialog">
+      <h2>Export Render Options</h2>
 
-      <label>Width</label>
-      <input type="number" name="options.size.width" required />
+      <label for="jsonOptionsInput">Enter JSON Options:</label>
+      <textarea
+        id="jsonOptionsInput"
+        name="options"
+        rows="10"
+        cols="50"
+        placeholder='{"key":"value"}'></textarea>
 
-      <label>Height</label>
-      <input type="number" name="options.size.height" required />
-
-      <label>Format</label>
-      <input type="text" name="options.format" required />
-
-      <menu>
-        <button type="submit">Start</button>
-        <button type="button" onclick="closeRenderStyleDialog()">Cancel</button>
-      </menu>
+      <div class="dialog-actions">
+        <button type="submit" class="btn-primary">Start</button>
+        <button type="button" class="btn-secondary" onclick="closeExportRenderDialog()">Cancel</button>
+      </div>
     </form>
   </dialog>
 

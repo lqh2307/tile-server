@@ -628,7 +628,7 @@ export function destroyRenderer(renderer) {
  * @param {number} tileScale Tile scale
  * @param {256|512} tileSize Tile size
  * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
- * @param {Array<number>} zooms Array of specific zoom level
+ * @param {number} maxzoom Max zoom level
  * @param {number} concurrency Concurrency download
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
@@ -644,10 +644,7 @@ export async function renderMBTilesTiles(
   tileScale = 1,
   tileSize = 256,
   bboxs = [[-180, -85.051129, 180, 85.051129]],
-  zooms = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22,
-  ],
+  maxzoom = 22,
   concurrency = os.cpus().length,
   maxTry = 5,
   timeout = 60000,
@@ -660,13 +657,11 @@ export async function renderMBTilesTiles(
 
   const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
     bboxs,
-    zooms,
+    [maxzoom],
     "xyz"
   );
 
-  let log = `Rendering ${total} tiles of style "${id}" to mbtiles with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
-    ", "
-  )}]\n\tBBoxs: [${bboxs
+  let log = `Rendering ${total} tiles of style "${id}" to mbtiles with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tMax zoom: ${maxzoom}\n\tBBoxs: [${bboxs
     .map((bbox) => `[${bbox.join(", ")}]`)
     .join(
       ", "
@@ -703,7 +698,11 @@ export async function renderMBTilesTiles(
 
   await updateMBTilesMetadataWithLock(
     source,
-    metadata,
+    {
+      ...metadata,
+      maxzoom: maxzoom,
+      minzoom: maxzoom,
+    },
     300000 // 5 mins
   );
 
@@ -820,7 +819,7 @@ export async function renderMBTilesTiles(
   if (createOverview === true) {
     printLog("info", "Creating overviews...");
 
-    const command = `gdaladdo -r lanczos -oo ZLEVEL=9 ${process.env.DATA_DIR}/exports/mbtiles/${id}/${id}.mbtiles 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576 2097152 4194304`;
+    const command = `gdaladdo -r lanczos -oo ZLEVEL=9 ${process.env.DATA_DIR}/exports/mbtiles/${id}/${id}.mbtiles`;
 
     printLog("info", `Command: ${command}`);
 
@@ -845,8 +844,8 @@ export async function renderMBTilesTiles(
  * @param {object} metadata Metadata object
  * @param {number} tileScale Tile scale
  * @param {256|512} tileSize Tile size
- * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
- * @param {Array<number>} zooms Array of specific zoom levels
+ * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
+ * @param {number} maxzoom Max zoom level
  * @param {number} concurrency Concurrency to download
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
@@ -862,10 +861,7 @@ export async function renderXYZTiles(
   tileScale = 1,
   tileSize = 256,
   bboxs = [[-180, -85.051129, 180, 85.051129]],
-  zooms = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22,
-  ],
+  maxzoom = 22,
   concurrency = os.cpus().length,
   maxTry = 5,
   timeout = 60000,
@@ -878,13 +874,11 @@ export async function renderXYZTiles(
 
   const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
     bboxs,
-    zooms,
+    [maxzoom],
     "xyz"
   );
 
-  let log = `Rendering ${total} tiles of style "${id}" to xyz with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
-    ", "
-  )}]\n\tBBoxs: [${bboxs
+  let log = `Rendering ${total} tiles of style "${id}" to xyz with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tMax zoom: ${maxzoom}\n\tBBoxs: [${bboxs
     .map((bbox) => `[${bbox.join(", ")}]`)
     .join(
       ", "
@@ -921,7 +915,11 @@ export async function renderXYZTiles(
 
   await updateXYZMetadataFileWithLock(
     `${process.env.DATA_DIR}/exports/xyzs/${id}/metadata.json`,
-    metadata,
+    {
+      ...metadata,
+      maxzoom: maxzoom,
+      minzoom: maxzoom,
+    },
     300000 // 5 mins
   );
 

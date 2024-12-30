@@ -33,19 +33,28 @@ const argOpts = program.opts();
  */
 async function startClusterServer(opts) {
   if (cluster.isPrimary === true) {
-    /* Setup envs */
-    process.env.DATA_DIR = opts.dataDir; // Store data directory
-    process.env.MAIN_PID = process.pid; // Store main PID
+    // Store data directory
+    process.env.DATA_DIR = opts.dataDir;
+
+    // Store main PID
+    process.env.MAIN_PID = process.pid;
 
     /* Read config.json file */
     printLog("info", `Reading config.json file at "${opts.dataDir}"...`);
 
     const config = await readConfigFile(true);
 
-    /* Setup envs */
-    process.env.UV_THREADPOOL_SIZE = config.options.thread; // For libuv
-    process.env.POSTGRESQL_BASE_URI = config.options.postgreSQLBaseURI; // Store postgreSQL base URI
-    process.env.FALLBACK_FONT = "Open Sans Regular"; // Set fallback font
+    // For libuv
+    process.env.UV_THREADPOOL_SIZE = config.options.thread;
+
+    // For gdal
+    process.env.GDAL_NUM_THREADS = "ALL_CPUS";
+
+    // Store postgreSQL base URI
+    process.env.POSTGRESQL_BASE_URI = config.options.postgreSQLBaseURI;
+
+    // Set fallback font
+    process.env.FALLBACK_FONT = "Open Sans Regular";
 
     /* Remove old cache locks */
     printLog(
