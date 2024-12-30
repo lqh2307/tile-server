@@ -304,8 +304,8 @@ function renderStyleHandler() {
           renderXYZTiles(
             id,
             parsedOptions.metadata,
-            parsedOptions.tileScale || 1,
-            parsedOptions.tileSize || 256,
+            parsedOptions.tileScale,
+            parsedOptions.tileSize,
             parsedOptions.bboxs,
             parsedOptions.zooms,
             parsedOptions.concurrency,
@@ -313,6 +313,7 @@ function renderStyleHandler() {
             parsedOptions.timeout,
             parsedOptions.storeMD5,
             parsedOptions.storeTransparent,
+            parsedOptions.createOverview,
             parsedOptions.refreshBefore?.time ||
               parsedOptions.refreshBefore?.day ||
               parsedOptions.refreshBefore?.md5
@@ -321,8 +322,8 @@ function renderStyleHandler() {
           renderMBTilesTiles(
             id,
             parsedOptions.metadata,
-            parsedOptions.tileScale || 1,
-            parsedOptions.tileSize || 256,
+            parsedOptions.tileScale,
+            parsedOptions.tileSize,
             parsedOptions.bboxs,
             parsedOptions.zooms,
             parsedOptions.concurrency,
@@ -330,6 +331,7 @@ function renderStyleHandler() {
             parsedOptions.timeout,
             parsedOptions.storeMD5,
             parsedOptions.storeTransparent,
+            parsedOptions.createOverview,
             parsedOptions.refreshBefore?.time ||
               parsedOptions.refreshBefore?.day ||
               parsedOptions.refreshBefore?.md5

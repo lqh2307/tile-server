@@ -634,14 +634,15 @@ export function destroyRenderer(renderer) {
  * @param {number} timeout Timeout in milliseconds
  * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {boolean} storeTransparent Is store transparent tile?
+ * @param {boolean} createOverview Is create overview?
  * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
  * @returns {Promise<void>}
  */
 export async function renderMBTilesTiles(
   id,
   metadata,
-  tileScale,
-  tileSize,
+  tileScale = 1,
+  tileSize = 256,
   bboxs = [[-180, -85.051129, 180, 85.051129]],
   zooms = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
@@ -652,6 +653,7 @@ export async function renderMBTilesTiles(
   timeout = 60000,
   storeMD5 = false,
   storeTransparent = false,
+  createOverview = true,
   refreshBefore
 ) {
   const startTime = Date.now();
@@ -664,7 +666,11 @@ export async function renderMBTilesTiles(
 
   let log = `Rendering ${total} tiles of style "${id}" to mbtiles with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
-  )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
+  )}]\n\tBBoxs: [${bboxs
+    .map((bbox) => `[${bbox.join(", ")}]`)
+    .join(
+      ", "
+    )}]\n\tTile size: ${tileSize}\n\tTile scale: ${tileScale}\n\tCreate overview: ${createOverview}`;
 
   let refreshTimestamp;
   if (typeof refreshBefore === "string") {
@@ -751,9 +757,9 @@ export async function renderMBTilesTiles(
 
       if (needRender === true) {
         await renderMBTilesTile(
+          rendered,
           tileScale,
           tileSize,
-          rendered,
           source,
           z,
           x,
@@ -811,15 +817,17 @@ export async function renderMBTilesTiles(
   }
 
   /* Create overviews */
-  printLog("info", "Creating overviews...");
+  if (createOverview === true) {
+    printLog("info", "Creating overviews...");
 
-  const command = `gdaladdo -r lanczos -oo ZLEVEL=9 ${process.env.DATA_DIR}/exports/mbtiles/${id}/${id}.mbtiles 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576 2097152 4194304`;
+    const command = `gdaladdo -r lanczos -oo ZLEVEL=9 ${process.env.DATA_DIR}/exports/mbtiles/${id}/${id}.mbtiles 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576 2097152 4194304`;
 
-  printLog("info", `Command: ${command}`);
+    printLog("info", `Command: ${command}`);
 
-  const commandOutput = await runCommand(command);
+    const commandOutput = await runCommand(command);
 
-  printLog("info", `Command output: ${commandOutput}`);
+    printLog("info", `Command output: ${commandOutput}`);
+  }
 
   const doneTime = Date.now();
 
@@ -835,7 +843,6 @@ export async function renderMBTilesTiles(
  * Render XYZ tiles
  * @param {string} id Style ID
  * @param {object} metadata Metadata object
- * @param {string} tileURL Tile URL
  * @param {number} tileScale Tile scale
  * @param {256|512} tileSize Tile size
  * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
@@ -845,14 +852,15 @@ export async function renderMBTilesTiles(
  * @param {number} timeout Timeout in milliseconds
  * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {boolean} storeTransparent Is store transparent tile?
+ * @param {boolean} createOverview Is create overview?
  * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
  * @returns {Promise<void>}
  */
 export async function renderXYZTiles(
   id,
   metadata,
-  tileScale,
-  tileSize,
+  tileScale = 1,
+  tileSize = 256,
   bboxs = [[-180, -85.051129, 180, 85.051129]],
   zooms = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
@@ -863,6 +871,7 @@ export async function renderXYZTiles(
   timeout = 60000,
   storeMD5 = false,
   storeTransparent = false,
+  createOverview = true,
   refreshBefore
 ) {
   const startTime = Date.now();
@@ -875,7 +884,11 @@ export async function renderXYZTiles(
 
   let log = `Rendering ${total} tiles of style "${id}" to xyz with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
-  )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
+  )}]\n\tBBoxs: [${bboxs
+    .map((bbox) => `[${bbox.join(", ")}]`)
+    .join(
+      ", "
+    )}]\n\tTile size: ${tileSize}\n\tTile scale: ${tileScale}\n\tCreate overview: ${createOverview}`;
 
   let refreshTimestamp;
   if (typeof refreshBefore === "string") {
@@ -1030,6 +1043,10 @@ export async function renderXYZTiles(
     `${process.env.DATA_DIR}/caches/xyzs/${id}`,
     /^.*\.(sqlite|json|gif|png|jpg|jpeg|webp|pbf)$/
   );
+
+  /* Create overviews */
+  if (createOverview === true) {
+  }
 
   const doneTime = Date.now();
 
