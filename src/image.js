@@ -33,6 +33,7 @@ import {
   calculateMD5,
   unzipAsync,
   runCommand,
+  delay,
 } from "./utils.js";
 import {
   updateXYZMetadataFileWithLock,
@@ -816,7 +817,7 @@ export async function renderMBTilesTiles(
 
   printLog("info", `Command: ${command}`);
 
-  const commandOutput = runCommand(command);
+  const commandOutput = await runCommand(command);
 
   printLog("info", `Command output: ${commandOutput}`);
 

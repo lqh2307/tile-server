@@ -825,7 +825,7 @@ export function getVersion() {
  * @param {string} command The command to run
  * @returns {Promise<string>} The command's stdout
  */
-export function runCommand(command) {
+export async function runCommand(command) {
   return new Promise((resolve, reject) => {
     exec(command, (error, stdout, stderr) => {
       if (error) {
