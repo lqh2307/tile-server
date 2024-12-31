@@ -29,16 +29,14 @@
   <h1 style="display:none;">{{name}}</h1>
   <div id="map"></div>
   <script>
-    const baseURL = "{{base_url}}";
-
     const preference = location.search.indexOf("raster") >= 0 ? "raster" : "vector";
 
     if (preference === "vector") {
-      maplibregl.setRTLTextPlugin(`${baseURL}/mapbox-gl-rtl-text.js`);
+      maplibregl.setRTLTextPlugin(`{{base_url}}/mapbox-gl-rtl-text.js`);
 
       const map = new maplibregl.Map({
         container: "map",
-        style: `${baseURL}/styles/{{id}}/style.json`,
+        style: `{{base_url}}/styles/{{id}}/style.json`,
         hash: true,
       });
 
@@ -49,6 +47,10 @@
       }));
 
       map.on("click", (event) => {
+        new maplibregl.Marker()
+          .setLngLat([event.lngLat.lng, event.lngLat.lat])
+          .addTo(map);
+
         alert(`Position: [${event.lngLat.lng}, ${event.lngLat.lat}]`);
       });
     } else {
@@ -64,7 +66,7 @@
 
       const req = new XMLHttpRequest();
       req.overrideMimeType("application/json");
-      req.open("GET", `${baseURL}/styles/{{id}}.json`, true);
+      req.open("GET", `{{base_url}}/styles/{{id}}.json`, true);
       req.onload = function () {
         const jsonResponse = JSON.parse(req.responseText);
         for (key in jsonResponse) {
@@ -110,6 +112,8 @@
       }, 0);
 
       map.on("click", (event) => {
+        L.marker([event.latlng.lat, event.latlng.lng]).addTo(map);
+
         alert(`Position: [${event.latlng.lng}, ${event.latlng.lat}]`);
       });
     }

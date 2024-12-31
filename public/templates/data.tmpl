@@ -82,8 +82,6 @@
   <div id="layerList"></div>
   <pre id="propertyList"></pre>
   <script>
-    const baseURL = "{{base_url}}";
-
     const map = new maplibregl.Map({
       container: "map",
       hash: true,
@@ -92,7 +90,7 @@
         sources: {
           "vector_layer_": {
             type: "vector",
-            url: `${baseURL}/datas/{{id}}.json`,
+            url: `{{base_url}}/datas/{{id}}.json`,
           }
         },
         layers: [],
@@ -127,6 +125,10 @@
     });
 
     map.on("click", (event) => {
+      new maplibregl.Marker()
+        .setLngLat([event.lngLat.lng, event.lngLat.lat])
+        .addTo(map);
+
       alert(`Position: [${event.lngLat.lng}, ${event.lngLat.lat}]`);
     });
   </script>
@@ -134,8 +136,6 @@
   <h1 style="display:none;">{{tileJSON.name}}</h1>
   <div id="map"></div>
   <script>
-    const baseURL = "{{base_url}}";
-
     const map = L.map("map", {
       zoomControl: false,
     });
@@ -148,7 +148,7 @@
 
     const req = new XMLHttpRequest();
     req.overrideMimeType("application/json");
-    req.open("GET", `${baseURL}/datas/{{id}}.json`, true);
+    req.open("GET", `{{base_url}}/datas/{{id}}.json`, true);
     req.onload = function () {
       const jsonResponse = JSON.parse(req.responseText);
       for (key in jsonResponse) {
@@ -194,6 +194,8 @@
     }, 0);
 
     map.on("click", (event) => {
+      L.marker([event.latlng.lat, event.latlng.lng]).addTo(map);
+
       alert(`Position: [${event.latlng.lng}, ${event.latlng.lat}]`);
     });
   </script>

@@ -477,65 +477,59 @@ export async function closeMBTilesDB(source) {
  * @returns {Promise<void>}
  */
 export async function downloadMBTilesFile(url, filePath, maxTry, timeout) {
-  printLog("info", `Downloading MBTiles file "${filePath}" from "${url}"...`);
+  await retry(async () => {
+    try {
+      await fsPromise.mkdir(path.dirname(filePath), {
+        recursive: true,
+      });
 
-  try {
-    await retry(async () => {
-      try {
-        await fsPromise.mkdir(path.dirname(filePath), {
-          recursive: true,
-        });
+      const response = await getDataFromURL(url, timeout, "stream");
 
-        const response = await getDataFromURL(url, timeout, "stream");
+      const tempFilePath = `${filePath}.tmp`;
 
-        const tempFilePath = `${filePath}.tmp`;
+      const writer = fs.createWriteStream(tempFilePath);
 
-        const writer = fs.createWriteStream(tempFilePath);
+      response.data.pipe(writer);
 
-        response.data.pipe(writer);
+      return await new Promise((resolve, reject) => {
+        writer
+          .on("finish", async () => {
+            await fsPromise.rename(tempFilePath, filePath);
 
-        return await new Promise((resolve, reject) => {
-          writer
-            .on("finish", async () => {
-              await fsPromise.rename(tempFilePath, filePath);
-
-              resolve();
-            })
-            .on("error", async (error) => {
-              await fsPromise.rm(tempFilePath, {
-                force: true,
-              });
-
-              reject(error);
+            resolve();
+          })
+          .on("error", async (error) => {
+            await fsPromise.rm(tempFilePath, {
+              force: true,
             });
-        });
-      } catch (error) {
-        if (error.response) {
-          if (
-            response.status === StatusCodes.NO_CONTENT ||
-            response.status === StatusCodes.NOT_FOUND
-          ) {
-            printLog(
-              "error",
-              `Failed to download MBTiles file "${filePath}" from "${url}": Status code: ${response.status} - ${response.statusText}`
-            );
 
-            return;
-          } else {
-            throw new Error(
-              `Failed to download MBTiles file "${filePath}" from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
-            );
-          }
+            reject(error);
+          });
+      });
+    } catch (error) {
+      if (error.response) {
+        if (
+          response.status === StatusCodes.NO_CONTENT ||
+          response.status === StatusCodes.NOT_FOUND
+        ) {
+          printLog(
+            "error",
+            `Failed to download MBTiles file "${filePath}" from "${url}": Status code: ${response.status} - ${response.statusText}`
+          );
+
+          return;
+        } else {
+          throw new Error(
+            `Failed to download MBTiles file "${filePath}" from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
+          );
         }
-
-        throw new Error(
-          `Failed to download MBTiles file "${filePath}" from "${url}": ${error}`
-        );
       }
-    }, maxTry);
-  } catch (error) {
-    throw error;
-  }
+
+      throw new Error(
+        `Failed to download MBTiles file "${filePath}" from "${url}": ${error}`
+      );
+    }
+  }, maxTry);
 }
 
 /**
@@ -642,60 +636,48 @@ export async function downloadMBTilesTile(
   storeMD5,
   storeTransparent
 ) {
-  const tileName = `${z}/${x}/${y}`;
+  await retry(async () => {
+    try {
+      // Get data from URL
+      const response = await getDataFromURL(url, timeout, "arraybuffer");
 
-  printLog("info", `Downloading tile data "${tileName}" from "${url}"...`);
+      // Store data
+      if (
+        storeTransparent === false &&
+        (await isFullTransparentPNGImage(response.data)) === true
+      ) {
+        return;
+      } else {
+        await createMBTilesTileWithLock(
+          source,
+          z,
+          x,
+          y,
+          storeMD5,
+          response.data,
+          300000 // 5 mins
+        );
+      }
+    } catch (error) {
+      printLog(
+        "error",
+        `Failed to download tile data "${tileName}" from "${url}": ${error}`
+      );
 
-  try {
-    await retry(async () => {
-      try {
-        // Get data from URL
-        const response = await getDataFromURL(url, timeout, "arraybuffer");
-
-        // Store data
+      if (error.statusCode !== undefined) {
         if (
-          storeTransparent === false &&
-          (await isFullTransparentPNGImage(response.data)) === true
+          error.statusCode === StatusCodes.NO_CONTENT ||
+          error.statusCode === StatusCodes.NOT_FOUND
         ) {
           return;
         } else {
-          await createMBTilesTileWithLock(
-            source,
-            z,
-            x,
-            y,
-            storeMD5,
-            response.data,
-            300000 // 5 mins
-          );
+          throw error;
         }
-      } catch (error) {
-        if (error.statusCode !== undefined) {
-          printLog(
-            "error",
-            `Failed to download tile data "${tileName}" from "${url}": ${error}`
-          );
-
-          if (
-            error.statusCode === StatusCodes.NO_CONTENT ||
-            error.statusCode === StatusCodes.NOT_FOUND
-          ) {
-            return;
-          } else {
-            throw new Error(
-              `Failed to download tile data "${tileName}" from "${url}": ${error}`
-            );
-          }
-        } else {
-          throw new Error(
-            `Failed to download tile data "${tileName}" from "${url}": ${error}`
-          );
-        }
+      } else {
+        throw error;
       }
-    }, maxTry);
-  } catch (error) {
-    printLog("error", `${error}`);
-  }
+    }
+  }, maxTry);
 }
 
 /**
@@ -726,40 +708,72 @@ export async function renderMBTilesTile(
   storeMD5,
   storeTransparent
 ) {
-  const tileName = `${z}/${x}/${y}`;
+  await retry(async () => {
+    // Get rendered data
+    const data = await renderImage(rendered, tileScale, tileSize, z, x, y);
 
-  printLog("info", `Rendering tile data "${tileName}"...`);
+    // Store data
+    if (
+      storeTransparent === false &&
+      (await isFullTransparentPNGImage(data)) === true
+    ) {
+      return;
+    } else {
+      await createMBTilesTileWithLock(
+        source,
+        z,
+        x,
+        y,
+        storeMD5,
+        data,
+        300000 // 5 mins
+      );
+    }
+  }, maxTry);
+}
 
-  try {
-    await retry(async () => {
-      try {
-        // Get rendered data
-        const data = await renderImage(rendered, tileScale, tileSize, z, x, y);
-
-        // Store data
-        if (
-          storeTransparent === false &&
-          (await isFullTransparentPNGImage(data)) === true
-        ) {
-          return;
-        } else {
-          await createMBTilesTileWithLock(
-            source,
-            z,
-            x,
-            y,
-            storeMD5,
-            data,
-            300000 // 5 mins
-          );
-        }
-      } catch (error) {
-        throw new Error(`Failed to render tile data "${tileName}": ${error}`);
-      }
-    }, maxTry);
-  } catch (error) {
-    printLog("error", `${error}`);
-  }
+/**
+ * Store render MBTiles tile data
+ * @param {Buffer} data Rendered buffer data
+ * @param {sqlite3.Database} source SQLite database instance
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
+ * @param {boolean} storeMD5 Is store MD5 hashed?
+ * @param {boolean} storeTransparent Is store transparent tile?
+ * @returns {Promise<void>}
+ */
+export async function storeRenderMBTilesTile(
+  data,
+  source,
+  z,
+  x,
+  y,
+  maxTry,
+  timeout,
+  storeMD5,
+  storeTransparent
+) {
+  await retry(async () => {
+    if (
+      storeTransparent === false &&
+      (await isFullTransparentPNGImage(data)) === true
+    ) {
+      return;
+    } else {
+      await createMBTilesTileWithLock(
+        source,
+        z,
+        x,
+        y,
+        storeMD5,
+        data,
+        300000 // 5 mins
+      );
+    }
+  }, maxTry);
 }
 
 /**
@@ -773,17 +787,9 @@ export async function renderMBTilesTile(
  * @returns {Promise<void>}
  */
 export async function removeMBTilesTileData(source, z, x, y, maxTry, timeout) {
-  const tileName = `${z}/${x}/${y}`;
-
-  printLog("info", `Removing tile data "${tileName}"...`);
-
-  try {
-    await retry(async () => {
-      await removeMBTilesTileWithLock(source, z, x, y, timeout);
-    }, maxTry);
-  } catch (error) {
-    printLog("error", `Failed to remove tile data "${tileName}": ${error}`);
-  }
+  await retry(async () => {
+    await removeMBTilesTileWithLock(source, z, x, y, timeout);
+  }, maxTry);
 }
 
 /**
@@ -806,29 +812,21 @@ export async function cacheMBtilesTileData(
   storeMD5,
   storeTransparent
 ) {
-  const tileName = `${z}/${x}/${y}`;
-
-  printLog("info", `Caching tile data "${tileName}"...`);
-
-  try {
-    if (
-      storeTransparent === false &&
-      (await isFullTransparentPNGImage(data)) === true
-    ) {
-      return;
-    } else {
-      await createMBTilesTileWithLock(
-        source,
-        z,
-        x,
-        y,
-        storeMD5,
-        data,
-        300000 // 5 mins
-      );
-    }
-  } catch (error) {
-    printLog("error", `Failed to cache tile data "${tileName}": ${error}`);
+  if (
+    storeTransparent === false &&
+    (await isFullTransparentPNGImage(data)) === true
+  ) {
+    return;
+  } else {
+    await createMBTilesTileWithLock(
+      source,
+      z,
+      x,
+      y,
+      storeMD5,
+      data,
+      300000 // 5 mins
+    );
   }
 }
 

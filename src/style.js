@@ -154,47 +154,37 @@ export async function removeStyleDataFileWithLock(filePath, timeout) {
  * @returns {Promise<void>}
  */
 export async function downloadStyleFile(url, filePath, maxTry, timeout) {
-  printLog("info", `Downloading style file "${filePath}" from "${url}"...`);
+  await retry(async () => {
+    try {
+      // Get data from URL
+      const response = await getDataFromURL(url, timeout, "arraybuffer");
 
-  try {
-    await retry(async () => {
-      try {
-        // Get data from URL
-        const response = await getDataFromURL(url, timeout, "arraybuffer");
-
-        // Store data to file
-        await createStyleDataFileWithLock(
-          filePath,
-          response.data,
-          300000 // 5 mins
+      // Store data to file
+      await createStyleDataFileWithLock(
+        filePath,
+        response.data,
+        300000 // 5 mins
+      );
+    } catch (error) {
+      if (error.statusCode !== undefined) {
+        printLog(
+          "error",
+          `Failed to download style file "${filePath}" from "${url}": ${error}`
         );
-      } catch (error) {
-        if (error.statusCode !== undefined) {
-          printLog(
-            "error",
-            `Failed to download style file "${filePath}" from "${url}": ${error}`
-          );
 
-          if (
-            error.statusCode === StatusCodes.NO_CONTENT ||
-            error.statusCode === StatusCodes.NOT_FOUND
-          ) {
-            return;
-          } else {
-            throw new Error(
-              `Failed to download style file "${filePath}" from "${url}": ${error}`
-            );
-          }
+        if (
+          error.statusCode === StatusCodes.NO_CONTENT ||
+          error.statusCode === StatusCodes.NOT_FOUND
+        ) {
+          return;
         } else {
-          throw new Error(
-            `Failed to download style file "${filePath}" from "${url}": ${error}`
-          );
+          throw error;
         }
+      } else {
+        throw error;
       }
-    }, maxTry);
-  } catch (error) {
-    printLog("error", `${error}`);
-  }
+    }
+  }, maxTry);
 }
 
 /**
@@ -205,21 +195,9 @@ export async function downloadStyleFile(url, filePath, maxTry, timeout) {
  * @returns {Promise<void>}
  */
 export async function removeStyleFile(filePath, maxTry, timeout) {
-  printLog("info", `Removing style file "${filePath}"...`);
-
-  try {
-    try {
-      await retry(async () => {
-        await removeStyleDataFileWithLock(filePath, timeout);
-      }, maxTry);
-    } catch (error) {
-      throw new Error(
-        `Failed to remove tile data file "${tileName}": ${error}`
-      );
-    }
-  } catch (error) {
-    printLog("error", `${error}`);
-  }
+  await retry(async () => {
+    await removeStyleDataFileWithLock(filePath, timeout);
+  }, maxTry);
 }
 
 /**
@@ -229,17 +207,11 @@ export async function removeStyleFile(filePath, maxTry, timeout) {
  * @returns {Promise<void>}
  */
 export async function cacheStyleFile(filePath, data) {
-  printLog("info", `Caching style file "${filePath}"...`);
-
-  try {
-    await createStyleDataFileWithLock(
-      filePath,
-      data,
-      300000 // 5 mins
-    );
-  } catch (error) {
-    printLog("error", `Failed to cache style file "${filePath}": ${error}`);
-  }
+  await createStyleDataFileWithLock(
+    filePath,
+    data,
+    300000 // 5 mins
+  );
 }
 
 /**

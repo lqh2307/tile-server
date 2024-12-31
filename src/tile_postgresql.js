@@ -1,7 +1,7 @@
 "use strict";
 
+import { isFullTransparentPNGImage, renderImage } from "./image.js";
 import { closePostgreSQL, openPostgreSQL } from "./postgresql.js";
-import { isFullTransparentPNGImage } from "./image.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import protobuf from "protocol-buffers";
@@ -513,58 +513,144 @@ export async function downloadPostgreSQLTile(
 ) {
   const tileName = `${z}/${x}/${y}`;
 
-  printLog("info", `Downloading tile data "${tileName}" from "${url}"...`);
+  await retry(async () => {
+    try {
+      // Get data from URL
+      const response = await getDataFromURL(url, timeout, "arraybuffer");
 
-  try {
-    await retry(async () => {
-      try {
-        // Get data from URL
-        const response = await getDataFromURL(url, timeout, "arraybuffer");
+      // Store data
+      if (
+        storeTransparent === false &&
+        (await isFullTransparentPNGImage(response.data)) === true
+      ) {
+        return;
+      } else {
+        await createPostgreSQLTileWithLock(
+          source,
+          z,
+          x,
+          y,
+          storeMD5,
+          response.data,
+          300000 // 5 mins
+        );
+      }
+    } catch (error) {
+      printLog(
+        "error",
+        `Failed to download tile data "${tileName}" from "${url}": ${error}`
+      );
 
-        // Store data
+      if (error.statusCode !== undefined) {
         if (
-          storeTransparent === false &&
-          (await isFullTransparentPNGImage(response.data)) === true
+          error.statusCode === StatusCodes.NO_CONTENT ||
+          error.statusCode === StatusCodes.NOT_FOUND
         ) {
           return;
         } else {
-          await createPostgreSQLTileWithLock(
-            source,
-            z,
-            x,
-            y,
-            storeMD5,
-            response.data,
-            300000 // 5 mins
-          );
+          throw error;
         }
-      } catch (error) {
-        if (error.statusCode !== undefined) {
-          printLog(
-            "error",
-            `Failed to download tile data "${tileName}" from "${url}": ${error}`
-          );
-
-          if (
-            error.statusCode === StatusCodes.NO_CONTENT ||
-            error.statusCode === StatusCodes.NOT_FOUND
-          ) {
-            return;
-          } else {
-            throw new Error(
-              `Failed to download tile data "${tileName}" from "${url}": ${error}`
-            );
-          }
-        } else {
-          throw new Error(
-            `Failed to download tile data "${tileName}" from "${url}": ${error}`
-          );
-        }
+      } else {
+        throw error;
       }
-    }, maxTry);
-  } catch (error) {
-    printLog("error", `${error}`);
-  }
+    }
+  }, maxTry);
+}
+
+/**
+ * Render PostgreSQL tile data
+ * @param {object} rendered Rendered item object
+ * @param {number} tileScale Tile scale
+ * @param {256|512} tileSize Tile size
+ * @param {pg.Client} source PostgreSQL database instance
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
+ * @param {boolean} storeMD5 Is store MD5 hashed?
+ * @param {boolean} storeTransparent Is store transparent tile?
+ * @returns {Promise<void>}
+ */
+export async function renderPostgreSQLTile(
+  rendered,
+  tileScale,
+  tileSize,
+  source,
+  z,
+  x,
+  y,
+  maxTry,
+  timeout,
+  storeMD5,
+  storeTransparent
+) {
+  await retry(async () => {
+    // Get rendered data
+    const data = await renderImage(rendered, tileScale, tileSize, z, x, y);
+
+    // Store data
+    if (
+      storeTransparent === false &&
+      (await isFullTransparentPNGImage(data)) === true
+    ) {
+      return;
+    } else {
+      await createPostgreSQLTileWithLock(
+        source,
+        z,
+        x,
+        y,
+        storeMD5,
+        data,
+        300000 // 5 mins
+      );
+    }
+  }, maxTry);
+}
+
+/**
+ * Store render PostgreSQL tile data
+ * @param {Buffer} data Rendered buffer data
+ * @param {pg.Client} source PostgreSQL database instance
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
+ * @param {boolean} storeMD5 Is store MD5 hashed?
+ * @param {boolean} storeTransparent Is store transparent tile?
+ * @returns {Promise<void>}
+ */
+export async function storeRenderPostgreSQLTile(
+  data,
+  source,
+  z,
+  x,
+  y,
+  maxTry,
+  timeout,
+  storeMD5,
+  storeTransparent
+) {
+  await retry(async () => {
+    if (
+      storeTransparent === false &&
+      (await isFullTransparentPNGImage(data)) === true
+    ) {
+      return;
+    } else {
+      await createPostgreSQLTileWithLock(
+        source,
+        z,
+        x,
+        y,
+        storeMD5,
+        data,
+        300000 // 5 mins
+      );
+    }
+  }, maxTry);
 }
 
 /**
@@ -585,17 +671,9 @@ export async function removePostgreSQLTileData(
   maxTry,
   timeout
 ) {
-  const tileName = `${z}/${x}/${y}`;
-
-  printLog("info", `Removing tile data "${tileName}"...`);
-
-  try {
-    await retry(async () => {
-      await removePostgreSQLTileWithLock(source, z, x, y, timeout);
-    }, maxTry);
-  } catch (error) {
-    printLog("error", `Failed to remove tile data "${tileName}": ${error}`);
-  }
+  await retry(async () => {
+    await removePostgreSQLTileWithLock(source, z, x, y, timeout);
+  }, maxTry);
 }
 
 /**
@@ -618,29 +696,21 @@ export async function cachePostgreSQLTileData(
   storeMD5,
   storeTransparent
 ) {
-  const tileName = `${z}/${x}/${y}`;
-
-  printLog("info", `Caching tile data "${tileName}"...`);
-
-  try {
-    if (
-      storeTransparent === false &&
-      (await isFullTransparentPNGImage(data)) === true
-    ) {
-      return;
-    } else {
-      await createPostgreSQLTileWithLock(
-        source,
-        z,
-        x,
-        y,
-        storeMD5,
-        data,
-        300000 // 5 mins
-      );
-    }
-  } catch (error) {
-    printLog("error", `Failed to cache tile data "${tileName}": ${error}`);
+  if (
+    storeTransparent === false &&
+    (await isFullTransparentPNGImage(data)) === true
+  ) {
+    return;
+  } else {
+    await createPostgreSQLTileWithLock(
+      source,
+      z,
+      x,
+      y,
+      storeMD5,
+      data,
+      300000 // 5 mins
+    );
   }
 }
 

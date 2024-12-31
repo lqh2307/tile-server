@@ -523,8 +523,15 @@ export async function seedMBTilesTiles(
       }
 
       if (needDownload === true) {
+        const targetURL = tileURL.replaceAll("{z}/{x}/{y}", tileName);
+
+        printLog(
+          "info",
+          `Downloading data "${id}" - Tile "${tileName}" from "${targetURL}"...`
+        );
+
         await downloadMBTilesTile(
-          tileURL.replaceAll("{z}/{x}/{y}", tileName),
+          targetURL,
           source,
           z,
           x,
@@ -719,8 +726,15 @@ export async function seedPostgreSQLTiles(
       }
 
       if (needDownload === true) {
+        const targetURL = tileURL.replaceAll("{z}/{x}/{y}", tileName);
+
+        printLog(
+          "info",
+          `Downloading data "${id}" - Tile "${tileName}" from "${targetURL}"...`
+        );
+
         await downloadPostgreSQLTile(
-          tileURL.replaceAll("{z}/{x}/{y}", tileName),
+          targetURL,
           source,
           z,
           x,
@@ -919,8 +933,15 @@ export async function seedXYZTiles(
       }
 
       if (needDownload === true) {
+        const targetURL = tileURL.replaceAll("{z}/{x}/{y}", tileName);
+
+        printLog(
+          "info",
+          `Downloading data "${id}" - Tile "${tileName}" from "${targetURL}"...`
+        );
+
         await downloadXYZTileDataFile(
-          tileURL.replaceAll("{z}/{x}/{y}", tileName),
+          targetURL,
           id,
           source,
           z,
@@ -1082,7 +1103,14 @@ export async function seedStyle(
       needDownload = true;
     }
 
+    printLog("info", "Downloading style...");
+
     if (needDownload === true) {
+      printLog(
+        "info",
+        `Downloading style "${id}" - File "${filePath}" from "${styleURL}"...`
+      );
+
       await downloadStyleFile(styleURL, filePath, maxTry, timeout);
     }
   } catch (error) {

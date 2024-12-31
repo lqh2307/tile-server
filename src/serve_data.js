@@ -175,6 +175,8 @@ function getDataTileHandler() {
 
             /* Cache */
             if (item.storeCache === true) {
+              printLog("info", `Caching data "${id}" - Tile "${tileName}"...`);
+
               cacheMBtilesTileData(
                 item.source,
                 z,
@@ -183,6 +185,11 @@ function getDataTileHandler() {
                 dataTile.data,
                 item.storeMD5,
                 item.storeTransparent
+              ).catch((error) =>
+                printLog(
+                  "error",
+                  `Failed to cache data "${id}" - Tile "${tileName}": ${error}`
+                )
               );
             }
           } else {
@@ -220,6 +227,8 @@ function getDataTileHandler() {
 
             /* Cache */
             if (item.storeCache === true) {
+              printLog("info", `Caching data "${id}" - Tile "${tileName}"...`);
+
               cacheXYZTileDataFile(
                 item.source,
                 item.md5Source,
@@ -230,6 +239,11 @@ function getDataTileHandler() {
                 dataTile.data,
                 item.storeMD5,
                 item.storeTransparent
+              ).catch((error) =>
+                printLog(
+                  "error",
+                  `Failed to cache data "${id}" - Tile "${tileName}": ${error}`
+                )
               );
             }
           } else {
@@ -259,6 +273,8 @@ function getDataTileHandler() {
 
             /* Cache */
             if (item.storeCache === true) {
+              printLog("info", `Caching data "${id}" - Tile "${tileName}"...`);
+
               cachePostgreSQLTileData(
                 item.source,
                 z,
@@ -267,6 +283,11 @@ function getDataTileHandler() {
                 dataTile.data,
                 item.storeMD5,
                 item.storeTransparent
+              ).catch((error) =>
+                printLog(
+                  "error",
+                  `Failed to cache data "${id}" - Tile "${tileName}": ${error}`
+                )
               );
             }
           } else {
@@ -796,6 +817,11 @@ export const serve_data = {
 
               /* Download MBTiles file */
               if ((await isExistFile(dataInfo.path)) === false) {
+                printLog(
+                  "info",
+                  `Downloading MBTiles file "${dataInfo.path}" from "${item.mbtiles}"...`
+                );
+
                 await downloadMBTilesFile(
                   item.mbtiles,
                   dataInfo.path,

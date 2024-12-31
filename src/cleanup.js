@@ -269,6 +269,8 @@ export async function cleanUpMBTilesTiles(
       }
 
       if (needRemove === true) {
+        printLog("info", `Removing data "${id}" - Tile "${tileName}"...`);
+
         await removeMBTilesTileData(
           source,
           z,
@@ -419,6 +421,8 @@ export async function cleanUpPostgreSQLTiles(
       }
 
       if (needRemove === true) {
+        printLog("info", `Removing data "${id}" - Tile "${tileName}"...`);
+
         await removePostgreSQLTileData(
           source,
           z,
@@ -574,6 +578,8 @@ export async function cleanUpXYZTiles(
       }
 
       if (needRemove === true) {
+        printLog("info", `Removing data "${id}" - Tile "${tileName}"...`);
+
         await removeXYZTileDataFile(
           id,
           source,
@@ -698,7 +704,11 @@ export async function cleanUpStyle(id, maxTry = 5, cleanUpBefore) {
       needRemove = true;
     }
 
+    printLog("info", "Removing style...");
+
     if (needRemove === true) {
+      printLog("info", `Removing style "${id}" - File "${filePath}"...`);
+
       await removeStyleFile(
         filePath,
         maxTry,

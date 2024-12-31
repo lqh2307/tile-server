@@ -719,66 +719,56 @@ export async function downloadXYZTileDataFile(
 ) {
   const tileName = `${z}/${x}/${y}`;
 
-  printLog("info", `Downloading tile data file "${tileName}" from "${url}"...`);
+  await retry(async () => {
+    try {
+      // Get data from URL
+      const response = await getDataFromURL(url, timeout, "arraybuffer");
 
-  try {
-    await retry(async () => {
-      try {
-        // Get data from URL
-        const response = await getDataFromURL(url, timeout, "arraybuffer");
+      // Store data to file
+      if (
+        storeTransparent === false &&
+        (await isFullTransparentPNGImage(response.data)) === true
+      ) {
+        return;
+      } else {
+        await createXYZTileDataFileWithLock(
+          `${process.env.DATA_DIR}/caches/xyzs/${id}/${tileName}.${format}`,
+          response.data,
+          300000 // 5 mins
+        );
 
-        // Store data to file
-        if (
-          storeTransparent === false &&
-          (await isFullTransparentPNGImage(response.data)) === true
-        ) {
-          return;
-        } else {
-          await createXYZTileDataFileWithLock(
-            `${process.env.DATA_DIR}/caches/xyzs/${id}/${tileName}.${format}`,
+        // Store data md5 hash
+        if (storeMD5 === true) {
+          await createXYZTileMD5WithLock(
+            source,
+            z,
+            x,
+            y,
             response.data,
             300000 // 5 mins
           );
-
-          // Store data md5 hash
-          if (storeMD5 === true) {
-            await createXYZTileMD5WithLock(
-              source,
-              z,
-              x,
-              y,
-              response.data,
-              300000 // 5 mins
-            );
-          }
-        }
-      } catch (error) {
-        if (error.statusCode !== undefined) {
-          printLog(
-            "error",
-            `Failed to download tile data file "${tileName}" from "${url}": ${error}`
-          );
-
-          if (
-            error.statusCode === StatusCodes.NO_CONTENT ||
-            error.statusCode === StatusCodes.NOT_FOUND
-          ) {
-            return;
-          } else {
-            throw new Error(
-              `Failed to download tile data file "${tileName}" from "${url}": ${error}`
-            );
-          }
-        } else {
-          throw new Error(
-            `Failed to download tile data file "${tileName}" from "${url}": ${error}`
-          );
         }
       }
-    }, maxTry);
-  } catch (error) {
-    printLog("error", `${error}`);
-  }
+    } catch (error) {
+      printLog(
+        "error",
+        `Failed to download tile data file "${tileName}" from "${url}": ${error}`
+      );
+
+      if (error.statusCode !== undefined) {
+        if (
+          error.statusCode === StatusCodes.NO_CONTENT ||
+          error.statusCode === StatusCodes.NOT_FOUND
+        ) {
+          return;
+        } else {
+          throw error;
+        }
+      } else {
+        throw error;
+      }
+    }
+  }, maxTry);
 }
 
 /**
@@ -813,48 +803,92 @@ export async function renderXYZTileDataFile(
   storeMD5,
   storeTransparent
 ) {
-  const tileName = `${z}/${x}/${y}`;
+  await retry(async () => {
+    // Get rendered data
+    const data = await renderImage(rendered, tileScale, tileSize, z, x, y);
 
-  printLog("info", `Rendering tile data "${tileName}"...`);
+    // Store data to file
+    if (
+      storeTransparent === false &&
+      (await isFullTransparentPNGImage(data)) === true
+    ) {
+      return;
+    } else {
+      await createXYZTileDataFileWithLock(
+        `${process.env.DATA_DIR}/exports/xyzs/${id}/${z}/${x}/${y}.${format}`,
+        data,
+        300000 // 5 mins
+      );
 
-  try {
-    await retry(async () => {
-      try {
-        // Get rendered data
-        const data = await renderImage(rendered, tileScale, tileSize, z, x, y);
-
-        // Store data to file
-        if (
-          storeTransparent === false &&
-          (await isFullTransparentPNGImage(data)) === true
-        ) {
-          return;
-        } else {
-          await createXYZTileDataFileWithLock(
-            `${process.env.DATA_DIR}/exports/xyzs/${id}/${tileName}.${format}`,
-            data,
-            300000 // 5 mins
-          );
-
-          // Store data md5 hash
-          if (storeMD5 === true) {
-            await createXYZTileMD5WithLock(
-              source,
-              z,
-              x,
-              y,
-              data,
-              300000 // 5 mins
-            );
-          }
-        }
-      } catch (error) {
-        throw new Error(`Failed to render tile data "${tileName}": ${error}`);
+      // Store data md5 hash
+      if (storeMD5 === true) {
+        await createXYZTileMD5WithLock(
+          source,
+          z,
+          x,
+          y,
+          data,
+          300000 // 5 mins
+        );
       }
-    }, maxTry);
-  } catch (error) {
-    printLog("error", `${error}`);
-  }
+    }
+  }, maxTry);
+}
+
+/**
+ * Store render XYZ tile data file
+ * @param {Buffer} data Rendered buffer data
+ * @param {string} id XYZ ID
+ * @param {sqlite3.Database} source SQLite database instance
+ * @param {number} z Zoom level
+ * @param {number} x X tile index
+ * @param {number} y Y tile index
+ * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
+ * @param {boolean} storeMD5 Is store MD5 hashed?
+ * @param {boolean} storeTransparent Is store transparent tile?
+ * @returns {Promise<void>}
+ */
+export async function storeRenderXYZTileDataFile(
+  data,
+  id,
+  source,
+  z,
+  x,
+  y,
+  format,
+  maxTry,
+  timeout,
+  storeMD5,
+  storeTransparent
+) {
+  await retry(async () => {
+    if (
+      storeTransparent === false &&
+      (await isFullTransparentPNGImage(data)) === true
+    ) {
+      return;
+    } else {
+      await createXYZTileDataFileWithLock(
+        `${process.env.DATA_DIR}/exports/xyzs/${id}/${z}/${x}/${y}.${format}`,
+        data,
+        300000 // 5 mins
+      );
+
+      // Store data md5 hash
+      if (storeMD5 === true) {
+        await createXYZTileMD5WithLock(
+          source,
+          z,
+          x,
+          y,
+          data,
+          300000 // 5 mins
+        );
+      }
+    }
+  }, maxTry);
 }
 
 /**
@@ -879,33 +913,22 @@ export async function removeXYZTileDataFile(
   maxTry,
   timeout
 ) {
-  const tileName = `${z}/${x}/${y}`;
-
-  printLog("info", `Removing tile data file "${tileName}"...`);
-
-  try {
-    await retry(async () => {
-      await removeXYZTileDataFileWithLock(
-        `${process.env.DATA_DIR}/caches/xyzs/${id}/${tileName}.${format}`,
-        timeout
-      );
-
-      if (source !== undefined) {
-        await removeXYZTileMD5WithLock(
-          source,
-          z,
-          x,
-          y,
-          300000 // 5 mins
-        );
-      }
-    }, maxTry);
-  } catch (error) {
-    printLog(
-      "error",
-      `Failed to remove tile data file "${tileName}": ${error}`
+  await retry(async () => {
+    await removeXYZTileDataFileWithLock(
+      `${process.env.DATA_DIR}/caches/xyzs/${id}/${z}/${x}/${y}.${format}`,
+      timeout
     );
-  }
+
+    if (source !== undefined) {
+      await removeXYZTileMD5WithLock(
+        source,
+        z,
+        x,
+        y,
+        300000 // 5 mins
+      );
+    }
+  }, maxTry);
 }
 
 /**
@@ -932,36 +955,28 @@ export async function cacheXYZTileDataFile(
   storeMD5,
   storeTransparent
 ) {
-  const tileName = `${z}/${x}/${y}`;
+  if (
+    storeTransparent === false &&
+    (await isFullTransparentPNGImage(data)) === true
+  ) {
+    return;
+  } else {
+    await createXYZTileDataFileWithLock(
+      `${sourcePath}/${z}/${x}/${y}.${format}`,
+      data,
+      300000 // 5 mins
+    );
 
-  printLog("info", `Caching tile data file "${tileName}"...`);
-
-  try {
-    if (
-      storeTransparent === false &&
-      (await isFullTransparentPNGImage(data)) === true
-    ) {
-      return;
-    } else {
-      await createXYZTileDataFileWithLock(
-        `${sourcePath}/${z}/${x}/${y}.${format}`,
+    if (storeMD5 === true) {
+      await createXYZTileMD5WithLock(
+        source,
+        z,
+        x,
+        y,
         data,
         300000 // 5 mins
       );
-
-      if (storeMD5 === true) {
-        await createXYZTileMD5WithLock(
-          source,
-          z,
-          x,
-          y,
-          data,
-          300000 // 5 mins
-        );
-      }
     }
-  } catch (error) {
-    printLog("error", `Failed to cache tile data file "${tileName}": ${error}`);
   }
 }
 

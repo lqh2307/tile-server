@@ -22,6 +22,7 @@ import {
   getStyle,
 } from "./style.js";
 import {
+  renderPostgreSQLTiles,
   renderMBTilesTiles,
   createEmptyData,
   destroyRenderer,
@@ -69,7 +70,15 @@ function getStyleHandler() {
 
           /* Cache */
           if (item.storeCache === true) {
-            cacheStyleFile(item.path, JSON.stringify(styleJSON, null, 2));
+            printLog("info", `Caching style "${id}" - File "${filePath}"...`);
+
+            cacheStyleFile(item.path, JSON.stringify(styleJSON, null, 2)).catch(
+              (error) =>
+                printLog(
+                  "error",
+                  `Failed to cache style "${id}" - File "${filePath}": ${error}`
+                )
+            );
           }
         } else {
           throw error;
@@ -347,6 +356,26 @@ function renderStyleHandler() {
             ).finally(() => {
               item.rendered.export = false;
             });
+          } else if (parsedOptions.storeType === "pg") {
+            renderPostgreSQLTiles(
+              id,
+              parsedOptions.metadata,
+              parsedOptions.tileScale,
+              parsedOptions.tileSize,
+              parsedOptions.bbox,
+              parsedOptions.maxzoom,
+              parsedOptions.concurrency,
+              parsedOptions.maxTry,
+              parsedOptions.timeout,
+              parsedOptions.storeMD5,
+              parsedOptions.storeTransparent,
+              parsedOptions.createOverview,
+              parsedOptions.refreshBefore?.time ||
+                parsedOptions.refreshBefore?.day ||
+                parsedOptions.refreshBefore?.md5
+            ).finally(() => {
+              item.rendered.export = false;
+            });
           }
         }, 0);
 
@@ -568,7 +597,20 @@ function getStyleJSONsListHandler() {
 
               /* Cache */
               if (item.storeCache === true) {
-                cacheStyleFile(item.path, JSON.stringify(styleJSON, null, 2));
+                printLog(
+                  "info",
+                  `Caching style "${id}" - File "${filePath}"...`
+                );
+
+                cacheStyleFile(
+                  item.path,
+                  JSON.stringify(styleJSON, null, 2)
+                ).catch((error) =>
+                  printLog(
+                    "error",
+                    `Failed to cache style "${id}" - File "${filePath}": ${error}`
+                  )
+                );
               }
             } else {
               throw error;
@@ -1178,6 +1220,11 @@ export const serve_style = {
 
             /* Download style.json file */
             if ((await isExistFile(styleInfo.path)) === false) {
+              printLog(
+                "info",
+                `Downloading style file "${styleInfo.path}" from "${item.style}"...`
+              );
+
               await downloadStyleFile(
                 item.style,
                 styleInfo.path,
@@ -1385,6 +1432,9 @@ export const serve_style = {
                   {
                     min: item.rendered.minPoolSize || os.cpus().length,
                     max: item.rendered.maxPoolSize || os.cpus().length * 2,
+                    evictionRunIntervalMillis: 10000, // 10 seconds
+                    idleTimeoutMillis: 60000, // 1 mins
+                    acquireTimeoutMillis: 300000, // 5 mins
                   }
                 );
               }

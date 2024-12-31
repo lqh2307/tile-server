@@ -7,7 +7,7 @@
   <title>Preview - Tile Server</title>
   <link rel="stylesheet" type="text/css" href="{{base_url}}/index.css" />
   <script>
-    const baseURL = "{{base_url}}";
+    const emptyImageURL = "${{base_url}}/images/placeholder.png";
 
     function toggleURL(id, event) {
       event.preventDefault();
@@ -61,8 +61,8 @@
         renderDatas("fonts-tab");
       } else if (tabId === "sprites-tab" && !document.querySelector("#sprites-tab").innerHTML.trim()) {
         renderDatas("sprites-tab");
-      } else if (tabId === "action-tab" && !document.querySelector("#action-tab").innerHTML.trim()) {
-        renderDatas("action-tab");
+      } else if (tabId === "actions-tab" && !document.querySelector("#actions-tab").innerHTML.trim()) {
+        renderDatas("actions-tab");
       }
     }
 
@@ -72,15 +72,15 @@
           <div class="box">
             {{#each styles}}
               <div class="item">
-                {{#if thumbnail}}<img src="{{thumbnail}}" alt="{{name}} preview" />{{else}}<img src="${baseURL}/images/placeholder.png" alt="{{name}} preview" />{{/if}}
+                {{#if thumbnail}}<img src="{{thumbnail}}" alt="{{name}} preview" />{{else}}<img src="${emptyImageURL}" alt="{{name}} preview" />{{/if}}
                 <div class="details">
                   <h3 class="name">{{name}}</h3>
                   <p class="identifier">identifier: {{@key}}</p>
                   <p class="services">
-                    services: <a href="${baseURL}/styles/{{@key}}/style.json">StyleJSON</a>
+                    services: <a href="{{base_url}}/styles/{{@key}}/style.json">StyleJSON</a>
                     {{#if thumbnail}}
-                      | <a href="${baseURL}/styles/{{@key}}.json">TileJSON</a>
-                      | <a href="${baseURL}/styles/{{@key}}/wmts.xml">WMTS</a>
+                      | <a href="{{base_url}}/styles/{{@key}}.json">TileJSON</a>
+                      | <a href="{{base_url}}/styles/{{@key}}/wmts.xml">WMTS</a>
                     {{/if}}
                     {{#if xyz}}
                       | <a href="#" onclick="toggleURL('xyz_style_{{@key}}', event)">XYZ</a>
@@ -89,9 +89,9 @@
                   </p>
                 </div>
                 <div class="viewers">
-                    <a class="btn" href="${baseURL}/styles/{{@key}}/?vector{{viewer_hash}}">Client Render</a>
+                    <a class="btn" href="{{base_url}}/styles/{{@key}}/?vector{{viewer_hash}}">Client Render</a>
                     {{#if thumbnail}}
-                      <a class="btn" href="${baseURL}/styles/{{@key}}/?raster{{viewer_hash}}">Backend Render</a>
+                      <a class="btn" href="{{base_url}}/styles/{{@key}}/?raster{{viewer_hash}}">Backend Render</a>
                       <a class="btn" href="#" onclick="showExportRenderDialog(event, '{{@key}}')">Export Render</a>
                     {{/if}}
                 </div>
@@ -104,14 +104,14 @@
           <div class="box">
             {{#each datas}}
               <div class="item">
-                {{#if thumbnail}}<img src="{{thumbnail}}" alt="{{name}} preview" />{{else}}<img src="${baseURL}/images/placeholder.png" alt="{{name}} preview" />{{/if}}
+                {{#if thumbnail}}<img src="{{thumbnail}}" alt="{{name}} preview" />{{else}}<img src="${emptyImageURL}" alt="{{name}} preview" />{{/if}}
                 <div class="details">
                   <h3 class="name">{{name}}</h3>
                   <div class="identifier">identifier: {{@key}}</div>
                   <div class="identifier">type: {{#if thumbnail}}raster{{else}}vector{{/if}}</div>
                   <div class="identifier">ext: {{source_type}}</div>
                   <p class="services">
-                    services: <a href="${baseURL}/datas/{{@key}}.json">TileJSON</a>
+                    services: <a href="{{base_url}}/datas/{{@key}}.json">TileJSON</a>
                     {{#if xyz}}
                       | <a href="#" onclick="toggleURL('xyz_data_{{@key}}', event)">XYZ</a>
                       <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz}}" onclick="copyToClipboard(this)" />
@@ -120,9 +120,9 @@
                 </div>
                 <div class="viewers">
                   {{#if thumbnail}}
-                      <a class="btn" href="${baseURL}/datas/{{@key}}/{{viewer_hash}}">View</a>
+                      <a class="btn" href="{{base_url}}/datas/{{@key}}/{{viewer_hash}}">View</a>
                   {{else}}
-                      <a class="btn" href="${baseURL}/datas/{{@key}}/{{viewer_hash}}">Inspect</a>
+                      <a class="btn" href="{{base_url}}/datas/{{@key}}/{{viewer_hash}}">Inspect</a>
                   {{/if}}
                 </div>
               </div>
@@ -134,7 +134,7 @@
           <div class="box">
             {{#each fonts}}
               <div class="item">
-                <img src="${baseURL}/images/placeholder.png" alt="Empty image" />
+                <img src="${emptyImageURL}" alt="Empty image" />
                 <div class="details">
                   <h3 class="name">{{name}}</h3>
                   <div class="identifier">identifier: {{@key}}</div>
@@ -152,13 +152,13 @@
           <div class="box">
             {{#each sprites}}
               <div class="item">
-                <img src="${baseURL}/sprites/{{@key}}/sprite.png" alt="{{name}} preview" />
+                <img src="{{base_url}}/sprites/{{@key}}/sprite.png" alt="{{name}} preview" />
                 <div class="details">
                   <h3 class="name">{{name}}</h3>
                   <div class="identifier">identifier: {{@key}}</div>
                   <p class="services">
-                    services: <a href="${baseURL}/sprites/{{@key}}/sprite.json">JSON</a>
-                    | <a href="${baseURL}/sprites/{{@key}}/sprite.png">PNG</a>
+                    services: <a href="{{base_url}}/sprites/{{@key}}/sprite.json">JSON</a>
+                    | <a href="{{base_url}}/sprites/{{@key}}/sprite.png">PNG</a>
                     | <a href="#" onclick="toggleURL('sprite_{{@key}}', event)">URL</a>
                     <input id="sprite_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{sprite}}" onclick="copyToClipboard(this)" />
                   </p>
@@ -167,11 +167,23 @@
             {{/each}}
           </div>
         `;
-      } else if (tabId === "action-tab") {
-        document.querySelector("#action-tab").innerHTML = `
+      } else if (tabId === "actions-tab") {
+        document.querySelector("#actions-tab").innerHTML = `
           <div class="box">
             <div class="item">
-              <img src="${baseURL}/images/placeholder.png" alt="Empty image" />
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Kill</h3>
+                <div class="identifier">Kill server</div>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="actionManager(event, 'kill')">Kill server</a>
+              </div>
+            </div>
+          </div>
+          <div class="box">
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Restart</h3>
                 <div class="identifier">Restart server</div>
@@ -183,10 +195,10 @@
           </div>
           <div class="box">
             <div class="item">
-              <img src="${baseURL}/images/placeholder.png" alt="Empty image" />
+              <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Cancel sync</h3>
-                <div class="identifier">Cancel clean up or seed styles and datas</div>
+                <div class="identifier">Cancel clean up/seed styles and datas</div>
               </div>
               <div class="viewers">
                 <a class="btn" href="#" onclick="actionManager(event, 'cancel')">Cancel sync</a>
@@ -195,7 +207,7 @@
           </div>
           <div class="box">
             <div class="item">
-              <img src="${baseURL}/images/placeholder.png" alt="Empty image" />
+              <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Sync all</h3>
                 <div class="identifier">Start clean up styles and datas then seed styles and datas</div>
@@ -207,7 +219,7 @@
           </div>
           <div class="box">
             <div class="item">
-              <img src="${baseURL}/images/placeholder.png" alt="Empty image" />
+              <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Clean styles</h3>
                 <div class="identifier">Start clean up styles</div>
@@ -219,7 +231,7 @@
           </div>
           <div class="box">
             <div class="item">
-              <img src="${baseURL}/images/placeholder.png" alt="Empty image" />
+              <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Clean datas</h3>
                 <div class="identifier">Start clean up datas</div>
@@ -231,7 +243,7 @@
           </div>
           <div class="box">
             <div class="item">
-              <img src="${baseURL}/images/placeholder.png" alt="Empty image" />
+              <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Seed styles</h3>
                 <div class="identifier">Start seed styles</div>
@@ -243,13 +255,61 @@
           </div>
           <div class="box">
             <div class="item">
-              <img src="${baseURL}/images/placeholder.png" alt="Empty image" />
+              <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Seed datas</h3>
                 <div class="identifier">Start seed datas</div>
               </div>
               <div class="viewers">
                 <a class="btn" href="#" onclick="actionManager(event, 'seedDatas')">Seed datas</a>
+              </div>
+            </div>
+          </div>
+          <div class="box">
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Summary</h3>
+                <div class="identifier">Summary</div>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="{{base_url}}/summary">View</a>
+              </div>
+            </div>
+          </div>
+          <div class="box">
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Config JSON</h3>
+                <div class="identifier">View config.json content</div>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="{{base_url}}/config">View</a>
+              </div>
+            </div>
+          </div>
+          <div class="box">
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Seed JSON</h3>
+                <div class="identifier">View seed.json content</div>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="{{base_url}}/seed">View</a>
+              </div>
+            </div>
+          </div>
+          <div class="box">
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Clean up JSON</h3>
+                <div class="identifier">View cleanup.json content</div>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="{{base_url}}/cleanup">View</a>
               </div>
             </div>
           </div>
@@ -261,7 +321,7 @@
       event.preventDefault();
 
       if (action === "all") {
-        fetch(`${baseURL}/tasks/start?seedStyles=true&cleanUpStyles=true&cleanUpDatas=true&seedDatas=true`, {
+        fetch(`{{base_url}}/tasks/start?seedStyles=true&cleanUpStyles=true&cleanUpDatas=true&seedDatas=true`, {
           method: "GET",
         })
           .then((response) => {
@@ -273,7 +333,7 @@
           })
           .catch((error) => alert(`Failed to start seed styles and datas: ${error.message}`));
       } else if (action === "cleanUpStyles") {
-        fetch(`${baseURL}/tasks/start?cleanUpStyles=true`, {
+        fetch(`{{base_url}}/tasks/start?cleanUpStyles=true`, {
           method: "GET",
         })
           .then((response) => {
@@ -285,7 +345,7 @@
           })
           .catch((error) => alert(`Failed to clean up styles: ${error.message}`));
       } else if (action === "cleanUpDatas") {
-        fetch(`${baseURL}/tasks/start?cleanUpDatas=true`, {
+        fetch(`{{base_url}}/tasks/start?cleanUpDatas=true`, {
           method: "GET",
         })
           .then((response) => {
@@ -297,7 +357,7 @@
           })
           .catch((error) => alert(`Failed to start clean up datas: ${error.message}`));
       } else if (action === "seedStyles") {
-        fetch(`${baseURL}/tasks/start?seedStyles=true`, {
+        fetch(`{{base_url}}/tasks/start?seedStyles=true`, {
           method: "GET",
         })
           .then((response) => {
@@ -309,7 +369,7 @@
           })
           .catch((error) => alert(`Failed to start seed styles: ${error.message}`));
       } else if (action === "seedDatas") {
-        fetch(`${baseURL}/tasks/start?seedDatas=true`, {
+        fetch(`{{base_url}}/tasks/start?seedDatas=true`, {
           method: "GET",
         })
           .then((response) => {
@@ -321,19 +381,19 @@
           })
           .catch((error) => alert(`Failed to start seed datas: ${error.message}`));
       } else if (action === "cancel") {
-        fetch(`${baseURL}/tasks/cancel`, {
+        fetch(`{{base_url}}/tasks/cancel`, {
           method: "GET",
         })
           .then((response) => {
             if (response.status === 200) {
-              alert("Canceling clean up or seed styles and datas...");
+              alert("Canceling clean up/seed styles and datas...");
             } else {
-              alert(`Failed to cancel clean up or seed styles and datas: Status code: ${response.status} - ${response.statusText}`);
+              alert(`Failed to cancel clean up/seed styles and datas: Status code: ${response.status} - ${response.statusText}`);
             }
           })
-          .catch((error) => alert(`Failed to cancel clean up or seed styles and datas: ${error.message}`));
+          .catch((error) => alert(`Failed to cancel clean up/seed styles and datas: ${error.message}`));
       } else if (action === "restart") {
-        fetch(`${baseURL}/restart`, {
+        fetch(`{{base_url}}/restart`, {
           method: "GET",
         })
           .then((response) => {
@@ -344,6 +404,18 @@
             }
           })
           .catch((error) => alert(`Failed to restart server: ${error.message}`));
+      } else if (action === "kill") {
+        fetch(`{{base_url}}/kill`, {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Server killed successfully!");
+            } else {
+              alert(`Failed to kill server: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => alert(`Failed to kill server: ${error.message}`));
       }
     }
 
@@ -358,12 +430,14 @@
         try {
           const options = JSON.parse(document.getElementById("jsonOptionsInput").value.trim());
 
-          fetch(`${baseURL}/styles/${styleID}/export/style.json?options=${encodeURIComponent(JSON.stringify(options))}`, {
+          fetch(`{{base_url}}/styles/${styleID}/export/style.json?options=${encodeURIComponent(JSON.stringify(options))}`, {
             method: "GET",
           })
             .then((response) => {
               if (response.status === 200) {
                 alert("Starting render style...");
+
+                closeExportRenderDialog();
               } else {
                 alert(`Failed to start render style: Status code: ${response.status} - ${response.statusText}`);
               }
@@ -371,8 +445,6 @@
             .catch((error) => {
               alert(`Failed to start render style: ${error.message}`);
             });
-
-          closeExportRenderDialog();
         } catch (error) {
           alert("Invalid JSON format. Please correct it and try again!");
         }
@@ -407,13 +479,13 @@
       <div class="tab" onclick="switchTab(event, 'datas-tab')">DATAS ({{data_count}})</div>
       <div class="tab" onclick="switchTab(event, 'fonts-tab')">FONTS ({{font_count}})</div>
       <div class="tab" onclick="switchTab(event, 'sprites-tab')">SPRITES ({{sprite_count}})</div>
-      <div class="tab" onclick="switchTab(event, 'action-tab')">ACTIONS</div>
+      <div class="tab" onclick="switchTab(event, 'actions-tab')">ACTIONS</div>
     </div>
     <div id="styles-tab" class="tab-content active"></div>
     <div id="datas-tab" class="tab-content"></div>
     <div id="fonts-tab" class="tab-content"></div>
     <div id="sprites-tab" class="tab-content"></div>
-    <div id="action-tab" class="tab-content"></div>
+    <div id="actions-tab" class="tab-content"></div>
   </section>
 
   <dialog id="exportRenderDialog">

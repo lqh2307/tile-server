@@ -10,12 +10,20 @@ import { Mutex } from "async-mutex";
 import sqlite3 from "sqlite3";
 import sharp from "sharp";
 import {
+  updatePostgreSQLMetadataWithLock,
+  storeRenderPostgreSQLTile,
   getPostgreSQLTileFromURL,
+  getPostgreSQLTileCreated,
   cachePostgreSQLTileData,
+  getPostgreSQLTileMD5,
+  renderPostgreSQLTile,
   getPostgreSQLTile,
+  closePostgreSQLDB,
+  openPostgreSQLDB,
 } from "./tile_postgresql.js";
 import {
   updateMBTilesMetadataWithLock,
+  storeRenderMBTilesTile,
   getMBTilesTileFromURL,
   getMBTilesTileCreated,
   cacheMBtilesTileData,
@@ -37,6 +45,7 @@ import {
 } from "./utils.js";
 import {
   updateXYZMetadataFileWithLock,
+  storeRenderXYZTileDataFile,
   renderXYZTileDataFile,
   cacheXYZTileDataFile,
   getXYZTileCreated,
@@ -378,6 +387,11 @@ export function createRenderer(ratio, emptyDatas, styleJSON) {
 
               /* Cache */
               if (sourceData.storeCache === true) {
+                printLog(
+                  "info",
+                  `Caching data "${id}" - Tile "${tileName}"...`
+                );
+
                 cacheMBtilesTileData(
                   sourceData.source,
                   z,
@@ -386,6 +400,11 @@ export function createRenderer(ratio, emptyDatas, styleJSON) {
                   dataTile.data,
                   sourceData.storeMD5,
                   sourceData.storeTransparent
+                ).catch((error) =>
+                  printLog(
+                    "error",
+                    `Failed to cache data "${id}" - Tile "${tileName}": ${error}`
+                  )
                 );
               }
             } else {
@@ -456,6 +475,11 @@ export function createRenderer(ratio, emptyDatas, styleJSON) {
 
               /* Cache */
               if (sourceData.storeCache === true) {
+                printLog(
+                  "info",
+                  `Caching data "${id}" - Tile "${tileName}"...`
+                );
+
                 cacheXYZTileDataFile(
                   sourceData.source,
                   sourceData.md5Source,
@@ -466,6 +490,11 @@ export function createRenderer(ratio, emptyDatas, styleJSON) {
                   dataTile.data,
                   sourceData.storeMD5,
                   sourceData.storeTransparent
+                ).catch((error) =>
+                  printLog(
+                    "error",
+                    `Failed to cache data "${id}" - Tile "${tileName}": ${error}`
+                  )
                 );
               }
             } else {
@@ -530,6 +559,11 @@ export function createRenderer(ratio, emptyDatas, styleJSON) {
 
               /* Cache */
               if (sourceData.storeCache === true) {
+                printLog(
+                  "info",
+                  `Caching data "${id}" - Tile "${tileName}"...`
+                );
+
                 cachePostgreSQLTileData(
                   sourceData.source,
                   z,
@@ -538,6 +572,11 @@ export function createRenderer(ratio, emptyDatas, styleJSON) {
                   dataTile.data,
                   sourceData.storeMD5,
                   sourceData.storeTransparent
+                ).catch((error) =>
+                  printLog(
+                    "error",
+                    `Failed to cache data "${id}" - Tile "${tileName}": ${error}`
+                  )
                 );
               }
             } else {
@@ -719,13 +758,25 @@ export async function renderMBTilesTiles(
 
       if (refreshTimestamp === true) {
         try {
+          printLog("info", `Rendering style "${id}" - Tile "${tileName}"...`);
+
           const [data, md5] = await Promise.all([
             renderImage(rendered, tileScale, tileSize, z, x, y),
             getMBTilesTileMD5(source, z, x, y),
           ]);
 
           if (calculateMD5(data) !== md5) {
-            needRender = true;
+            await storeRenderMBTilesTile(
+              data,
+              source,
+              z,
+              x,
+              y,
+              maxTry,
+              timeout,
+              storeMD5,
+              storeTransparent
+            );
           }
         } catch (error) {
           if (error.message === "Tile MD5 does not exist") {
@@ -753,6 +804,8 @@ export async function renderMBTilesTiles(
       }
 
       if (needRender === true) {
+        printLog("info", `Rendering style "${id}" - Tile "${tileName}"...`);
+
         await renderMBTilesTile(
           rendered,
           tileScale,
@@ -934,13 +987,27 @@ export async function renderXYZTiles(
 
       if (refreshTimestamp === true) {
         try {
+          printLog("info", `Rendering style "${id}" - Tile "${tileName}"...`);
+
           const [data, md5] = await Promise.all([
             renderImage(rendered, tileScale, tileSize, z, x, y),
             getXYZTileMD5(source, z, x, y),
           ]);
 
           if (calculateMD5(data) !== md5) {
-            needRender = true;
+            await storeRenderXYZTileDataFile(
+              data,
+              id,
+              source,
+              z,
+              x,
+              y,
+              metadata.format,
+              maxTry,
+              timeout,
+              storeMD5,
+              storeTransparent
+            );
           }
         } catch (error) {
           if (error.message === "Tile MD5 does not exist") {
@@ -970,6 +1037,8 @@ export async function renderXYZTiles(
       }
 
       if (needRender === true) {
+        printLog("info", `Rendering style "${id}" - Tile "${tileName}"...`);
+
         await renderXYZTileDataFile(
           rendered,
           tileScale,
@@ -1047,6 +1116,225 @@ export async function renderXYZTiles(
   printLog(
     "info",
     `Completed render ${total} tiles of style "${id}" to xyz after ${
+      (doneTime - startTime) / 1000
+    }s!`
+  );
+}
+
+/**
+ * Render PostgreSQL tiles
+ * @param {string} id Style ID
+ * @param {object} metadata Metadata object
+ * @param {number} tileScale Tile scale
+ * @param {256|512} tileSize Tile size
+ * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {number} maxzoom Max zoom level
+ * @param {number} concurrency Concurrency download
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
+ * @param {boolean} storeMD5 Is store MD5 hashed?
+ * @param {boolean} storeTransparent Is store transparent tile?
+ * @param {boolean} createOverview Is create overview?
+ * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
+ * @returns {Promise<void>}
+ */
+export async function renderPostgreSQLTiles(
+  id,
+  metadata,
+  tileScale = 1,
+  tileSize = 256,
+  bbox = [-180, -85.051129, 180, 85.051129],
+  maxzoom = 22,
+  concurrency = os.cpus().length,
+  maxTry = 5,
+  timeout = 60000,
+  storeMD5 = false,
+  storeTransparent = false,
+  createOverview = true,
+  refreshBefore
+) {
+  const startTime = Date.now();
+
+  const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
+    [bbox],
+    [maxzoom],
+    "xyz"
+  );
+
+  let log = `Rendering ${total} tiles of style "${id}" to postgresql with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tMax zoom: ${maxzoom}\n\tBBox: [${bbox.join(
+    ", "
+  )}]\n\tTile size: ${tileSize}\n\tTile scale: ${tileScale}\n\tCreate overview: ${createOverview}`;
+
+  let refreshTimestamp;
+  if (typeof refreshBefore === "string") {
+    refreshTimestamp = new Date(refreshBefore).getTime();
+
+    log += `\n\tRefresh before: ${refreshBefore}`;
+  } else if (typeof refreshBefore === "number") {
+    const now = new Date();
+
+    refreshTimestamp = now.setDate(now.getDate() - refreshBefore);
+
+    log += `\n\tOld than: ${refreshBefore} days`;
+  } else if (typeof refreshBefore === "boolean") {
+    refreshTimestamp = true;
+
+    log += `\n\tRefresh before: check MD5`;
+  }
+
+  printLog("info", log);
+
+  /* Open PostgreSQL database */
+  const source = await openPostgreSQLDB(
+    `${process.env.POSTGRESQL_BASE_URI}/${id}`,
+    true
+  );
+
+  /* Update metadata */
+  printLog("info", "Updating metadata...");
+
+  await updatePostgreSQLMetadataWithLock(
+    source,
+    {
+      ...metadata,
+      maxzoom: maxzoom,
+      minzoom: maxzoom,
+    },
+    300000 // 5 mins
+  );
+
+  /* Render tiles */
+  const mutex = new Mutex();
+
+  let activeTasks = 0;
+  let remainingTasks = total;
+
+  async function renderPostgreSQLTileData(z, x, y) {
+    const tileName = `${z}/${x}/${y}`;
+    const rendered = config.repo.styles[id].rendered;
+
+    try {
+      let needRender = false;
+
+      if (refreshTimestamp === true) {
+        try {
+          printLog("info", `Rendering style "${id}" - Tile "${tileName}"...`);
+
+          const [data, md5] = await Promise.all([
+            renderImage(rendered, tileScale, tileSize, z, x, y),
+            getPostgreSQLTileMD5(source, z, x, y),
+          ]);
+
+          if (calculateMD5(data) !== md5) {
+            await storeRenderPostgreSQLTile(
+              data,
+              source,
+              z,
+              x,
+              y,
+              maxTry,
+              timeout,
+              storeMD5,
+              storeTransparent
+            );
+          }
+        } catch (error) {
+          if (error.message === "Tile MD5 does not exist") {
+            needRender = true;
+          } else {
+            throw error;
+          }
+        }
+      } else if (refreshTimestamp !== undefined) {
+        try {
+          const created = await getPostgreSQLTileCreated(source, z, x, y);
+
+          if (!created || created < refreshTimestamp) {
+            needRender = true;
+          }
+        } catch (error) {
+          if (error.message === "Tile created does not exist") {
+            needRender = true;
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        needRender = true;
+      }
+
+      if (needRender === true) {
+        printLog("info", `Rendering style "${id}" - Tile "${tileName}"...`);
+
+        await renderPostgreSQLTile(
+          rendered,
+          tileScale,
+          tileSize,
+          source,
+          z,
+          x,
+          y,
+          maxTry,
+          timeout,
+          storeMD5,
+          storeTransparent
+        );
+      }
+    } catch (error) {
+      printLog(
+        "error",
+        `Failed to render style "${id}" - Tile "${tileName}": ${error}`
+      );
+    }
+  }
+
+  printLog("info", "Rendering datas...");
+
+  for (const tilesSummary of tilesSummaries) {
+    for (const z in tilesSummary) {
+      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+          /* Wait slot for a task */
+          while (activeTasks >= concurrency) {
+            await delay(50);
+          }
+
+          await mutex.runExclusive(() => {
+            activeTasks++;
+
+            remainingTasks--;
+          });
+
+          /* Run a task */
+          renderPostgreSQLTileData(z, x, y).finally(() =>
+            mutex.runExclusive(() => {
+              activeTasks--;
+            })
+          );
+        }
+      }
+    }
+  }
+
+  /* Wait all tasks done */
+  while (activeTasks > 0) {
+    await delay(50);
+  }
+
+  /* Close PostgreSQL database */
+  if (source !== undefined) {
+    await closePostgreSQLDB(source);
+  }
+
+  /* Create overviews */
+  if (createOverview === true) {
+  }
+
+  const doneTime = Date.now();
+
+  printLog(
+    "info",
+    `Completed render ${total} tiles of style "${id}" to postgresql after ${
       (doneTime - startTime) / 1000
     }s!`
   );
