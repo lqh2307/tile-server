@@ -1432,6 +1432,7 @@ export const serve_style = {
                   {
                     min: item.rendered.minPoolSize || os.cpus().length,
                     max: item.rendered.maxPoolSize || os.cpus().length * 2,
+                    softIdleTimeoutMillis: 60000, // 1 mins
                     acquireTimeoutMillis: 300000, // 5 mins
                   }
                 );
