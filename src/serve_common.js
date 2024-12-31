@@ -720,100 +720,98 @@ export const serve_common = {
      */
     app.get("/health", serveHealthHandler());
 
-    if (config.options.configEndpoint === true) {
-      /**
-       * @swagger
-       * tags:
-       *   - name: Common
-       *     description: Common related endpoints
-       * /config:
-       *   get:
-       *     tags:
-       *       - Common
-       *     summary: Get config
-       *     responses:
-       *       200:
-       *         description: Config
-       *         content:
-       *           application/json:
-       *             schema:
-       *               type: object
-       *       404:
-       *         description: Not found
-       *       503:
-       *         description: Server is starting up
-       *         content:
-       *           text/plain:
-       *             schema:
-       *               type: string
-       *               example: Starting...
-       *       500:
-       *         description: Internal server error
-       */
-      app.get("/config", serveConfigHandler());
+    /**
+     * @swagger
+     * tags:
+     *   - name: Common
+     *     description: Common related endpoints
+     * /config:
+     *   get:
+     *     tags:
+     *       - Common
+     *     summary: Get config
+     *     responses:
+     *       200:
+     *         description: Config
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/config", serveConfigHandler());
 
-      /**
-       * @swagger
-       * tags:
-       *   - name: Common
-       *     description: Common related endpoints
-       * /seed:
-       *   get:
-       *     tags:
-       *       - Common
-       *     summary: Get seed
-       *     responses:
-       *       200:
-       *         description: Seed
-       *         content:
-       *           application/json:
-       *             schema:
-       *               type: object
-       *       404:
-       *         description: Not found
-       *       503:
-       *         description: Server is starting up
-       *         content:
-       *           text/plain:
-       *             schema:
-       *               type: string
-       *               example: Starting...
-       *       500:
-       *         description: Internal server error
-       */
-      app.get("/seed", serveSeedHandler());
+    /**
+     * @swagger
+     * tags:
+     *   - name: Common
+     *     description: Common related endpoints
+     * /seed:
+     *   get:
+     *     tags:
+     *       - Common
+     *     summary: Get seed
+     *     responses:
+     *       200:
+     *         description: Seed
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/seed", serveSeedHandler());
 
-      /**
-       * @swagger
-       * tags:
-       *   - name: Common
-       *     description: Common related endpoints
-       * /cleanup:
-       *   get:
-       *     tags:
-       *       - Common
-       *     summary: Get clean up
-       *     responses:
-       *       200:
-       *         description: Clean up
-       *         content:
-       *           application/json:
-       *             schema:
-       *               type: object
-       *       404:
-       *         description: Not found
-       *       503:
-       *         description: Server is starting up
-       *         content:
-       *           text/plain:
-       *             schema:
-       *               type: string
-       *               example: Starting...
-       *       500:
-       *         description: Internal server error
-       */
-      app.get("/cleanup", serveCleanUpHandler());
-    }
+    /**
+     * @swagger
+     * tags:
+     *   - name: Common
+     *     description: Common related endpoints
+     * /cleanup:
+     *   get:
+     *     tags:
+     *       - Common
+     *     summary: Get clean up
+     *     responses:
+     *       200:
+     *         description: Clean up
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/cleanup", serveCleanUpHandler());
 
     if (config.options.serverEndpoint === true) {
       /**

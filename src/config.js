@@ -36,9 +36,6 @@ async function readConfigFile(isValidate) {
               serverEndpoint: {
                 type: "boolean",
               },
-              configEndpoint: {
-                type: "boolean",
-              },
               serveFrontPage: {
                 type: "boolean",
               },
@@ -73,7 +70,6 @@ async function readConfigFile(isValidate) {
                 minimum: 1,
               },
             },
-            additionalProperties: false,
           },
           styles: {
             type: "object",
@@ -186,7 +182,6 @@ async function readConfigFile(isValidate) {
   config.options = {
     listenPort: config.options.listenPort ?? 8080, // default: 8080
     serverEndpoint: config.options.serverEndpoint ?? true, // default: true
-    configEndpoint: config.options.configEndpoint ?? true, // default: true
     serveFrontPage: config.options.serveFrontPage ?? true, // default: true
     serveSwagger: config.options.serveSwagger ?? true, // default: true
     loggerFormat:
