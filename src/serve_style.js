@@ -1432,8 +1432,6 @@ export const serve_style = {
                   {
                     min: item.rendered.minPoolSize || os.cpus().length,
                     max: item.rendered.maxPoolSize || os.cpus().length * 2,
-                    evictionRunIntervalMillis: 10000, // 10 seconds
-                    idleTimeoutMillis: 60000, // 1 mins
                     acquireTimeoutMillis: 300000, // 5 mins
                   }
                 );

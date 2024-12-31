@@ -32,6 +32,8 @@
     const preference = location.search.indexOf("raster") >= 0 ? "raster" : "vector";
 
     if (preference === "vector") {
+      let currentMarker;
+
       maplibregl.setRTLTextPlugin(`{{base_url}}/mapbox-gl-rtl-text.js`);
 
       const map = new maplibregl.Map({
@@ -47,13 +49,19 @@
       }));
 
       map.on("click", (event) => {
-        new maplibregl.Marker()
+        if (currentMarker) {
+          currentMarker.remove();
+        }
+
+        currentMarker = new maplibregl.Marker()
           .setLngLat([event.lngLat.lng, event.lngLat.lat])
           .addTo(map);
 
         alert(`Position: [${event.lngLat.lng}, ${event.lngLat.lat}]`);
       });
     } else {
+      let currentMarker;
+
       const map = L.map("map", {
         zoomControl: false,
       });
@@ -112,7 +120,11 @@
       }, 0);
 
       map.on("click", (event) => {
-        L.marker([event.latlng.lat, event.latlng.lng]).addTo(map);
+        if (currentMarker) {
+          map.removeLayer(currentMarker);
+        }
+
+        currentMarker = L.marker([event.latlng.lat, event.latlng.lng]).addTo(map);
 
         alert(`Position: [${event.latlng.lng}, ${event.latlng.lat}]`);
       });

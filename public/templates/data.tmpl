@@ -136,6 +136,8 @@
   <h1 style="display:none;">{{tileJSON.name}}</h1>
   <div id="map"></div>
   <script>
+    let currentMarker;
+
     const map = L.map("map", {
       zoomControl: false,
     });
@@ -194,7 +196,11 @@
     }, 0);
 
     map.on("click", (event) => {
-      L.marker([event.latlng.lat, event.latlng.lng]).addTo(map);
+      if (currentMarker) {
+        map.removeLayer(currentMarker);
+      }
+
+      currentMarker = L.marker([event.latlng.lat, event.latlng.lng]).addTo(map);
 
       alert(`Position: [${event.latlng.lng}, ${event.latlng.lat}]`);
     });
