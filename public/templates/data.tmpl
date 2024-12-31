@@ -119,6 +119,8 @@
       })
     });
 
+    let currentMarker;
+
     map.on("click", (event) => {
       if (currentMarker) {
         currentMarker.remove();

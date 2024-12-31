@@ -175,6 +175,7 @@ export async function readCleanUpFile(isValidate) {
           },
         },
         required: ["styles", "datas", "sprites", "fonts"],
+        additionalProperties: false,
       },
       cleanUp
     );

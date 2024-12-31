@@ -385,6 +385,7 @@ export async function readSeedFile(isValidate) {
           },
         },
         required: ["styles", "datas", "sprites", "fonts"],
+        additionalProperties: false,
       },
       seed
     );

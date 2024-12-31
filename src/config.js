@@ -73,6 +73,7 @@ async function readConfigFile(isValidate) {
                 minimum: 1,
               },
             },
+            additionalProperties: false,
           },
           styles: {
             type: "object",
@@ -175,6 +176,7 @@ async function readConfigFile(isValidate) {
           },
         },
         required: ["options", "styles", "datas", "sprites", "fonts"],
+        additionalProperties: false,
       },
       config
     );
