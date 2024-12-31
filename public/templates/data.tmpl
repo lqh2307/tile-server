@@ -80,7 +80,6 @@
   <h1>{{name}}</h1>
   <div id="map"></div>
   <div id="layerList"></div>
-  <pre id="propertyList"></pre>
   <script>
     const map = new maplibregl.Map({
       container: "map",
@@ -90,7 +89,7 @@
         sources: {
           "vector_layer_": {
             type: "vector",
-            url: `{{base_url}}/datas/{{id}}.json`,
+            url: "{{base_url}}/datas/{{id}}.json",
           }
         },
         layers: [],
@@ -107,10 +106,6 @@
     map.addControl(inspect);
 
     map.on("styledata", function () {
-      const layerList = document.getElementById("layerList");
-
-      layerList.innerHTML = "";
-
       Object.keys(inspect.sources).forEach(function (sourceId) {
         inspect.sources[sourceId].forEach(function (layerId) {
           const item = document.createElement("div");
@@ -119,13 +114,17 @@
             "background:" + inspect.assignLayerColor(layerId) + ";" +
             '"></div> ' + layerId;
 
-          layerList.appendChild(item);
+          document.getElementById("layerList").appendChild(item);
         });
       })
     });
 
     map.on("click", (event) => {
-      new maplibregl.Marker()
+      if (currentMarker) {
+        currentMarker.remove();
+      }
+
+      currentMarker = new maplibregl.Marker()
         .setLngLat([event.lngLat.lng, event.lngLat.lat])
         .addTo(map);
 
@@ -136,8 +135,6 @@
   <h1 style="display:none;">{{tileJSON.name}}</h1>
   <div id="map"></div>
   <script>
-    let currentMarker;
-
     const map = L.map("map", {
       zoomControl: false,
     });
@@ -146,54 +143,42 @@
       position: "topright",
     }).addTo(map);
 
-    let tile_urls = [], tile_attribution, tile_minzoom, tile_maxzoom;
-
-    const req = new XMLHttpRequest();
-    req.overrideMimeType("application/json");
-    req.open("GET", `{{base_url}}/datas/{{id}}.json`, true);
-    req.onload = function () {
-      const jsonResponse = JSON.parse(req.responseText);
-      for (key in jsonResponse) {
-        switch (key.toLowerCase()) {
-          case "tiles":
-            tile_urls = jsonResponse[key];
-
-            break;
-          case "attribution":
-            tile_attribution = jsonResponse[key];
-
-            break;
-          case "minzoom":
-            tile_minzoom = jsonResponse[key];
-
-            break;
-          case "maxzoom":
-            tile_maxzoom = jsonResponse[key];
-
-            break;
+    fetch("{{base_url}}/datas/{{id}}.json", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => {
+        if (response.status === 200) {
+          return response.json();
+        } else {
+          alert(`Failed to fetch tileJSON: Status code: ${response.status} - ${response.statusText}`);
         }
-      }
+      })
+      .then((jsonResponse) => {
+        for (const tile of jsonResponse.tiles || []) {
+          L.tileLayer(tile, {
+            tileSize: 256,
+            minZoom: jsonResponse.minzoom,
+            maxZoom: jsonResponse.maxzoom,
+            attribution: jsonResponse.attribution,
+          }).addTo(map);
+        }
 
-      for (tile_url in tile_urls) {
-        L.tileLayer(tile_urls[tile_url], {
-          tileSize: 256,
-          minZoom: tile_minzoom,
-          maxZoom: tile_maxzoom,
-          attribution: tile_attribution,
-        }).addTo(map);
-      }
-
-      map.eachLayer(function (layer) {
-        // do not add scale prefix even if retina display is detected
-        layer.scalePrefix = ".";
+        map.eachLayer(function (layer) {
+          layer.scalePrefix = ".";
+        });
+      })
+      .catch((error) => {
+        alert(`Failed to fetch tileJSON: Status code: ${error.message}`);
       });
-    };
-
-    req.send(null);
 
     setTimeout(function () {
       new L.Hash(map);
     }, 0);
+
+    let currentMarker;
 
     map.on("click", (event) => {
       if (currentMarker) {

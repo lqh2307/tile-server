@@ -32,8 +32,6 @@
     const preference = location.search.indexOf("raster") >= 0 ? "raster" : "vector";
 
     if (preference === "vector") {
-      let currentMarker;
-
       maplibregl.setRTLTextPlugin(`{{base_url}}/mapbox-gl-rtl-text.js`);
 
       const map = new maplibregl.Map({
@@ -48,6 +46,8 @@
         showCompass: true,
       }));
 
+      let currentMarker;
+
       map.on("click", (event) => {
         if (currentMarker) {
           currentMarker.remove();
@@ -60,8 +60,6 @@
         alert(`Position: [${event.lngLat.lng}, ${event.lngLat.lat}]`);
       });
     } else {
-      let currentMarker;
-
       const map = L.map("map", {
         zoomControl: false,
       });
@@ -70,54 +68,42 @@
         position: "topright",
       }).addTo(map);
 
-      let tile_urls = [], tile_attribution, tile_minzoom, tile_maxzoom;
-
-      const req = new XMLHttpRequest();
-      req.overrideMimeType("application/json");
-      req.open("GET", `{{base_url}}/styles/{{id}}.json`, true);
-      req.onload = function () {
-        const jsonResponse = JSON.parse(req.responseText);
-        for (key in jsonResponse) {
-          switch (key.toLowerCase()) {
-            case "tiles":
-              tile_urls = jsonResponse[key];
-
-              break;
-            case "attribution":
-              tile_attribution = jsonResponse[key];
-
-              break;
-            case "minzoom":
-              tile_minzoom = jsonResponse[key];
-
-              break;
-            case "maxzoom":
-              tile_maxzoom = jsonResponse[key];
-
-              break;
+      fetch("{{base_url}}/styles/{{id}}.json", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => {
+          if (response.status === 200) {
+            return response.json();
+          } else {
+            alert(`Failed to fetch tileJSON: Status code: ${response.status} - ${response.statusText}`);
           }
-        }
+        })
+        .then((jsonResponse) => {
+          for (const tile of jsonResponse.tiles || []) {
+            L.tileLayer(tile, {
+              tileSize: 256,
+              minZoom: jsonResponse.minzoom,
+              maxZoom: jsonResponse.maxzoom,
+              attribution: jsonResponse.attribution,
+            }).addTo(map);
+          }
 
-        for (tile_url in tile_urls) {
-          L.tileLayer(tile_urls[tile_url], {
-            tileSize: 256,
-            minZoom: tile_minzoom,
-            maxZoom: tile_maxzoom,
-            attribution: tile_attribution,
-          }).addTo(map);
-        }
-
-        map.eachLayer(function (layer) {
-          // do not add scale prefix even if retina display is detected
-          layer.scalePrefix = ".";
+          map.eachLayer(function (layer) {
+            layer.scalePrefix = ".";
+          });
+        })
+        .catch((error) => {
+          alert(`Failed to fetch tileJSON: Status code: ${error.message}`);
         });
-      };
-
-      req.send(null);
 
       setTimeout(function () {
         new L.Hash(map);
       }, 0);
+
+      let currentMarker;
 
       map.on("click", (event) => {
         if (currentMarker) {
