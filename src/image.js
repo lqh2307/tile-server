@@ -56,6 +56,9 @@ import {
   getXYZTile,
 } from "./tile_xyz.js";
 
+/* Create empty tiles */
+const emptyDatas = createEmptyData();
+
 /**
  * Create empty data
  * @returns {object}
@@ -153,7 +156,7 @@ export function createEmptyData() {
  * @returns {Promise<Buffer>}
  */
 export async function renderImage(rendered, tileScale, tileSize, z, x, y) {
-  const renderer = await rendered.renderers[tileScale - 1].acquire();
+  const renderer = createRenderer(tileScale, emptyDatas, rendered.styleJSON);
 
   try {
     const data = await new Promise((resolve, reject) => {
@@ -165,8 +168,6 @@ export async function renderImage(rendered, tileScale, tileSize, z, x, y) {
           height: z === 0 && tileSize === 256 ? 512 : tileSize,
         },
         (error, data) => {
-          rendered.renderers[tileScale - 1].release(renderer);
-
           if (error) {
             return reject(error);
           }
@@ -210,11 +211,11 @@ export async function renderImage(rendered, tileScale, tileSize, z, x, y) {
         .toBuffer();
     }
   } catch (error) {
-    if (renderer !== undefined) {
-      rendered.renderers[tileScale - 1].release(renderer);
-    }
-
     throw error;
+  } finally {
+    if (renderer !== undefined) {
+      destroyRenderer(renderer);
+    }
   }
 }
 

@@ -5,7 +5,6 @@ import { StatusCodes } from "http-status-codes";
 import { readSeedFile } from "./seed.js";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
-import { Pool } from "./pool.js";
 import express from "express";
 import {
   isLocalTileURL,
@@ -24,13 +23,9 @@ import {
 import {
   renderPostgreSQLTiles,
   renderMBTilesTiles,
-  createEmptyData,
-  destroyRenderer,
-  createRenderer,
   renderXYZTiles,
   renderImage,
 } from "./image.js";
-import os from "os";
 
 /**
  * Get styleJSON handler
@@ -1197,9 +1192,6 @@ export const serve_style = {
   add: async () => {
     const seed = await readSeedFile(true);
 
-    /* Create empty tiles */
-    const emptyDatas = createEmptyData();
-
     await Promise.all(
       Object.keys(config.styles).map(async (id) => {
         const item = config.styles[id];
@@ -1302,6 +1294,7 @@ export const serve_style = {
                 name: styleInfo.name,
                 description: styleInfo.name,
               }),
+              styleJSON: {},
               maxScale: item.rendered.maxScale || 1,
               compressionLevel: item.rendered.compressionLevel || 6,
             };
@@ -1417,27 +1410,8 @@ export const serve_style = {
               })
             );
 
-            /* Create pools */
-            rendered.renderers = Array.from(
-              {
-                length: rendered.maxScale,
-              },
-              (_, index) => {
-                return new Pool(
-                  {
-                    create: () =>
-                      createRenderer(index + 1, emptyDatas, styleJSON),
-                    destroy: (renderer) => destroyRenderer(renderer),
-                  },
-                  {
-                    min: item.rendered.minPoolSize || os.cpus().length,
-                    max: item.rendered.maxPoolSize || os.cpus().length * 2,
-                    idleTimeout: 60000, // 1 mins
-                    idleIntervalCheck: 10000, // 10 seconds
-                  }
-                );
-              }
-            );
+            /* Add styleJSON */
+            rendered.styleJSON = styleJSON;
 
             /* Add to repo */
             config.repo.styles[id].rendered = rendered;
