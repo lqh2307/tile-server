@@ -2,10 +2,10 @@
 
 import { checkReadyMiddleware } from "./middleware.js";
 import { StatusCodes } from "http-status-codes";
-import { createPool } from "generic-pool";
 import { readSeedFile } from "./seed.js";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
+import { Pool } from "./pool.js";
 import express from "express";
 import {
   isLocalTileURL,
@@ -1423,7 +1423,7 @@ export const serve_style = {
                 length: rendered.maxScale,
               },
               (_, index) => {
-                return createPool(
+                return new Pool(
                   {
                     create: () =>
                       createRenderer(index + 1, emptyDatas, styleJSON),
@@ -1432,8 +1432,8 @@ export const serve_style = {
                   {
                     min: item.rendered.minPoolSize || os.cpus().length,
                     max: item.rendered.maxPoolSize || os.cpus().length * 2,
-                    softIdleTimeoutMillis: 60000, // 1 mins
-                    acquireTimeoutMillis: 300000, // 5 mins
+                    idleTimeout: 60000, // 1 mins
+                    idleIntervalCheck: 10000, // 10 seconds
                   }
                 );
               }
