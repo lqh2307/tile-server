@@ -121,9 +121,6 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
     "asia_vietnam": {
       "style": "asia_vietnam/style.json",
       "rendered": {
-        "maxScale": 1,
-        "minPoolSize": 8,
-        "maxPoolSize": 16,
         "compressionLevel": 9
       }
     },

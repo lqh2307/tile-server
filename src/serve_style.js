@@ -439,12 +439,6 @@ function getRenderedTileHandler() {
     /* Get and check rendered tile scale (Default: 1). Ex: @2x -> 2 */
     const tileScale = Number(req.params.tileScale?.slice(1, -1)) || 1;
 
-    if (tileScale > item.rendered.maxScale) {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .send("Rendered tile scale is invalid");
-    }
-
     /* Get tile size (Default: 256px x 256px) */
     const z = Number(req.params.z);
     const x = Number(req.params.x);
@@ -454,9 +448,10 @@ function getRenderedTileHandler() {
     /* Render tile */
     try {
       const image = await renderImage(
-        item.rendered,
         tileScale,
         tileSize,
+        item.rendered.compressionLevel,
+        item.rendered.styleJSON,
         z,
         x,
         y
@@ -1295,7 +1290,6 @@ export const serve_style = {
                 description: styleInfo.name,
               }),
               styleJSON: {},
-              maxScale: item.rendered.maxScale || 1,
               compressionLevel: item.rendered.compressionLevel || 6,
             };
 

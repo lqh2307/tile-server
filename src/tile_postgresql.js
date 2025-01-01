@@ -559,7 +559,8 @@ export async function downloadPostgreSQLTile(
 
 /**
  * Render PostgreSQL tile data
- * @param {object} rendered Rendered item object
+ * @param {number} compressionLevel Compression level
+ * @param {object} styleJSON StyleJSON
  * @param {number} tileScale Tile scale
  * @param {256|512} tileSize Tile size
  * @param {pg.Client} source PostgreSQL database instance
@@ -573,7 +574,8 @@ export async function downloadPostgreSQLTile(
  * @returns {Promise<void>}
  */
 export async function renderPostgreSQLTile(
-  rendered,
+  compressionLevel,
+  styleJSON,
   tileScale,
   tileSize,
   source,
@@ -587,7 +589,15 @@ export async function renderPostgreSQLTile(
 ) {
   await retry(async () => {
     // Get rendered data
-    const data = await renderImage(rendered, tileScale, tileSize, z, x, y);
+    const data = await renderImage(
+      tileScale,
+      tileSize,
+      compressionLevel,
+      styleJSON,
+      z,
+      x,
+      y
+    );
 
     // Store data
     if (

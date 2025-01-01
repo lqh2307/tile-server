@@ -94,22 +94,10 @@ async function readConfigFile(isValidate) {
                 rendered: {
                   type: "object",
                   properties: {
-                    maxScale: {
-                      type: "number",
-                      minimum: 1,
-                    },
                     compressionLevel: {
                       type: "integer",
                       minimum: 1,
                       maximum: 9,
-                    },
-                    minPoolSize: {
-                      type: "integer",
-                      minimum: 1,
-                    },
-                    maxPoolSize: {
-                      type: "integer",
-                      minimum: 1,
                     },
                   },
                 },

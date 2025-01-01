@@ -682,7 +682,8 @@ export async function downloadMBTilesTile(
 
 /**
  * Render MBTiles tile data
- * @param {object} rendered Rendered item object
+ * @param {number} compressionLevel Compression level
+ * @param {object} styleJSON StyleJSON
  * @param {number} tileScale Tile scale
  * @param {256|512} tileSize Tile size
  * @param {sqlite3.Database} source SQLite database instance
@@ -696,7 +697,8 @@ export async function downloadMBTilesTile(
  * @returns {Promise<void>}
  */
 export async function renderMBTilesTile(
-  rendered,
+  compressionLevel,
+  styleJSON,
   tileScale,
   tileSize,
   source,
@@ -710,7 +712,15 @@ export async function renderMBTilesTile(
 ) {
   await retry(async () => {
     // Get rendered data
-    const data = await renderImage(rendered, tileScale, tileSize, z, x, y);
+    const data = await renderImage(
+      tileScale,
+      tileSize,
+      compressionLevel,
+      styleJSON,
+      z,
+      x,
+      y
+    );
 
     // Store data
     if (
