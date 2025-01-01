@@ -157,116 +157,6 @@ export async function renderImage(
   x,
   y
 ) {
-  const renderer = createRenderer(tileScale, styleJSON);
-
-  try {
-    const data = await new Promise((resolve, reject) => {
-      renderer.render(
-        {
-          zoom: z !== 0 && tileSize === 256 ? z - 1 : z,
-          center: getLonLatFromXYZ(x, y, z, "center", "xyz"),
-          width: z === 0 && tileSize === 256 ? 512 : tileSize,
-          height: z === 0 && tileSize === 256 ? 512 : tileSize,
-        },
-        (error, data) => {
-          if (error) {
-            return reject(error);
-          }
-
-          resolve(data);
-        }
-      );
-    });
-
-    if (z === 0 && tileSize === 256) {
-      // HACK2: This hack allows tile-server to support zoom level 0 - 256px tiles, which would actually be zoom -1 in maplibre-gl-native
-      return await sharp(data, {
-        raw: {
-          premultiplied: true,
-          width: 512 * tileScale,
-          height: 512 * tileScale,
-          channels: 4,
-        },
-      })
-        .resize({
-          width: 256 * tileScale,
-          height: 256 * tileScale,
-        })
-        .png({
-          compressionLevel: compressionLevel,
-        })
-        .toBuffer();
-      // END HACK2
-    } else {
-      return await sharp(data, {
-        raw: {
-          premultiplied: true,
-          width: tileSize * tileScale,
-          height: tileSize * tileScale,
-          channels: 4,
-        },
-      })
-        .png({
-          compressionLevel: compressionLevel,
-        })
-        .toBuffer();
-    }
-  } catch (error) {
-    throw error;
-  } finally {
-    if (renderer !== undefined) {
-      destroyRenderer(renderer);
-    }
-  }
-}
-
-/**
- * Check if PNG image file/buffer is full transparent (alpha = 0)
- * @param {Buffer} buffer Buffer of the PNG image
- * @returns {Promise<boolean>}
- */
-export async function isFullTransparentPNGImage(buffer) {
-  try {
-    if (
-      buffer[0] !== 0x89 ||
-      buffer[1] !== 0x50 ||
-      buffer[2] !== 0x4e ||
-      buffer[3] !== 0x47 ||
-      buffer[4] !== 0x0d ||
-      buffer[5] !== 0x0a ||
-      buffer[6] !== 0x1a ||
-      buffer[7] !== 0x0a
-    ) {
-      return false;
-    }
-
-    const { data, info } = await sharp(buffer).raw().toBuffer({
-      resolveWithObject: true,
-    });
-
-    if (info.channels !== 4) {
-      return false;
-    }
-
-    for (let i = 3; i < data.length; i += 4) {
-      if (data[i] !== 0) {
-        return false;
-      }
-    }
-
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
-
-/**
- * Create a renderer
- * @param {number} tileScale Tile scale
- * @param {string} styleJSON Style JSON for the renderer
- * @returns {mlgl.Map} Renderer instance
- */
-export function createRenderer(tileScale, styleJSON) {
   const renderer = new mlgl.Map({
     mode: "tile",
     ratio: tileScale,
@@ -647,17 +537,98 @@ export function createRenderer(tileScale, styleJSON) {
 
   renderer.load(styleJSON);
 
-  return renderer;
+  const data = await new Promise((resolve, reject) => {
+    renderer.render(
+      {
+        zoom: z !== 0 && tileSize === 256 ? z - 1 : z,
+        center: getLonLatFromXYZ(x, y, z, "center", "xyz"),
+        width: z === 0 && tileSize === 256 ? 512 : tileSize,
+        height: z === 0 && tileSize === 256 ? 512 : tileSize,
+      },
+      (error, data) => {
+        renderer.release();
+
+        if (error) {
+          return reject(error);
+        }
+
+        resolve(data);
+      }
+    );
+  });
+
+  if (z === 0 && tileSize === 256) {
+    // HACK2: This hack allows tile-server to support zoom level 0 - 256px tiles, which would actually be zoom -1 in maplibre-gl-native
+    return await sharp(data, {
+      raw: {
+        premultiplied: true,
+        width: 512 * tileScale,
+        height: 512 * tileScale,
+        channels: 4,
+      },
+    })
+      .resize({
+        width: 256 * tileScale,
+        height: 256 * tileScale,
+      })
+      .png({
+        compressionLevel: compressionLevel,
+      })
+      .toBuffer();
+    // END HACK2
+  } else {
+    return await sharp(data, {
+      raw: {
+        premultiplied: true,
+        width: tileSize * tileScale,
+        height: tileSize * tileScale,
+        channels: 4,
+      },
+    })
+      .png({
+        compressionLevel: compressionLevel,
+      })
+      .toBuffer();
+  }
 }
 
 /**
- * Destroy a renderer
- * @param {mlgl.Map} renderer Renderer instance
- * @returns {void}
+ * Check if PNG image file/buffer is full transparent (alpha = 0)
+ * @param {Buffer} buffer Buffer of the PNG image
+ * @returns {Promise<boolean>}
  */
-export function destroyRenderer(renderer) {
-  if (renderer !== undefined) {
-    renderer.release();
+export async function isFullTransparentPNGImage(buffer) {
+  try {
+    if (
+      buffer[0] !== 0x89 ||
+      buffer[1] !== 0x50 ||
+      buffer[2] !== 0x4e ||
+      buffer[3] !== 0x47 ||
+      buffer[4] !== 0x0d ||
+      buffer[5] !== 0x0a ||
+      buffer[6] !== 0x1a ||
+      buffer[7] !== 0x0a
+    ) {
+      return false;
+    }
+
+    const { data, info } = await sharp(buffer).raw().toBuffer({
+      resolveWithObject: true,
+    });
+
+    if (info.channels !== 4) {
+      return false;
+    }
+
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] !== 0) {
+        return false;
+      }
+    }
+
+    return true;
+  } catch (error) {
+    return false;
   }
 }
 
