@@ -4,6 +4,8 @@ import fsPromise from "node:fs/promises";
 import { findFiles } from "./utils.js";
 import sharp from "sharp";
 
+sharp.cache(false);
+
 /**
  * Validate sprite
  * @param {string} spriteDirPath Sprite dir path
