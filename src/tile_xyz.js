@@ -171,55 +171,6 @@ async function getXYZZoomLevelFromTiles(sourcePath, zoomType = "maxzoom") {
 }
 
 /**
- * Update XYZ metadata.json file
- * @param {string} filePath File path to store metadata.json file
- * @param {Object<string,string>} metadataAdds Metadata object
- * @returns {Promise<void>}
- */
-async function updateXYZMetadataFile(filePath, metadataAdds) {
-  const tempFilePath = `${filePath}.tmp`;
-
-  try {
-    const data = await fsPromise.readFile(filePath, "utf8");
-
-    const metadatas = JSON.parse(data);
-
-    await fsPromise.writeFile(
-      tempFilePath,
-      JSON.stringify(
-        {
-          ...metadatas,
-          ...metadataAdds,
-        },
-        null,
-        2
-      ),
-      "utf8"
-    );
-
-    await fsPromise.rename(tempFilePath, filePath);
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      await fsPromise.mkdir(path.dirname(filePath), {
-        recursive: true,
-      });
-
-      await fsPromise.writeFile(
-        filePath,
-        JSON.stringify(metadataAdds, null, 2),
-        "utf8"
-      );
-    } else {
-      await fsPromise.rm(tempFilePath, {
-        force: true,
-      });
-
-      throw error;
-    }
-  }
-}
-
-/**
  * Create XYZ tile data file with lock
  * @param {string} filePath File path to store tile data file
  * @param {Buffer} data Tile data buffer
@@ -604,10 +555,52 @@ export async function updateXYZMetadataFile(filePath, metadataAdds, timeout) {
     try {
       lockFileHandle = await fsPromise.open(lockFilePath, "wx");
 
-      await updateXYZMetadataFile(filePath, {
-        ...metadataAdds,
-        scheme: "xyz",
-      });
+      const tempFilePath = `${filePath}.tmp`;
+
+      try {
+        const data = await fsPromise.readFile(filePath, "utf8");
+
+        await fsPromise.writeFile(
+          tempFilePath,
+          JSON.stringify(
+            {
+              ...JSON.parse(data),
+              ...metadataAdds,
+              scheme: "xyz",
+            },
+            null,
+            2
+          ),
+          "utf8"
+        );
+
+        await fsPromise.rename(tempFilePath, filePath);
+      } catch (error) {
+        if (error.code === "ENOENT") {
+          await fsPromise.mkdir(path.dirname(filePath), {
+            recursive: true,
+          });
+
+          await fsPromise.writeFile(
+            filePath,
+            JSON.stringify(
+              {
+                ...metadataAdds,
+                scheme: "xyz",
+              },
+              null,
+              2
+            ),
+            "utf8"
+          );
+        } else {
+          await fsPromise.rm(tempFilePath, {
+            force: true,
+          });
+
+          throw error;
+        }
+      }
 
       await lockFileHandle.close();
 
