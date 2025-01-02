@@ -61,7 +61,7 @@ sharp.cache(false);
 /**
  * Render empty image
  * @param {Function} callback Callback function
- * @param {256|512} tileSize Tile size
+ * @param {gif|png|jpg|jpeg|webp|pbf} tileFormat Tile format
  * @returns {void}
  */
 function renderEmptyImage(callback, tileFormat) {
@@ -213,7 +213,7 @@ export async function renderImage(
     request: async (req, callback) => {
       const url = decodeURIComponent(req.url);
       const parts = url.split("/");
-      let tileFormat;
+      let tileFormat = "other";
 
       switch (parts[0]) {
         case "sprites:": {
@@ -298,7 +298,7 @@ export async function renderImage(
               `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
             );
 
-            tileFormat = sourceData.tileJSON.format || "other";
+            tileFormat = sourceData.tileJSON.format;
           }
 
           break;
@@ -382,7 +382,7 @@ export async function renderImage(
               `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
             );
 
-            tileFormat = sourceData.tileJSON.format || "other";
+            tileFormat = sourceData.tileJSON.format;
           }
 
           break;
@@ -474,7 +474,7 @@ export async function renderImage(
               `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
             );
 
-            tileFormat = sourceData.tileJSON.format || "other";
+            tileFormat = sourceData.tileJSON.format;
           }
 
           break;
@@ -558,7 +558,7 @@ export async function renderImage(
               `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
             );
 
-            tileFormat = sourceData.tileJSON.format || "other";
+            tileFormat = sourceData.tileJSON.format;
           }
 
           break;
@@ -594,7 +594,7 @@ export async function renderImage(
               `Failed to get data tile from "${url}": ${error}. Serving empty tile...`
             );
 
-            tileFormat = url.slice(url.lastIndexOf(".") + 1) || "other";
+            tileFormat = url.slice(url.lastIndexOf(".") + 1);
           }
 
           break;
@@ -607,7 +607,7 @@ export async function renderImage(
         }
       }
 
-      if (tileFormat !== undefined) {
+      if (tileFormat !== "other") {
         renderEmptyImage(callback, tileFormat);
       }
     },
