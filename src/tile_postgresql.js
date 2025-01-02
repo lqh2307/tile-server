@@ -1,12 +1,12 @@
 "use strict";
 
-import { isFullTransparentPNGImage, renderImage } from "./image.js";
 import { closePostgreSQL, openPostgreSQL } from "./postgresql.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import protobuf from "protocol-buffers";
 import { printLog } from "./logger.js";
 import {
+  isFullTransparentPNGImage,
   detectFormatAndHeaders,
   getBBoxFromTiles,
   getDataFromURL,
@@ -511,34 +511,25 @@ export async function downloadPostgreSQLTile(
   storeMD5,
   storeTransparent
 ) {
-  const tileName = `${z}/${x}/${y}`;
-
   await retry(async () => {
     try {
       // Get data from URL
       const response = await getDataFromURL(url, timeout, "arraybuffer");
 
       // Store data
-      if (
-        storeTransparent === false &&
-        (await isFullTransparentPNGImage(response.data)) === true
-      ) {
-        return;
-      } else {
-        await createPostgreSQLTileWithLock(
-          source,
-          z,
-          x,
-          y,
-          storeMD5,
-          response.data,
-          300000 // 5 mins
-        );
-      }
+      await cachePostgreSQLTileData(
+        source,
+        z,
+        x,
+        y,
+        response.data,
+        storeMD5,
+        storeTransparent
+      );
     } catch (error) {
       printLog(
         "error",
-        `Failed to download tile data "${tileName}" from "${url}": ${error}`
+        `Failed to download tile data "${z}/${x}/${y}" from "${url}": ${error}`
       );
 
       if (error.statusCode !== undefined) {
@@ -553,112 +544,6 @@ export async function downloadPostgreSQLTile(
       } else {
         throw error;
       }
-    }
-  }, maxTry);
-}
-
-/**
- * Render PostgreSQL tile data
- * @param {number} compressionLevel Compression level
- * @param {object} styleJSON StyleJSON
- * @param {number} tileScale Tile scale
- * @param {256|512} tileSize Tile size
- * @param {pg.Client} source PostgreSQL database instance
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {number} maxTry Number of retry attempts on failure
- * @param {number} timeout Timeout in milliseconds
- * @param {boolean} storeMD5 Is store MD5 hashed?
- * @param {boolean} storeTransparent Is store transparent tile?
- * @returns {Promise<void>}
- */
-export async function renderPostgreSQLTile(
-  compressionLevel,
-  styleJSON,
-  tileScale,
-  tileSize,
-  source,
-  z,
-  x,
-  y,
-  maxTry,
-  timeout,
-  storeMD5,
-  storeTransparent
-) {
-  await retry(async () => {
-    // Get rendered data
-    const data = await renderImage(
-      tileScale,
-      tileSize,
-      compressionLevel,
-      styleJSON,
-      z,
-      x,
-      y
-    );
-
-    // Store data
-    if (
-      storeTransparent === false &&
-      (await isFullTransparentPNGImage(data)) === true
-    ) {
-      return;
-    } else {
-      await createPostgreSQLTileWithLock(
-        source,
-        z,
-        x,
-        y,
-        storeMD5,
-        data,
-        300000 // 5 mins
-      );
-    }
-  }, maxTry);
-}
-
-/**
- * Store render PostgreSQL tile data
- * @param {Buffer} data Rendered buffer data
- * @param {pg.Client} source PostgreSQL database instance
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {number} maxTry Number of retry attempts on failure
- * @param {number} timeout Timeout in milliseconds
- * @param {boolean} storeMD5 Is store MD5 hashed?
- * @param {boolean} storeTransparent Is store transparent tile?
- * @returns {Promise<void>}
- */
-export async function storeRenderPostgreSQLTile(
-  data,
-  source,
-  z,
-  x,
-  y,
-  maxTry,
-  timeout,
-  storeMD5,
-  storeTransparent
-) {
-  await retry(async () => {
-    if (
-      storeTransparent === false &&
-      (await isFullTransparentPNGImage(data)) === true
-    ) {
-      return;
-    } else {
-      await createPostgreSQLTileWithLock(
-        source,
-        z,
-        x,
-        y,
-        storeMD5,
-        data,
-        300000 // 5 mins
-      );
     }
   }, maxTry);
 }

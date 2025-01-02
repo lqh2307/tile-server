@@ -1,6 +1,5 @@
 "use strict";
 
-import { isFullTransparentPNGImage, renderImage } from "./image.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import protobuf from "protocol-buffers";
@@ -9,6 +8,7 @@ import sqlite3 from "sqlite3";
 import path from "node:path";
 import fs from "node:fs";
 import {
+  isFullTransparentPNGImage,
   detectFormatAndHeaders,
   getBBoxFromTiles,
   getDataFromURL,
@@ -642,26 +642,19 @@ export async function downloadMBTilesTile(
       const response = await getDataFromURL(url, timeout, "arraybuffer");
 
       // Store data
-      if (
-        storeTransparent === false &&
-        (await isFullTransparentPNGImage(response.data)) === true
-      ) {
-        return;
-      } else {
-        await createMBTilesTileWithLock(
-          source,
-          z,
-          x,
-          y,
-          storeMD5,
-          response.data,
-          300000 // 5 mins
-        );
-      }
+      await cacheMBtilesTileData(
+        source,
+        z,
+        x,
+        y,
+        response.data,
+        storeMD5,
+        storeTransparent
+      );
     } catch (error) {
       printLog(
         "error",
-        `Failed to download tile data "${tileName}" from "${url}": ${error}`
+        `Failed to download tile data "${z}/${x}/${y}" from "${url}": ${error}`
       );
 
       if (error.statusCode !== undefined) {
@@ -676,112 +669,6 @@ export async function downloadMBTilesTile(
       } else {
         throw error;
       }
-    }
-  }, maxTry);
-}
-
-/**
- * Render MBTiles tile data
- * @param {number} compressionLevel Compression level
- * @param {object} styleJSON StyleJSON
- * @param {number} tileScale Tile scale
- * @param {256|512} tileSize Tile size
- * @param {sqlite3.Database} source SQLite database instance
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {number} maxTry Number of retry attempts on failure
- * @param {number} timeout Timeout in milliseconds
- * @param {boolean} storeMD5 Is store MD5 hashed?
- * @param {boolean} storeTransparent Is store transparent tile?
- * @returns {Promise<void>}
- */
-export async function renderMBTilesTile(
-  compressionLevel,
-  styleJSON,
-  tileScale,
-  tileSize,
-  source,
-  z,
-  x,
-  y,
-  maxTry,
-  timeout,
-  storeMD5,
-  storeTransparent
-) {
-  await retry(async () => {
-    // Get rendered data
-    const data = await renderImage(
-      tileScale,
-      tileSize,
-      compressionLevel,
-      styleJSON,
-      z,
-      x,
-      y
-    );
-
-    // Store data
-    if (
-      storeTransparent === false &&
-      (await isFullTransparentPNGImage(data)) === true
-    ) {
-      return;
-    } else {
-      await createMBTilesTileWithLock(
-        source,
-        z,
-        x,
-        y,
-        storeMD5,
-        data,
-        300000 // 5 mins
-      );
-    }
-  }, maxTry);
-}
-
-/**
- * Store render MBTiles tile data
- * @param {Buffer} data Rendered buffer data
- * @param {sqlite3.Database} source SQLite database instance
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {number} maxTry Number of retry attempts on failure
- * @param {number} timeout Timeout in milliseconds
- * @param {boolean} storeMD5 Is store MD5 hashed?
- * @param {boolean} storeTransparent Is store transparent tile?
- * @returns {Promise<void>}
- */
-export async function storeRenderMBTilesTile(
-  data,
-  source,
-  z,
-  x,
-  y,
-  maxTry,
-  timeout,
-  storeMD5,
-  storeTransparent
-) {
-  await retry(async () => {
-    if (
-      storeTransparent === false &&
-      (await isFullTransparentPNGImage(data)) === true
-    ) {
-      return;
-    } else {
-      await createMBTilesTileWithLock(
-        source,
-        z,
-        x,
-        y,
-        storeMD5,
-        data,
-        300000 // 5 mins
-      );
     }
   }, maxTry);
 }

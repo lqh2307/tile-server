@@ -11,24 +11,20 @@ import sqlite3 from "sqlite3";
 import sharp from "sharp";
 import {
   updatePostgreSQLMetadataWithLock,
-  storeRenderPostgreSQLTile,
   getPostgreSQLTileFromURL,
   getPostgreSQLTileCreated,
   cachePostgreSQLTileData,
   getPostgreSQLTileMD5,
-  renderPostgreSQLTile,
   getPostgreSQLTile,
   closePostgreSQLDB,
   openPostgreSQLDB,
 } from "./tile_postgresql.js";
 import {
   updateMBTilesMetadataWithLock,
-  storeRenderMBTilesTile,
   getMBTilesTileFromURL,
   getMBTilesTileCreated,
   cacheMBtilesTileData,
   getMBTilesTileMD5,
-  renderMBTilesTile,
   getMBTilesTile,
   closeMBTilesDB,
   openMBTilesDB,
@@ -45,8 +41,6 @@ import {
 } from "./utils.js";
 import {
   updateXYZMetadataFileWithLock,
-  storeRenderXYZTileDataFile,
-  renderXYZTileDataFile,
   cacheXYZTileDataFile,
   getXYZTileCreated,
   getXYZTileFromURL,
@@ -682,46 +676,6 @@ export async function renderImage(
 }
 
 /**
- * Check if PNG image file/buffer is full transparent (alpha = 0)
- * @param {Buffer} buffer Buffer of the PNG image
- * @returns {Promise<boolean>}
- */
-export async function isFullTransparentPNGImage(buffer) {
-  try {
-    if (
-      buffer[0] !== 0x89 ||
-      buffer[1] !== 0x50 ||
-      buffer[2] !== 0x4e ||
-      buffer[3] !== 0x47 ||
-      buffer[4] !== 0x0d ||
-      buffer[5] !== 0x0a ||
-      buffer[6] !== 0x1a ||
-      buffer[7] !== 0x0a
-    ) {
-      return false;
-    }
-
-    const { data, info } = await sharp(buffer).raw().toBuffer({
-      resolveWithObject: true,
-    });
-
-    if (info.channels !== 4) {
-      return false;
-    }
-
-    for (let i = 3; i < data.length; i += 4) {
-      if (data[i] !== 0) {
-        return false;
-      }
-    }
-
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
-
-/**
  * Render MBTiles tiles
  * @param {string} id Style ID
  * @param {object} metadata Metadata object
@@ -730,8 +684,6 @@ export async function isFullTransparentPNGImage(buffer) {
  * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {number} maxzoom Max zoom level
  * @param {number} concurrency Concurrency download
- * @param {number} maxTry Number of retry attempts on failure
- * @param {number} timeout Timeout in milliseconds
  * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {boolean} storeTransparent Is store transparent tile?
  * @param {boolean} createOverview Is create overview?
@@ -746,8 +698,6 @@ export async function renderMBTilesTiles(
   bbox = [-180, -85.051129, 180, 85.051129],
   maxzoom = 22,
   concurrency = os.cpus().length,
-  maxTry = 5,
-  timeout = 60000,
   storeMD5 = false,
   storeTransparent = false,
   createOverview = true,
@@ -761,7 +711,7 @@ export async function renderMBTilesTiles(
     "xyz"
   );
 
-  let log = `Rendering ${total} tiles of style "${id}" to mbtiles with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tMax zoom: ${maxzoom}\n\tBBox: [${bbox.join(
+  let log = `Rendering ${total} tiles of style "${id}" to mbtiles with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax zoom: ${maxzoom}\n\tBBox: [${bbox.join(
     ", "
   )}]\n\tTile size: ${tileSize}\n\tTile scale: ${tileScale}\n\tCreate overview: ${createOverview}`;
 
@@ -821,6 +771,7 @@ export async function renderMBTilesTiles(
         try {
           printLog("info", `Rendering style "${id}" - Tile "${tileName}"...`);
 
+          // Rendered data
           const [data, md5] = await Promise.all([
             renderImage(
               tileScale,
@@ -835,14 +786,13 @@ export async function renderMBTilesTiles(
           ]);
 
           if (calculateMD5(data) !== md5) {
-            await storeRenderMBTilesTile(
-              data,
+            // Store data
+            await cacheMBtilesTileData(
               source,
               z,
               x,
               y,
-              maxTry,
-              timeout,
+              data,
               storeMD5,
               storeTransparent
             );
@@ -875,17 +825,24 @@ export async function renderMBTilesTiles(
       if (needRender === true) {
         printLog("info", `Rendering style "${id}" - Tile "${tileName}"...`);
 
-        await renderMBTilesTile(
-          rendered.compressionLevel,
-          rendered.styleJSON,
+        // Rendered data
+        const data = await renderImage(
           tileScale,
           tileSize,
+          rendered.compressionLevel,
+          rendered.styleJSON,
+          z,
+          x,
+          y
+        );
+
+        // Store data
+        await cacheMBtilesTileData(
           source,
           z,
           x,
           y,
-          maxTry,
-          timeout,
+          data,
           storeMD5,
           storeTransparent
         );
@@ -968,8 +925,6 @@ export async function renderMBTilesTiles(
  * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {number} maxzoom Max zoom level
  * @param {number} concurrency Concurrency to download
- * @param {number} maxTry Number of retry attempts on failure
- * @param {number} timeout Timeout in milliseconds
  * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {boolean} storeTransparent Is store transparent tile?
  * @param {boolean} createOverview Is create overview?
@@ -984,8 +939,6 @@ export async function renderXYZTiles(
   bbox = [-180, -85.051129, 180, 85.051129],
   maxzoom = 22,
   concurrency = os.cpus().length,
-  maxTry = 5,
-  timeout = 60000,
   storeMD5 = false,
   storeTransparent = false,
   createOverview = true,
@@ -999,7 +952,7 @@ export async function renderXYZTiles(
     "xyz"
   );
 
-  let log = `Rendering ${total} tiles of style "${id}" to xyz with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tMax zoom: ${maxzoom}\n\tBBox: [${bbox.join(
+  let log = `Rendering ${total} tiles of style "${id}" to xyz with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax zoom: ${maxzoom}\n\tBBox: [${bbox.join(
     ", "
   )}]\n\tTile size: ${tileSize}\n\tTile scale: ${tileScale}\n\tCreate overview: ${createOverview}`;
 
@@ -1059,6 +1012,7 @@ export async function renderXYZTiles(
         try {
           printLog("info", `Rendering style "${id}" - Tile "${tileName}"...`);
 
+          // Rendered data
           const [data, md5] = await Promise.all([
             renderImage(
               tileScale,
@@ -1073,16 +1027,15 @@ export async function renderXYZTiles(
           ]);
 
           if (calculateMD5(data) !== md5) {
-            await storeRenderXYZTileDataFile(
-              data,
-              id,
+            // Store data
+            await cacheXYZTileDataFile(
+              `${process.env.DATA_DIR}/exports/xyzs/${id}`,
               source,
               z,
               x,
               y,
               metadata.format,
-              maxTry,
-              timeout,
+              data,
               storeMD5,
               storeTransparent
             );
@@ -1117,19 +1070,26 @@ export async function renderXYZTiles(
       if (needRender === true) {
         printLog("info", `Rendering style "${id}" - Tile "${tileName}"...`);
 
-        await renderXYZTileDataFile(
-          rendered.compressionLevel,
-          rendered.styleJSON,
+        // Rendered data
+        const data = await renderImage(
           tileScale,
           tileSize,
-          id,
+          rendered.compressionLevel,
+          rendered.styleJSON,
+          z,
+          x,
+          y
+        );
+
+        // Store data
+        await cacheXYZTileDataFile(
+          `${process.env.DATA_DIR}/exports/xyzs/${id}`,
           source,
           z,
           x,
           y,
           metadata.format,
-          maxTry,
-          timeout,
+          data,
           storeMD5,
           storeTransparent
         );
@@ -1209,8 +1169,6 @@ export async function renderXYZTiles(
  * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {number} maxzoom Max zoom level
  * @param {number} concurrency Concurrency download
- * @param {number} maxTry Number of retry attempts on failure
- * @param {number} timeout Timeout in milliseconds
  * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {boolean} storeTransparent Is store transparent tile?
  * @param {boolean} createOverview Is create overview?
@@ -1225,8 +1183,6 @@ export async function renderPostgreSQLTiles(
   bbox = [-180, -85.051129, 180, 85.051129],
   maxzoom = 22,
   concurrency = os.cpus().length,
-  maxTry = 5,
-  timeout = 60000,
   storeMD5 = false,
   storeTransparent = false,
   createOverview = true,
@@ -1240,7 +1196,7 @@ export async function renderPostgreSQLTiles(
     "xyz"
   );
 
-  let log = `Rendering ${total} tiles of style "${id}" to postgresql with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tMax zoom: ${maxzoom}\n\tBBox: [${bbox.join(
+  let log = `Rendering ${total} tiles of style "${id}" to postgresql with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax zoom: ${maxzoom}\n\tBBox: [${bbox.join(
     ", "
   )}]\n\tTile size: ${tileSize}\n\tTile scale: ${tileScale}\n\tCreate overview: ${createOverview}`;
 
@@ -1299,6 +1255,7 @@ export async function renderPostgreSQLTiles(
         try {
           printLog("info", `Rendering style "${id}" - Tile "${tileName}"...`);
 
+          // Rendered data
           const [data, md5] = await Promise.all([
             renderImage(
               tileScale,
@@ -1313,14 +1270,13 @@ export async function renderPostgreSQLTiles(
           ]);
 
           if (calculateMD5(data) !== md5) {
-            await storeRenderPostgreSQLTile(
-              data,
+            // Store data
+            await cachePostgreSQLTileData(
               source,
               z,
               x,
               y,
-              maxTry,
-              timeout,
+              data,
               storeMD5,
               storeTransparent
             );
@@ -1353,17 +1309,24 @@ export async function renderPostgreSQLTiles(
       if (needRender === true) {
         printLog("info", `Rendering style "${id}" - Tile "${tileName}"...`);
 
-        await renderPostgreSQLTile(
-          rendered.compressionLevel,
-          rendered.styleJSON,
+        // Rendered data
+        const data = await renderImage(
           tileScale,
           tileSize,
+          rendered.compressionLevel,
+          rendered.styleJSON,
+          z,
+          x,
+          y
+        );
+
+        // Store data
+        await cachePostgreSQLTileData(
           source,
           z,
           x,
           y,
-          maxTry,
-          timeout,
+          data,
           storeMD5,
           storeTransparent
         );

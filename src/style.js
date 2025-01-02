@@ -160,11 +160,7 @@ export async function downloadStyleFile(url, filePath, maxTry, timeout) {
       const response = await getDataFromURL(url, timeout, "arraybuffer");
 
       // Store data to file
-      await createStyleDataFileWithLock(
-        filePath,
-        response.data,
-        300000 // 5 mins
-      );
+      await cacheStyleFile(filePath, response.data);
     } catch (error) {
       if (error.statusCode !== undefined) {
         printLog(
