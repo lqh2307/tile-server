@@ -232,15 +232,7 @@ async function getMBTilesFormatFromTiles(source) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function createMBTilesTileWithLock(
-  source,
-  z,
-  x,
-  y,
-  storeMD5,
-  data,
-  timeout
-) {
+async function createMBTilesTile(source, z, x, y, storeMD5, data, timeout) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
@@ -285,7 +277,7 @@ async function createMBTilesTileWithLock(
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function removeMBTilesTileWithLock(source, z, x, y, timeout) {
+export async function removeMBTilesTile(source, z, x, y, timeout) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
@@ -578,11 +570,7 @@ export async function downloadMBTilesFile(url, filePath, maxTry, timeout) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function updateMBTilesMetadataWithLock(
-  source,
-  metadataAdds,
-  timeout
-) {
+export async function updateMBTilesMetadata(source, metadataAdds, timeout) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
@@ -713,22 +701,6 @@ export async function downloadMBTilesTile(
 }
 
 /**
- * Remove MBTiles tile data
- * @param {sqlite3.Database} source SQLite database instance
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {number} maxTry Number of retry attempts on failure
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-export async function removeMBTilesTileData(source, z, x, y, maxTry, timeout) {
-  await retry(async () => {
-    await removeMBTilesTileWithLock(source, z, x, y, timeout);
-  }, maxTry);
-}
-
-/**
  * Cache MBTiles tile data
  * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
@@ -754,7 +726,7 @@ export async function cacheMBtilesTileData(
   ) {
     return;
   } else {
-    await createMBTilesTileWithLock(
+    await createMBTilesTile(
       source,
       z,
       x,

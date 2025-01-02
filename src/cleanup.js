@@ -7,14 +7,14 @@ import { Mutex } from "async-mutex";
 import sqlite3 from "sqlite3";
 import os from "os";
 import {
-  removeXYZTileDataFile,
   getXYZTileCreated,
+  removeXYZTile,
   closeXYZMD5DB,
   openXYZMD5DB,
 } from "./tile_xyz.js";
 import {
-  removeMBTilesTileData,
   getMBTilesTileCreated,
+  removeMBTilesTile,
   closeMBTilesDB,
   openMBTilesDB,
 } from "./tile_mbtiles.js";
@@ -26,7 +26,7 @@ import {
 } from "./utils.js";
 import {
   getPostgreSQLTileCreated,
-  removePostgreSQLTileData,
+  removePostgreSQLTile,
   closePostgreSQLDB,
   openPostgreSQLDB,
 } from "./tile_postgresql.js";
@@ -272,12 +272,11 @@ export async function cleanUpMBTilesTiles(
       if (needRemove === true) {
         printLog("info", `Removing data "${id}" - Tile "${tileName}"...`);
 
-        await removeMBTilesTileData(
+        await removeMBTilesTile(
           source,
           z,
           x,
           y,
-          maxTry,
           300000 // 5 mins
         );
       }
@@ -424,12 +423,11 @@ export async function cleanUpPostgreSQLTiles(
       if (needRemove === true) {
         printLog("info", `Removing data "${id}" - Tile "${tileName}"...`);
 
-        await removePostgreSQLTileData(
+        await removePostgreSQLTile(
           source,
           z,
           x,
           y,
-          maxTry,
           300000 // 5 mins
         );
       }
@@ -581,14 +579,13 @@ export async function cleanUpXYZTiles(
       if (needRemove === true) {
         printLog("info", `Removing data "${id}" - Tile "${tileName}"...`);
 
-        await removeXYZTileDataFile(
+        await removeXYZTile(
           id,
           source,
           z,
           x,
           y,
           format,
-          maxTry,
           300000 // 5 mins
         );
       }

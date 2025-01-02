@@ -20,33 +20,33 @@ import {
  * @returns {Promise<void>}
  */
 async function initializePostgreSQLTables(source) {
-  // Create metadata table
-  await source.query(
-    `
-    CREATE TABLE IF NOT EXISTS
-      metadata (
-        name TEXT NOT NULL,
-        value TEXT NOT NULL,
-        PRIMARY KEY (name)
-      );
-    `
-  );
-
-  // Create tiles table
-  await source.query(
-    `
-    CREATE TABLE IF NOT EXISTS
-      tiles (
-        zoom_level INTEGER NOT NULL,
-        tile_column INTEGER NOT NULL,
-        tile_row INTEGER NOT NULL,
-        tile_data BYTEA NOT NULL,
-        hash TEXT,
-        created BIGINT,
-        PRIMARY KEY (zoom_level, tile_column, tile_row)
-      );
-    `
-  );
+  // Create metadata and tiles table
+  await Promise.all([
+    source.query(
+      `
+      CREATE TABLE IF NOT EXISTS
+        metadata (
+          name TEXT NOT NULL,
+          value TEXT NOT NULL,
+          PRIMARY KEY (name)
+        );
+      `
+    ),
+    source.query(
+      `
+      CREATE TABLE IF NOT EXISTS
+        tiles (
+          zoom_level INTEGER NOT NULL,
+          tile_column INTEGER NOT NULL,
+          tile_row INTEGER NOT NULL,
+          tile_data BYTEA NOT NULL,
+          hash TEXT,
+          created BIGINT,
+          PRIMARY KEY (zoom_level, tile_column, tile_row)
+        );
+      `
+    ),
+  ]);
 }
 
 /**
@@ -218,15 +218,7 @@ async function getPostgreSQLFormatFromTiles(source) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function createPostgreSQLTileWithLock(
-  source,
-  z,
-  x,
-  y,
-  storeMD5,
-  data,
-  timeout
-) {
+async function createPostgreSQLTile(source, z, x, y, storeMD5, data, timeout) {
   await source.query({
     text: `
     INSERT INTO
@@ -257,7 +249,7 @@ async function createPostgreSQLTileWithLock(
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function removePostgreSQLTileWithLock(source, z, x, y, timeout) {
+export async function removePostgreSQLTile(source, z, x, y, timeout) {
   await source.query({
     text: `
     DELETE FROM
@@ -470,11 +462,7 @@ export async function closePostgreSQLDB(source) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function updatePostgreSQLMetadataWithLock(
-  source,
-  metadataAdds,
-  timeout
-) {
+export async function updatePostgreSQLMetadata(source, metadataAdds, timeout) {
   await Promise.all(
     Object.entries({
       ...metadataAdds,
@@ -588,29 +576,6 @@ export async function downloadPostgreSQLTile(
 }
 
 /**
- * Remove PostgreSQL tile data
- * @param {pg.Client} source PostgreSQL database instance
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {number} maxTry Number of retry attempts on failure
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-export async function removePostgreSQLTileData(
-  source,
-  z,
-  x,
-  y,
-  maxTry,
-  timeout
-) {
-  await retry(async () => {
-    await removePostgreSQLTileWithLock(source, z, x, y, timeout);
-  }, maxTry);
-}
-
-/**
  * Cache PostgreSQL tile data
  * @param {pg.Client} source PostgreSQL database instance
  * @param {number} z Zoom level
@@ -636,7 +601,7 @@ export async function cachePostgreSQLTileData(
   ) {
     return;
   } else {
-    await createPostgreSQLTileWithLock(
+    await createPostgreSQLTile(
       source,
       z,
       x,

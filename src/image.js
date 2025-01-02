@@ -10,7 +10,7 @@ import { Mutex } from "async-mutex";
 import sqlite3 from "sqlite3";
 import sharp from "sharp";
 import {
-  updatePostgreSQLMetadataWithLock,
+  updatePostgreSQLMetadata,
   getPostgreSQLTileFromURL,
   getPostgreSQLTileCreated,
   cachePostgreSQLTileData,
@@ -20,7 +20,7 @@ import {
   openPostgreSQLDB,
 } from "./tile_postgresql.js";
 import {
-  updateMBTilesMetadataWithLock,
+  updateMBTilesMetadata,
   getMBTilesTileFromURL,
   getMBTilesTileCreated,
   cacheMBtilesTileData,
@@ -40,7 +40,7 @@ import {
   delay,
 } from "./utils.js";
 import {
-  updateXYZMetadataFileWithLock,
+  updateXYZMetadataFile,
   cacheXYZTileDataFile,
   getXYZTileCreated,
   getXYZTileFromURL,
@@ -744,7 +744,7 @@ export async function renderMBTilesTiles(
   /* Update metadata */
   printLog("info", "Updating metadata...");
 
-  await updateMBTilesMetadataWithLock(
+  await updateMBTilesMetadata(
     source,
     {
       ...metadata,
@@ -985,7 +985,7 @@ export async function renderXYZTiles(
   /* Update metadata */
   printLog("info", "Updating metadata...");
 
-  await updateXYZMetadataFileWithLock(
+  await updateXYZMetadataFile(
     `${process.env.DATA_DIR}/exports/xyzs/${id}/metadata.json`,
     {
       ...metadata,
@@ -1228,7 +1228,7 @@ export async function renderPostgreSQLTiles(
   /* Update metadata */
   printLog("info", "Updating metadata...");
 
-  await updatePostgreSQLMetadataWithLock(
+  await updatePostgreSQLMetadata(
     source,
     {
       ...metadata,

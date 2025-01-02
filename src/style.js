@@ -41,7 +41,7 @@ async function createStyleDataFile(filePath, data) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function createStyleDataFileWithLock(filePath, data, timeout) {
+async function createStyleDataFile(filePath, data, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;
@@ -102,7 +102,7 @@ async function createStyleDataFileWithLock(filePath, data, timeout) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function removeStyleDataFileWithLock(filePath, timeout) {
+export async function removeStyleDataFile(filePath, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;
@@ -192,7 +192,7 @@ export async function downloadStyleFile(url, filePath, maxTry, timeout) {
  */
 export async function removeStyleFile(filePath, maxTry, timeout) {
   await retry(async () => {
-    await removeStyleDataFileWithLock(filePath, timeout);
+    await removeStyleDataFile(filePath, timeout);
   }, maxTry);
 }
 
@@ -203,7 +203,7 @@ export async function removeStyleFile(filePath, maxTry, timeout) {
  * @returns {Promise<void>}
  */
 export async function cacheStyleFile(filePath, data) {
-  await createStyleDataFileWithLock(
+  await createStyleDataFile(
     filePath,
     data,
     300000 // 5 mins

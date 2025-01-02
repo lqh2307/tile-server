@@ -7,15 +7,15 @@ import { Mutex } from "async-mutex";
 import sqlite3 from "sqlite3";
 import os from "os";
 import {
-  updateXYZMetadataFileWithLock,
   downloadXYZTileDataFile,
+  updateXYZMetadataFile,
   getXYZTileCreated,
   closeXYZMD5DB,
   getXYZTileMD5,
   openXYZMD5DB,
 } from "./tile_xyz.js";
 import {
-  updateMBTilesMetadataWithLock,
+  updateMBTilesMetadata,
   getMBTilesTileCreated,
   downloadMBTilesTile,
   getMBTilesTileMD5,
@@ -30,7 +30,7 @@ import {
   delay,
 } from "./utils.js";
 import {
-  updatePostgreSQLMetadataWithLock,
+  updatePostgreSQLMetadata,
   getPostgreSQLTileCreated,
   downloadPostgreSQLTile,
   getPostgreSQLTileMD5,
@@ -466,7 +466,7 @@ export async function seedMBTilesTiles(
   /* Update metadata */
   printLog("info", "Updating metadata...");
 
-  await updateMBTilesMetadataWithLock(
+  await updateMBTilesMetadata(
     source,
     metadata,
     300000 // 5 mins
@@ -669,7 +669,7 @@ export async function seedPostgreSQLTiles(
   /* Update metadata */
   printLog("info", "Updating metadata...");
 
-  await updatePostgreSQLMetadataWithLock(
+  await updatePostgreSQLMetadata(
     source,
     metadata,
     300000 // 5 mins
@@ -874,7 +874,7 @@ export async function seedXYZTiles(
   /* Update metadata */
   printLog("info", "Updating metadata...");
 
-  await updateXYZMetadataFileWithLock(
+  await updateXYZMetadataFile(
     `${process.env.DATA_DIR}/caches/xyzs/${id}/metadata.json`,
     metadata,
     300000 // 5 mins

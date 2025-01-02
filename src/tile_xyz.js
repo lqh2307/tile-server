@@ -252,7 +252,7 @@ async function createXYZTileDataFile(filePath, data) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function createXYZTileDataFileWithLock(filePath, data, timeout) {
+async function createXYZTileDataFile(filePath, data, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;
@@ -303,7 +303,7 @@ async function createXYZTileDataFileWithLock(filePath, data, timeout) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function removeXYZTileDataFileWithLock(filePath, timeout) {
+async function removeXYZTileDataFile(filePath, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;
@@ -429,7 +429,7 @@ async function upsertXYZTileMD5(source, z, x, y, hash) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function createXYZTileMD5WithLock(source, z, x, y, buffer, timeout) {
+async function createXYZTileMD5(source, z, x, y, buffer, timeout) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
@@ -458,7 +458,7 @@ async function createXYZTileMD5WithLock(source, z, x, y, buffer, timeout) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function removeXYZTileMD5WithLock(source, z, x, y, timeout) {
+async function removeXYZTileMD5(source, z, x, y, timeout) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
@@ -637,11 +637,7 @@ export async function getXYZInfos(sourcePath) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function updateXYZMetadataFileWithLock(
-  filePath,
-  metadataAdds,
-  timeout
-) {
+export async function updateXYZMetadataFile(filePath, metadataAdds, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;
@@ -764,36 +760,24 @@ export async function downloadXYZTileDataFile(
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
- * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function removeXYZTileDataFile(
-  id,
-  source,
-  z,
-  x,
-  y,
-  format,
-  maxTry,
-  timeout
-) {
-  await retry(async () => {
-    await removeXYZTileDataFileWithLock(
-      `${process.env.DATA_DIR}/caches/xyzs/${id}/${z}/${x}/${y}.${format}`,
-      timeout
-    );
+export async function removeXYZTile(id, source, z, x, y, format, timeout) {
+  await removeXYZTileDataFile(
+    `${process.env.DATA_DIR}/caches/xyzs/${id}/${z}/${x}/${y}.${format}`,
+    timeout
+  );
 
-    if (source !== undefined) {
-      await removeXYZTileMD5WithLock(
-        source,
-        z,
-        x,
-        y,
-        300000 // 5 mins
-      );
-    }
-  }, maxTry);
+  if (source !== undefined) {
+    await removeXYZTileMD5(
+      source,
+      z,
+      x,
+      y,
+      300000 // 5 mins
+    );
+  }
 }
 
 /**
@@ -826,14 +810,14 @@ export async function cacheXYZTileDataFile(
   ) {
     return;
   } else {
-    await createXYZTileDataFileWithLock(
+    await createXYZTileDataFile(
       `${sourcePath}/${z}/${x}/${y}.${format}`,
       data,
       300000 // 5 mins
     );
 
     if (storeMD5 === true) {
-      await createXYZTileMD5WithLock(
+      await createXYZTileMD5(
         source,
         z,
         x,
