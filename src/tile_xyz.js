@@ -337,50 +337,6 @@ async function removeXYZTileDataFile(filePath, timeout) {
 }
 
 /**
- * Initialize XYZ MD5 database tables
- * @param {sqlite3.Database} source SQLite database instance
- * @returns {Promise<void>}
- */
-async function initializeXYZMD5Tables(source) {
-  await runSQL(
-    source,
-    `
-    CREATE TABLE IF NOT EXISTS
-      md5s (
-        zoom_level INTEGER NOT NULL,
-        tile_column INTEGER NOT NULL,
-        tile_row INTEGER NOT NULL,
-        hash TEXT,
-        PRIMARY KEY (zoom_level, tile_column, tile_row)
-      );
-    `
-  );
-}
-
-/**
- * Remove MD5 hash of XYZ tile
- * @param {sqlite3.Database} source SQLite database instance
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @returns {Promise<void>}
- */
-async function removeXYZTileMD5(source, z, x, y) {
-  await runSQL(
-    source,
-    `
-    DELETE FROM
-      md5s
-    WHERE
-      zoom_level = ? AND tile_column = ? AND tile_row = ?;
-    `,
-    z,
-    x,
-    y
-  );
-}
-
-/**
  * Upsert MD5 hash of XYZ tile
  * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
@@ -453,7 +409,18 @@ async function removeXYZTileMD5(source, z, x, y, timeout) {
 
   while (Date.now() - startTime <= timeout) {
     try {
-      await removeXYZTileMD5(source, z, x, y);
+      await runSQL(
+        source,
+        `
+        DELETE FROM
+          md5s
+        WHERE
+          zoom_level = ? AND tile_column = ? AND tile_row = ?;
+        `,
+        z,
+        x,
+        y
+      );
 
       return;
     } catch (error) {
@@ -830,7 +797,19 @@ export async function openXYZMD5DB(filePath, mode, wal = false) {
   const source = await openSQLite(filePath, mode, wal);
 
   if (mode & sqlite3.OPEN_CREATE) {
-    await initializeXYZMD5Tables(source);
+    await runSQL(
+      source,
+      `
+      CREATE TABLE IF NOT EXISTS
+        md5s (
+          zoom_level INTEGER NOT NULL,
+          tile_column INTEGER NOT NULL,
+          tile_row INTEGER NOT NULL,
+          hash TEXT,
+          PRIMARY KEY (zoom_level, tile_column, tile_row)
+        );
+      `
+    );
   }
 
   return source;

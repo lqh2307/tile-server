@@ -25,43 +25,6 @@ import {
 } from "./sqlite.js";
 
 /**
- * Initialize MBTiles database tables
- * @param {sqlite3.Database} source SQLite database instance
- * @returns {Promise<void>}
- */
-async function initializeMBTilesTables(source) {
-  // Create metadata and tiles table
-  await Promise.all([
-    runSQL(
-      source,
-      `
-      CREATE TABLE IF NOT EXISTS
-        metadata (
-          name TEXT NOT NULL,
-          value TEXT NOT NULL,
-          PRIMARY KEY (name)
-        );
-      `
-    ),
-    runSQL(
-      source,
-      `
-      CREATE TABLE IF NOT EXISTS
-        tiles (
-          zoom_level INTEGER NOT NULL,
-          tile_column INTEGER NOT NULL,
-          tile_row INTEGER NOT NULL,
-          tile_data BLOB NOT NULL,
-          hash TEXT,
-          created BIGINT,
-          PRIMARY KEY (zoom_level, tile_column, tile_row)
-        );
-      `
-    ),
-  ]);
-}
-
-/**
  * Get MBTiles layers from tiles
  * @param {sqlite3.Database} source SQLite database instance
  * @returns {Promise<Array<string>>}
@@ -319,7 +282,34 @@ export async function openMBTilesDB(filePath, mode, wal = false) {
   const source = await openSQLite(filePath, mode, wal);
 
   if (mode & sqlite3.OPEN_CREATE) {
-    await initializeMBTilesTables(source);
+    await Promise.all([
+      runSQL(
+        source,
+        `
+        CREATE TABLE IF NOT EXISTS
+          metadata (
+            name TEXT NOT NULL,
+            value TEXT NOT NULL,
+            PRIMARY KEY (name)
+          );
+      `
+      ),
+      runSQL(
+        source,
+        `
+        CREATE TABLE IF NOT EXISTS
+          tiles (
+            zoom_level INTEGER NOT NULL,
+            tile_column INTEGER NOT NULL,
+            tile_row INTEGER NOT NULL,
+            tile_data BLOB NOT NULL,
+            hash TEXT,
+            created BIGINT,
+            PRIMARY KEY (zoom_level, tile_column, tile_row)
+          );
+        `
+      ),
+    ]);
   }
 
   return source;

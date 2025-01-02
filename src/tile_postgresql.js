@@ -15,41 +15,6 @@ import {
 } from "./utils.js";
 
 /**
- * Initialize PostgreSQL database tables
- * @param {pg.Client} source PostgreSQL database instance
- * @returns {Promise<void>}
- */
-async function initializePostgreSQLTables(source) {
-  // Create metadata and tiles table
-  await Promise.all([
-    source.query(
-      `
-      CREATE TABLE IF NOT EXISTS
-        metadata (
-          name TEXT NOT NULL,
-          value TEXT NOT NULL,
-          PRIMARY KEY (name)
-        );
-      `
-    ),
-    source.query(
-      `
-      CREATE TABLE IF NOT EXISTS
-        tiles (
-          zoom_level INTEGER NOT NULL,
-          tile_column INTEGER NOT NULL,
-          tile_row INTEGER NOT NULL,
-          tile_data BYTEA NOT NULL,
-          hash TEXT,
-          created BIGINT,
-          PRIMARY KEY (zoom_level, tile_column, tile_row)
-        );
-      `
-    ),
-  ]);
-}
-
-/**
  * Get PostgreSQL layers from tiles
  * @param {pg.Client} source PostgreSQL database instance
  * @returns {Promise<Array<string>>}
@@ -272,7 +237,32 @@ export async function openPostgreSQLDB(uri, isCreate) {
   const source = await openPostgreSQL(uri, isCreate);
 
   if (isCreate === true) {
-    await initializePostgreSQLTables(source);
+    await Promise.all([
+      source.query(
+        `
+        CREATE TABLE IF NOT EXISTS
+          metadata (
+            name TEXT NOT NULL,
+            value TEXT NOT NULL,
+            PRIMARY KEY (name)
+          );
+        `
+      ),
+      source.query(
+        `
+        CREATE TABLE IF NOT EXISTS
+          tiles (
+            zoom_level INTEGER NOT NULL,
+            tile_column INTEGER NOT NULL,
+            tile_row INTEGER NOT NULL,
+            tile_data BYTEA NOT NULL,
+            hash TEXT,
+            created BIGINT,
+            PRIMARY KEY (zoom_level, tile_column, tile_row)
+          );
+        `
+      ),
+    ]);
   }
 
   return source;
