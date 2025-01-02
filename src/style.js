@@ -9,32 +9,6 @@ import { config } from "./config.js";
 import path from "node:path";
 
 /**
- * Create style data file
- * @param {string} filePath File path to store style file
- * @param {Buffer} data Data buffer
- * @returns {Promise<void>}
- */
-async function createStyleDataFile(filePath, data) {
-  const tempFilePath = `${filePath}.tmp`;
-
-  try {
-    await fsPromise.mkdir(path.dirname(filePath), {
-      recursive: true,
-    });
-
-    await fsPromise.writeFile(tempFilePath, data);
-
-    await fsPromise.rename(tempFilePath, filePath);
-  } catch (error) {
-    await fsPromise.rm(tempFilePath, {
-      force: true,
-    });
-
-    throw error;
-  }
-}
-
-/**
  * Create style data file with lock
  * @param {string} filePath File path to store style file
  * @param {Buffer} data Data buffer
@@ -51,7 +25,23 @@ async function createStyleDataFile(filePath, data, timeout) {
     try {
       lockFileHandle = await fsPromise.open(lockFilePath, "wx");
 
-      await createStyleDataFile(filePath, data);
+      const tempFilePath = `${filePath}.tmp`;
+
+      try {
+        await fsPromise.mkdir(path.dirname(filePath), {
+          recursive: true,
+        });
+
+        await fsPromise.writeFile(tempFilePath, data);
+
+        await fsPromise.rename(tempFilePath, filePath);
+      } catch (error) {
+        await fsPromise.rm(tempFilePath, {
+          force: true,
+        });
+
+        throw error;
+      }
 
       await lockFileHandle.close();
 
@@ -66,17 +56,7 @@ async function createStyleDataFile(filePath, data, timeout) {
           recursive: true,
         });
 
-        lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-        await createStyleDataFile(filePath, data);
-
-        await lockFileHandle.close();
-
-        await fsPromise.rm(lockFilePath, {
-          force: true,
-        });
-
-        return;
+        continue;
       } else if (error.code === "EEXIST") {
         await delay(50);
       } else {

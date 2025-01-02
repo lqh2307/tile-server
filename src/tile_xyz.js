@@ -220,32 +220,6 @@ async function updateXYZMetadataFile(filePath, metadataAdds) {
 }
 
 /**
- * Create XYZ tile data file
- * @param {string} filePath File path to store tile data file
- * @param {Buffer} data Tile data buffer
- * @returns {Promise<void>}
- */
-async function createXYZTileDataFile(filePath, data) {
-  const tempFilePath = `${filePath}.tmp`;
-
-  try {
-    await fsPromise.mkdir(path.dirname(filePath), {
-      recursive: true,
-    });
-
-    await fsPromise.writeFile(tempFilePath, data);
-
-    await fsPromise.rename(tempFilePath, filePath);
-  } catch (error) {
-    await fsPromise.rm(tempFilePath, {
-      force: true,
-    });
-
-    throw error;
-  }
-}
-
-/**
  * Create XYZ tile data file with lock
  * @param {string} filePath File path to store tile data file
  * @param {Buffer} data Tile data buffer
@@ -262,7 +236,23 @@ async function createXYZTileDataFile(filePath, data, timeout) {
     try {
       lockFileHandle = await fsPromise.open(lockFilePath, "wx");
 
-      await createXYZTileDataFile(filePath, data);
+      const tempFilePath = `${filePath}.tmp`;
+
+      try {
+        await fsPromise.mkdir(path.dirname(filePath), {
+          recursive: true,
+        });
+
+        await fsPromise.writeFile(tempFilePath, data);
+
+        await fsPromise.rename(tempFilePath, filePath);
+      } catch (error) {
+        await fsPromise.rm(tempFilePath, {
+          force: true,
+        });
+
+        throw error;
+      }
 
       await lockFileHandle.close();
 
