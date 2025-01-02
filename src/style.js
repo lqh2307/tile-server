@@ -184,19 +184,6 @@ export async function downloadStyleFile(url, filePath, maxTry, timeout) {
 }
 
 /**
- * Remove style file
- * @param {string} filePath File path
- * @param {number} maxTry Number of retry attempts on failure
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-export async function removeStyleFile(filePath, maxTry, timeout) {
-  await retry(async () => {
-    await removeStyleDataFile(filePath, timeout);
-  }, maxTry);
-}
-
-/**
  * Cache style file
  * @param {string} filePath File path
  * @param {Buffer} data Tile data buffer

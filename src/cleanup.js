@@ -1,6 +1,6 @@
 "use strict";
 
-import { getStyleCreated, removeStyleFile } from "./style.js";
+import { removeStyleDataFile, getStyleCreated } from "./style.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
@@ -707,9 +707,8 @@ export async function cleanUpStyle(id, maxTry = 5, cleanUpBefore) {
     if (needRemove === true) {
       printLog("info", `Removing style "${id}" - File "${filePath}"...`);
 
-      await removeStyleFile(
+      await removeStyleDataFile(
         filePath,
-        maxTry,
         300000 // 5 mins
       );
     }
