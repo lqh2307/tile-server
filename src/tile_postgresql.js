@@ -116,25 +116,64 @@ async function getPostgreSQLBBoxFromTiles(source) {
     `
   );
 
-  if (rows.rows.length > 0) {
-    const boundsArr = rows.rows.map((row) =>
-      getBBoxFromTiles(
-        row.xMin,
-        row.yMin,
-        row.xMax,
-        row.yMax,
-        row.zoom_level,
-        "xyz"
-      )
+  let bbox = [-180, -85.051129, 180, 85.051129];
+
+  for (let index = 0; index < rows.rows.length; index++) {
+    const _bbox = getBBoxFromTiles(
+      rows.rows[index].xMin,
+      rows.rows[index].yMin,
+      rows.rows[index].xMax,
+      rows.rows[index].yMax,
+      rows.rows[index].zoom_level,
+      "xyz"
     );
 
-    return [
-      Math.min(...boundsArr.map((bbox) => bbox[0])),
-      Math.min(...boundsArr.map((bbox) => bbox[1])),
-      Math.max(...boundsArr.map((bbox) => bbox[2])),
-      Math.max(...boundsArr.map((bbox) => bbox[3])),
-    ];
+    if (index === 0) {
+      bbox = _bbox;
+    } else {
+      if (_bbox[0] < bbox[0]) {
+        bbox[0] = _bbox[0];
+      }
+
+      if (_bbox[1] < bbox[1]) {
+        bbox[1] = _bbox[1];
+      }
+
+      if (_bbox[2] > bbox[2]) {
+        bbox[2] = _bbox[2];
+      }
+
+      if (_bbox[3] > bbox[3]) {
+        bbox[3] = _bbox[3];
+      }
+    }
   }
+
+  if (bbox[0] > 180) {
+    bbox[0] = 180;
+  } else if (bbox[0] < -180) {
+    bbox[0] = -180;
+  }
+
+  if (bbox[1] > 180) {
+    bbox[1] = 180;
+  } else if (bbox[1] < -180) {
+    bbox[1] = -180;
+  }
+
+  if (bbox[2] > 85.051129) {
+    bbox[2] = 85.051129;
+  } else if (bbox[2] < -85.051129) {
+    bbox[2] = -85.051129;
+  }
+
+  if (bbox[3] > 85.051129) {
+    bbox[3] = 85.051129;
+  } else if (bbox[3] < -85.051129) {
+    bbox[3] = -85.051129;
+  }
+
+  return bbox;
 }
 
 /**
