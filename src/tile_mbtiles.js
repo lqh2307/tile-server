@@ -160,7 +160,7 @@ async function getMBTilesBBoxFromTiles(source) {
  * @param {"minzoom"|"maxzoom"} zoomType
  * @returns {Promise<number>}
  */
-async function getMBTilesZoomLevelFromTiles(source, zoomType = "maxzoom") {
+async function getMBTilesZoomLevelFromTiles(source, zoomType) {
   const data = await fetchOne(
     source,
     zoomType === "minzoom"

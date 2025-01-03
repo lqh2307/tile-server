@@ -147,7 +147,7 @@ async function getPostgreSQLBBoxFromTiles(source) {
  * @param {"minzoom"|"maxzoom"} zoomType
  * @returns {Promise<number>}
  */
-async function getPostgreSQLZoomLevelFromTiles(source, zoomType = "maxzoom") {
+async function getPostgreSQLZoomLevelFromTiles(source, zoomType) {
   const data = await source.query(
     zoomType === "minzoom"
       ? "SELECT MIN(zoom_level) AS zoom FROM tiles;"

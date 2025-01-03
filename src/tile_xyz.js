@@ -162,7 +162,7 @@ async function getXYZBBoxFromTiles(sourcePath) {
  * @param {"minzoom"|"maxzoom"} zoomType
  * @returns {Promise<number>}
  */
-async function getXYZZoomLevelFromTiles(sourcePath, zoomType = "maxzoom") {
+async function getXYZZoomLevelFromTiles(sourcePath, zoomType) {
   const folders = await findFolders(sourcePath, /^\d+$/, false);
 
   return zoomType === "minzoom"
