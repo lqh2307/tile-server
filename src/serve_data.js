@@ -5,8 +5,8 @@ import { StatusCodes } from "http-status-codes";
 import { readSeedFile } from "./seed.js";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
-import express from "express";
 import sqlite3 from "sqlite3";
+import express from "express";
 import {
   getXYZTileFromURL,
   cacheXYZTileFile,
@@ -48,6 +48,9 @@ import {
   getPostgreSQLTile,
   openPostgreSQLDB,
 } from "./tile_postgresql.js";
+import {
+  validateGeoJSON,
+} from "./geojson.js";
 
 /**
  * Get data tile handler
@@ -930,6 +933,40 @@ export const serve_data = {
             }
 
             validatePostgreSQL(dataInfo.tileJSON);
+          } else if (item.geojson !== undefined) {
+            dataInfo.sourceType = "geojson";
+
+            if (item.cache !== undefined) {
+              dataInfo.path = `${process.env.DATA_DIR}/caches/geojson/${item.geojson}`;
+
+              const cacheSource = seed.datas[item.geojson];
+
+              if (
+                cacheSource === undefined ||
+                cacheSource.storeType !== "geojson"
+              ) {
+                throw new Error(
+                  `Cache geojson data "${item.geojson}" is invalid`
+                );
+              }
+
+              if (item.cache.forward === true) {
+                dataInfo.sourceURL = cacheSource.url;
+                dataInfo.storeCache = item.cache.store;
+              }
+
+              dataInfo.source = dataInfo.path;
+
+              dataInfo.tileJSON = {};
+            } else {
+              dataInfo.path = `${process.env.DATA_DIR}/geojson/${item.geojson}`;
+
+              dataInfo.source = dataInfo.path;
+
+              dataInfo.tileJSON = {};
+            }
+
+            validateGeoJSON(dataInfo.tileJSON);
           }
 
           /* Add to repo */

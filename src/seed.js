@@ -295,7 +295,7 @@ export async function readSeedFile(isValidate) {
                 },
                 storeType: {
                   type: "string",
-                  enum: ["xyz", "mbtiles", "pg"],
+                  enum: ["xyz", "mbtiles", "pg", "geojson"],
                 },
                 storeMD5: {
                   type: "boolean",

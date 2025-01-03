@@ -126,6 +126,10 @@ async function readConfigFile(isValidate) {
                   type: "string",
                   minLength: 1,
                 },
+                geojson: {
+                  type: "string",
+                  minLength: 1,
+                },
                 cache: {
                   type: "object",
                   properties: {
@@ -143,6 +147,7 @@ async function readConfigFile(isValidate) {
                 { required: ["pmtiles"] },
                 { required: ["xyz"] },
                 { required: ["pg"] },
+                { required: ["geojson"] },
               ],
             },
           },
