@@ -12,6 +12,7 @@
   "dependencies": {
     "@maplibre/maplibre-gl-style-spec": "22.0.1",
     "@maplibre/maplibre-gl-native": "6.0.0",
+    "geojson-validation": "1.0.2",
     "swagger-ui-express": "5.0.1",
     "http-status-codes": "2.3.0",
     "protocol-buffers": "5.0.0",
