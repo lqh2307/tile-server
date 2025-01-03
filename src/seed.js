@@ -7,8 +7,8 @@ import { Mutex } from "async-mutex";
 import sqlite3 from "sqlite3";
 import os from "os";
 import {
-  downloadXYZTileDataFile,
   updateXYZMetadataFile,
+  downloadXYZTileFile,
   getXYZTileCreated,
   closeXYZMD5DB,
   getXYZTileMD5,
@@ -941,7 +941,7 @@ export async function seedXYZTiles(
           `Downloading data "${id}" - Tile "${tileName}" from "${targetURL}"...`
         );
 
-        await downloadXYZTileDataFile(
+        await downloadXYZTileFile(
           targetURL,
           id,
           source,

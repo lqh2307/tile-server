@@ -1,11 +1,10 @@
 "use strict";
 
-import { removeStyleDataFile, getStyleCreated } from "./style.js";
+import { removeStyleFile, getStyleCreated } from "./style.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
 import sqlite3 from "sqlite3";
-import os from "os";
 import {
   getXYZTileCreated,
   removeXYZTile,
@@ -189,8 +188,6 @@ export async function readCleanUpFile(isValidate) {
  * @param {string} id Clean up MBTiles ID
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
- * @param {number} concurrency Concurrency download
- * @param {number} maxTry Number of retry attempts on failure
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
@@ -201,8 +198,6 @@ export async function cleanUpMBTilesTiles(
     21, 22,
   ],
   bboxs = [[-180, -85.051129, 180, 85.051129]],
-  concurrency = os.cpus().length,
-  maxTry = 5,
   cleanUpBefore
 ) {
   const startTime = Date.now();
@@ -213,7 +208,7 @@ export async function cleanUpMBTilesTiles(
     "xyz"
   );
 
-  let log = `Cleaning up ${total} tiles of mbtiles "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${total} tiles of mbtiles "${id}" with:\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
@@ -295,7 +290,7 @@ export async function cleanUpMBTilesTiles(
       for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
         for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
           /* Wait slot for a task */
-          while (activeTasks >= concurrency) {
+          while (activeTasks >= 200) {
             await delay(50);
           }
 
@@ -341,8 +336,6 @@ export async function cleanUpMBTilesTiles(
  * @param {string} id Clean up PostgreSQL ID
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
- * @param {number} concurrency Concurrency download
- * @param {number} maxTry Number of retry attempts on failure
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
@@ -353,8 +346,6 @@ export async function cleanUpPostgreSQLTiles(
     21, 22,
   ],
   bboxs = [[-180, -85.051129, 180, 85.051129]],
-  concurrency = os.cpus().length,
-  maxTry = 5,
   cleanUpBefore
 ) {
   const startTime = Date.now();
@@ -365,7 +356,7 @@ export async function cleanUpPostgreSQLTiles(
     "xyz"
   );
 
-  let log = `Cleaning up ${total} tiles of postgresql "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${total} tiles of postgresql "${id}" with:\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
@@ -446,7 +437,7 @@ export async function cleanUpPostgreSQLTiles(
       for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
         for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
           /* Wait slot for a task */
-          while (activeTasks >= concurrency) {
+          while (activeTasks >= 200) {
             await delay(50);
           }
 
@@ -493,8 +484,6 @@ export async function cleanUpPostgreSQLTiles(
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
- * @param {number} concurrency Concurrency to clean up
- * @param {number} maxTry Number of retry attempts on failure
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
@@ -506,8 +495,6 @@ export async function cleanUpXYZTiles(
     21, 22,
   ],
   bboxs = [[-180, -85.051129, 180, 85.051129]],
-  concurrency = os.cpus().length,
-  maxTry = 5,
   cleanUpBefore
 ) {
   const startTime = Date.now();
@@ -518,7 +505,7 @@ export async function cleanUpXYZTiles(
     "xyz"
   );
 
-  let log = `Cleaning up ${total} tiles of xyz "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tZoom levels: [${zooms.join(
+  let log = `Cleaning up ${total} tiles of xyz "${id}" with:\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
 
@@ -604,7 +591,7 @@ export async function cleanUpXYZTiles(
       for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
         for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
           /* Wait slot for a task */
-          while (activeTasks >= concurrency) {
+          while (activeTasks >= 200) {
             await delay(50);
           }
 
@@ -654,14 +641,13 @@ export async function cleanUpXYZTiles(
 /**
  * Clean up style
  * @param {string} id Clean up style ID
- * @param {number} maxTry Number of retry attempts on failure
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-export async function cleanUpStyle(id, maxTry = 5, cleanUpBefore) {
+export async function cleanUpStyle(id, cleanUpBefore) {
   const startTime = Date.now();
 
-  let log = `Cleaning up style "${id}" with:\n\tMax try: ${maxTry}`;
+  let log = `Cleaning up style "${id}" with:`;
 
   let cleanUpTimestamp;
   if (typeof cleanUpBefore === "string") {
@@ -707,7 +693,7 @@ export async function cleanUpStyle(id, maxTry = 5, cleanUpBefore) {
     if (needRemove === true) {
       printLog("info", `Removing style "${id}" - File "${filePath}"...`);
 
-      await removeStyleDataFile(
+      await removeStyleFile(
         filePath,
         300000 // 5 mins
       );

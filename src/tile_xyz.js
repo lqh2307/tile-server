@@ -177,7 +177,7 @@ async function getXYZZoomLevelFromTiles(sourcePath, zoomType = "maxzoom") {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function createXYZTileDataFile(filePath, data, timeout) {
+async function createXYZTileFile(filePath, data, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;
@@ -244,7 +244,7 @@ async function createXYZTileDataFile(filePath, data, timeout) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function removeXYZTileDataFile(filePath, timeout) {
+async function removeXYZTileFile(filePath, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;
@@ -650,7 +650,7 @@ export async function updateXYZMetadataFile(filePath, metadataAdds, timeout) {
  * @param {boolean} storeTransparent Is store transparent tile?
  * @returns {Promise<void>}
  */
-export async function downloadXYZTileDataFile(
+export async function downloadXYZTileFile(
   url,
   id,
   source,
@@ -669,7 +669,7 @@ export async function downloadXYZTileDataFile(
       const response = await getDataFromURL(url, timeout, "arraybuffer");
 
       // Store data to file
-      await cacheXYZTileDataFile(
+      await cacheXYZTileFile(
         `${process.env.DATA_DIR}/caches/xyzs/${id}`,
         source,
         z,
@@ -714,7 +714,7 @@ export async function downloadXYZTileDataFile(
  * @returns {Promise<void>}
  */
 export async function removeXYZTile(id, source, z, x, y, format, timeout) {
-  await removeXYZTileDataFile(
+  await removeXYZTileFile(
     `${process.env.DATA_DIR}/caches/xyzs/${id}/${z}/${x}/${y}.${format}`,
     timeout
   );
@@ -743,7 +743,7 @@ export async function removeXYZTile(id, source, z, x, y, format, timeout) {
  * @param {boolean} storeTransparent Is store transparent tile?
  * @returns {Promise<void>}
  */
-export async function cacheXYZTileDataFile(
+export async function cacheXYZTileFile(
   sourcePath,
   source,
   z,
@@ -760,7 +760,7 @@ export async function cacheXYZTileDataFile(
   ) {
     return;
   } else {
-    await createXYZTileDataFile(
+    await createXYZTileFile(
       `${sourcePath}/${z}/${x}/${y}.${format}`,
       data,
       300000 // 5 mins

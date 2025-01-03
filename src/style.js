@@ -15,7 +15,7 @@ import path from "node:path";
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function createStyleDataFile(filePath, data, timeout) {
+async function createStyleFile(filePath, data, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;
@@ -82,7 +82,7 @@ async function createStyleDataFile(filePath, data, timeout) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function removeStyleDataFile(filePath, timeout) {
+export async function removeStyleFile(filePath, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;
@@ -170,7 +170,7 @@ export async function downloadStyleFile(url, filePath, maxTry, timeout) {
  * @returns {Promise<void>}
  */
 export async function cacheStyleFile(filePath, data) {
-  await createStyleDataFile(
+  await createStyleFile(
     filePath,
     data,
     300000 // 5 mins

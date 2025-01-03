@@ -41,9 +41,9 @@ import {
 } from "./utils.js";
 import {
   updateXYZMetadataFile,
-  cacheXYZTileDataFile,
   getXYZTileCreated,
   getXYZTileFromURL,
+  cacheXYZTileFile,
   getXYZTileMD5,
   closeXYZMD5DB,
   openXYZMD5DB,
@@ -300,7 +300,7 @@ export async function renderImage(
                     `Caching data "${id}" - Tile "${tileName}"...`
                   );
 
-                  cacheXYZTileDataFile(
+                  cacheXYZTileFile(
                     sourceData.source,
                     sourceData.md5Source,
                     z,
@@ -1028,7 +1028,7 @@ export async function renderXYZTiles(
 
           if (calculateMD5(data) !== md5) {
             // Store data
-            await cacheXYZTileDataFile(
+            await cacheXYZTileFile(
               `${process.env.DATA_DIR}/exports/xyzs/${id}`,
               source,
               z,
@@ -1082,7 +1082,7 @@ export async function renderXYZTiles(
         );
 
         // Store data
-        await cacheXYZTileDataFile(
+        await cacheXYZTileFile(
           `${process.env.DATA_DIR}/exports/xyzs/${id}`,
           source,
           z,
