@@ -674,3 +674,80 @@ export async function getPostgreSQLSize(source, dbName) {
     return Number(data.rows[0].size);
   }
 }
+
+/**
+ * Validate PostgreSQL metadata (no validate json field)
+ * @param {object} metadata PostgreSQL metadata
+ * @returns {void}
+ */
+export function validatePostgreSQL(metadata) {
+  /* Validate name */
+  if (metadata.name === undefined) {
+    throw new Error("name is invalid");
+  }
+
+  /* Validate type */
+  if (metadata.type !== undefined) {
+    if (["baselayer", "overlay"].includes(metadata.type) === false) {
+      throw new Error("type is invalid");
+    }
+  }
+
+  /* Validate format */
+  if (
+    ["jpeg", "jpg", "pbf", "png", "webp", "gif"].includes(metadata.format) ===
+    false
+  ) {
+    throw new Error("format is invalid");
+  }
+
+  /* Validate json */
+  /*
+  if (metadata.format === "pbf" && metadata.json === undefined) {
+    throw new Error(`json is invalid`);
+  }
+  */
+
+  /* Validate minzoom */
+  if (metadata.minzoom < 0 || metadata.minzoom > 22) {
+    throw new Error("minzoom is invalid");
+  }
+
+  /* Validate maxzoom */
+  if (metadata.maxzoom < 0 || metadata.maxzoom > 22) {
+    throw new Error("maxzoom is invalid");
+  }
+
+  /* Validate minzoom & maxzoom */
+  if (metadata.minzoom > metadata.maxzoom) {
+    throw new Error("zoom is invalid");
+  }
+
+  /* Validate bounds */
+  if (metadata.bounds !== undefined) {
+    if (
+      metadata.bounds.length !== 4 ||
+      Math.abs(metadata.bounds[0]) > 180 ||
+      Math.abs(metadata.bounds[2]) > 180 ||
+      Math.abs(metadata.bounds[1]) > 90 ||
+      Math.abs(metadata.bounds[3]) > 90 ||
+      metadata.bounds[0] >= metadata.bounds[2] ||
+      metadata.bounds[1] >= metadata.bounds[3]
+    ) {
+      throw new Error("bounds is invalid");
+    }
+  }
+
+  /* Validate center */
+  if (metadata.center !== undefined) {
+    if (
+      metadata.center.length !== 3 ||
+      Math.abs(metadata.center[0]) > 180 ||
+      Math.abs(metadata.center[1]) > 90 ||
+      metadata.center[2] < 0 ||
+      metadata.center[2] > 22
+    ) {
+      throw new Error("center is invalid");
+    }
+  }
+}
