@@ -10,7 +10,7 @@ import { Mutex } from "async-mutex";
 import sqlite3 from "sqlite3";
 import sharp from "sharp";
 import {
-  updatePostgreSQLMetadataWithLock,
+  updatePostgreSQLMetadata,
   getPostgreSQLTileFromURL,
   getPostgreSQLTileCreated,
   cachePostgreSQLTileData,
@@ -20,7 +20,7 @@ import {
   openPostgreSQLDB,
 } from "./tile_postgresql.js";
 import {
-  updateMBTilesMetadataWithLock,
+  updateMBTilesMetadata,
   getMBTilesTileFromURL,
   getMBTilesTileCreated,
   cacheMBtilesTileData,
@@ -40,10 +40,10 @@ import {
   delay,
 } from "./utils.js";
 import {
-  updateXYZMetadataFileWithLock,
-  cacheXYZTileDataFile,
+  updateXYZMetadataFile,
   getXYZTileCreated,
   getXYZTileFromURL,
+  cacheXYZTileFile,
   getXYZTileMD5,
   closeXYZMD5DB,
   openXYZMD5DB,
@@ -300,7 +300,7 @@ export async function renderImage(
                     `Caching data "${id}" - Tile "${tileName}"...`
                   );
 
-                  cacheXYZTileDataFile(
+                  cacheXYZTileFile(
                     sourceData.source,
                     sourceData.md5Source,
                     z,
@@ -744,7 +744,7 @@ export async function renderMBTilesTiles(
   /* Update metadata */
   printLog("info", "Updating metadata...");
 
-  await updateMBTilesMetadataWithLock(
+  await updateMBTilesMetadata(
     source,
     {
       ...metadata,
@@ -985,7 +985,7 @@ export async function renderXYZTiles(
   /* Update metadata */
   printLog("info", "Updating metadata...");
 
-  await updateXYZMetadataFileWithLock(
+  await updateXYZMetadataFile(
     `${process.env.DATA_DIR}/exports/xyzs/${id}/metadata.json`,
     {
       ...metadata,
@@ -1028,7 +1028,7 @@ export async function renderXYZTiles(
 
           if (calculateMD5(data) !== md5) {
             // Store data
-            await cacheXYZTileDataFile(
+            await cacheXYZTileFile(
               `${process.env.DATA_DIR}/exports/xyzs/${id}`,
               source,
               z,
@@ -1082,7 +1082,7 @@ export async function renderXYZTiles(
         );
 
         // Store data
-        await cacheXYZTileDataFile(
+        await cacheXYZTileFile(
           `${process.env.DATA_DIR}/exports/xyzs/${id}`,
           source,
           z,
@@ -1228,7 +1228,7 @@ export async function renderPostgreSQLTiles(
   /* Update metadata */
   printLog("info", "Updating metadata...");
 
-  await updatePostgreSQLMetadataWithLock(
+  await updatePostgreSQLMetadata(
     source,
     {
       ...metadata,

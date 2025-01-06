@@ -8,8 +8,8 @@ import { seed } from "./seed.js";
 import express from "express";
 import sqlite3 from "sqlite3";
 import {
-  cacheXYZTileDataFile,
   getXYZTileFromURL,
+  cacheXYZTileFile,
   getXYZTileMD5,
   openXYZMD5DB,
   getXYZInfos,
@@ -229,7 +229,7 @@ function getDataTileHandler() {
             if (item.storeCache === true) {
               printLog("info", `Caching data "${id}" - Tile "${tileName}"...`);
 
-              cacheXYZTileDataFile(
+              cacheXYZTileFile(
                 item.source,
                 item.md5Source,
                 z,
