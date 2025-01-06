@@ -162,87 +162,12 @@ async function getXYZBBoxFromTiles(sourcePath) {
  * @param {"minzoom"|"maxzoom"} zoomType
  * @returns {Promise<number>}
  */
-async function getXYZZoomLevelFromTiles(sourcePath, zoomType = "maxzoom") {
+async function getXYZZoomLevelFromTiles(sourcePath, zoomType) {
   const folders = await findFolders(sourcePath, /^\d+$/, false);
 
   return zoomType === "minzoom"
     ? Math.min(...folders.map((folder) => Number(folder)))
     : Math.max(...folders.map((folder) => Number(folder)));
-}
-
-/**
- * Update XYZ metadata.json file
- * @param {string} filePath File path to store metadata.json file
- * @param {Object<string,string>} metadataAdds Metadata object
- * @returns {Promise<void>}
- */
-async function updateXYZMetadataFile(filePath, metadataAdds) {
-  const tempFilePath = `${filePath}.tmp`;
-
-  try {
-    const data = await fsPromise.readFile(filePath, "utf8");
-
-    const metadatas = JSON.parse(data);
-
-    await fsPromise.writeFile(
-      tempFilePath,
-      JSON.stringify(
-        {
-          ...metadatas,
-          ...metadataAdds,
-        },
-        null,
-        2
-      ),
-      "utf8"
-    );
-
-    await fsPromise.rename(tempFilePath, filePath);
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      await fsPromise.mkdir(path.dirname(filePath), {
-        recursive: true,
-      });
-
-      await fsPromise.writeFile(
-        filePath,
-        JSON.stringify(metadataAdds, null, 2),
-        "utf8"
-      );
-    } else {
-      await fsPromise.rm(tempFilePath, {
-        force: true,
-      });
-
-      throw error;
-    }
-  }
-}
-
-/**
- * Create XYZ tile data file
- * @param {string} filePath File path to store tile data file
- * @param {Buffer} data Tile data buffer
- * @returns {Promise<void>}
- */
-async function createXYZTileDataFile(filePath, data) {
-  const tempFilePath = `${filePath}.tmp`;
-
-  try {
-    await fsPromise.mkdir(path.dirname(filePath), {
-      recursive: true,
-    });
-
-    await fsPromise.writeFile(tempFilePath, data);
-
-    await fsPromise.rename(tempFilePath, filePath);
-  } catch (error) {
-    await fsPromise.rm(tempFilePath, {
-      force: true,
-    });
-
-    throw error;
-  }
 }
 
 /**
@@ -252,7 +177,7 @@ async function createXYZTileDataFile(filePath, data) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function createXYZTileDataFileWithLock(filePath, data, timeout) {
+async function createXYZTileFile(filePath, data, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;
@@ -262,7 +187,23 @@ async function createXYZTileDataFileWithLock(filePath, data, timeout) {
     try {
       lockFileHandle = await fsPromise.open(lockFilePath, "wx");
 
-      await createXYZTileDataFile(filePath, data);
+      const tempFilePath = `${filePath}.tmp`;
+
+      try {
+        await fsPromise.mkdir(path.dirname(filePath), {
+          recursive: true,
+        });
+
+        await fsPromise.writeFile(tempFilePath, data);
+
+        await fsPromise.rename(tempFilePath, filePath);
+      } catch (error) {
+        await fsPromise.rm(tempFilePath, {
+          force: true,
+        });
+
+        throw error;
+      }
 
       await lockFileHandle.close();
 
@@ -303,7 +244,7 @@ async function createXYZTileDataFileWithLock(filePath, data, timeout) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function removeXYZTileDataFileWithLock(filePath, timeout) {
+async function removeXYZTileFile(filePath, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;
@@ -347,50 +288,6 @@ async function removeXYZTileDataFileWithLock(filePath, timeout) {
 }
 
 /**
- * Initialize XYZ MD5 database tables
- * @param {sqlite3.Database} source SQLite database instance
- * @returns {Promise<void>}
- */
-async function initializeXYZMD5Tables(source) {
-  await runSQL(
-    source,
-    `
-    CREATE TABLE IF NOT EXISTS
-      md5s (
-        zoom_level INTEGER NOT NULL,
-        tile_column INTEGER NOT NULL,
-        tile_row INTEGER NOT NULL,
-        hash TEXT,
-        PRIMARY KEY (zoom_level, tile_column, tile_row)
-      );
-    `
-  );
-}
-
-/**
- * Remove MD5 hash of XYZ tile
- * @param {sqlite3.Database} source SQLite database instance
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @returns {Promise<void>}
- */
-async function removeXYZTileMD5(source, z, x, y) {
-  await runSQL(
-    source,
-    `
-    DELETE FROM
-      md5s
-    WHERE
-      zoom_level = ? AND tile_column = ? AND tile_row = ?;
-    `,
-    z,
-    x,
-    y
-  );
-}
-
-/**
  * Upsert MD5 hash of XYZ tile
  * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
@@ -429,7 +326,7 @@ async function upsertXYZTileMD5(source, z, x, y, hash) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function createXYZTileMD5WithLock(source, z, x, y, buffer, timeout) {
+async function createXYZTileMD5(source, z, x, y, buffer, timeout) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
@@ -458,12 +355,23 @@ async function createXYZTileMD5WithLock(source, z, x, y, buffer, timeout) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function removeXYZTileMD5WithLock(source, z, x, y, timeout) {
+async function removeXYZTileMD5(source, z, x, y, timeout) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
     try {
-      await removeXYZTileMD5(source, z, x, y);
+      await runSQL(
+        source,
+        `
+        DELETE FROM
+          md5s
+        WHERE
+          zoom_level = ? AND tile_column = ? AND tile_row = ?;
+        `,
+        z,
+        x,
+        y
+      );
 
       return;
     } catch (error) {
@@ -637,11 +545,7 @@ export async function getXYZInfos(sourcePath) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function updateXYZMetadataFileWithLock(
-  filePath,
-  metadataAdds,
-  timeout
-) {
+export async function updateXYZMetadataFile(filePath, metadataAdds, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;
@@ -651,10 +555,52 @@ export async function updateXYZMetadataFileWithLock(
     try {
       lockFileHandle = await fsPromise.open(lockFilePath, "wx");
 
-      await updateXYZMetadataFile(filePath, {
-        ...metadataAdds,
-        scheme: "xyz",
-      });
+      const tempFilePath = `${filePath}.tmp`;
+
+      try {
+        const data = await fsPromise.readFile(filePath, "utf8");
+
+        await fsPromise.writeFile(
+          tempFilePath,
+          JSON.stringify(
+            {
+              ...JSON.parse(data),
+              ...metadataAdds,
+              scheme: "xyz",
+            },
+            null,
+            2
+          ),
+          "utf8"
+        );
+
+        await fsPromise.rename(tempFilePath, filePath);
+      } catch (error) {
+        if (error.code === "ENOENT") {
+          await fsPromise.mkdir(path.dirname(filePath), {
+            recursive: true,
+          });
+
+          await fsPromise.writeFile(
+            filePath,
+            JSON.stringify(
+              {
+                ...metadataAdds,
+                scheme: "xyz",
+              },
+              null,
+              2
+            ),
+            "utf8"
+          );
+        } else {
+          await fsPromise.rm(tempFilePath, {
+            force: true,
+          });
+
+          throw error;
+        }
+      }
 
       await lockFileHandle.close();
 
@@ -704,7 +650,7 @@ export async function updateXYZMetadataFileWithLock(
  * @param {boolean} storeTransparent Is store transparent tile?
  * @returns {Promise<void>}
  */
-export async function downloadXYZTileDataFile(
+export async function downloadXYZTileFile(
   url,
   id,
   source,
@@ -723,7 +669,7 @@ export async function downloadXYZTileDataFile(
       const response = await getDataFromURL(url, timeout, "arraybuffer");
 
       // Store data to file
-      await cacheXYZTileDataFile(
+      await cacheXYZTileFile(
         `${process.env.DATA_DIR}/caches/xyzs/${id}`,
         source,
         z,
@@ -764,36 +710,24 @@ export async function downloadXYZTileDataFile(
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
- * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function removeXYZTileDataFile(
-  id,
-  source,
-  z,
-  x,
-  y,
-  format,
-  maxTry,
-  timeout
-) {
-  await retry(async () => {
-    await removeXYZTileDataFileWithLock(
-      `${process.env.DATA_DIR}/caches/xyzs/${id}/${z}/${x}/${y}.${format}`,
-      timeout
-    );
+export async function removeXYZTile(id, source, z, x, y, format, timeout) {
+  await removeXYZTileFile(
+    `${process.env.DATA_DIR}/caches/xyzs/${id}/${z}/${x}/${y}.${format}`,
+    timeout
+  );
 
-    if (source !== undefined) {
-      await removeXYZTileMD5WithLock(
-        source,
-        z,
-        x,
-        y,
-        300000 // 5 mins
-      );
-    }
-  }, maxTry);
+  if (source !== undefined) {
+    await removeXYZTileMD5(
+      source,
+      z,
+      x,
+      y,
+      300000 // 5 mins
+    );
+  }
 }
 
 /**
@@ -809,7 +743,7 @@ export async function removeXYZTileDataFile(
  * @param {boolean} storeTransparent Is store transparent tile?
  * @returns {Promise<void>}
  */
-export async function cacheXYZTileDataFile(
+export async function cacheXYZTileFile(
   sourcePath,
   source,
   z,
@@ -826,14 +760,14 @@ export async function cacheXYZTileDataFile(
   ) {
     return;
   } else {
-    await createXYZTileDataFileWithLock(
+    await createXYZTileFile(
       `${sourcePath}/${z}/${x}/${y}.${format}`,
       data,
       300000 // 5 mins
     );
 
     if (storeMD5 === true) {
-      await createXYZTileMD5WithLock(
+      await createXYZTileMD5(
         source,
         z,
         x,
@@ -856,7 +790,19 @@ export async function openXYZMD5DB(filePath, mode, wal = false) {
   const source = await openSQLite(filePath, mode, wal);
 
   if (mode & sqlite3.OPEN_CREATE) {
-    await initializeXYZMD5Tables(source);
+    await runSQL(
+      source,
+      `
+      CREATE TABLE IF NOT EXISTS
+        md5s (
+          zoom_level INTEGER NOT NULL,
+          tile_column INTEGER NOT NULL,
+          tile_row INTEGER NOT NULL,
+          hash TEXT,
+          PRIMARY KEY (zoom_level, tile_column, tile_row)
+        );
+      `
+    );
   }
 
   return source;
@@ -917,6 +863,83 @@ export async function getXYZTileCreated(filePath) {
       throw new Error("Tile created does not exist");
     } else {
       throw error;
+    }
+  }
+}
+
+/**
+ * Validate XYZ metadata (no validate json field)
+ * @param {object} metadata XYZ metadata
+ * @returns {void}
+ */
+export function validateXYZ(metadata) {
+  /* Validate name */
+  if (metadata.name === undefined) {
+    throw new Error("name is invalid");
+  }
+
+  /* Validate type */
+  if (metadata.type !== undefined) {
+    if (["baselayer", "overlay"].includes(metadata.type) === false) {
+      throw new Error("type is invalid");
+    }
+  }
+
+  /* Validate format */
+  if (
+    ["jpeg", "jpg", "pbf", "png", "webp", "gif"].includes(metadata.format) ===
+    false
+  ) {
+    throw new Error("format is invalid");
+  }
+
+  /* Validate json */
+  /*
+  if (metadata.format === "pbf" && metadata.json === undefined) {
+    throw new Error(`json is invalid`);
+  }
+  */
+
+  /* Validate minzoom */
+  if (metadata.minzoom < 0 || metadata.minzoom > 22) {
+    throw new Error("minzoom is invalid");
+  }
+
+  /* Validate maxzoom */
+  if (metadata.maxzoom < 0 || metadata.maxzoom > 22) {
+    throw new Error("maxzoom is invalid");
+  }
+
+  /* Validate minzoom & maxzoom */
+  if (metadata.minzoom > metadata.maxzoom) {
+    throw new Error("zoom is invalid");
+  }
+
+  /* Validate bounds */
+  if (metadata.bounds !== undefined) {
+    if (
+      metadata.bounds.length !== 4 ||
+      Math.abs(metadata.bounds[0]) > 180 ||
+      Math.abs(metadata.bounds[2]) > 180 ||
+      Math.abs(metadata.bounds[1]) > 90 ||
+      Math.abs(metadata.bounds[3]) > 90 ||
+      metadata.bounds[0] >= metadata.bounds[2] ||
+      metadata.bounds[1] >= metadata.bounds[3]
+    ) {
+      throw new Error("bounds is invalid");
+    }
+  }
+
+  /* Validate center */
+  if (metadata.center !== undefined) {
+    if (
+      metadata.center.length !== 3 ||
+      Math.abs(metadata.center[0]) > 180 ||
+      Math.abs(metadata.center[1]) > 90 ||
+      metadata.center[2] < 0 ||
+      metadata.center[2] > 22
+    ) {
+      throw new Error("center is invalid");
     }
   }
 }

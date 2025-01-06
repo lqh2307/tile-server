@@ -9,39 +9,13 @@ import { config } from "./config.js";
 import path from "node:path";
 
 /**
- * Create style data file
- * @param {string} filePath File path to store style file
- * @param {Buffer} data Data buffer
- * @returns {Promise<void>}
- */
-async function createStyleDataFile(filePath, data) {
-  const tempFilePath = `${filePath}.tmp`;
-
-  try {
-    await fsPromise.mkdir(path.dirname(filePath), {
-      recursive: true,
-    });
-
-    await fsPromise.writeFile(tempFilePath, data);
-
-    await fsPromise.rename(tempFilePath, filePath);
-  } catch (error) {
-    await fsPromise.rm(tempFilePath, {
-      force: true,
-    });
-
-    throw error;
-  }
-}
-
-/**
  * Create style data file with lock
  * @param {string} filePath File path to store style file
  * @param {Buffer} data Data buffer
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function createStyleDataFileWithLock(filePath, data, timeout) {
+async function createStyleFile(filePath, data, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;
@@ -51,7 +25,23 @@ async function createStyleDataFileWithLock(filePath, data, timeout) {
     try {
       lockFileHandle = await fsPromise.open(lockFilePath, "wx");
 
-      await createStyleDataFile(filePath, data);
+      const tempFilePath = `${filePath}.tmp`;
+
+      try {
+        await fsPromise.mkdir(path.dirname(filePath), {
+          recursive: true,
+        });
+
+        await fsPromise.writeFile(tempFilePath, data);
+
+        await fsPromise.rename(tempFilePath, filePath);
+      } catch (error) {
+        await fsPromise.rm(tempFilePath, {
+          force: true,
+        });
+
+        throw error;
+      }
 
       await lockFileHandle.close();
 
@@ -66,17 +56,7 @@ async function createStyleDataFileWithLock(filePath, data, timeout) {
           recursive: true,
         });
 
-        lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-        await createStyleDataFile(filePath, data);
-
-        await lockFileHandle.close();
-
-        await fsPromise.rm(lockFilePath, {
-          force: true,
-        });
-
-        return;
+        continue;
       } else if (error.code === "EEXIST") {
         await delay(50);
       } else {
@@ -102,7 +82,7 @@ async function createStyleDataFileWithLock(filePath, data, timeout) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function removeStyleDataFileWithLock(filePath, timeout) {
+export async function removeStyleFile(filePath, timeout) {
   const startTime = Date.now();
 
   const lockFilePath = `${filePath}.lock`;
@@ -184,26 +164,13 @@ export async function downloadStyleFile(url, filePath, maxTry, timeout) {
 }
 
 /**
- * Remove style file
- * @param {string} filePath File path
- * @param {number} maxTry Number of retry attempts on failure
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-export async function removeStyleFile(filePath, maxTry, timeout) {
-  await retry(async () => {
-    await removeStyleDataFileWithLock(filePath, timeout);
-  }, maxTry);
-}
-
-/**
  * Cache style file
  * @param {string} filePath File path
  * @param {Buffer} data Tile data buffer
  * @returns {Promise<void>}
  */
 export async function cacheStyleFile(filePath, data) {
-  await createStyleDataFileWithLock(
+  await createStyleFile(
     filePath,
     data,
     300000 // 5 mins

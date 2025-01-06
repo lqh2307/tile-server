@@ -58,5 +58,7 @@ if test -n "$XVFB_PID"; then
     kill "$XVFB_PID"
 
     wait "$XVFB_PID" 2>/dev/null
+
+    unset DISPLAY
   fi
 fi

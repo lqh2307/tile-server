@@ -2,9 +2,9 @@
 
 import { checkReadyMiddleware } from "./middleware.js";
 import { StatusCodes } from "http-status-codes";
-import { readSeedFile } from "./seed.js";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
+import { seed } from "./seed.js";
 import express from "express";
 import {
   isLocalTileURL,
@@ -1179,8 +1179,6 @@ export const serve_style = {
   },
 
   add: async () => {
-    const seed = await readSeedFile(true);
-
     await Promise.all(
       Object.keys(config.styles).map(async (id) => {
         const item = config.styles[id];

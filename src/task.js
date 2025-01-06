@@ -60,7 +60,6 @@ export async function runTasks(opts) {
           try {
             await cleanUpStyle(
               id,
-              cleanUpStyleItem.maxTry,
               cleanUpStyleItem.refreshBefore?.time ||
                 cleanUpStyleItem.refreshBefore?.day
             );
@@ -111,8 +110,6 @@ export async function runTasks(opts) {
                 seedDataItem.metadata.format,
                 cleanUpDataItem.zooms,
                 cleanUpDataItem.bboxs,
-                seedDataItem.concurrency,
-                seedDataItem.maxTry,
                 cleanUpDataItem.cleanUpBefore?.time ||
                   cleanUpDataItem.cleanUpBefore?.day
               );
@@ -121,8 +118,6 @@ export async function runTasks(opts) {
                 id,
                 cleanUpDataItem.zooms,
                 cleanUpDataItem.bboxs,
-                seedDataItem.concurrency,
-                seedDataItem.maxTry,
                 cleanUpDataItem.cleanUpBefore?.time ||
                   cleanUpDataItem.cleanUpBefore?.day
               );
@@ -131,8 +126,6 @@ export async function runTasks(opts) {
                 id,
                 cleanUpDataItem.zooms,
                 cleanUpDataItem.bboxs,
-                seedDataItem.concurrency,
-                seedDataItem.maxTry,
                 cleanUpDataItem.cleanUpBefore?.time ||
                   cleanUpDataItem.cleanUpBefore?.day
               );

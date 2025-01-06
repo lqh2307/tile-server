@@ -25,43 +25,6 @@ import {
 } from "./sqlite.js";
 
 /**
- * Initialize MBTiles database tables
- * @param {sqlite3.Database} source SQLite database instance
- * @returns {Promise<void>}
- */
-async function initializeMBTilesTables(source) {
-  // Create metadata table
-  await runSQL(
-    source,
-    `
-    CREATE TABLE IF NOT EXISTS
-      metadata (
-        name TEXT NOT NULL,
-        value TEXT NOT NULL,
-        PRIMARY KEY (name)
-      );
-    `
-  );
-
-  // Create tiles table
-  await runSQL(
-    source,
-    `
-    CREATE TABLE IF NOT EXISTS
-      tiles (
-        zoom_level INTEGER NOT NULL,
-        tile_column INTEGER NOT NULL,
-        tile_row INTEGER NOT NULL,
-        tile_data BLOB NOT NULL,
-        hash TEXT,
-        created BIGINT,
-        PRIMARY KEY (zoom_level, tile_column, tile_row)
-      );
-    `
-  );
-}
-
-/**
  * Get MBTiles layers from tiles
  * @param {sqlite3.Database} source SQLite database instance
  * @returns {Promise<Array<string>>}
@@ -131,25 +94,64 @@ async function getMBTilesBBoxFromTiles(source) {
     `
   );
 
-  if (rows.length > 0) {
-    const boundsArr = rows.map((row) =>
-      getBBoxFromTiles(
-        row.xMin,
-        row.yMin,
-        row.xMax,
-        row.yMax,
-        row.zoom_level,
-        "tms"
-      )
+  let bbox = [-180, -85.051129, 180, 85.051129];
+
+  for (let index = 0; index < rows.length; index++) {
+    const _bbox = getBBoxFromTiles(
+      rows[index].xMin,
+      rows[index].yMin,
+      rows[index].xMax,
+      rows[index].yMax,
+      rows[index].zoom_level,
+      "tms"
     );
 
-    return [
-      Math.min(...boundsArr.map((bbox) => bbox[0])),
-      Math.min(...boundsArr.map((bbox) => bbox[1])),
-      Math.max(...boundsArr.map((bbox) => bbox[2])),
-      Math.max(...boundsArr.map((bbox) => bbox[3])),
-    ];
+    if (index === 0) {
+      bbox = _bbox;
+    } else {
+      if (_bbox[0] < bbox[0]) {
+        bbox[0] = _bbox[0];
+      }
+
+      if (_bbox[1] < bbox[1]) {
+        bbox[1] = _bbox[1];
+      }
+
+      if (_bbox[2] > bbox[2]) {
+        bbox[2] = _bbox[2];
+      }
+
+      if (_bbox[3] > bbox[3]) {
+        bbox[3] = _bbox[3];
+      }
+    }
   }
+
+  if (bbox[0] > 180) {
+    bbox[0] = 180;
+  } else if (bbox[0] < -180) {
+    bbox[0] = -180;
+  }
+
+  if (bbox[1] > 180) {
+    bbox[1] = 180;
+  } else if (bbox[1] < -180) {
+    bbox[1] = -180;
+  }
+
+  if (bbox[2] > 85.051129) {
+    bbox[2] = 85.051129;
+  } else if (bbox[2] < -85.051129) {
+    bbox[2] = -85.051129;
+  }
+
+  if (bbox[3] > 85.051129) {
+    bbox[3] = 85.051129;
+  } else if (bbox[3] < -85.051129) {
+    bbox[3] = -85.051129;
+  }
+
+  return bbox;
 }
 
 /**
@@ -158,7 +160,7 @@ async function getMBTilesBBoxFromTiles(source) {
  * @param {"minzoom"|"maxzoom"} zoomType
  * @returns {Promise<number>}
  */
-async function getMBTilesZoomLevelFromTiles(source, zoomType = "maxzoom") {
+async function getMBTilesZoomLevelFromTiles(source, zoomType) {
   const data = await fetchOne(
     source,
     zoomType === "minzoom"
@@ -193,15 +195,7 @@ async function getMBTilesFormatFromTiles(source) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function createMBTilesTileWithLock(
-  source,
-  z,
-  x,
-  y,
-  storeMD5,
-  data,
-  timeout
-) {
+async function createMBTilesTile(source, z, x, y, storeMD5, data, timeout) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
@@ -246,7 +240,7 @@ async function createMBTilesTileWithLock(
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function removeMBTilesTileWithLock(source, z, x, y, timeout) {
+export async function removeMBTilesTile(source, z, x, y, timeout) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
@@ -288,7 +282,34 @@ export async function openMBTilesDB(filePath, mode, wal = false) {
   const source = await openSQLite(filePath, mode, wal);
 
   if (mode & sqlite3.OPEN_CREATE) {
-    await initializeMBTilesTables(source);
+    await Promise.all([
+      runSQL(
+        source,
+        `
+        CREATE TABLE IF NOT EXISTS
+          metadata (
+            name TEXT NOT NULL,
+            value TEXT NOT NULL,
+            PRIMARY KEY (name)
+          );
+      `
+      ),
+      runSQL(
+        source,
+        `
+        CREATE TABLE IF NOT EXISTS
+          tiles (
+            zoom_level INTEGER NOT NULL,
+            tile_column INTEGER NOT NULL,
+            tile_row INTEGER NOT NULL,
+            tile_data BLOB NOT NULL,
+            hash TEXT,
+            created BIGINT,
+            PRIMARY KEY (zoom_level, tile_column, tile_row)
+          );
+        `
+      ),
+    ]);
   }
 
   return source;
@@ -539,11 +560,7 @@ export async function downloadMBTilesFile(url, filePath, maxTry, timeout) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function updateMBTilesMetadataWithLock(
-  source,
-  metadataAdds,
-  timeout
-) {
+export async function updateMBTilesMetadata(source, metadataAdds, timeout) {
   const startTime = Date.now();
 
   while (Date.now() - startTime <= timeout) {
@@ -674,22 +691,6 @@ export async function downloadMBTilesTile(
 }
 
 /**
- * Remove MBTiles tile data
- * @param {sqlite3.Database} source SQLite database instance
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {number} maxTry Number of retry attempts on failure
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-export async function removeMBTilesTileData(source, z, x, y, maxTry, timeout) {
-  await retry(async () => {
-    await removeMBTilesTileWithLock(source, z, x, y, timeout);
-  }, maxTry);
-}
-
-/**
  * Cache MBTiles tile data
  * @param {sqlite3.Database} source SQLite database instance
  * @param {number} z Zoom level
@@ -715,7 +716,7 @@ export async function cacheMBtilesTileData(
   ) {
     return;
   } else {
-    await createMBTilesTileWithLock(
+    await createMBTilesTile(
       source,
       z,
       x,
@@ -787,4 +788,81 @@ export async function getMBTilesTileCreated(source, z, x, y) {
   }
 
   return data.created;
+}
+
+/**
+ * Validate MBTiles metadata (no validate json field)
+ * @param {object} metadata MBTiles metadata
+ * @returns {void}
+ */
+export function validateMBTiles(metadata) {
+  /* Validate name */
+  if (metadata.name === undefined) {
+    throw new Error("name is invalid");
+  }
+
+  /* Validate type */
+  if (metadata.type !== undefined) {
+    if (["baselayer", "overlay"].includes(metadata.type) === false) {
+      throw new Error("type is invalid");
+    }
+  }
+
+  /* Validate format */
+  if (
+    ["jpeg", "jpg", "pbf", "png", "webp", "gif"].includes(metadata.format) ===
+    false
+  ) {
+    throw new Error("format is invalid");
+  }
+
+  /* Validate json */
+  /*
+  if (metadata.format === "pbf" && metadata.json === undefined) {
+    throw new Error(`json is invalid`);
+  }
+  */
+
+  /* Validate minzoom */
+  if (metadata.minzoom < 0 || metadata.minzoom > 22) {
+    throw new Error("minzoom is invalid");
+  }
+
+  /* Validate maxzoom */
+  if (metadata.maxzoom < 0 || metadata.maxzoom > 22) {
+    throw new Error("maxzoom is invalid");
+  }
+
+  /* Validate minzoom & maxzoom */
+  if (metadata.minzoom > metadata.maxzoom) {
+    throw new Error("zoom is invalid");
+  }
+
+  /* Validate bounds */
+  if (metadata.bounds !== undefined) {
+    if (
+      metadata.bounds.length !== 4 ||
+      Math.abs(metadata.bounds[0]) > 180 ||
+      Math.abs(metadata.bounds[2]) > 180 ||
+      Math.abs(metadata.bounds[1]) > 90 ||
+      Math.abs(metadata.bounds[3]) > 90 ||
+      metadata.bounds[0] >= metadata.bounds[2] ||
+      metadata.bounds[1] >= metadata.bounds[3]
+    ) {
+      throw new Error("bounds is invalid");
+    }
+  }
+
+  /* Validate center */
+  if (metadata.center !== undefined) {
+    if (
+      metadata.center.length !== 3 ||
+      Math.abs(metadata.center[0]) > 180 ||
+      Math.abs(metadata.center[1]) > 90 ||
+      metadata.center[2] < 0 ||
+      metadata.center[2] > 22
+    ) {
+      throw new Error("center is invalid");
+    }
+  }
 }

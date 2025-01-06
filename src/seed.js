@@ -7,15 +7,15 @@ import { Mutex } from "async-mutex";
 import sqlite3 from "sqlite3";
 import os from "os";
 import {
-  updateXYZMetadataFileWithLock,
-  downloadXYZTileDataFile,
+  updateXYZMetadataFile,
+  downloadXYZTileFile,
   getXYZTileCreated,
   closeXYZMD5DB,
   getXYZTileMD5,
   openXYZMD5DB,
 } from "./tile_xyz.js";
 import {
-  updateMBTilesMetadataWithLock,
+  updateMBTilesMetadata,
   getMBTilesTileCreated,
   downloadMBTilesTile,
   getMBTilesTileMD5,
@@ -30,7 +30,7 @@ import {
   delay,
 } from "./utils.js";
 import {
-  updatePostgreSQLMetadataWithLock,
+  updatePostgreSQLMetadata,
   getPostgreSQLTileCreated,
   downloadPostgreSQLTile,
   getPostgreSQLTileMD5,
@@ -38,12 +38,14 @@ import {
   openPostgreSQLDB,
 } from "./tile_postgresql.js";
 
+let seed;
+
 /**
  * Read seed.json file
  * @param {boolean} isValidate Is validate file?
  * @returns {Promise<object>}
  */
-export async function readSeedFile(isValidate) {
+async function readSeedFile(isValidate) {
   /* Read seed.json file */
   const data = await fsPromise.readFile(
     `${process.env.DATA_DIR}/seed.json`,
@@ -295,7 +297,7 @@ export async function readSeedFile(isValidate) {
                 },
                 storeType: {
                   type: "string",
-                  enum: ["xyz", "mbtiles", "pg"],
+                  enum: ["xyz", "mbtiles", "pg", "geojson"],
                 },
                 storeMD5: {
                   type: "boolean",
@@ -409,7 +411,7 @@ export async function readSeedFile(isValidate) {
  * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
  * @returns {Promise<void>}
  */
-export async function seedMBTilesTiles(
+async function seedMBTilesTiles(
   id,
   metadata,
   tileURL,
@@ -466,7 +468,7 @@ export async function seedMBTilesTiles(
   /* Update metadata */
   printLog("info", "Updating metadata...");
 
-  await updateMBTilesMetadataWithLock(
+  await updateMBTilesMetadata(
     source,
     metadata,
     300000 // 5 mins
@@ -614,7 +616,7 @@ export async function seedMBTilesTiles(
  * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
  * @returns {Promise<void>}
  */
-export async function seedPostgreSQLTiles(
+async function seedPostgreSQLTiles(
   id,
   metadata,
   tileURL,
@@ -669,7 +671,7 @@ export async function seedPostgreSQLTiles(
   /* Update metadata */
   printLog("info", "Updating metadata...");
 
-  await updatePostgreSQLMetadataWithLock(
+  await updatePostgreSQLMetadata(
     source,
     metadata,
     300000 // 5 mins
@@ -817,7 +819,7 @@ export async function seedPostgreSQLTiles(
  * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
  * @returns {Promise<void>}
  */
-export async function seedXYZTiles(
+async function seedXYZTiles(
   id,
   metadata,
   tileURL,
@@ -874,7 +876,7 @@ export async function seedXYZTiles(
   /* Update metadata */
   printLog("info", "Updating metadata...");
 
-  await updateXYZMetadataFileWithLock(
+  await updateXYZMetadataFile(
     `${process.env.DATA_DIR}/caches/xyzs/${id}/metadata.json`,
     metadata,
     300000 // 5 mins
@@ -941,7 +943,7 @@ export async function seedXYZTiles(
           `Downloading data "${id}" - Tile "${tileName}" from "${targetURL}"...`
         );
 
-        await downloadXYZTileDataFile(
+        await downloadXYZTileFile(
           targetURL,
           id,
           source,
@@ -1026,7 +1028,7 @@ export async function seedXYZTiles(
  * @param {string|number} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which file should be refreshed
  * @returns {Promise<void>}
  */
-export async function seedStyle(
+async function seedStyle(
   id,
   styleURL,
   maxTry = 5,
@@ -1131,3 +1133,21 @@ export async function seedStyle(
     `Completed seeding style "${id}" after ${(doneTime - startTime) / 1000}s!`
   );
 }
+
+/**
+ * Load seed.json file
+ * @returns {Promise<void>}
+ */
+async function loadSeedFile() {
+  seed = await readSeedFile(true);
+}
+
+export {
+  seedPostgreSQLTiles,
+  seedMBTilesTiles,
+  readSeedFile,
+  seedXYZTiles,
+  loadSeedFile,
+  seedStyle,
+  seed,
+};

@@ -15,41 +15,6 @@ import {
 } from "./utils.js";
 
 /**
- * Initialize PostgreSQL database tables
- * @param {pg.Client} source PostgreSQL database instance
- * @returns {Promise<void>}
- */
-async function initializePostgreSQLTables(source) {
-  // Create metadata table
-  await source.query(
-    `
-    CREATE TABLE IF NOT EXISTS
-      metadata (
-        name TEXT NOT NULL,
-        value TEXT NOT NULL,
-        PRIMARY KEY (name)
-      );
-    `
-  );
-
-  // Create tiles table
-  await source.query(
-    `
-    CREATE TABLE IF NOT EXISTS
-      tiles (
-        zoom_level INTEGER NOT NULL,
-        tile_column INTEGER NOT NULL,
-        tile_row INTEGER NOT NULL,
-        tile_data BYTEA NOT NULL,
-        hash TEXT,
-        created BIGINT,
-        PRIMARY KEY (zoom_level, tile_column, tile_row)
-      );
-    `
-  );
-}
-
-/**
  * Get PostgreSQL layers from tiles
  * @param {pg.Client} source PostgreSQL database instance
  * @returns {Promise<Array<string>>}
@@ -116,25 +81,64 @@ async function getPostgreSQLBBoxFromTiles(source) {
     `
   );
 
-  if (rows.rows.length > 0) {
-    const boundsArr = rows.rows.map((row) =>
-      getBBoxFromTiles(
-        row.xMin,
-        row.yMin,
-        row.xMax,
-        row.yMax,
-        row.zoom_level,
-        "xyz"
-      )
+  let bbox = [-180, -85.051129, 180, 85.051129];
+
+  for (let index = 0; index < rows.rows.length; index++) {
+    const _bbox = getBBoxFromTiles(
+      rows.rows[index].xMin,
+      rows.rows[index].yMin,
+      rows.rows[index].xMax,
+      rows.rows[index].yMax,
+      rows.rows[index].zoom_level,
+      "xyz"
     );
 
-    return [
-      Math.min(...boundsArr.map((bbox) => bbox[0])),
-      Math.min(...boundsArr.map((bbox) => bbox[1])),
-      Math.max(...boundsArr.map((bbox) => bbox[2])),
-      Math.max(...boundsArr.map((bbox) => bbox[3])),
-    ];
+    if (index === 0) {
+      bbox = _bbox;
+    } else {
+      if (_bbox[0] < bbox[0]) {
+        bbox[0] = _bbox[0];
+      }
+
+      if (_bbox[1] < bbox[1]) {
+        bbox[1] = _bbox[1];
+      }
+
+      if (_bbox[2] > bbox[2]) {
+        bbox[2] = _bbox[2];
+      }
+
+      if (_bbox[3] > bbox[3]) {
+        bbox[3] = _bbox[3];
+      }
+    }
   }
+
+  if (bbox[0] > 180) {
+    bbox[0] = 180;
+  } else if (bbox[0] < -180) {
+    bbox[0] = -180;
+  }
+
+  if (bbox[1] > 180) {
+    bbox[1] = 180;
+  } else if (bbox[1] < -180) {
+    bbox[1] = -180;
+  }
+
+  if (bbox[2] > 85.051129) {
+    bbox[2] = 85.051129;
+  } else if (bbox[2] < -85.051129) {
+    bbox[2] = -85.051129;
+  }
+
+  if (bbox[3] > 85.051129) {
+    bbox[3] = 85.051129;
+  } else if (bbox[3] < -85.051129) {
+    bbox[3] = -85.051129;
+  }
+
+  return bbox;
 }
 
 /**
@@ -143,7 +147,7 @@ async function getPostgreSQLBBoxFromTiles(source) {
  * @param {"minzoom"|"maxzoom"} zoomType
  * @returns {Promise<number>}
  */
-async function getPostgreSQLZoomLevelFromTiles(source, zoomType = "maxzoom") {
+async function getPostgreSQLZoomLevelFromTiles(source, zoomType) {
   const data = await source.query(
     zoomType === "minzoom"
       ? "SELECT MIN(zoom_level) AS zoom FROM tiles;"
@@ -179,15 +183,7 @@ async function getPostgreSQLFormatFromTiles(source) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function createPostgreSQLTileWithLock(
-  source,
-  z,
-  x,
-  y,
-  storeMD5,
-  data,
-  timeout
-) {
+async function createPostgreSQLTile(source, z, x, y, storeMD5, data, timeout) {
   await source.query({
     text: `
     INSERT INTO
@@ -218,7 +214,7 @@ async function createPostgreSQLTileWithLock(
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-async function removePostgreSQLTileWithLock(source, z, x, y, timeout) {
+export async function removePostgreSQLTile(source, z, x, y, timeout) {
   await source.query({
     text: `
     DELETE FROM
@@ -241,7 +237,32 @@ export async function openPostgreSQLDB(uri, isCreate) {
   const source = await openPostgreSQL(uri, isCreate);
 
   if (isCreate === true) {
-    await initializePostgreSQLTables(source);
+    await Promise.all([
+      source.query(
+        `
+        CREATE TABLE IF NOT EXISTS
+          metadata (
+            name TEXT NOT NULL,
+            value TEXT NOT NULL,
+            PRIMARY KEY (name)
+          );
+        `
+      ),
+      source.query(
+        `
+        CREATE TABLE IF NOT EXISTS
+          tiles (
+            zoom_level INTEGER NOT NULL,
+            tile_column INTEGER NOT NULL,
+            tile_row INTEGER NOT NULL,
+            tile_data BYTEA NOT NULL,
+            hash TEXT,
+            created BIGINT,
+            PRIMARY KEY (zoom_level, tile_column, tile_row)
+          );
+        `
+      ),
+    ]);
   }
 
   return source;
@@ -431,11 +452,7 @@ export async function closePostgreSQLDB(source) {
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function updatePostgreSQLMetadataWithLock(
-  source,
-  metadataAdds,
-  timeout
-) {
+export async function updatePostgreSQLMetadata(source, metadataAdds, timeout) {
   await Promise.all(
     Object.entries({
       ...metadataAdds,
@@ -549,29 +566,6 @@ export async function downloadPostgreSQLTile(
 }
 
 /**
- * Remove PostgreSQL tile data
- * @param {pg.Client} source PostgreSQL database instance
- * @param {number} z Zoom level
- * @param {number} x X tile index
- * @param {number} y Y tile index
- * @param {number} maxTry Number of retry attempts on failure
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-export async function removePostgreSQLTileData(
-  source,
-  z,
-  x,
-  y,
-  maxTry,
-  timeout
-) {
-  await retry(async () => {
-    await removePostgreSQLTileWithLock(source, z, x, y, timeout);
-  }, maxTry);
-}
-
-/**
  * Cache PostgreSQL tile data
  * @param {pg.Client} source PostgreSQL database instance
  * @param {number} z Zoom level
@@ -597,7 +591,7 @@ export async function cachePostgreSQLTileData(
   ) {
     return;
   } else {
-    await createPostgreSQLTileWithLock(
+    await createPostgreSQLTile(
       source,
       z,
       x,
@@ -678,5 +672,82 @@ export async function getPostgreSQLSize(source, dbName) {
 
   if (data.rows.length !== 0) {
     return Number(data.rows[0].size);
+  }
+}
+
+/**
+ * Validate PostgreSQL metadata (no validate json field)
+ * @param {object} metadata PostgreSQL metadata
+ * @returns {void}
+ */
+export function validatePostgreSQL(metadata) {
+  /* Validate name */
+  if (metadata.name === undefined) {
+    throw new Error("name is invalid");
+  }
+
+  /* Validate type */
+  if (metadata.type !== undefined) {
+    if (["baselayer", "overlay"].includes(metadata.type) === false) {
+      throw new Error("type is invalid");
+    }
+  }
+
+  /* Validate format */
+  if (
+    ["jpeg", "jpg", "pbf", "png", "webp", "gif"].includes(metadata.format) ===
+    false
+  ) {
+    throw new Error("format is invalid");
+  }
+
+  /* Validate json */
+  /*
+  if (metadata.format === "pbf" && metadata.json === undefined) {
+    throw new Error(`json is invalid`);
+  }
+  */
+
+  /* Validate minzoom */
+  if (metadata.minzoom < 0 || metadata.minzoom > 22) {
+    throw new Error("minzoom is invalid");
+  }
+
+  /* Validate maxzoom */
+  if (metadata.maxzoom < 0 || metadata.maxzoom > 22) {
+    throw new Error("maxzoom is invalid");
+  }
+
+  /* Validate minzoom & maxzoom */
+  if (metadata.minzoom > metadata.maxzoom) {
+    throw new Error("zoom is invalid");
+  }
+
+  /* Validate bounds */
+  if (metadata.bounds !== undefined) {
+    if (
+      metadata.bounds.length !== 4 ||
+      Math.abs(metadata.bounds[0]) > 180 ||
+      Math.abs(metadata.bounds[2]) > 180 ||
+      Math.abs(metadata.bounds[1]) > 90 ||
+      Math.abs(metadata.bounds[3]) > 90 ||
+      metadata.bounds[0] >= metadata.bounds[2] ||
+      metadata.bounds[1] >= metadata.bounds[3]
+    ) {
+      throw new Error("bounds is invalid");
+    }
+  }
+
+  /* Validate center */
+  if (metadata.center !== undefined) {
+    if (
+      metadata.center.length !== 3 ||
+      Math.abs(metadata.center[0]) > 180 ||
+      Math.abs(metadata.center[1]) > 90 ||
+      metadata.center[2] < 0 ||
+      metadata.center[2] > 22
+    ) {
+      throw new Error("center is invalid");
+    }
   }
 }

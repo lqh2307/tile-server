@@ -3,6 +3,7 @@
 import { config, loadConfigFile } from "./config.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
+import { seed, loadSeedFile } from "./seed.js";
 import { serve_style } from "./serve_style.js";
 import { Worker } from "node:worker_threads";
 import { serve_font } from "./serve_font.js";
@@ -76,13 +77,22 @@ export function cancelTaskInWorker() {
 }
 
 /**
- * Start HTTP server
- * @returns {void}
+ * Start server
+ * @returns {Promise<void>}
  */
-function startHTTPServer() {
-  printLog("info", "Starting HTTP server...");
-
+export async function startServer() {
   try {
+    /* Load configs */
+    printLog(
+      "info",
+      `Loading config.json and seed.json files at "${process.env.DATA_DIR}"...`
+    );
+
+    await Promise.all([loadConfigFile(), loadSeedFile()]);
+
+    /* Start HTTP server */
+    printLog("info", "Starting HTTP server...");
+
     express()
       .disable("x-powered-by")
       .enable("trust proxy")
@@ -103,67 +113,35 @@ function startHTTPServer() {
       .on("error", (error) => {
         printLog("error", `HTTP server is stopped by: ${error}`);
       });
-  } catch (error) {
-    throw new Error(`Failed to start HTTP server: ${error}`);
-  }
-}
 
-/**
- * Load data into services
- * @returns {Promise<void>}
- */
-async function loadData() {
-  printLog("info", "Loading data...");
+    /* Load datas */
+    printLog("info", "Loading data...");
 
-  try {
-    /* Load data */
-    await Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()]);
-    await serve_style.add();
+    Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()])
+      .then(() => serve_style.add())
+      .catch((error) => {
+        printLog("error", `Failed to load data: ${error}. Exited!`);
 
-    /* Clean */
-    config.styles = undefined;
-    config.datas = undefined;
-    config.sprites = undefined;
-    config.fonts = undefined;
+        /* Clean */
+        seed.styles = undefined;
+        seed.datas = undefined;
+        seed.sprites = undefined;
+        seed.fonts = undefined;
 
-    /* Update STARTING_UP ENV */
-    process.env.STARTING_UP = "false";
+        config.styles = undefined;
+        config.datas = undefined;
+        config.sprites = undefined;
+        config.fonts = undefined;
 
-    printLog("info", "Completed startup!");
-  } catch (error) {
-    printLog("error", `Failed to load data: ${error}. Exited!`);
+        /* Update STARTING_UP ENV */
+        process.env.STARTING_UP = "false";
 
-    process.send({
-      action: "killServer",
-    });
-  }
-}
+        printLog("info", "Completed startup!");
 
-/**
- * Load config.json file
- * @returns {Promise<void>}
- */
-async function loadConfig() {
-  printLog("info", `Loading config.json file at "${process.env.DATA_DIR}"...`);
-
-  try {
-    await loadConfigFile();
-  } catch (error) {
-    throw new Error(`Failed to load config.json file: ${error}`);
-  }
-}
-
-/**
- * Start server
- * @returns {Promise<void>}
- */
-export async function startServer() {
-  try {
-    await loadConfig();
-
-    startHTTPServer();
-
-    loadData();
+        process.send({
+          action: "killServer",
+        });
+      });
   } catch (error) {
     printLog("error", `Failed to start server: ${error}. Exited!`);
 
