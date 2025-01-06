@@ -5,13 +5,14 @@ import { StatusCodes } from "http-status-codes";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import { seed } from "./seed.js";
-import express from "express";
 import sqlite3 from "sqlite3";
+import express from "express";
 import {
   getXYZTileFromURL,
   cacheXYZTileFile,
   getXYZTileMD5,
   openXYZMD5DB,
+  validateXYZ,
   getXYZInfos,
   getXYZTile,
 } from "./tile_xyz.js";
@@ -20,6 +21,7 @@ import {
   cacheMBtilesTileData,
   downloadMBTilesFile,
   getMBTilesTileMD5,
+  validateMBTiles,
   getMBTilesInfos,
   getMBTilesTile,
   openMBTilesDB,
@@ -32,6 +34,7 @@ import {
   gzipAsync,
 } from "./utils.js";
 import {
+  validatePMTiles,
   getPMTilesInfos,
   getPMTilesTile,
   openPMTiles,
@@ -41,85 +44,10 @@ import {
   cachePostgreSQLTileData,
   getPostgreSQLTileMD5,
   getPostgreSQLInfos,
+  validatePostgreSQL,
   getPostgreSQLTile,
   openPostgreSQLDB,
 } from "./tile_postgresql.js";
-
-/**
- * Validate data info (no validate json field)
- * @param {object} info Data info
- * @returns {void}
- */
-function validateDataInfo(info) {
-  /* Validate name */
-  if (info.name === undefined) {
-    throw new Error("Data name info is invalid");
-  }
-
-  /* Validate type */
-  if (info.type !== undefined) {
-    if (["baselayer", "overlay"].includes(info.type) === false) {
-      throw new Error("Data type info is invalid");
-    }
-  }
-
-  /* Validate format */
-  if (
-    ["jpeg", "jpg", "pbf", "png", "webp", "gif"].includes(info.format) === false
-  ) {
-    throw new Error("Data format info is invalid");
-  }
-
-  /* Validate json */
-  /*
-  if (info.format === "pbf" && info.json === undefined) {
-    throw new Error(`Data json info is invalid`);
-  }
-  */
-
-  /* Validate minzoom */
-  if (info.minzoom < 0 || info.minzoom > 22) {
-    throw new Error("Data minzoom info is invalid");
-  }
-
-  /* Validate maxzoom */
-  if (info.maxzoom < 0 || info.maxzoom > 22) {
-    throw new Error("Data maxzoom info is invalid");
-  }
-
-  /* Validate minzoom & maxzoom */
-  if (info.minzoom > info.maxzoom) {
-    throw new Error("Data zoom info is invalid");
-  }
-
-  /* Validate bounds */
-  if (info.bounds !== undefined) {
-    if (
-      info.bounds.length !== 4 ||
-      Math.abs(info.bounds[0]) > 180 ||
-      Math.abs(info.bounds[2]) > 180 ||
-      Math.abs(info.bounds[1]) > 90 ||
-      Math.abs(info.bounds[3]) > 90 ||
-      info.bounds[0] >= info.bounds[2] ||
-      info.bounds[1] >= info.bounds[3]
-    ) {
-      throw new Error("Data bounds info is invalid");
-    }
-  }
-
-  /* Validate center */
-  if (info.center !== undefined) {
-    if (
-      info.center.length !== 3 ||
-      Math.abs(info.center[0]) > 180 ||
-      Math.abs(info.center[1]) > 90 ||
-      info.center[2] < 0 ||
-      info.center[2] > 22
-    ) {
-      throw new Error("Data center info is invalid");
-    }
-  }
-}
 
 /**
  * Get data tile handler
