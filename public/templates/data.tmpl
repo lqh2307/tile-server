@@ -48,12 +48,6 @@
       white-space: nowrap;
       text-overflow: ellipsis;
     }
-
-    #layerList div div {
-      width: 15px;
-      height: 15px;
-      display: inline-block;
-    }
   </style>
   {{else}}
   <link rel="stylesheet" type="text/css" href="{{base_url}}/leaflet.css" />
@@ -89,7 +83,7 @@
       style: {
         version: 8,
         sources: {
-          "vector_layer_": {
+          "vector_layer": {
             type: "vector",
             url: `${baseURL}/datas/{{id}}.json`,
           }
@@ -107,18 +101,52 @@
 
     map.addControl(inspect);
 
-    map.on("styledata", function () {
+    map.on("load", function () {
+      const layerList = document.getElementById("layerList");
+
       Object.keys(inspect.sources).forEach(function (sourceId) {
         inspect.sources[sourceId].forEach(function (layerId) {
           const item = document.createElement("div");
 
-          item.innerHTML = '<div style="' +
-            "background:" + inspect.assignLayerColor(layerId) + ";" +
-            '"></div> ' + layerId;
+          const layerColor = inspect.assignLayerColor(layerId);
 
-          document.getElementById("layerList").appendChild(item);
+          item.innerHTML = `
+            <div style="display:flex;align-items:center;cursor:pointer;">
+              <div style="width:15px;height:15px;display:inline-block;background:${layerColor};"></div>
+              <span style="margin-left:5px;color:${layerColor};">${layerId}</span>
+            </div>
+          `;
+
+          item.onclick = function () {
+            const visibility = map.getLayoutProperty(
+              `vector_layer_${layerId}_polygon`,
+              "visibility"
+            );
+
+            const newVisibility = (visibility === "none" || visibility === undefined) ? "visible" : "none";
+
+            map.setLayoutProperty(
+              `vector_layer_${layerId}_polygon`,
+              "visibility",
+              newVisibility
+            );
+            map.setLayoutProperty(
+              `vector_layer_${layerId}_line`,
+              "visibility",
+              newVisibility
+            );
+            map.setLayoutProperty(
+              `vector_layer_${layerId}_circle`,
+              "visibility",
+              newVisibility
+            );
+
+            item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
+          };
+
+          layerList.appendChild(item);
         });
-      })
+      });
     });
 
     let currentMarker;

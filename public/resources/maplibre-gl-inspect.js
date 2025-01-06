@@ -2047,6 +2047,9 @@
         "circle-color": color,
         "circle-radius": 2,
       },
+      layout: {
+        visibility: "visible",
+      },
       filter: ["==", "$type", "Point"],
     };
     if (vectorLayer) {
@@ -2063,6 +2066,9 @@
         "fill-color": color,
         "fill-antialias": true,
         "fill-outline-color": color,
+      },
+      layout: {
+        visibility: "visible",
       },
       filter: ["==", "$type", "Polygon"],
     };
@@ -2082,6 +2088,9 @@
       type: "line",
       paint: {
         "line-color": color,
+      },
+      layout: {
+        visibility: "visible",
       },
       filter: ["==", "$type", "LineString"],
     };
