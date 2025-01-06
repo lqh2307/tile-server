@@ -119,8 +119,11 @@ export async function startServer() {
 
     Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()])
       .then(() => serve_style.add())
-      .catch((error) => {
-        printLog("error", `Failed to load data: ${error}. Exited!`);
+      .then(() => {
+        /* Update STARTING_UP ENV */
+        process.env.STARTING_UP = "false";
+
+        printLog("info", "Completed startup!");
 
         /* Clean */
         seed.styles = undefined;
@@ -132,11 +135,9 @@ export async function startServer() {
         config.datas = undefined;
         config.sprites = undefined;
         config.fonts = undefined;
-
-        /* Update STARTING_UP ENV */
-        process.env.STARTING_UP = "false";
-
-        printLog("info", "Completed startup!");
+      })
+      .catch((error) => {
+        printLog("error", `Failed to load data: ${error}. Exited!`);
 
         process.send({
           action: "killServer",
