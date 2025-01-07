@@ -101,7 +101,7 @@
           </div>
         `;
       } if (tabId === "geojsons-tab") {
-        document.querySelector("#styles-tab").innerHTML = `
+        document.querySelector("#geojsons-tab").innerHTML = `
           <div class="box">
             {{#each geojsons}}
               <div class="item">
@@ -110,8 +110,7 @@
                   <h3 class="name">{{name}}</h3>
                   <p class="identifier">identifier: {{@key}}</p>
                   <p class="services">
-                    services: <a href="#" onclick="toggleURL('geojson_{{@key}}', event)">GeoJSON</a>
-                    <input id="geojson_{{@key}}" style="display:none;cursor:pointer;" type="text" value="${baseURL}/geojsons/{{@key}}/geojson.geojson" onclick="copyToClipboard(this)" />
+                    services: <a href="${baseURL}/geojsons/{{@key}}/geojson.geojson">GeoJSON</a>
                   </p>
                 </div>
                 <div class="viewers">
