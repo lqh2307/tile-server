@@ -1,6 +1,7 @@
 "use strict";
 
 import { config, loadConfigFile } from "./config.js";
+import { serve_geojson } from "./serve_geojson.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
 import { seed, loadSeedFile } from "./seed.js";
@@ -100,6 +101,7 @@ export async function startServer() {
       .use(morgan(`[PID = ${process.pid}] ${config.options.loggerFormat}`))
       .use("/", serve_common.init())
       .use("/datas", serve_data.init())
+      .use("/geojsons", serve_geojson.init())
       .use("/fonts", serve_font.init())
       .use("/sprites", serve_sprite.init())
       .use("/styles", serve_style.init())
@@ -117,7 +119,12 @@ export async function startServer() {
     /* Load datas */
     printLog("info", "Loading data...");
 
-    Promise.all([serve_font.add(), serve_sprite.add(), serve_data.add()])
+    Promise.all([
+      serve_font.add(),
+      serve_sprite.add(),
+      serve_data.add(),
+      serve_geojson.add(),
+    ])
       .then(() => serve_style.add())
       .then(() => {
         /* Update STARTING_UP ENV */
@@ -127,11 +134,13 @@ export async function startServer() {
 
         /* Clean */
         seed.styles = undefined;
+        seed.geojsons = undefined;
         seed.datas = undefined;
         seed.sprites = undefined;
         seed.fonts = undefined;
 
         config.styles = undefined;
+        config.geojsons = undefined;
         config.datas = undefined;
         config.sprites = undefined;
         config.fonts = undefined;
