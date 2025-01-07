@@ -6,6 +6,7 @@ import {
   cleanUpMBTilesTiles,
   cleanUpXYZTiles,
   readCleanUpFile,
+  cleanUpGeoJSON,
   cleanUpStyle,
 } from "./cleanup.js";
 import {
@@ -13,6 +14,7 @@ import {
   seedMBTilesTiles,
   readSeedFile,
   seedXYZTiles,
+  seedGeoJSON,
   seedStyle,
 } from "./seed.js";
 
@@ -24,8 +26,10 @@ import {
 export async function runTasks(opts) {
   if (
     opts.cleanUpStyles === true ||
+    opts.cleanUpGeoJSONs === true ||
     opts.cleanUpDatas === true ||
     opts.seedStyles === true ||
+    opts.seedGeoJSONs === true ||
     opts.seedDatas === true
   ) {
     /* Read cleanup.json and seed.json files */
@@ -81,6 +85,51 @@ export async function runTasks(opts) {
         );
       } catch (error) {
         printLog("error", `Failed to clean up styles: ${error}. Exited!`);
+      }
+    }
+
+    /* Clean up geojsons */
+    if (opts.cleanUpGeoJSONs === true) {
+      try {
+        const ids = Object.keys(cleanUpData.geojsons);
+
+        printLog("info", `Starting clean up ${ids.length} geojsons...`);
+
+        const startTime = Date.now();
+
+        for (const id of ids) {
+          const cleanUpGeoJSONItem = cleanUpData.geojsons[id];
+
+          if (cleanUpGeoJSONItem.skip === true) {
+            printLog("info", `Skipping clean up geojson "${id}"...`);
+
+            continue;
+          }
+
+          try {
+            await cleanUpGeoJSON(
+              id,
+              cleanUpGeoJSONItem.refreshBefore?.time ||
+                cleanUpGeoJSONItem.refreshBefore?.day
+            );
+          } catch (error) {
+            printLog(
+              "error",
+              `Failed to clean up geojson "${id}": ${error}. Skipping...`
+            );
+          }
+        }
+
+        const doneTime = Date.now();
+
+        printLog(
+          "info",
+          `Completed clean up ${ids.length} geojsons after: ${
+            (doneTime - startTime) / 1000
+          }s!`
+        );
+      } catch (error) {
+        printLog("error", `Failed to clean up geojsons: ${error}. Exited!`);
       }
     }
 
@@ -197,6 +246,55 @@ export async function runTasks(opts) {
         );
       } catch (error) {
         printLog("error", `Failed to seed styles: ${error}. Exited!`);
+      }
+    }
+
+    /* Run seed geojsons */
+    if (opts.seedGeoJSONs === true) {
+      try {
+        const ids = Object.keys(seedData.geojsons);
+
+        printLog("info", `Starting seed ${ids.length} geojsons...`);
+
+        const startTime = Date.now();
+
+        for (const id of ids) {
+          const seedGeoJSONItem = seedData.geojsons[id];
+
+          if (seedGeoJSONItem.skip === true) {
+            printLog("info", `Skipping seed geojson "${id}"...`);
+
+            continue;
+          }
+
+          try {
+            await seedGeoJSON(
+              id,
+              seedGeoJSONItem.url,
+              seedGeoJSONItem.maxTry,
+              seedGeoJSONItem.timeout,
+              seedGeoJSONItem.refreshBefore?.time ||
+                seedGeoJSONItem.refreshBefore?.day ||
+                seedGeoJSONItem.refreshBefore?.md5
+            );
+          } catch (error) {
+            printLog(
+              "error",
+              `Failed to seed geojson "${id}": ${error}. Skipping...`
+            );
+          }
+        }
+
+        const doneTime = Date.now();
+
+        printLog(
+          "info",
+          `Completed seed ${ids.length} geojsons after: ${
+            (doneTime - startTime) / 1000
+          }s!`
+        );
+      } catch (error) {
+        printLog("error", `Failed to seed geojsons: ${error}. Exited!`);
       }
     }
 

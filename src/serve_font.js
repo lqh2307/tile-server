@@ -55,6 +55,7 @@ function getFontsListHandler() {
       const result = await Promise.all(
         Object.keys(config.repo.fonts).map(async (id) => {
           return {
+            id: id,
             name: id,
             url: `${requestHost}/fonts/${id}/{range}.pbf`,
           };

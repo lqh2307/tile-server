@@ -176,12 +176,12 @@ export async function cacheGeoJSONFile(filePath, data) {
 }
 
 /**
- * Get GeoJSONJSON from a URL
+ * Get GeoJSON from a URL
  * @param {string} url The URL to fetch data from
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<object>}
  */
-export async function getGeoJSONJSONFromURL(url, timeout) {
+export async function getGeoJSONFromURL(url, timeout) {
   try {
     const response = await getDataFromURL(url, timeout, "json");
 
@@ -204,13 +204,10 @@ export async function getGeoJSONJSONFromURL(url, timeout) {
 
 /**
  * Validate GeoJSON
- * @param {string} filePath GeoJSON file path
+ * @param {object} geoJSON GeoJSON
  * @returns {Promise<void>}
  */
-export async function validateGeoJSON(filePath) {
-  const fileData = await fsPromise.readFile(filePath, "utf8");
-  const geoJSON = JSON.parse(fileData);
-
+export async function validateGeoJSON(geoJSON) {
   if ("type" in geoJSON === false) {
     throw new Error("Invalid GeoJSON file");
   }
@@ -303,19 +300,16 @@ export async function getGeoJSONCreated(filePath) {
 /**
  * Get GeoJSON layer names
  * @param {object} geoJSON GeoJSON
- * @param {string} altLayerName Alt layer name
  * @returns {Promise<Array<string>}
  */
-export async function getGeoJSONLayerNames(geoJSON, altLayerName) {
+export async function getGeoJSONLayerNames(geoJSON) {
   if (geoJSON.type === "Feature") {
-    return [feature.properties?.name || altLayerName];
-  }
-
-  if (geoJSON.type === "FeatureCollection") {
+    return [feature.properties?.name || geoJSON.name || "Unknown"];
+  } else if (geoJSON.type === "FeatureCollection") {
     return geoJSON.features.map((feature, index) => {
-      return feature.properties?.name || `${altLayerName}_${index + 1}`;
+      return feature.properties?.name || `Unknown_${index + 1}`;
     });
+  } else {
+    return [geoJSON.name || "Unknown"];
   }
-
-  return [altLayerName];
 }

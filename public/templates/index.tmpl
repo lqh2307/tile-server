@@ -56,6 +56,8 @@
 
       if (tabId === "styles-tab" && !document.querySelector("#styles-tab").innerHTML.trim()) {
         renderDatas("styles-tab");
+      } else if (tabId === "geojsons-tab" && !document.querySelector("#geojsons-tab").innerHTML.trim()) {
+        renderDatas("geojsons-tab");
       } else if (tabId === "datas-tab" && !document.querySelector("#datas-tab").innerHTML.trim()) {
         renderDatas("datas-tab");
       } else if (tabId === "fonts-tab" && !document.querySelector("#fonts-tab").innerHTML.trim()) {
@@ -82,10 +84,8 @@
                     {{#if thumbnail}}
                       | <a href="${baseURL}/styles/{{@key}}.json">TileJSON</a>
                       | <a href="${baseURL}/styles/{{@key}}/wmts.xml">WMTS</a>
-                    {{/if}}
-                    {{#if xyz}}
                       | <a href="#" onclick="toggleURL('xyz_style_{{@key}}', event)">XYZ</a>
-                      <input id="xyz_style_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz}}" onclick="copyToClipboard(this)" />
+                      <input id="xyz_style_{{@key}}" style="display:none;cursor:pointer;" type="text" value="${baseURL}/styles/{{@key}}/{z}/{x}/{y}.png" onclick="copyToClipboard(this)" />
                     {{/if}}
                   </p>
                 </div>
@@ -95,6 +95,27 @@
                       <a class="btn" href="${baseURL}/styles/{{@key}}/?raster{{viewer_hash}}">Backend Render</a>
                       <a class="btn" href="#" onclick="showExportRenderDialog(event, '{{@key}}')">Export Render</a>
                     {{/if}}
+                </div>
+              </div>
+            {{/each}}
+          </div>
+        `;
+      } if (tabId === "geojsons-tab") {
+        document.querySelector("#styles-tab").innerHTML = `
+          <div class="box">
+            {{#each geojsons}}
+              <div class="item">
+                <img src="${emptyImageURL}" alt="Empty image" />
+                <div class="details">
+                  <h3 class="name">{{name}}</h3>
+                  <p class="identifier">identifier: {{@key}}</p>
+                  <p class="services">
+                    services: <a href="#" onclick="toggleURL('geojson_{{@key}}', event)">GeoJSON</a>
+                    <input id="geojson_{{@key}}" style="display:none;cursor:pointer;" type="text" value="${baseURL}/geojsons/{{@key}}/geojson.geojson" onclick="copyToClipboard(this)" />
+                  </p>
+                </div>
+                <div class="viewers">
+                  <a class="btn" href="${baseURL}/geojsons/{{@key}}/">Inspect</a>
                 </div>
               </div>
             {{/each}}
@@ -113,10 +134,8 @@
                   <div class="identifier">ext: {{source_type}}</div>
                   <p class="services">
                     services: <a href="${baseURL}/datas/{{@key}}.json">TileJSON</a>
-                    {{#if xyz}}
                       | <a href="#" onclick="toggleURL('xyz_data_{{@key}}', event)">XYZ</a>
-                      <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{xyz}}" onclick="copyToClipboard(this)" />
-                    {{/if}}
+                      <input id="xyz_data_{{@key}}" style="display:none;cursor:pointer;" type="text" value="${baseURL}/datas/{{@key}}/{z}/{x}/{y}.{{format}}" onclick="copyToClipboard(this)" />
                   </p>
                 </div>
                 <div class="viewers">
@@ -140,8 +159,8 @@
                   <h3 class="name">{{name}}</h3>
                   <div class="identifier">identifier: {{@key}}</div>
                   <p class="services">
-                    <a href="#" onclick="toggleURL('font_{{@key}}', event)">URL</a>
-                    <input id="font_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{font}}" onclick="copyToClipboard(this)" />
+                    services: <a href="#" onclick="toggleURL('font_{{@key}}', event)">URL</a>
+                    <input id="font_{{@key}}" style="display:none;cursor:pointer;" type="text" value="${baseURL}/fonts/{{@key}}/{range}.pbf" onclick="copyToClipboard(this)" />
                   </p>
                 </div>
               </div>
@@ -161,7 +180,7 @@
                     services: <a href="${baseURL}/sprites/{{@key}}/sprite.json">JSON</a>
                     | <a href="${baseURL}/sprites/{{@key}}/sprite.png">PNG</a>
                     | <a href="#" onclick="toggleURL('sprite_{{@key}}', event)">URL</a>
-                    <input id="sprite_{{@key}}" style="display:none;cursor:pointer;" type="text" value="{{sprite}}" onclick="copyToClipboard(this)" />
+                    <input id="sprite_{{@key}}" style="display:none;cursor:pointer;" type="text" value="${baseURL}/sprites/{{@key}}/sprite" onclick="copyToClipboard(this)" />
                   </p>
                 </div>
               </div>
@@ -327,12 +346,12 @@
         })
           .then((response) => {
             if (response.status === 200) {
-              alert("Starting clean up styles and datas then seed styles and datas...");
+              alert("Starting all tasks...");
             } else {
-              alert(`Failed to start clean up styles and datas then seed styles and datas: Status code: ${response.status} - ${response.statusText}`);
+              alert(`Failed to start all tasks: Status code: ${response.status} - ${response.statusText}`);
             }
           })
-          .catch((error) => alert(`Failed to start seed styles and datas: ${error.message}`));
+          .catch((error) => alert(`Failed to start all tasks: ${error.message}`));
       } else if (action === "cleanUpStyles") {
         fetch(`${baseURL}/tasks/start?cleanUpStyles=true`, {
           method: "GET",
@@ -345,6 +364,18 @@
             }
           })
           .catch((error) => alert(`Failed to clean up styles: ${error.message}`));
+      } else if (action === "cleanUpGeoJSONs") {
+        fetch(`${baseURL}/tasks/start?cleanUpGeoJSONs=true`, {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Starting start clean up geojsons...");
+            } else {
+              alert(`Failed to start clean up geojsons: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => alert(`Failed to clean up geojsons: ${error.message}`));
       } else if (action === "cleanUpDatas") {
         fetch(`${baseURL}/tasks/start?cleanUpDatas=true`, {
           method: "GET",
@@ -369,6 +400,18 @@
             }
           })
           .catch((error) => alert(`Failed to start seed styles: ${error.message}`));
+      } else if (action === "seedGeoJSONs") {
+        fetch(`${baseURL}/tasks/start?seedGeoJSONs=true`, {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Starting seed geojsons...");
+            } else {
+              alert(`Failed to start seed geojsons: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => alert(`Failed to start seed geojsons: ${error.message}`));
       } else if (action === "seedDatas") {
         fetch(`${baseURL}/tasks/start?seedDatas=true`, {
           method: "GET",
@@ -387,12 +430,12 @@
         })
           .then((response) => {
             if (response.status === 200) {
-              alert("Canceling clean up/seed styles and datas...");
+              alert("Canceling clean all tasks...");
             } else {
-              alert(`Failed to cancel clean up/seed styles and datas: Status code: ${response.status} - ${response.statusText}`);
+              alert(`Failed to cancel all tasks: Status code: ${response.status} - ${response.statusText}`);
             }
           })
-          .catch((error) => alert(`Failed to cancel clean up/seed styles and datas: ${error.message}`));
+          .catch((error) => alert(`Failed to cancel all tasks: ${error.message}`));
       } else if (action === "restart") {
         fetch(`${baseURL}/restart`, {
           method: "GET",
@@ -477,12 +520,14 @@
     <h1 class="title">Tile server preview</h1>
     <div class="tabs">
       <div class="tab active" onclick="switchTab(event, 'styles-tab')">STYLES ({{style_count}})</div>
+      <div class="tab" onclick="switchTab(event, 'geojsons-tab')">GEOJSONS ({{geojson_count}})</div>
       <div class="tab" onclick="switchTab(event, 'datas-tab')">DATAS ({{data_count}})</div>
       <div class="tab" onclick="switchTab(event, 'fonts-tab')">FONTS ({{font_count}})</div>
       <div class="tab" onclick="switchTab(event, 'sprites-tab')">SPRITES ({{sprite_count}})</div>
       <div class="tab" onclick="switchTab(event, 'actions-tab')">ACTIONS</div>
     </div>
     <div id="styles-tab" class="tab-content active"></div>
+    <div id="geojsons-tab" class="tab-content"></div>
     <div id="datas-tab" class="tab-content"></div>
     <div id="fonts-tab" class="tab-content"></div>
     <div id="sprites-tab" class="tab-content"></div>

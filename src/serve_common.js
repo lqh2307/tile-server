@@ -41,6 +41,7 @@ async function compileTemplate(template, data) {
 function serveFrontPageHandler() {
   return async (req, res, next) => {
     const styles = {};
+    const geojsons = {};
     const datas = {};
     const fonts = {};
     const sprites = {};
@@ -58,7 +59,6 @@ function serveFrontPageHandler() {
 
           styles[id] = {
             name: name,
-            xyz: `${requestHost}/styles/${id}/{z}/{x}/{y}.png`,
             viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
             thumbnail: `${requestHost}/styles/${id}/${z}/${x}/${y}.png`,
           };
@@ -70,6 +70,11 @@ function serveFrontPageHandler() {
             viewer_hash: `#${zoom}/${center[1]}/${center[0]}`,
           };
         }
+      }),
+      ...Object.keys(config.repo.geojsons).map(async (id) => {
+        geojsons[id] = {
+          name: config.repo.geojsons[id].name,
+        };
       }),
       ...Object.keys(config.repo.datas).map(async (id) => {
         const data = config.repo.datas[id];
@@ -84,7 +89,7 @@ function serveFrontPageHandler() {
 
         datas[id] = {
           name: name,
-          xyz: `${requestHost}/datas/${id}/{z}/{x}/{y}.${format}`,
+          format: format,
           viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
           thumbnail: thumbnail,
           source_type: data.sourceType,
@@ -93,13 +98,11 @@ function serveFrontPageHandler() {
       ...Object.keys(config.repo.fonts).map(async (id) => {
         fonts[id] = {
           name: id,
-          font: `${requestHost}/fonts/${id}/{range}.pbf`,
         };
       }),
       ...Object.keys(config.repo.sprites).map(async (id) => {
         sprites[id] = {
           name: id,
-          sprite: `${requestHost}/sprites/${id}/sprite`,
         };
       }),
     ]);
@@ -107,10 +110,12 @@ function serveFrontPageHandler() {
     try {
       const compiled = await compileTemplate("index", {
         styles: styles,
+        geojsons: geojsons,
         datas: datas,
         fonts: fonts,
         sprites: sprites,
         style_count: Object.keys(styles).length,
+        geojson_count: Object.keys(geojsons).length,
         data_count: Object.keys(datas).length,
         font_count: Object.keys(fonts).length,
         sprite_count: Object.keys(sprites).length,
@@ -183,6 +188,37 @@ function serveDataHandler() {
       return res.status(StatusCodes.OK).send(compiled);
     } catch (error) {
       printLog("error", `Failed to serve data "${id}": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
+/**
+ * Serve GeoJSON handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
+function serveGeoJSONHandler() {
+  return async (req, res, next) => {
+    const id = req.params.id;
+    const item = config.repo.geojsons[id];
+
+    if (item === undefined) {
+      return res.status(StatusCodes.NOT_FOUND).send("GeoJSON does not exist");
+    }
+
+    try {
+      const compiled = await compileTemplate("geojson", {
+        id: id,
+        name: item.name,
+        base_url: getRequestHost(req),
+      });
+
+      return res.status(StatusCodes.OK).send(compiled);
+    } catch (error) {
+      printLog("error", `Failed to serve geojson "${id}": ${error}`);
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -361,6 +397,10 @@ function serveSummaryHandler() {
             size: 0,
           },
         },
+        geojson: {
+          count: 0,
+          size: 0,
+        },
         style: {
           count: 0,
           size: 0,
@@ -477,6 +517,23 @@ function serveSummaryHandler() {
         if (item.rendered !== undefined) {
           result.rendered.count += 1;
         }
+      }
+
+      // GeoJSONs info
+      for (const id in config.repo.geojsons) {
+        const item = config.repo.geojsons[id];
+
+        try {
+          const stat = await fsPromise.stat(item.path);
+
+          result.geojson.size += stat.size;
+        } catch (error) {
+          if (item.cache === undefined && error.code === "ENOENT") {
+            throw error;
+          }
+        }
+
+        result.geojson.count += 1;
       }
 
       res.header("content-type", "application/json");
@@ -957,6 +1014,45 @@ export const serve_common = {
        *         description: Internal server error
        */
       app.get("/styles/:id/$", checkReadyMiddleware(), serveStyleHandler());
+
+      /**
+       * @swagger
+       * tags:
+       *   - name: Common
+       *     description: Common related endpoints
+       * /geojsons/{id}/:
+       *   get:
+       *     tags:
+       *       - Common
+       *     summary: Serve geojson page
+       *     parameters:
+       *       - in: path
+       *         name: id
+       *         schema:
+       *           type: string
+       *           example: id
+       *         required: true
+       *         description: ID of the geojson
+       *     responses:
+       *       200:
+       *         description: GeoJSON page
+       *         content:
+       *           text/html:
+       *             schema:
+       *               type: string
+       *       404:
+       *         description: Not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
+       *       500:
+       *         description: Internal server error
+       */
+      app.get("/geojsons/:id/$", checkReadyMiddleware(), serveGeoJSONHandler());
 
       /* Serve data */
       /**

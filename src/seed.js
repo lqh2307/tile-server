@@ -7,6 +7,11 @@ import { Mutex } from "async-mutex";
 import sqlite3 from "sqlite3";
 import os from "os";
 import {
+  downloadGeoJSONFile,
+  getGeoJSONCreated,
+  getGeoJSON,
+} from "./geojson.js";
+import {
   updateXYZMetadataFile,
   downloadXYZTileFile,
   getXYZTileCreated,
@@ -85,6 +90,59 @@ async function readSeedFile(isValidate) {
                       },
                       minItems: 3,
                       maxItems: 3,
+                    },
+                  },
+                },
+                url: {
+                  type: "string",
+                  minLength: 1,
+                },
+                skip: {
+                  type: "boolean",
+                },
+                refreshBefore: {
+                  type: "object",
+                  properties: {
+                    time: {
+                      type: "string",
+                      minLength: 1,
+                    },
+                    day: {
+                      type: "integer",
+                      minimum: 0,
+                    },
+                    md5: {
+                      type: "boolean",
+                    },
+                  },
+                  anyOf: [
+                    { required: ["time"] },
+                    { required: ["day"] },
+                    { required: ["md5"] },
+                  ],
+                },
+                timeout: {
+                  type: "integer",
+                  minimum: 0,
+                },
+                maxTry: {
+                  type: "integer",
+                  minimum: 1,
+                },
+              },
+              required: ["metadata", "url"],
+            },
+          },
+          geojsons: {
+            type: "object",
+            additionalProperties: {
+              type: "object",
+              properties: {
+                metadata: {
+                  type: "object",
+                  properties: {
+                    name: {
+                      type: "string",
                     },
                   },
                 },
@@ -297,7 +355,7 @@ async function readSeedFile(isValidate) {
                 },
                 storeType: {
                   type: "string",
-                  enum: ["xyz", "mbtiles", "pg", "geojson"],
+                  enum: ["xyz", "mbtiles", "pg"],
                 },
                 storeMD5: {
                   type: "boolean",
@@ -386,7 +444,7 @@ async function readSeedFile(isValidate) {
             },
           },
         },
-        required: ["styles", "datas", "sprites", "fonts"],
+        required: ["styles", "geojsons", "datas", "sprites", "fonts"],
         additionalProperties: false,
       },
       seed
@@ -1020,6 +1078,121 @@ async function seedXYZTiles(
 }
 
 /**
+ * Seed geojson
+ * @param {string} id Cache geojson ID
+ * @param {string} geojsonURL GeoJSON URL
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
+ * @param {string|number} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which file should be refreshed
+ * @returns {Promise<void>}
+ */
+async function seedGeoJSON(
+  id,
+  geojsonURL,
+  maxTry = 5,
+  timeout = 60000,
+  refreshBefore
+) {
+  const startTime = Date.now();
+
+  let log = `Seeding geojson "${id}" with:\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}`;
+
+  let refreshTimestamp;
+  if (typeof refreshBefore === "string") {
+    refreshTimestamp = new Date(refreshBefore).getTime();
+
+    log += `\n\tRefresh before: ${refreshBefore}`;
+  } else if (typeof refreshBefore === "number") {
+    const now = new Date();
+
+    refreshTimestamp = now.setDate(now.getDate() - refreshBefore);
+
+    log += `\n\tOld than: ${refreshBefore} days`;
+  } else if (typeof refreshBefore === "boolean") {
+    refreshTimestamp = true;
+
+    log += `\n\tRefresh before: check MD5`;
+  }
+
+  printLog("info", log);
+
+  /* Download geojson.geojson file */
+  const filePath = `${process.env.DATA_DIR}/caches/geojsons/${id}/geojson.geojson`;
+
+  try {
+    let needDownload = false;
+
+    if (refreshTimestamp === true) {
+      try {
+        const [response, geoJSON] = await Promise.all([
+          getDataFromURL(
+            geojsonURL.replaceAll("geojson.geojson", `md5/geojson.geojson`),
+            timeout,
+            "arraybuffer"
+          ),
+          getGeoJSON(filePath),
+        ]);
+
+        if (
+          response.headers["etag"] !==
+          calculateMD5(Buffer.from(JSON.stringify(geoJSON), "utf8"))
+        ) {
+          needDownload = true;
+        }
+      } catch (error) {
+        if (error.message === "GeoJSON does not exist") {
+          needDownload = true;
+        } else {
+          throw error;
+        }
+      }
+    } else if (refreshTimestamp !== undefined) {
+      try {
+        const created = await getGeoJSONCreated(filePath);
+
+        if (!created || created < refreshTimestamp) {
+          needDownload = true;
+        }
+      } catch (error) {
+        if (error.message === "GeoJSON created does not exist") {
+          needDownload = true;
+        } else {
+          throw error;
+        }
+      }
+    } else {
+      needDownload = true;
+    }
+
+    printLog("info", "Downloading geojson...");
+
+    if (needDownload === true) {
+      printLog(
+        "info",
+        `Downloading geojson "${id}" - File "${filePath}" from "${geojsonURL}"...`
+      );
+
+      await downloadGeoJSONFile(geojsonURL, filePath, maxTry, timeout);
+    }
+  } catch (error) {
+    printLog("error", `Failed to seed geojson "${id}": ${error}`);
+  }
+
+  /* Remove parent folders if empty */
+  await removeEmptyFolders(
+    `${process.env.DATA_DIR}/caches/geojsons/${id}`,
+    /^.*\.geojson$/
+  );
+
+  const doneTime = Date.now();
+
+  printLog(
+    "info",
+    `Completed seeding geojson "${id}" after ${(doneTime - startTime) / 1000}s!`
+  );
+}
+
+/**
  * Seed style
  * @param {string} id Cache style ID
  * @param {string} styleURL Style URL
@@ -1148,6 +1321,7 @@ export {
   readSeedFile,
   seedXYZTiles,
   loadSeedFile,
+  seedGeoJSON,
   seedStyle,
   seed,
 };

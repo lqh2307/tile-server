@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{name}} - Tile Server</title>
+  <link rel="stylesheet" type="text/css" href="{{base_url}}/maplibre-gl.css" />
+  <link rel="stylesheet" type="text/css" href="{{base_url}}/maplibre-gl-inspect.css" />
+  <script src="{{base_url}}/maplibre-gl.js"></script>
+  <script src="{{base_url}}/maplibre-gl-inspect.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 250px;
+      bottom: 0;
+    }
+
+    h1 {
+      position: absolute;
+      top: 5px;
+      right: 0;
+      width: 240px;
+      margin: 0;
+      line-height: 20px;
+      font-size: 20px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    #layerList {
+      position: absolute;
+      top: 35px;
+      right: 0;
+      bottom: 0;
+      width: 240px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>{{name}}</h1>
+  <div id="map"></div>
+  <div id="layerList"></div>
+  <script>
+    const baseURL = "{{base_url}}";
+
+    const map = new maplibregl.Map({
+      container: "map",
+      hash: true,
+      style: {
+        version: 8,
+        sources: {
+          "vector_layer": {
+            type: "geojson",
+            data: `${baseURL}/geojsons/{{id}}/geojson.geojson`,
+          }
+        },
+        layers: [],
+      },
+    });
+
+    map.addControl(new maplibregl.NavigationControl());
+
+    const inspect = new MaplibreInspect({
+      showInspectMap: true,
+      showInspectButton: false,
+    });
+
+    map.addControl(inspect);
+
+    map.on("load", function () {
+      const layerList = document.getElementById("layerList");
+
+      Object.keys(inspect.sources).forEach(function (sourceId) {
+        inspect.sources[sourceId].forEach(function (layerId) {
+          const item = document.createElement("div");
+
+          const layerColor = inspect.assignLayerColor(layerId);
+
+          item.innerHTML = `
+            <div style="display:flex;align-items:center;cursor:pointer;">
+              <div style="width:15px;height:15px;display:inline-block;background:${layerColor};"></div>
+              <span style="margin-left:5px;color:${layerColor};">${layerId}</span>
+            </div>
+          `;
+
+          item.onclick = function () {
+            const visibility = map.getLayoutProperty(
+              `vector_layer_${layerId}_polygon`,
+              "visibility"
+            );
+
+            const newVisibility = (visibility === "none" || visibility === undefined) ? "visible" : "none";
+
+            map.setLayoutProperty(
+              `vector_layer_${layerId}_polygon`,
+              "visibility",
+              newVisibility
+            );
+            map.setLayoutProperty(
+              `vector_layer_${layerId}_line`,
+              "visibility",
+              newVisibility
+            );
+            map.setLayoutProperty(
+              `vector_layer_${layerId}_circle`,
+              "visibility",
+              newVisibility
+            );
+
+            item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
+          };
+
+          layerList.appendChild(item);
+        });
+      });
+    });
+
+    let currentMarker;
+
+    map.on("click", (event) => {
+      if (currentMarker) {
+        currentMarker.remove();
+      }
+
+      currentMarker = new maplibregl.Marker()
+        .setLngLat([event.lngLat.lng, event.lngLat.lat])
+        .addTo(map);
+
+      alert(`Position: [${event.lngLat.lng}, ${event.lngLat.lat}]`);
+    });
+  </script>
+</body>
+
+</html>

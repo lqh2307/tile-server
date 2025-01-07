@@ -102,8 +102,10 @@ async function startClusterServer(opts) {
         startTaskInWorker({
           restartServerAfterTask: config.options.restartServerAfterTask,
           cleanUpStyles: true,
+          cleanUpGeoJSONs: true,
           cleanUpDatas: true,
           seedStyles: true,
+          seedGeoJSONs: true,
           seedDatas: true,
         });
       });

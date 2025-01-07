@@ -105,6 +105,30 @@ async function readConfigFile(isValidate) {
               required: ["style"],
             },
           },
+          geojsons: {
+            type: "object",
+            additionalProperties: {
+              type: "object",
+              properties: {
+                geojsons: {
+                  type: "string",
+                  minLength: 1,
+                },
+                cache: {
+                  type: "object",
+                  properties: {
+                    forward: {
+                      type: "boolean",
+                    },
+                    store: {
+                      type: "boolean",
+                    },
+                  },
+                },
+              },
+              required: ["geojsons"],
+            },
+          },
           datas: {
             type: "object",
             additionalProperties: {
@@ -126,10 +150,6 @@ async function readConfigFile(isValidate) {
                   type: "string",
                   minLength: 1,
                 },
-                geojson: {
-                  type: "string",
-                  minLength: 1,
-                },
                 cache: {
                   type: "object",
                   properties: {
@@ -147,7 +167,6 @@ async function readConfigFile(isValidate) {
                 { required: ["pmtiles"] },
                 { required: ["xyz"] },
                 { required: ["pg"] },
-                { required: ["geojson"] },
               ],
             },
           },
@@ -164,7 +183,14 @@ async function readConfigFile(isValidate) {
             },
           },
         },
-        required: ["options", "styles", "datas", "sprites", "fonts"],
+        required: [
+          "options",
+          "styles",
+          "geojsons",
+          "datas",
+          "sprites",
+          "fonts",
+        ],
         additionalProperties: false,
       },
       config
@@ -189,6 +215,7 @@ async function readConfigFile(isValidate) {
 
   config.repo = {
     styles: {},
+    geojsons: {},
     datas: {},
     fonts: {},
     sprites: {},

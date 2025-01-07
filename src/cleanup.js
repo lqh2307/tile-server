@@ -1,5 +1,6 @@
 "use strict";
 
+import { getGeoJSONCreated, removeGeoJSONFile } from "./geojson.js";
 import { removeStyleFile, getStyleCreated } from "./style.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
@@ -51,6 +52,30 @@ export async function readCleanUpFile(isValidate) {
         type: "object",
         properties: {
           styles: {
+            type: "object",
+            additionalProperties: {
+              type: "object",
+              properties: {
+                skip: {
+                  type: "boolean",
+                },
+                cleanUpBefore: {
+                  type: "object",
+                  properties: {
+                    time: {
+                      type: "string",
+                    },
+                    day: {
+                      type: "integer",
+                      minimum: 0,
+                    },
+                  },
+                  anyOf: [{ required: ["time"] }, { required: ["day"] }],
+                },
+              },
+            },
+          },
+          geojsons: {
             type: "object",
             additionalProperties: {
               type: "object",
@@ -173,7 +198,7 @@ export async function readCleanUpFile(isValidate) {
             },
           },
         },
-        required: ["styles", "datas", "sprites", "fonts"],
+        required: ["styles", "geojsons", "datas", "sprites", "fonts"],
         additionalProperties: false,
       },
       cleanUp
@@ -639,6 +664,86 @@ export async function cleanUpXYZTiles(
 }
 
 /**
+ * Clean up geojson
+ * @param {string} id Clean up geojson ID
+ * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
+ * @returns {Promise<void>}
+ */
+export async function cleanUpGeoJSON(id, cleanUpBefore) {
+  const startTime = Date.now();
+
+  let log = `Cleaning up geojson "${id}" with:`;
+
+  let cleanUpTimestamp;
+  if (typeof cleanUpBefore === "string") {
+    cleanUpTimestamp = new Date(cleanUpBefore).getTime();
+
+    log += `\n\tClean up before: ${cleanUpBefore}`;
+  } else if (typeof cleanUpBefore === "number") {
+    const now = new Date();
+
+    cleanUpTimestamp = now.setDate(now.getDate() - cleanUpBefore);
+
+    log += `\n\tOld than: ${cleanUpBefore} days`;
+  }
+
+  printLog("info", log);
+
+  /* Remove geojson.geojson file */
+  const filePath = `${process.env.DATA_DIR}/caches/geojsons/${id}/geojson.geojson`;
+
+  try {
+    let needRemove = false;
+
+    if (cleanUpTimestamp !== undefined) {
+      try {
+        const created = await getGeoJSONCreated(filePath);
+
+        if (!created || created < cleanUpTimestamp) {
+          needRemove = true;
+        }
+      } catch (error) {
+        if (error.message === "GeoJSON created does not exist") {
+          needRemove = true;
+        } else {
+          throw error;
+        }
+      }
+    } else {
+      needRemove = true;
+    }
+
+    printLog("info", "Removing geojson...");
+
+    if (needRemove === true) {
+      printLog("info", `Removing geojson "${id}" - File "${filePath}"...`);
+
+      await removeGeoJSONFile(
+        filePath,
+        300000 // 5 mins
+      );
+    }
+  } catch (error) {
+    printLog("error", `Failed to clean up geojson "${id}": ${error}`);
+  }
+
+  /* Remove parent folders if empty */
+  await removeEmptyFolders(
+    `${process.env.DATA_DIR}/caches/geojsons/${id}`,
+    /^.*\.geojson$/
+  );
+
+  const doneTime = Date.now();
+
+  printLog(
+    "info",
+    `Completed clean up geojson "${id}" after ${
+      (doneTime - startTime) / 1000
+    }s!`
+  );
+}
+
+/**
  * Clean up style
  * @param {string} id Clean up style ID
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
@@ -664,7 +769,7 @@ export async function cleanUpStyle(id, cleanUpBefore) {
 
   printLog("info", log);
 
-  /* Remove style file */
+  /* Remove style.json file */
   const filePath = `${process.env.DATA_DIR}/caches/styles/${id}/style.json`;
 
   try {

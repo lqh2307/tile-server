@@ -135,6 +135,18 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
       "style": "zurich_switzerland/style.json"
     }
   },
+  "geojsons": {
+    "asia_vietnam_geojson": {
+      "geojson": "asia_vietnam_geojson/geojson.geojson",
+    },
+    "asia_cambodia_geojson": {
+      "geojson": "asia_cambodia_geojson",
+      "cache": {
+        "forward": true,
+        "store": true
+      }
+    }
+  },
   "datas": {
     "asia_china": {
       "mbtiles": "asia_vietnam/asia_vietnam.mbtiles"
@@ -197,6 +209,17 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
         ]
       },
       "url": "http://localhost:9999/styles/asia_cambodia/style.json",
+      "refreshBefore": {
+        "day": 2
+      }
+    }
+  },
+  "geojsons": {
+    "asia_cambodia_geojson": {
+      "metadata": {
+        "name": "asia_cambodia"
+      },
+      "url": "http://localhost:9999/geojsons/asia_cambodia/geojson.geojson",
       "refreshBefore": {
         "day": 2
       }
@@ -425,6 +448,14 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
       "cleanUpBefore": {
         "day": 3
       }
+    }
+  },
+  "geojsons": {
+    "asia_cambodia_geojson": {
+      "cleanUpBefore": {
+        "day": 2
+      },
+      "skip": true
     }
   },
   "datas": {
