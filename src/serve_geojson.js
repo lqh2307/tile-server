@@ -53,13 +53,16 @@ function getGeoJSONHandler() {
 
           /* Cache */
           if (item.storeCache === true) {
-            printLog("info", `Caching GeoJSON "${id}" - File "${filePath}"...`);
+            printLog(
+              "info",
+              `Caching GeoJSON "${id}" - File "${item.path}"...`
+            );
 
             cacheGeoJSONFile(item.path, JSON.stringify(geoJSON, null, 2)).catch(
               (error) =>
                 printLog(
                   "error",
-                  `Failed to cache GeoJSON "${id}" - File "${filePath}": ${error}`
+                  `Failed to cache GeoJSON "${id}" - File "${item.path}": ${error}`
                 )
             );
           }

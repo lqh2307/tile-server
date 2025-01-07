@@ -65,13 +65,13 @@ function getStyleHandler() {
 
           /* Cache */
           if (item.storeCache === true) {
-            printLog("info", `Caching style "${id}" - File "${filePath}"...`);
+            printLog("info", `Caching style "${id}" - File "${item.path}"...`);
 
             cacheStyleFile(item.path, JSON.stringify(styleJSON, null, 2)).catch(
               (error) =>
                 printLog(
                   "error",
-                  `Failed to cache style "${id}" - File "${filePath}": ${error}`
+                  `Failed to cache style "${id}" - File "${item.path}": ${error}`
                 )
             );
           }
@@ -583,7 +583,7 @@ function getStyleJSONsListHandler() {
               if (item.storeCache === true) {
                 printLog(
                   "info",
-                  `Caching style "${id}" - File "${filePath}"...`
+                  `Caching style "${id}" - File "${item.path}"...`
                 );
 
                 cacheStyleFile(
@@ -592,7 +592,7 @@ function getStyleJSONsListHandler() {
                 ).catch((error) =>
                   printLog(
                     "error",
-                    `Failed to cache style "${id}" - File "${filePath}": ${error}`
+                    `Failed to cache style "${id}" - File "${item.path}": ${error}`
                   )
                 );
               }
