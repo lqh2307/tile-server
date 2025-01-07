@@ -364,7 +364,7 @@
       event.preventDefault();
 
       if (action === "all") {
-        fetch(`${baseURL}/tasks/start?seedStyles=true&cleanUpStyles=true&cleanUpDatas=true&seedDatas=true`, {
+        fetch(`${baseURL}/tasks/start?seedStyles=true&cleanUpStyles=true&cleanUpDatas=true&seedDatas=true&seedGeoJSONs=true&cleanUpGeoJSONs=true`, {
           method: "GET",
         })
           .then((response) => {

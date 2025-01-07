@@ -67,7 +67,7 @@ function getStyleHandler() {
           if (item.storeCache === true) {
             printLog("info", `Caching style "${id}" - File "${item.path}"...`);
 
-            cacheStyleFile(item.path, JSON.stringify(styleJSON, null, 2)).catch(
+            cacheStyleFile(item.path, JSON.stringify(styleJSON)).catch(
               (error) =>
                 printLog(
                   "error",
@@ -586,14 +586,12 @@ function getStyleJSONsListHandler() {
                   `Caching style "${id}" - File "${item.path}"...`
                 );
 
-                cacheStyleFile(
-                  item.path,
-                  JSON.stringify(styleJSON, null, 2)
-                ).catch((error) =>
-                  printLog(
-                    "error",
-                    `Failed to cache style "${id}" - File "${item.path}": ${error}`
-                  )
+                cacheStyleFile(item.path, JSON.stringify(styleJSON)).catch(
+                  (error) =>
+                    printLog(
+                      "error",
+                      `Failed to cache style "${id}" - File "${item.path}": ${error}`
+                    )
                 );
               }
             } else {

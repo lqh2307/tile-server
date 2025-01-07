@@ -562,15 +562,11 @@ export async function updateXYZMetadataFile(filePath, metadataAdds, timeout) {
 
         await fsPromise.writeFile(
           tempFilePath,
-          JSON.stringify(
-            {
-              ...JSON.parse(data),
-              ...metadataAdds,
-              scheme: "xyz",
-            },
-            null,
-            2
-          ),
+          JSON.stringify({
+            ...JSON.parse(data),
+            ...metadataAdds,
+            scheme: "xyz",
+          }),
           "utf8"
         );
 
@@ -583,14 +579,10 @@ export async function updateXYZMetadataFile(filePath, metadataAdds, timeout) {
 
           await fsPromise.writeFile(
             filePath,
-            JSON.stringify(
-              {
-                ...metadataAdds,
-                scheme: "xyz",
-              },
-              null,
-              2
-            ),
+            JSON.stringify({
+              ...metadataAdds,
+              scheme: "xyz",
+            }),
             "utf8"
           );
         } else {

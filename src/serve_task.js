@@ -17,8 +17,10 @@ function startTaskHandler() {
           process.send({
             action: "startTask",
             cleanUpStyles: req.query.cleanUpStyles === "true",
+            cleanUpGeoJSONs: req.query.cleanUpGeoJSONs === "true",
             cleanUpDatas: req.query.cleanUpDatas === "true",
             seedStyles: req.query.seedStyles === "true",
+            seedGeoJSONs: req.query.seedGeoJSONs === "true",
             seedDatas: req.query.seedDatas === "true",
           }),
         0
@@ -83,6 +85,12 @@ export const serve_task = {
      *         required: false
      *         description: Run clean up styles
      *       - in: query
+     *         name: cleanUpGeoJSONs
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Run clean up geojsons
+     *       - in: query
      *         name: cleanUpDatas
      *         schema:
      *           type: boolean
@@ -94,6 +102,12 @@ export const serve_task = {
      *           type: boolean
      *         required: false
      *         description: Run seed styles
+     *       - in: query
+     *         name: seedGeoJSONs
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Run seed geojsons
      *       - in: query
      *         name: seedDatas
      *         schema:

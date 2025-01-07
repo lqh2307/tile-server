@@ -58,7 +58,7 @@ function getGeoJSONHandler() {
               `Caching GeoJSON "${id}" - File "${item.path}"...`
             );
 
-            cacheGeoJSONFile(item.path, JSON.stringify(geoJSON, null, 2)).catch(
+            cacheGeoJSONFile(item.path, JSON.stringify(geoJSON)).catch(
               (error) =>
                 printLog(
                   "error",
