@@ -110,7 +110,7 @@ async function readConfigFile(isValidate) {
             additionalProperties: {
               type: "object",
               properties: {
-                geojsons: {
+                geojson: {
                   type: "string",
                   minLength: 1,
                 },
@@ -126,7 +126,7 @@ async function readConfigFile(isValidate) {
                   },
                 },
               },
-              required: ["geojsons"],
+              required: ["geojson"],
             },
           },
           datas: {
