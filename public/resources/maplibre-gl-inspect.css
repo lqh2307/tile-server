@@ -10,6 +10,7 @@
 .maplibregl-inspect_layer {
   display: block;
   font-weight: bold;
+  color: red;
 }
 
 .maplibregl-inspect_property {
