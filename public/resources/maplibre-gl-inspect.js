@@ -2322,7 +2322,6 @@
 
       var randomColor = function (options) {
         options = options || {};
-        g;
 
         // Check if there is a seed and ensure it's an
         // integer. Otherwise, reset the seed value.
