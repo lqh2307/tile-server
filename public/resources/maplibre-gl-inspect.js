@@ -2132,19 +2132,23 @@
     }
 
     Object.keys(sources).forEach((sourceId) => {
-      let layers = sources[sourceId];
+      const layers = sources[sourceId];
 
       if (!layers || layers.length === 0) {
-        layers = ["polygon", "line", "point"];
+        const colors = alphaColors(sourceId);
+
+        circleLayers.push(circleLayer(colors.circle, sourceId));
+        lineLayers.push(lineLayer(colors.line, sourceId));
+        polyLayers.push(polygonLayer(colors.polygon, sourceId));
+      } else {
+        layers.forEach((layerId) => {
+          const colors = alphaColors(layerId);
+
+          circleLayers.push(circleLayer(colors.circle, sourceId, layerId));
+          lineLayers.push(lineLayer(colors.line, sourceId, layerId));
+          polyLayers.push(polygonLayer(colors.polygon, sourceId, layerId));
+        });
       }
-
-      layers.forEach((layerId) => {
-        const colors = alphaColors(layerId);
-
-        circleLayers.push(circleLayer(colors.circle, sourceId, layerId));
-        lineLayers.push(lineLayer(colors.line, sourceId, layerId));
-        polyLayers.push(polygonLayer(colors.polygon, sourceId, layerId));
-      });
     });
 
     return polyLayers.concat(lineLayers).concat(circleLayers);
@@ -2318,6 +2322,7 @@
 
       var randomColor = function (options) {
         options = options || {};
+        g;
 
         // Check if there is a seed and ensure it's an
         // integer. Otherwise, reset the seed value.
