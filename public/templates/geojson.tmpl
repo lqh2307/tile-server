@@ -91,7 +91,7 @@
             "layout": {
               "visibility": "visible"
             },
-            "filter": ["all", ["==", "$type", "Polygon"], ["==", "geometry-type", "Polygon"]]
+            "filter": ["any", ["==", "$type", "Polygon"], ["==", "geometry-type", "Polygon"]]
           },
           {
             "id": "source_line",
@@ -105,7 +105,7 @@
               "line-cap": "round",
               "visibility": "visible"
             },
-            "filter": ["all", ["==", "$type", "LineString"], ["==", "geometry-type", "LineString"]]
+            "filter": ["any", ["==", "$type", "LineString"], ["==", "geometry-type", "LineString"]]
           },
           {
             "id": "source_circle",
@@ -118,7 +118,7 @@
             "layout": {
               "visibility": "visible"
             },
-            "filter": ["all", ["==", "$type", "Point"], ["==", "geometry-type", "Point"]]
+            "filter": ["any", ["==", "$type", "Point"], ["==", "geometry-type", "Point"]]
           }
         ]
       }
