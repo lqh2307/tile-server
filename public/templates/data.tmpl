@@ -81,25 +81,27 @@
       container: "map",
       hash: true,
       style: {
-        version: 8,
-        sources: {
-          "vector_layer": {
-            type: "vector",
-            url: `${baseURL}/datas/{{id}}.json`,
-          }
-        },
-        layers: [],
-      },
+        "version": 8,
+        "sources": {},
+        "layers": []
+      }
     });
 
     map.addControl(new maplibregl.NavigationControl());
 
     const inspect = new MaplibreInspect({
       showInspectMap: true,
-      showInspectButton: false,
+      showInspectButton: false
     });
 
     map.addControl(inspect);
+
+    const sourceName = "vector_tile_source";
+
+    map.addSource(sourceName, {
+      "type": "vector",
+      "url": `${baseURL}/datas/{{id}}.json`
+    });
 
     map.on("load", function () {
       const layerList = document.getElementById("layerList");
@@ -119,24 +121,24 @@
 
           item.onclick = function () {
             const visibility = map.getLayoutProperty(
-              `vector_layer_${layerId}_polygon`,
+              `${sourceName}_${layerId}_polygon`,
               "visibility"
             );
 
             const newVisibility = visibility === "none" ? "visible" : "none";
 
             map.setLayoutProperty(
-              `vector_layer_${layerId}_polygon`,
+              `${sourceName}_${layerId}_polygon`,
               "visibility",
               newVisibility
             );
             map.setLayoutProperty(
-              `vector_layer_${layerId}_line`,
+              `${sourceName}_${layerId}_line`,
               "visibility",
               newVisibility
             );
             map.setLayoutProperty(
-              `vector_layer_${layerId}_circle`,
+              `${sourceName}_${layerId}_circle`,
               "visibility",
               newVisibility
             );
@@ -170,7 +172,7 @@
     const baseURL = "{{base_url}}";
 
     const map = L.map("map", {
-      zoomControl: false,
+      zoomControl: false
     });
 
     new L.Control.Zoom({
@@ -180,8 +182,8 @@
     fetch(`${baseURL}/datas/{{id}}.json`, {
       method: "GET",
       headers: {
-        "Content-Type": "application/json",
-      },
+        "Content-Type": "application/json"
+      }
     })
       .then((response) => {
         if (response.status === 200) {
@@ -196,7 +198,7 @@
             tileSize: 256,
             minZoom: jsonResponse.minzoom,
             maxZoom: jsonResponse.maxzoom,
-            attribution: jsonResponse.attribution,
+            attribution: jsonResponse.attribution
           }).addTo(map);
         }
 

@@ -61,72 +61,118 @@
       container: "map",
       hash: true,
       style: {
-        version: 8,
-        sources: {
-          "vector_layer": {
-            type: "geojson",
-            data: `${baseURL}/geojsons/{{id}}/geojson.geojson`,
-          }
-        },
-        layers: [],
-      },
+        "version": 8,
+        "sources": {},
+        "layers": []
+      }
     });
 
     map.addControl(new maplibregl.NavigationControl());
 
-    const inspect = new MaplibreInspect({
+    map.addControl(new MaplibreInspect({
       showInspectMap: true,
-      showInspectButton: false,
-    });
+      showInspectButton: false
+    }));
 
-    map.addControl(inspect);
+    const sourceName = "geojson_source";
+    const layerObj = [
+      {
+        name: "polygon",
+        color: "rgba(255, 0, 0, 0.3)"
+      },
+      {
+        name: "line",
+        color: "rgba(0, 255, 0, 0.6)"
+      },
+      {
+        name: "point",
+        color: "rgba(0, 0, 255, 0.8)"
+      }
+    ];
+
+    map.addSource(sourceName, {
+      "type": "geojson",
+      "data": `${baseURL}/geojsons/{{id}}/geojson.geojson`
+    });
 
     map.on("load", function () {
       const layerList = document.getElementById("layerList");
 
-      Object.keys(inspect.sources).forEach(function (sourceId) {
-        ["point", "line", "polygon"].forEach(function (layerId) {
-          const item = document.createElement("div");
+      layerObj.forEach(function (layer) {
+        const item = document.createElement("div");
 
-          const layerColor = inspect.assignLayerColor(layerId);
+        if (layer.name === "polygon") {
+          map.addLayer({
+            "id": `${sourceName}_${layer.name}`,
+            "source": sourceName,
+            "type": "fill",
+            "paint": {
+              "fill-color": layer.color,
+              "fill-antialias": true,
+              "fill-outline-color": layer.color
+            },
+            "layout": {
+              "visibility": "visible"
+            },
+            "filter": ["==", "$type", "Polygon"]
+          });
+        } else if (layer.name === "line") {
+          map.addLayer({
+            "id": `${sourceName}_${layer.name}`,
+            "source": sourceName,
+            "type": "line",
+            "paint": {
+              "line-color": layer.color
+            },
+            "layout": {
+              "line-join": "round",
+              "line-cap": "round",
+              "visibility": "visible"
+            },
+            "filter": ["==", "$type", "LineString"]
+          });
+        } else if (layer.name === "point") {
+          map.addLayer({
+            "id": `${sourceName}_${layer.name}`,
+            "source": sourceName,
+            "type": "circle",
+            "paint": {
+              "circle-color": layer.color,
+              "circle-radius": 2
+            },
+            "layout": {
+              "visibility": "visible"
+            },
+            "filter": ["==", "$type", "Point"]
+          });
+        }
 
-          item.innerHTML = `
-            <div style="display:flex;align-items:center;cursor:pointer;">
-              <div style="width:15px;height:15px;display:inline-block;background:${layerColor};"></div>
-              <span style="margin-left:5px;color:${layerColor};">${layerId}</span>
-            </div>
-          `;
+        item.innerHTML = `
+          <div style="display:flex;align-items:center;cursor:pointer;">
+            <div style="width:15px;height:15px;display:inline-block;background:${layer.color};"></div>
+            <span style="margin-left:5px;color:${layer.color};">${layer.name}</span>
+          </div>
+        `;
 
-          item.onclick = function () {
-            const visibility = map.getLayoutProperty(
-              `vector_layer__polygon`,
-              "visibility"
-            );
+        item.onclick = function () {
+          const visibility = map.getLayoutProperty(
+            `${sourceName}_${layer.name}`,
+            "visibility"
+          );
 
-            const newVisibility = visibility === "none" ? "visible" : "none";
+          const newVisibility = visibility === "none" ? "visible" : "none";
 
-            map.setLayoutProperty(
-              `vector_layer__polygon`,
-              "visibility",
-              newVisibility
-            );
-            map.setLayoutProperty(
-              `vector_layer__line`,
-              "visibility",
-              newVisibility
-            );
-            map.setLayoutProperty(
-              `vector_layer__circle`,
-              "visibility",
-              newVisibility
-            );
+          map.setLayoutProperty(
+            `${sourceName}_${layer.name}`,
+            "visibility",
+            newVisibility
+          );
 
-            item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
-          };
+          item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
+        };
 
-          layerList.appendChild(item);
-        });
-      });
+        layerList.appendChild(item);
+      })
     });
 
     let currentMarker;

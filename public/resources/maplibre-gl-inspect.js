@@ -2057,7 +2057,7 @@
     }
     return layer;
   }
-  function polygonLayer(color, _outlineColor, source, vectorLayer) {
+  function polygonLayer(color, source, vectorLayer) {
     const layer = {
       id: [source, vectorLayer, "polygon"].join("_"),
       source,
@@ -2114,8 +2114,6 @@
         circle: assignLayerColor(layerId, 0.8),
         line: assignLayerColor(layerId, 0.6),
         polygon: assignLayerColor(layerId, 0.3),
-        polygonOutline: assignLayerColor(layerId, 0.6),
-        default: assignLayerColor(layerId, 1),
       };
       return obj;
     }
@@ -2125,22 +2123,13 @@
         const colors = alphaColors(sourceId);
         circleLayers.push(circleLayer(colors.circle, sourceId));
         lineLayers.push(lineLayer(colors.line, sourceId));
-        polyLayers.push(
-          polygonLayer(colors.polygon, colors.polygonOutline, sourceId)
-        );
+        polyLayers.push(polygonLayer(colors.polygon, sourceId));
       } else {
         layers.forEach((layerId) => {
           const colors = alphaColors(layerId);
           circleLayers.push(circleLayer(colors.circle, sourceId, layerId));
           lineLayers.push(lineLayer(colors.line, sourceId, layerId));
-          polyLayers.push(
-            polygonLayer(
-              colors.polygon,
-              colors.polygonOutline,
-              sourceId,
-              layerId
-            )
-          );
+          polyLayers.push(polygonLayer(colors.polygon, sourceId, layerId));
         });
       }
     });
