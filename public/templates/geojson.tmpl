@@ -74,6 +74,9 @@
             "type": "background",
             "paint": {
               "background-color": "#FFF"
+            },
+            "layout": {
+              "visibility": "visible"
             }
           },
           {
@@ -88,7 +91,7 @@
             "layout": {
               "visibility": "visible"
             },
-            "filter": ["==", "$type", "Polygon"]
+            "filter": ["all", ["==", "$type", "Polygon"], ["==", "geometry-type", "Polygon"]]
           },
           {
             "id": "source_line",
@@ -102,7 +105,7 @@
               "line-cap": "round",
               "visibility": "visible"
             },
-            "filter": ["==", "$type", "LineString"]
+            "filter": ["all", ["==", "$type", "LineString"], ["==", "geometry-type", "LineString"]]
           },
           {
             "id": "source_circle",
@@ -112,10 +115,10 @@
               "circle-color": "rgba(0, 0, 255, 0.8)",
               "circle-radius": 2
             },
-            layout: {
+            "layout": {
               "visibility": "visible"
             },
-            "filter": ["==", "$type", "Point"]
+            "filter": ["all", ["==", "$type", "Point"], ["==", "geometry-type", "Point"]]
           }
         ]
       }
@@ -155,29 +158,35 @@
 
       polygonItem.onclick = () => {
         const newVisibility = map.getLayoutProperty("source_polygon", "visibility") === "none" ? "visible" : "none";
+
         map.setLayoutProperty(
           "source_polygon",
           "visibility",
           newVisibility
         );
+
         polygonItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
       };
       lineItem.onclick = () => {
         const newVisibility = map.getLayoutProperty("source_line", "visibility") === "none" ? "visible" : "none";
+
         map.setLayoutProperty(
           "source_line",
           "visibility",
           newVisibility
         );
+
         lineItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
       };
       circleItem.onclick = () => {
         const newVisibility = map.getLayoutProperty("source_circle", "visibility") === "none" ? "visible" : "none";
+
         map.setLayoutProperty(
           "source_circle",
           "visibility",
           newVisibility
         );
+
         circleItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
       };
 
