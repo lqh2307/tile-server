@@ -2261,17 +2261,30 @@
     return `<div class="maplibregl-inspect_layer">${layerId}</div>`;
   }
   function renderProperties(feature) {
-    const sourceProperty = renderLayer(
-      feature.layer["source-layer"] || feature.layer.source
-    );
-    const idProperty = renderProperty("$id", feature.id);
-    const typeProperty = renderProperty("$type", feature.geometry.type);
-    const properties = Object.keys(feature.properties).map((propertyName) =>
-      renderProperty(propertyName, feature.properties[propertyName])
-    );
-    return [sourceProperty, idProperty, typeProperty]
-      .concat(properties)
-      .join("");
+    if (feature.id) {
+      return [
+        renderLayer(feature.layer["source-layer"] || feature.layer.source),
+        renderProperty("$id", feature.id),
+        renderProperty("$type", feature.geometry.type),
+      ]
+        .concat(
+          Object.keys(feature.properties).map((propertyName) =>
+            renderProperty(propertyName, feature.properties[propertyName])
+          )
+        )
+        .join("");
+    } else {
+      return [
+        renderLayer(feature.layer["source-layer"] || feature.layer.source),
+        renderProperty("$type", feature.geometry.type),
+      ]
+        .concat(
+          Object.keys(feature.properties).map((propertyName) =>
+            renderProperty(propertyName, feature.properties[propertyName])
+          )
+        )
+        .join("");
+    }
   }
   function renderFeatures(features) {
     return features
