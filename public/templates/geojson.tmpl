@@ -82,6 +82,8 @@
     map.addControl(inspect);
 
     map.on("load", () => {
+      const item = document.createElement("div");
+
       const layerColor = inspect.assignLayerColor("{{name}}");
 
       item.innerHTML = `
