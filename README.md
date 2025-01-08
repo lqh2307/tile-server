@@ -7,7 +7,7 @@
 Clone source:
 
 ```bash
-git clone --single-branch -b 0.0.11 https://github.com/lqh2307/tile-server.git
+git clone --single-branch -b 0.0.12 https://github.com/lqh2307/tile-server.git
 ```
 
 Jump to folder:
@@ -16,10 +16,10 @@ Jump to folder:
 cd tile-server
 ```
 
-Switch to 0.0.11:
+Switch to 0.0.12:
 
 ```bash
-git checkout 0.0.11
+git checkout 0.0.12
 ```
 
 ### Run with nodejs (on ubuntu)
@@ -86,19 +86,19 @@ yarn run server -d path_to_data_folder;
 Build image:
 
 ```bash
-docker build -t tile-server:0.0.11 .
+docker build -t tile-server:0.0.12 .
 ```
 
 Run container (without nginx):
 
 ```bash
-docker run --rm -it -p 8080:8080 --name tile-server -e USE_NGINX=false -v path_to_data_folder:/tile-server/data tile-server:0.0.11
+docker run --rm -it -p 8080:8080 --name tile-server -e USE_NGINX=false -v path_to_data_folder:/tile-server/data tile-server:0.0.12
 ```
 
 Run container (with nginx):
 
 ```bash
-docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-server/data tile-server:0.0.11
+docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-server/data tile-server:0.0.12
 ```
 
 ## Example config.json

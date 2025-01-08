@@ -74,28 +74,28 @@
       showInspectButton: false
     }));
 
-    const sourceName = "geojson_source";
-    const layerObj = [
-      {
-        name: "polygon",
-        color: "rgba(255, 0, 0, 0.3)"
-      },
-      {
-        name: "line",
-        color: "rgba(0, 255, 0, 0.6)"
-      },
-      {
-        name: "point",
-        color: "rgba(0, 0, 255, 0.8)"
-      }
-    ];
-
-    map.addSource(sourceName, {
-      "type": "geojson",
-      "data": `${baseURL}/geojsons/{{id}}/geojson.geojson`
-    });
-
     map.on("load", function () {
+      const sourceName = "geojson_source";
+      const layerObj = [
+        {
+          name: "polygon",
+          color: "rgba(255, 0, 0, 0.3)"
+        },
+        {
+          name: "line",
+          color: "rgba(0, 255, 0, 0.6)"
+        },
+        {
+          name: "point",
+          color: "rgba(0, 0, 255, 0.8)"
+        }
+      ];
+
+      map.addSource(sourceName, {
+        "type": "geojson",
+        "data": `${baseURL}/geojsons/{{id}}/geojson.geojson`
+      });
+
       const layerList = document.getElementById("layerList");
 
       layerObj.forEach(function (layer) {

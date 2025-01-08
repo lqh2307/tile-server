@@ -96,14 +96,14 @@
 
     map.addControl(inspect);
 
-    const sourceName = "vector_tile_source";
-
-    map.addSource(sourceName, {
-      "type": "vector",
-      "url": `${baseURL}/datas/{{id}}.json`
-    });
-
     map.on("load", function () {
+      const sourceName = "vector_tile_source";
+
+      map.addSource(sourceName, {
+        "type": "vector",
+        "url": `${baseURL}/datas/{{id}}.json`
+      });
+
       const layerList = document.getElementById("layerList");
 
       Object.keys(inspect.sources).forEach(function (sourceId) {
