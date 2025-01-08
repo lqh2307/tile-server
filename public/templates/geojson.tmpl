@@ -85,7 +85,7 @@
       const layerList = document.getElementById("layerList");
 
       Object.keys(inspect.sources).forEach(function (sourceId) {
-        ["points", "lines", "polygons"].forEach(function (layerId) {
+        ["point", "line", "polygon"].forEach(function (layerId) {
           const item = document.createElement("div");
 
           const layerColor = inspect.assignLayerColor(layerId);
@@ -99,24 +99,24 @@
 
           item.onclick = function () {
             const visibility = map.getLayoutProperty(
-              `vector_layer_${layerId}_polygon`,
+              `vector_layer__polygon`,
               "visibility"
             );
 
             const newVisibility = visibility === "none" ? "visible" : "none";
 
             map.setLayoutProperty(
-              `vector_layer_${layerId}_polygon`,
+              `vector_layer__polygon`,
               "visibility",
               newVisibility
             );
             map.setLayoutProperty(
-              `vector_layer_${layerId}_line`,
+              `vector_layer__line`,
               "visibility",
               newVisibility
             );
             map.setLayoutProperty(
-              `vector_layer_${layerId}_circle`,
+              `vector_layer__circle`,
               "visibility",
               newVisibility
             );
