@@ -68,7 +68,49 @@
             "data": `${baseURL}/geojsons/{{id}}/geojson.geojson`
           }
         },
-        "layers": []
+        "layers": [
+          {
+            "id": "source_polygon",
+            "source": "source",
+            "type": "fill",
+            "paint": {
+              "fill-color": "rgba(255, 0, 0, 0.3)",
+              "fill-antialias": true,
+              "fill-outline-color": "rgba(255, 0, 0, 0.3)"
+            },
+            "layout": {
+              "visibility": "visible"
+            },
+            "filter": ["==", "$type", "Polygon"]
+          },
+          {
+            "id": "source_line",
+            "source": "source",
+            "type": "line",
+            "paint": {
+              "line-color": "rgba(0, 255, 0, 0.6)"
+            },
+            "layout": {
+              "line-join": "round",
+              "line-cap": "round",
+              "visibility": "visible"
+            },
+            "filter": ["==", "$type", "LineString"]
+          },
+          {
+            "id": "source_point",
+            "source": "source",
+            "type": "circle",
+            "paint": {
+              "circle-radius": 2,
+              "circle-color": "rgba(0, 0, 255, 0.8)"
+            },
+            "layout": {
+              "visibility": "visible"
+            },
+            "filter": ["==", "$type", "Point"]
+          }
+        ]
       }
     });
 
@@ -80,98 +122,56 @@
     }));
 
     map.on("load", () => {
-      const layerObj = [
-        {
-          name: "polygon",
-          color: "rgba(255, 0, 0, 0.3)"
-        },
-        {
-          name: "line",
-          color: "rgba(0, 255, 0, 0.6)"
-        },
-        {
-          name: "point",
-          color: "rgba(0, 0, 255, 0.8)"
-        }
-      ];
+      const item = document.createElement("div");
 
-      const layerList = document.getElementById("layerList");
+      item.innerHTML = `
+        <div style="display:flex;align-items:center;cursor:pointer;">
+          <div style="width:15px;height:15px;display:inline-block;background:rgba(255, 0, 0, 0.3);"></div>
+          <span style="margin-left:5px;color:rgba(255, 0, 0, 0.3);">polygon</span>
+        </div>
+        <div style="display:flex;align-items:center;cursor:pointer;">
+          <div style="width:15px;height:15px;display:inline-block;background:rgba(0, 255, 0, 0.6);"></div>
+          <span style="margin-left:5px;color:rgba(0, 255, 0, 0.6);">line</span>
+        </div>
+        <div style="display:flex;align-items:center;cursor:pointer;">
+          <div style="width:15px;height:15px;display:inline-block;background:rgba(0, 0, 255, 0.8);"></div>
+          <span style="margin-left:5px;color:rgba(0, 0, 255, 0.8);">point</span>
+        </div>
+      `;
 
-      layerObj.forEach((layer) => {
-        const item = document.createElement("div");
+      item.onclick = () => {
+        let newVisibility = map.getLayoutProperty("source_polygon", "visibility") === "none" ? "visible" : "none";
 
-        if (layer.name === "polygon") {
-          map.addLayer({
-            "id": `source_${layer.name}`,
-            "source": "source",
-            "type": "fill",
-            "paint": {
-              "fill-color": layer.color,
-              "fill-antialias": true,
-              "fill-outline-color": layer.color
-            },
-            "layout": {
-              "visibility": "visible"
-            },
-            "filter": ["==", "$type", "Polygon"]
-          });
-        } else if (layer.name === "line") {
-          map.addLayer({
-            "id": `source_${layer.name}`,
-            "source": "source",
-            "type": "line",
-            "paint": {
-              "line-color": layer.color
-            },
-            "layout": {
-              "line-join": "round",
-              "line-cap": "round",
-              "visibility": "visible"
-            },
-            "filter": ["==", "$type", "LineString"]
-          });
-        } else if (layer.name === "point") {
-          map.addLayer({
-            "id": `source_${layer.name}`,
-            "source": "source",
-            "type": "circle",
-            "paint": {
-              "circle-color": layer.color,
-              "circle-radius": 2
-            },
-            "layout": {
-              "visibility": "visible"
-            },
-            "filter": ["==", "$type", "Point"]
-          });
-        }
+        map.setLayoutProperty(
+          "source_polygon",
+          "visibility",
+          newVisibility
+        );
 
-        item.innerHTML = `
-          <div style="display:flex;align-items:center;cursor:pointer;">
-            <div style="width:15px;height:15px;display:inline-block;background:${layer.color};"></div>
-            <span style="margin-left:5px;color:${layer.color};">${layer.name}</span>
-          </div>
-        `;
+        item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
 
-        item.onclick = () => {
-          const visibility = map.getLayoutProperty(
-            `source_${layer.name}`,
-            "visibility"
-          );
+        newVisibility = map.getLayoutProperty("source_line", "visibility") === "none" ? "visible" : "none";
 
-          const newVisibility = visibility === "none" ? "visible" : "none";
+        map.setLayoutProperty(
+          "source_line",
+          "visibility",
+          newVisibility
+        );
 
-          map.setLayoutProperty(
-            `source_${layer.name}`,
-            "visibility",
-            newVisibility
-          );
+        item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
 
-          item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
-        };
+        newVisibility = map.getLayoutProperty("source_point", "visibility") === "none" ? "visible" : "none";
 
-        layerList.appendChild(item);
-      })
+        map.setLayoutProperty(
+          "source_point",
+          "visibility",
+          newVisibility
+        );
+
+        item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
+      };
+
+      document.getElementById("layerList").appendChild(item);
     });
 
     let currentMarker;

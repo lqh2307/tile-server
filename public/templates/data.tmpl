@@ -118,12 +118,7 @@
           `;
 
           item.onclick = () => {
-            const visibility = map.getLayoutProperty(
-              `source_${layerId}_polygon`,
-              "visibility"
-            );
-
-            const newVisibility = visibility === "none" ? "visible" : "none";
+            const newVisibility = map.getLayoutProperty(`source_${layerId}_polygon`, "visibility") === "none" ? "visible" : "none";
 
             map.setLayoutProperty(
               `source_${layerId}_polygon`,
