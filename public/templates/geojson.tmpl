@@ -122,25 +122,33 @@
     }));
 
     map.on("load", () => {
-      const item = document.createElement("div");
+      const layerList = document.getElementById("layerList");
 
-      item.innerHTML = `
+      const polygonItem = document.createElement("div");
+      const lineItem = document.createElement("div");
+      const pointItem = document.createElement("div");
+
+      polygonItem.innerHTML = `
         <div style="display:flex;align-items:center;cursor:pointer;">
           <div style="width:15px;height:15px;display:inline-block;background:rgba(255, 0, 0, 0.3);"></div>
           <span style="margin-left:5px;color:rgba(255, 0, 0, 0.3);">polygon</span>
         </div>
+      `;
+      lineItem.innerHTML = `
         <div style="display:flex;align-items:center;cursor:pointer;">
           <div style="width:15px;height:15px;display:inline-block;background:rgba(0, 255, 0, 0.6);"></div>
           <span style="margin-left:5px;color:rgba(0, 255, 0, 0.6);">line</span>
         </div>
+      `;
+      pointItem.innerHTML = `
         <div style="display:flex;align-items:center;cursor:pointer;">
           <div style="width:15px;height:15px;display:inline-block;background:rgba(0, 0, 255, 0.8);"></div>
           <span style="margin-left:5px;color:rgba(0, 0, 255, 0.8);">point</span>
         </div>
       `;
 
-      item.onclick = () => {
-        let newVisibility = map.getLayoutProperty("source_polygon", "visibility") === "none" ? "visible" : "none";
+      polygonItem.onclick = () => {
+        const newVisibility = map.getLayoutProperty("source_polygon", "visibility") === "none" ? "visible" : "none";
 
         map.setLayoutProperty(
           "source_polygon",
@@ -148,9 +156,10 @@
           newVisibility
         );
 
-        item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
-
-        newVisibility = map.getLayoutProperty("source_line", "visibility") === "none" ? "visible" : "none";
+        polygonItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
+      };
+      lineItem.onclick = () => {
+        const newVisibility = map.getLayoutProperty("source_line", "visibility") === "none" ? "visible" : "none";
 
         map.setLayoutProperty(
           "source_line",
@@ -158,9 +167,10 @@
           newVisibility
         );
 
-        item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
-
-        newVisibility = map.getLayoutProperty("source_point", "visibility") === "none" ? "visible" : "none";
+        lineItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
+      };
+      pointItem.onclick = () => {
+        const newVisibility = map.getLayoutProperty("source_point", "visibility") === "none" ? "visible" : "none";
 
         map.setLayoutProperty(
           "source_point",
@@ -168,10 +178,12 @@
           newVisibility
         );
 
-        item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
+        pointItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
       };
 
-      document.getElementById("layerList").appendChild(item);
+      layerList.appendChild(polygonItem);
+      layerList.appendChild(lineItem);
+      layerList.appendChild(pointItem);
     });
 
     let currentMarker;
