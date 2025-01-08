@@ -2040,7 +2040,6 @@
 
   function circleLayer(color, source, vectorLayer) {
     const layer = {
-      id: [source, vectorLayer, "circle"].join("_"),
       source,
       type: "circle",
       paint: {
@@ -2052,14 +2051,19 @@
       },
       filter: ["==", "$type", "Point"],
     };
+
     if (vectorLayer) {
       layer["source-layer"] = vectorLayer;
+      layer.id = [source, vectorLayer, "circle"].join("_");
+    } else {
+      layer.id = [source, "circle"].join("_");
     }
+
     return layer;
   }
+
   function polygonLayer(color, source, vectorLayer) {
     const layer = {
-      id: [source, vectorLayer, "polygon"].join("_"),
       source,
       type: "fill",
       paint: {
@@ -2072,14 +2076,19 @@
       },
       filter: ["==", "$type", "Polygon"],
     };
+
     if (vectorLayer) {
       layer["source-layer"] = vectorLayer;
+      layer.id = [source, vectorLayer, "polygon"].join("_");
+    } else {
+      layer.id = [source, "polygon"].join("_");
     }
+
     return layer;
   }
+
   function lineLayer(color, source, vectorLayer) {
     const layer = {
-      id: [source, vectorLayer, "line"].join("_"),
       source,
       type: "line",
       paint: {
@@ -2092,11 +2101,17 @@
       },
       filter: ["==", "$type", "LineString"],
     };
+
     if (vectorLayer) {
       layer["source-layer"] = vectorLayer;
+      layer.id = [source, vectorLayer, "line"].join("_");
+    } else {
+      layer.id = [source, "line"].join("_");
     }
+
     return layer;
   }
+
   /**
    * Generate colored layer styles for the given sources
    * @param sources dictionary containing the vector layer IDs
@@ -2107,30 +2122,31 @@
     const polyLayers = [];
     const circleLayers = [];
     const lineLayers = [];
+
     function alphaColors(layerId) {
-      const obj = {
+      return {
         circle: assignLayerColor(layerId, 0.8),
         line: assignLayerColor(layerId, 0.6),
         polygon: assignLayerColor(layerId, 0.3),
       };
-      return obj;
     }
+
     Object.keys(sources).forEach((sourceId) => {
-      const layers = sources[sourceId];
+      let layers = sources[sourceId];
+
       if (!layers || layers.length === 0) {
-        const colors = alphaColors(sourceId);
-        circleLayers.push(circleLayer(colors.circle, sourceId));
-        lineLayers.push(lineLayer(colors.line, sourceId));
-        polyLayers.push(polygonLayer(colors.polygon, sourceId));
-      } else {
-        layers.forEach((layerId) => {
-          const colors = alphaColors(layerId);
-          circleLayers.push(circleLayer(colors.circle, sourceId, layerId));
-          lineLayers.push(lineLayer(colors.line, sourceId, layerId));
-          polyLayers.push(polygonLayer(colors.polygon, sourceId, layerId));
-        });
+        layers = ["polygon", "line", "point"];
       }
+
+      layers.forEach((layerId) => {
+        const colors = alphaColors(layerId);
+
+        circleLayers.push(circleLayer(colors.circle, sourceId, layerId));
+        lineLayers.push(lineLayer(colors.line, sourceId, layerId));
+        polyLayers.push(polygonLayer(colors.polygon, sourceId, layerId));
+      });
     });
+
     return polyLayers.concat(lineLayers).concat(circleLayers);
   }
   /**
