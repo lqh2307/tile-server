@@ -2081,15 +2081,13 @@
     const layer = {
       id: [source, vectorLayer, "line"].join("_"),
       source,
-      layout: {
-        "line-join": "round",
-        "line-cap": "round",
-      },
       type: "line",
       paint: {
         "line-color": color,
       },
       layout: {
+        "line-join": "round",
+        "line-cap": "round",
         visibility: "visible",
       },
       filter: ["==", "$type", "LineString"],
