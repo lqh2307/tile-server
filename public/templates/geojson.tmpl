@@ -62,7 +62,12 @@
       hash: true,
       style: {
         "version": 8,
-        "sources": {},
+        "sources": {
+          "source", {
+            "type": "geojson",
+            "data": `${baseURL}/geojsons/{{id}}/geojson.geojson`
+          }
+        },
         "layers": []
       }
     });
@@ -74,8 +79,7 @@
       showInspectButton: false
     }));
 
-    map.on("load", function () {
-      const sourceName = "geojson_source";
+    map.on("load", () => {
       const layerObj = [
         {
           name: "polygon",
@@ -91,20 +95,15 @@
         }
       ];
 
-      map.addSource(sourceName, {
-        "type": "geojson",
-        "data": `${baseURL}/geojsons/{{id}}/geojson.geojson`
-      });
-
       const layerList = document.getElementById("layerList");
 
-      layerObj.forEach(function (layer) {
+      layerObj.forEach((layer) => {
         const item = document.createElement("div");
 
         if (layer.name === "polygon") {
           map.addLayer({
-            "id": `${sourceName}_${layer.name}`,
-            "source": sourceName,
+            "id": `source_${layer.name}`,
+            "source": "source",
             "type": "fill",
             "paint": {
               "fill-color": layer.color,
@@ -118,8 +117,8 @@
           });
         } else if (layer.name === "line") {
           map.addLayer({
-            "id": `${sourceName}_${layer.name}`,
-            "source": sourceName,
+            "id": `source_${layer.name}`,
+            "source": "source",
             "type": "line",
             "paint": {
               "line-color": layer.color
@@ -133,8 +132,8 @@
           });
         } else if (layer.name === "point") {
           map.addLayer({
-            "id": `${sourceName}_${layer.name}`,
-            "source": sourceName,
+            "id": `source_${layer.name}`,
+            "source": "source",
             "type": "circle",
             "paint": {
               "circle-color": layer.color,
@@ -154,16 +153,16 @@
           </div>
         `;
 
-        item.onclick = function () {
+        item.onclick = () => {
           const visibility = map.getLayoutProperty(
-            `${sourceName}_${layer.name}`,
+            `source_${layer.name}`,
             "visibility"
           );
 
           const newVisibility = visibility === "none" ? "visible" : "none";
 
           map.setLayoutProperty(
-            `${sourceName}_${layer.name}`,
+            `source_${layer.name}`,
             "visibility",
             newVisibility
           );
