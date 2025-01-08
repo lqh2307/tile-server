@@ -68,54 +68,120 @@
             "data": `${baseURL}/geojsons/{{id}}/geojson.geojson`
           }
         },
-        "layers": []
+        "layers": [
+          {
+            "id": "background",
+            "type": "background",
+            "paint": {
+              "background-color": "#FFF"
+            }
+          },
+          {
+            "source": "source_polygon",
+            "type": "fill",
+            "paint": {
+              "fill-color": "rgba(255, 0, 0, 0.3)",
+              "fill-antialias": true,
+              "fill-outline-color": "rgba(255, 0, 0, 0.3)"
+            },
+            "layout": {
+              "visibility": "visible"
+            },
+            "filter": ["==", "$type", "Polygon"]
+          },
+          {
+            "id": "source_line",
+            "source": "source",
+            "type": "line",
+            "paint": {
+              "line-color": "rgba(0, 255, 0, 0.6)"
+            },
+            "layout": {
+              "line-join": "round",
+              "line-cap": "round",
+              "visibility": "visible"
+            },
+            "filter": ["==", "$type", "LineString"]
+          },
+          {
+            "source": "source_circle",
+            "type": "circle",
+            "paint": {
+              "circle-color": "rgba(0, 0, 255, 0.8)",
+              "circle-radius": 2
+            },
+            layout: {
+              "visibility": "visible"
+            },
+            "filter": ["==", "$type", "Point"]
+          }
+        ]
       }
     });
 
     map.addControl(new maplibregl.NavigationControl());
 
-    const inspect = new MaplibreInspect({
+    map.addControl(new MaplibreInspect({
       showInspectMap: true,
-      showInspectButton: false
-    });
-
-    map.addControl(inspect);
+      showInspectButton: false,
+      useInspectStyle: false
+    }));
 
     map.on("load", () => {
-      const item = document.createElement("div");
+      const polygonItem = document.createElement("div");
+      const lineItem = document.createElement("div");
+      const circleItem = document.createElement("div");
 
-      const layerColor = inspect.assignLayerColor("{{name}}");
-
-      item.innerHTML = `
+      polygonItem.innerHTML = `
         <div style="display:flex;align-items:center;cursor:pointer;">
-          <div style="width:15px;height:15px;display:inline-block;background:${layerColor};"></div>
-          <span style="margin-left:5px;color:${layerColor};">{{name}}</span>
+          <div style="width:15px;height:15px;display:inline-block;background:rgba(255, 0, 0, 0.3);"></div>
+          <span style="margin-left:5px;color:rgba(255, 0, 0, 0.3);">polygon</span>
+        </div>
+      `;
+      lineItem.innerHTML = `
+        <div style="display:flex;align-items:center;cursor:pointer;">
+          <div style="width:15px;height:15px;display:inline-block;background:rgba(0, 255, 0, 0.6);"></div>
+          <span style="margin-left:5px;color:rgba(0, 255, 0, 0.6);">line</span>
+        </div>
+      `;
+      circleItem.innerHTML = `
+        <div style="display:flex;align-items:center;cursor:pointer;">
+          <div style="width:15px;height:15px;display:inline-block;background:rgba(0, 0, 255, 0.8);"></div>
+          <span style="margin-left:5px;color:rgba(0, 0, 255, 0.8);">circle</span>
         </div>
       `;
 
-      item.onclick = () => {
+      polygonItem.onclick = () => {
         const newVisibility = map.getLayoutProperty("source_polygon", "visibility") === "none" ? "visible" : "none";
-
         map.setLayoutProperty(
           "source_polygon",
           "visibility",
           newVisibility
         );
+        polygonItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
+      };
+      lineItem.onclick = () => {
+        const newVisibility = map.getLayoutProperty("source_line", "visibility") === "none" ? "visible" : "none";
         map.setLayoutProperty(
           "source_line",
           "visibility",
           newVisibility
         );
+        lineItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
+      };
+      circleItem.onclick = () => {
+        const newVisibility = map.getLayoutProperty("source_circle", "visibility") === "none" ? "visible" : "none";
         map.setLayoutProperty(
           "source_circle",
           "visibility",
           newVisibility
         );
-
-        item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
+        circleItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
       };
 
-      document.getElementById("layerList").appendChild(item);
+      layerList.appendChild(polygonItem);
+      layerList.appendChild(lineItem);
+      layerList.appendChild(circleItem);
     });
 
     let currentMarker;
