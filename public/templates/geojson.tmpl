@@ -92,20 +92,20 @@
       `;
 
       item.onclick = () => {
-        const newVisibility = map.getLayoutProperty(`{{name}}_polygon`, "visibility") === "none" ? "visible" : "none";
+        const newVisibility = map.getLayoutProperty("source_polygon", "visibility") === "none" ? "visible" : "none";
 
         map.setLayoutProperty(
-          `{{name}}_polygon`,
+          "source_polygon",
           "visibility",
           newVisibility
         );
         map.setLayoutProperty(
-          `{{name}}_line`,
+          "source_line",
           "visibility",
           newVisibility
         );
         map.setLayoutProperty(
-          `{{name}}_point`,
+          "source_circle",
           "visibility",
           newVisibility
         );
