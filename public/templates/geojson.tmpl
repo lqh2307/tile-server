@@ -85,7 +85,7 @@
       const layerList = document.getElementById("layerList");
 
       Object.keys(inspect.sources).forEach(function (sourceId) {
-        inspect.sources[sourceId].forEach(function (layerId) {
+        ["points", "lines", "polygons"].forEach(function (layerId) {
           const item = document.createElement("div");
 
           const layerColor = inspect.assignLayerColor(layerId);
@@ -103,7 +103,7 @@
               "visibility"
             );
 
-            const newVisibility = (visibility === "none" || visibility === undefined) ? "visible" : "none";
+            const newVisibility = visibility === "none" ? "visible" : "none";
 
             map.setLayoutProperty(
               `vector_layer_${layerId}_polygon`,
