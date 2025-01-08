@@ -7,10 +7,6 @@
   border-bottom: 1px solid #ccc;
 }
 
-.maplibregl-inspect_layer:before {
-  content: '#';
-}
-
 .maplibregl-inspect_layer {
   display: block;
   font-weight: bold;

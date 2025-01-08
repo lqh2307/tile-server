@@ -2264,8 +2264,8 @@
     if (feature.id) {
       return [
         renderLayer(feature.layer["source-layer"] || feature.layer.source),
-        renderProperty("$id", feature.id),
-        renderProperty("$type", feature.geometry.type),
+        renderProperty("id", feature.id),
+        renderProperty("type", feature.geometry.type),
       ]
         .concat(
           Object.keys(feature.properties).map((propertyName) =>
@@ -2276,7 +2276,7 @@
     } else {
       return [
         renderLayer(feature.layer["source-layer"] || feature.layer.source),
-        renderProperty("$type", feature.geometry.type),
+        renderProperty("type", feature.geometry.type),
       ]
         .concat(
           Object.keys(feature.properties).map((propertyName) =>
