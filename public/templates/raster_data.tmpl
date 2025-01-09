@@ -49,26 +49,23 @@
 
         if (jsonResponse.cacheBBoxs) {
           const cacheBBoxsLayer = L.geoJSON({
-              type: "geojson",
-              data: {
-                type: "MultiPolygon",
-                coordinates: jsonResponse.cacheBBoxs.map((bbox) => {
-                  return [
-                    [
-                      [bbox[0], bbox[1]],
-                      [bbox[2], bbox[1]],
-                      [bbox[2], bbox[3]],
-                      [bbox[0], bbox[3]],
-                      [bbox[0], bbox[1]]
-                    ]
-                  ];
-                })
-              }
-            }, {
-              color: "rgba(255, 0, 0, 1)",
-              weight: 2,
-              fillOpacity: 0
-            });
+            type: "MultiPolygon",
+            coordinates: jsonResponse.cacheBBoxs.map((bbox) => {
+              return [
+                [
+                  [bbox[0], bbox[1]],
+                  [bbox[2], bbox[1]],
+                  [bbox[2], bbox[3]],
+                  [bbox[0], bbox[3]],
+                  [bbox[0], bbox[1]]
+                ]
+              ];
+            })
+          }, {
+            color: "rgba(255, 0, 0, 1)",
+            weight: 2,
+            fillOpacity: 0
+          });
 
           const cacheBBoxsButton = Object.assign(
             document.createElement("div"), {
