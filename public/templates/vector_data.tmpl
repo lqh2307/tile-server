@@ -19,74 +19,74 @@
   <script>
     const baseURL = "{{base_url}}";
 
-    const map = new maplibregl.Map({
-      container: "map",
-      hash: true,
-      style: {
-        "version": 8,
-        "sources": {
-          "source": {
-            "type": "vector",
-            "url": `${baseURL}/datas/{{id}}.json`
-          }
-        },
-        "layers": []
-      }
-    });
-
-    map.addControl(new maplibregl.NavigationControl({
-      visualizePitch: true
-    }));
-
-    const inspect = new MaplibreInspect({
-      showInspectMap: true,
-      showInspectButton: false
-    });
-
-    map.addControl(inspect);
-
-    map.on("load", () => {
-      const layerList = document.getElementById("layerList");
-
-      inspect.sources["source"].forEach((layerId) => {
-        const item = document.createElement("div");
-
-        const layerColor = inspect.assignLayerColor(layerId);
-
-        item.innerHTML = `
-          <div style="display:flex;align-items:center;cursor:pointer;">
-            <div style="width:15px;height:15px;display:inline-block;background:${layerColor};"></div>
-            <span style="margin-left:5px;color:${layerColor};">${layerId}</span>
-          </div>
-        `;
-
-        item.onclick = () => {
-          const newVisibility = map.getLayoutProperty(`source_${layerId}_polygon`, "visibility") === "none" ? "visible" : "none";
-
-          map.setLayoutProperty(`source_${layerId}_polygon`, "visibility", newVisibility);
-          map.setLayoutProperty(`source_${layerId}_line`, "visibility", newVisibility);
-          map.setLayoutProperty(`source_${layerId}_circle`, "visibility", newVisibility);
-
-          item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
-        };
-
-        layerList.appendChild(item);
-      });
-
-      fetch(`${baseURL}/datas/{{id}}.json`, {
+    fetch(`${baseURL}/datas/{{id}}.json`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json"
         },
       })
-        .then((response) => {
-          if (response.status === 200) {
-            return response.json();
-          } else {
-            alert(`Failed to fetch tileJSON: Status code: ${response.status} - ${response.statusText}`);
+      .then((response) => {
+        if (response.status === 200) {
+          return response.json();
+        } else {
+          alert(`Failed to fetch tileJSON: Status code: ${response.status} - ${response.statusText}`);
+        }
+      })
+      .then((jsonResponse) => {
+        const map = new maplibregl.Map({
+          container: "map",
+          hash: true,
+          style: {
+            "version": 8,
+            "sources": {
+              "source": {
+                "type": "vector",
+                "url": `${baseURL}/datas/{{id}}.json`
+              }
+            },
+            "layers": []
           }
-        })
-        .then((jsonResponse) => {
+        });
+
+        map.addControl(new maplibregl.NavigationControl({
+          visualizePitch: true
+        }));
+
+        const inspect = new MaplibreInspect({
+          showInspectMap: true,
+          showInspectButton: false
+        });
+
+        map.addControl(inspect);
+
+        map.on("load", () => {
+          const layerList = document.getElementById("layerList");
+
+          inspect.sources["source"].forEach((layerId) => {
+            const item = document.createElement("div");
+
+            const layerColor = inspect.assignLayerColor(layerId);
+
+            item.innerHTML = `
+              <div style="display:flex;align-items:center;cursor:pointer;">
+                <div style="width:15px;height:15px;display:inline-block;background:${layerColor};"></div>
+                <span style="margin-left:5px;color:${layerColor};">${layerId}</span>
+              </div>
+            `;
+
+            item.onclick = () => {
+              const newVisibility = map.getLayoutProperty(`source_${layerId}_polygon`, "visibility") === "none" ? "visible" : "none";
+
+              map.setLayoutProperty(`source_${layerId}_polygon`, "visibility", newVisibility);
+              map.setLayoutProperty(`source_${layerId}_line`, "visibility", newVisibility);
+              map.setLayoutProperty(`source_${layerId}_circle`, "visibility", newVisibility);
+
+              item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
+            };
+
+            layerList.appendChild(item);
+          });
+
           if (jsonResponse.cacheBBoxs) {
             map.addSource("cache_bboxs_source", {
               type: "geojson",
@@ -104,10 +104,6 @@
               }
             });
 
-            map.setLayoutProperty("cache_bboxs_source_polygon", "visibility", "none");
-            map.setLayoutProperty("cache_bboxs_source_line", "visibility", "none");
-            map.setLayoutProperty("cache_bboxs_source_circle", "visibility", "none");
-
             const cacheBBoxsButton = document.createElement("div");
             cacheBBoxsButton.innerHTML = "Show cache BBoxs";
             cacheBBoxsButton.style.cssText = "position:absolute;bottom:10px;left:10px;padding:5px 10px;font-size:14px;cursor:pointer;background-color:rgba(0, 150, 255, 0.5);color:white;border:none;border-radius:5px;display:inline-block;z-index:1000;";
@@ -124,25 +120,25 @@
 
             document.body.appendChild(cacheBBoxsButton);
           }
-        })
-        .catch((error) => {
-          alert(`Failed to fetch tileJSON: Status code: ${error.message}`);
         });
-    });
 
-    let currentMarker;
+        let currentMarker;
 
-    map.on("click", (event) => {
-      if (currentMarker) {
-        currentMarker.remove();
-      }
+        map.on("click", (event) => {
+          if (currentMarker) {
+            currentMarker.remove();
+          }
 
-      currentMarker = new maplibregl.Marker()
-        .setLngLat([event.lngLat.lng, event.lngLat.lat])
-        .addTo(map);
+          currentMarker = new maplibregl.Marker()
+            .setLngLat([event.lngLat.lng, event.lngLat.lat])
+            .addTo(map);
 
-      alert(`Position: [${event.lngLat.lng}, ${event.lngLat.lat}]`);
-    });
+          alert(`Position: [${event.lngLat.lng}, ${event.lngLat.lat}]`);
+        });
+      })
+      .catch((error) => {
+        alert(`Failed to fetch tileJSON: Status code: ${error.message}`);
+      });
   </script>
 </body>
 

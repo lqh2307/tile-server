@@ -16,20 +16,12 @@
   <script>
     const baseURL = "{{base_url}}";
 
-    const map = L.map("map", {
-      zoomControl: false
-    });
-
-    new L.Control.Zoom({
-      position: "topright",
-    }).addTo(map);
-
     fetch(`${baseURL}/datas/{{id}}.json`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
-      }
-    })
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
       .then((response) => {
         if (response.status === 200) {
           return response.json();
@@ -38,6 +30,18 @@
         }
       })
       .then((jsonResponse) => {
+        const map = L.map("map", {
+          zoomControl: false
+        });
+
+        new L.Control.Zoom({
+          position: "topright",
+        }).addTo(map);
+
+        setTimeout(() => {
+          new L.Hash(map);
+        }, 0);
+
         for (const tile of jsonResponse.tiles || []) {
           L.tileLayer(tile, {
             minZoom: jsonResponse.minzoom,
@@ -63,11 +67,13 @@
             color: "rgba(255, 0, 0, 0.6)"
           });
 
+          cacheBBoxsLayer.addTo(map);
+
           const cacheBBoxsButton = document.createElement("div");
           cacheBBoxsButton.innerHTML = "Show cache BBoxs";
-          cacheBBoxsButton.style.cssText = "position:bottom;top:10px;left:10px;padding:5px 10px;font-size:14px;cursor:pointer;background-color:rgba(0, 150, 255, 0.5);color:white;border:none;border-radius:5px;display:inline-block;z-index:1000;";
+          cacheBBoxsButton.style.cssText = "position:absolute;bottom:10px;left:10px;padding:5px 10px;font-size:14px;cursor:pointer;background-color:rgba(0, 150, 255, 0.5);color:white;border:none;border-radius:5px;display:inline-block;z-index:1000;";
 
-          let isVisible = false;
+          let isVisible = true;
 
           cacheBBoxsButton.onclick = () => {
             if (isVisible === true) {
@@ -85,26 +91,22 @@
 
           document.body.appendChild(cacheBBoxsButton);
         }
+
+        let currentMarker;
+
+        map.on("click", (event) => {
+          if (currentMarker) {
+            map.removeLayer(currentMarker);
+          }
+
+          currentMarker = L.marker([event.latlng.lat, event.latlng.lng]).addTo(map);
+
+          alert(`Position: [${event.latlng.lng}, ${event.latlng.lat}]`);
+        });
       })
       .catch((error) => {
         alert(`Failed to fetch tileJSON: Status code: ${error.message}`);
       });
-
-    setTimeout(() => {
-      new L.Hash(map);
-    }, 0);
-
-    let currentMarker;
-
-    map.on("click", (event) => {
-      if (currentMarker) {
-        map.removeLayer(currentMarker);
-      }
-
-      currentMarker = L.marker([event.latlng.lat, event.latlng.lng]).addTo(map);
-
-      alert(`Position: [${event.latlng.lng}, ${event.latlng.lat}]`);
-    });
   </script>
 </body>
 
