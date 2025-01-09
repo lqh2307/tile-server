@@ -9,51 +9,13 @@
   <link rel="stylesheet" type="text/css" href="{{base_url}}/maplibre-gl-inspect.css" />
   <script src="{{base_url}}/maplibre-gl.js"></script>
   <script src="{{base_url}}/maplibre-gl-inspect.js"></script>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, Helvetica, sans-serif;
-    }
-
-    #map {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 250px;
-      bottom: 0;
-    }
-
-    h1 {
-      position: absolute;
-      top: 5px;
-      right: 0;
-      width: 240px;
-      margin: 0;
-      line-height: 20px;
-      font-size: 20px;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-
-    #layerList {
-      position: absolute;
-      top: 35px;
-      right: 0;
-      bottom: 0;
-      width: 240px;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-  </style>
 </head>
 
 <body>
-  <h1>{{name}}</h1>
-  <div id="map"></div>
-  <div id="layerList"></div>
+  <h1 style="position:absolute;top:5px;right:0;width:240px;margin:0;font-size:18px;">Geometry type</h1>
+  <div id="map" style="position:absolute;top:0;left:0;right:250px;bottom:0;"></div>
+  <div id="layerList" style="position:absolute;top:35px;right:0;bottom:0;width:240px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"></div>
+
   <script>
     const baseURL = "{{base_url}}";
 
@@ -124,9 +86,9 @@
       }
     });
 
-    map.addControl(new maplibregl.NavigationControl(
+    map.addControl(new maplibregl.NavigationControl({
       visualizePitch: true
-    ));
+    }));
 
     map.addControl(new MaplibreInspect({
       showInspectMap: true,
