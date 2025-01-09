@@ -74,6 +74,88 @@
           layerList.appendChild(item);
         });
       });
+
+      fetch(`${baseURL}/datas/{{id}}.json`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        },
+      })
+        .then((response) => {
+          if (response.status === 200) {
+            return response.json();
+          } else {
+            alert(`Failed to fetch tileJSON: Status code: ${response.status} - ${response.statusText}`);
+          }
+        })
+        .then((jsonResponse) => {
+          if (jsonResponse.cacheBBoxs) {
+            map.addSource("cache_bboxs_source", {
+              type: "geojson",
+              data: {
+                type: "MultiPolygon",
+                coordinates: jsonResponse.cacheBBoxs.map((bbox) => {
+                  return [
+                    [
+                      [bbox[0], bbox[1]],
+                      [bbox[2], bbox[1]],
+                      [bbox[2], bbox[3]],
+                      [bbox[0], bbox[3]],
+                      [bbox[0], bbox[1]]
+                    ]
+                  ];
+                })
+              }
+            });
+
+            map.addLayer({
+              "id": "cache_bboxs_source_line",
+              "source": "cache_bboxs_source",
+              "type": "line",
+              "paint": {
+                "line-width": 2,
+                "line-color": "rgba(255, 0, 0, 1)"
+              },
+              "layout": {
+                "line-join": "round",
+                "line-cap": "round",
+                "visibility": "none"
+              }
+            });
+
+            const cacheBBoxsButton = Object.assign(
+              document.createElement("div"), {
+              innerHTML: "Show cache BBoxs",
+              style: {
+                position: "absolute",
+                top: "10px",
+                left: "10px",
+                padding: "5px 10px",
+                fontSize: "14px",
+                cursor: "pointer",
+                backgroundColor: "rgba(0, 150, 255, 0.5)",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+                textAlign: "center",
+                display: "inline-block"
+              }
+            });
+
+            cacheBBoxsButton.onclick = () => {
+              const newVisibility = map.getLayoutProperty("cache_bboxs_source_line", "visibility") === "none" ? "visible" : "none";
+
+              map.setLayoutProperty("cache_bboxs_source_line", "visibility", newVisibility);
+
+              cacheBBoxsButton.innerHTML = newVisibility === "visible" ? "Hide cache BBoxs" : "Show cache BBoxs";
+            };
+
+            document.body.appendChild(cacheBBoxsButton);
+          }
+        })
+        .catch((error) => {
+          alert(`Failed to fetch tileJSON: Status code: ${error.message}`);
+        });
     });
 
     let currentMarker;

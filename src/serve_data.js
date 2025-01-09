@@ -27,7 +27,7 @@ import {
   openMBTilesDB,
 } from "./tile_mbtiles.js";
 import {
-  createMetadata,
+  createDataMetadata,
   getRequestHost,
   calculateMD5,
   isExistFile,
@@ -805,7 +805,7 @@ export const serve_data = {
                 }
 
                 /* Get MBTiles metadata */
-                dataInfo.tileJSON = createMetadata(cacheSource.metadata);
+                dataInfo.tileJSON = createDataMetadata(cacheSource.metadata);
               } else {
                 dataInfo.path = `${process.env.DATA_DIR}/mbtiles/${item.mbtiles}`;
 
@@ -891,7 +891,7 @@ export const serve_data = {
               dataInfo.source = dataInfo.path;
 
               /* Get XYZ metadata */
-              dataInfo.tileJSON = createMetadata(cacheSource.metadata);
+              dataInfo.tileJSON = createDataMetadata(cacheSource.metadata);
             } else {
               dataInfo.path = `${process.env.DATA_DIR}/xyzs/${item.xyz}`;
 
@@ -925,7 +925,7 @@ export const serve_data = {
               dataInfo.source = await openPostgreSQLDB(dataInfo.path, true);
 
               /* Get PostgreSQL metadata */
-              dataInfo.tileJSON = createMetadata(cacheSource.metadata);
+              dataInfo.tileJSON = createDataMetadata(cacheSource.metadata);
             } else {
               dataInfo.path = `${process.env.POSTGRESQL_BASE_URI}/${id}`;
 

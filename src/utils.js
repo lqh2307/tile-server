@@ -598,11 +598,11 @@ export function getRequestHost(req) {
 }
 
 /**
- * Create new tileJSON
+ * Create new data tileJSON
  * @param {object} metadata Metadata object
  * @returns
  */
-export function createMetadata(metadata) {
+export function createDataMetadata(metadata) {
   // Default
   const data = {
     name: "Unknown",
@@ -688,6 +688,84 @@ export function createMetadata(metadata) {
   // Add vector_layers
   if (data.format === "pbf" && data.vector_layers === undefined) {
     data.vector_layers = [];
+  }
+
+  return data;
+}
+
+/**
+ * Create new rendered tileJSON
+ * @param {object} metadata Metadata object
+ * @returns
+ */
+export function createRenderedMetadata(metadata) {
+  // Default
+  const data = {
+    name: "Unknown",
+    description: "Unknown",
+    attribution: "<b>Viettel HighTech</b>",
+    version: "1.0.0",
+    type: "overlay",
+    format: "png",
+    bounds: [-180, -85.051129, 180, 85.051129],
+    minzoom: 0,
+    maxzoom: 22,
+  };
+
+  // Overwrite
+  if (metadata !== undefined) {
+    if (metadata.name !== undefined) {
+      data.name = metadata.name;
+    }
+
+    if (metadata.description !== undefined) {
+      data.description = metadata.description;
+    }
+
+    if (metadata.attribution !== undefined) {
+      data.attribution = metadata.attribution;
+    }
+
+    if (metadata.type !== undefined) {
+      data.type = metadata.type;
+    }
+
+    if (metadata.format !== undefined) {
+      data.format = metadata.format;
+    }
+
+    if (metadata.version !== undefined) {
+      data.version = metadata.version;
+    }
+
+    if (metadata.tiles !== undefined) {
+      data.tiles = [...metadata.tiles];
+    }
+
+    if (metadata.bounds !== undefined) {
+      data.bounds = [...metadata.bounds];
+    }
+
+    if (metadata.center !== undefined) {
+      data.center = [...metadata.center];
+    }
+
+    if (metadata.minzoom !== undefined) {
+      data.minzoom = metadata.minzoom;
+    }
+
+    if (metadata.maxzoom !== undefined) {
+      data.maxzoom = metadata.maxzoom;
+    }
+  }
+
+  // Calculate center
+  if (data.center === undefined) {
+    data.center = [
+      (data.bounds[0] + data.bounds[2]) / 2,
+      (data.bounds[1] + data.bounds[3]) / 2,
+      Math.floor((data.minzoom + data.maxzoom) / 2),
+    ];
   }
 
   return data;
