@@ -598,9 +598,9 @@ export function getRequestHost(req) {
 }
 
 /**
- * Create new data tileJSON
+ * Create data tileJSON
  * @param {object} metadata Metadata object
- * @returns
+ * @returns {object}
  */
 export function createDataMetadata(metadata) {
   // Default
@@ -685,18 +685,13 @@ export function createDataMetadata(metadata) {
     ];
   }
 
-  // Add vector_layers
-  if (data.format === "pbf" && data.vector_layers === undefined) {
-    data.vector_layers = [];
-  }
-
   return data;
 }
 
 /**
- * Create new rendered tileJSON
+ * Create rendered tileJSON
  * @param {object} metadata Metadata object
- * @returns
+ * @returns {object}
  */
 export function createRenderedMetadata(metadata) {
   // Default
