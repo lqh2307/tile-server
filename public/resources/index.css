@@ -148,6 +148,7 @@ section {
   text-decoration: none;
   display: none;
   align-items: center;
+  z-index: 1000;
 }
 
 .back-to-top:hover {

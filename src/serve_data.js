@@ -805,7 +805,10 @@ export const serve_data = {
                 }
 
                 /* Get MBTiles metadata */
-                dataInfo.tileJSON = createDataMetadata(cacheSource.metadata);
+                dataInfo.tileJSON = createDataMetadata({
+                  ...cacheSource.metadata,
+                  cacheBBoxs: cacheSource.cacheBBoxs,
+                });
               } else {
                 dataInfo.path = `${process.env.DATA_DIR}/mbtiles/${item.mbtiles}`;
 
@@ -891,7 +894,10 @@ export const serve_data = {
               dataInfo.source = dataInfo.path;
 
               /* Get XYZ metadata */
-              dataInfo.tileJSON = createDataMetadata(cacheSource.metadata);
+              dataInfo.tileJSON = createDataMetadata({
+                ...cacheSource.metadata,
+                cacheBBoxs: cacheSource.cacheBBoxs,
+              });
             } else {
               dataInfo.path = `${process.env.DATA_DIR}/xyzs/${item.xyz}`;
 
@@ -925,7 +931,10 @@ export const serve_data = {
               dataInfo.source = await openPostgreSQLDB(dataInfo.path, true);
 
               /* Get PostgreSQL metadata */
-              dataInfo.tileJSON = createDataMetadata(cacheSource.metadata);
+              dataInfo.tileJSON = createDataMetadata({
+                ...cacheSource.metadata,
+                cacheBBoxs: cacheSource.cacheBBoxs,
+              });
             } else {
               dataInfo.path = `${process.env.POSTGRESQL_BASE_URI}/${id}`;
 

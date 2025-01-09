@@ -672,7 +672,7 @@ export function createDataMetadata(metadata) {
     }
 
     if (metadata.cacheBBoxs !== undefined) {
-      data.cacheBBoxs = deepClone(metadata.bboxs);
+      data.cacheBBoxs = deepClone(metadata.cacheBBoxs);
     }
   }
 
