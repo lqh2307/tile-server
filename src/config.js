@@ -108,25 +108,29 @@ async function readConfigFile(isValidate) {
           geojsons: {
             type: "object",
             additionalProperties: {
-              type: "object",
-              properties: {
-                geojson: {
-                  type: "string",
-                  minLength: 1,
-                },
-                cache: {
-                  type: "object",
-                  properties: {
-                    forward: {
-                      type: "boolean",
-                    },
-                    store: {
-                      type: "boolean",
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  geojson: {
+                    type: "string",
+                    minLength: 1,
+                  },
+                  cache: {
+                    type: "object",
+                    properties: {
+                      forward: {
+                        type: "boolean",
+                      },
+                      store: {
+                        type: "boolean",
+                      },
                     },
                   },
                 },
+                required: ["geojson"],
               },
-              required: ["geojson"],
+              minItems: 1,
             },
           },
           datas: {

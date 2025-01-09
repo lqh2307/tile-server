@@ -136,16 +136,20 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
     }
   },
   "geojsons": {
-    "asia_vietnam_geojson": {
-      "geojson": "asia_vietnam_geojson/geojson.geojson",
-    },
-    "asia_cambodia_geojson": {
-      "geojson": "asia_cambodia_geojson",
-      "cache": {
-        "forward": true,
-        "store": true
+    "asia_vietnam_geojson": [
+      {
+        "geojson": "asia_vietnam_geojson/geojson.geojson"
       }
-    }
+    ],
+    "asia_cambodia_geojson":[
+      {
+        "geojson": "asia_cambodia_geojson",
+        "cache": {
+          "forward": true,
+          "store": true
+        }
+      }
+    ]
   },
   "datas": {
     "asia_china": {

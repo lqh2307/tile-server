@@ -296,20 +296,3 @@ export async function getGeoJSONCreated(filePath) {
     }
   }
 }
-
-/**
- * Get GeoJSON layer names
- * @param {object} geoJSON GeoJSON
- * @returns {Promise<Array<string>}
- */
-export async function getGeoJSONLayerNames(geoJSON) {
-  if (geoJSON.type === "Feature") {
-    return [feature.properties?.name || geoJSON.name || "Unknown"];
-  } else if (geoJSON.type === "FeatureCollection") {
-    return geoJSON.features.map((feature, index) => {
-      return feature.properties?.name || `Unknown_${index + 1}`;
-    });
-  } else {
-    return [geoJSON.name || "Unknown"];
-  }
-}

@@ -116,6 +116,7 @@ export async function readCleanUpFile(isValidate) {
                     minItems: 4,
                     maxItems: 4,
                   },
+                  minItems: 1,
                 },
                 zooms: {
                   type: "array",

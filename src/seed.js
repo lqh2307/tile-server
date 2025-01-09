@@ -278,6 +278,7 @@ async function readSeedFile(isValidate) {
                         },
                         required: ["id"],
                       },
+                      minItems: 0,
                     },
                     tilestats: {
                       type: "object",
@@ -340,6 +341,7 @@ async function readSeedFile(isValidate) {
                     minItems: 4,
                     maxItems: 4,
                   },
+                  minItems: 1,
                 },
                 timeout: {
                   type: "integer",
