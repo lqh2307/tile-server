@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{name}} - Tile Server</title>
+  <link rel="stylesheet" type="text/css" href="{{base_url}}/leaflet.css" />
+  <script src="{{base_url}}/leaflet.js"></script>
+  <script src="{{base_url}}/leaflet-hash.js"></script>
+</head>
+
+<body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;">
+  <div id="map" style="position:absolute;top:0;left:0;right:0;bottom:0;"></div>
+
+  <script>
+    const baseURL = "{{base_url}}";
+
+    const map = L.map("map", {
+      zoomControl: false
+    });
+
+    new L.Control.Zoom({
+      position: "topright",
+    }).addTo(map);
+
+    fetch(`${baseURL}/datas/{{id}}.json`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    })
+      .then((response) => {
+        if (response.status === 200) {
+          return response.json();
+        } else {
+          alert(`Failed to fetch tileJSON: Status code: ${response.status} - ${response.statusText}`);
+        }
+      })
+      .then((jsonResponse) => {
+        for (const tile of jsonResponse.tiles || []) {
+          L.tileLayer(tile, {
+            minZoom: jsonResponse.minzoom,
+            maxZoom: jsonResponse.maxzoom,
+            maxNativeZoom: 22,
+            attribution: jsonResponse.attribution
+          }).addTo(map);
+        }
+      })
+      .catch((error) => {
+        alert(`Failed to fetch tileJSON: Status code: ${error.message}`);
+      });
+
+    setTimeout(() => {
+      new L.Hash(map);
+    }, 0);
+
+    let currentMarker;
+
+    map.on("click", (event) => {
+      if (currentMarker) {
+        map.removeLayer(currentMarker);
+      }
+
+      currentMarker = L.marker([event.latlng.lat, event.latlng.lng]).addTo(map);
+
+      alert(`Position: [${event.latlng.lng}, ${event.latlng.lat}]`);
+    });
+  </script>
+</body>
+
+</html>

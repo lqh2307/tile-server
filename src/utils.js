@@ -614,6 +614,7 @@ export function createMetadata(metadata) {
     bounds: [-180, -85.051129, 180, 85.051129],
     minzoom: 0,
     maxzoom: 22,
+    cacheBBoxs: [[-180, -85.051129, 180, 85.051129]],
   };
 
   // Overwrite
@@ -668,6 +669,10 @@ export function createMetadata(metadata) {
 
     if (metadata.tilestats !== undefined) {
       data.tilestats = deepClone(metadata.tilestats);
+    }
+
+    if (metadata.cacheBBoxs !== undefined) {
+      data.cacheBBoxs = deepClone(metadata.bboxs);
     }
   }
 

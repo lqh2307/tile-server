@@ -10,41 +10,26 @@
   <script src="{{base_url}}/maplibre-gl.js"></script>
   <script src="{{base_url}}/leaflet.js"></script>
   <script src="{{base_url}}/leaflet-hash.js"></script>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-    }
-
-    #map {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 100%;
-    }
-  </style>
 </head>
 
-<body>
+<body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;">
   <h1 style="display:none;">{{name}}</h1>
-  <div id="map"></div>
+  <div id="map" style="position:absolute;top:0;left:0;right:0;bottom:0;></div>
+
   <script>
     const baseURL = "{{base_url}}";
-    const preference = location.search.indexOf("raster") >= 0 ? "raster" : "vector";
 
-    if (preference === "vector") {
+    if (location.search.indexOf("vector") >= 0) {
       maplibregl.setRTLTextPlugin(`${baseURL}/mapbox-gl-rtl-text.js`);
 
       const map = new maplibregl.Map({
         container: "map",
         style: `${baseURL}/styles/{{id}}/style.json`,
-        hash: true,
+        hash: true
       });
 
       map.addControl(new maplibregl.NavigationControl({
-        visualizePitch: true,
-        showZoom: true,
-        showCompass: true,
+        visualizePitch: true
       }));
 
       let currentMarker;
@@ -62,17 +47,17 @@
       });
     } else {
       const map = L.map("map", {
-        zoomControl: false,
+        zoomControl: false
       });
 
       new L.Control.Zoom({
-        position: "topright",
+        position: "topright"
       }).addTo(map);
 
       fetch(`${baseURL}/styles/{{id}}.json`, {
         method: "GET",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
       })
         .then((response) => {
@@ -85,16 +70,12 @@
         .then((jsonResponse) => {
           for (const tile of jsonResponse.tiles || []) {
             L.tileLayer(tile, {
-              tileSize: 256,
               minZoom: jsonResponse.minzoom,
               maxZoom: jsonResponse.maxzoom,
-              attribution: jsonResponse.attribution,
+              maxNativeZoom: 22,
+              attribution: jsonResponse.attribution
             }).addTo(map);
           }
-
-          map.eachLayer(function (layer) {
-            layer.scalePrefix = ".";
-          });
         })
         .catch((error) => {
           alert(`Failed to fetch tileJSON: Status code: ${error.message}`);

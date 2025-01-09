@@ -178,12 +178,14 @@ function serveDataHandler() {
     }
 
     try {
-      const compiled = await compileTemplate("data", {
-        id: id,
-        name: item.tileJSON.name,
-        is_vector: item.tileJSON.format === "pbf",
-        base_url: getRequestHost(req),
-      });
+      const compiled = await compileTemplate(
+        item.tileJSON.format === "pbf" ? "vector_data" : "raster_data",
+        {
+          id: id,
+          name: item.tileJSON.name,
+          base_url: getRequestHost(req),
+        }
+      );
 
       return res.status(StatusCodes.OK).send(compiled);
     } catch (error) {

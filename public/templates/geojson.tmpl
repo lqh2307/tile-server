@@ -124,7 +124,9 @@
       }
     });
 
-    map.addControl(new maplibregl.NavigationControl());
+    map.addControl(new maplibregl.NavigationControl(
+      visualizePitch: true
+    ));
 
     map.addControl(new MaplibreInspect({
       showInspectMap: true,
@@ -159,33 +161,21 @@
       polygonItem.onclick = () => {
         const newVisibility = map.getLayoutProperty("source_polygon", "visibility") === "none" ? "visible" : "none";
 
-        map.setLayoutProperty(
-          "source_polygon",
-          "visibility",
-          newVisibility
-        );
+        map.setLayoutProperty("source_polygon", "visibility", newVisibility);
 
         polygonItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
       };
       lineItem.onclick = () => {
         const newVisibility = map.getLayoutProperty("source_line", "visibility") === "none" ? "visible" : "none";
 
-        map.setLayoutProperty(
-          "source_line",
-          "visibility",
-          newVisibility
-        );
+        map.setLayoutProperty("source_line", "visibility", newVisibility);
 
         lineItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
       };
       circleItem.onclick = () => {
         const newVisibility = map.getLayoutProperty("source_circle", "visibility") === "none" ? "visible" : "none";
 
-        map.setLayoutProperty(
-          "source_circle",
-          "visibility",
-          newVisibility
-        );
+        map.setLayoutProperty("source_circle", "visibility", newVisibility);
 
         circleItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
       };
