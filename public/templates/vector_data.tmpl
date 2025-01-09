@@ -93,16 +93,14 @@
             map.addSource("cache_bboxs_source", {
               type: "geojson",
               data: {
-                type: "MultiPolygon",
+                type: "MultiLineString",
                 coordinates: jsonResponse.cacheBBoxs.map((bbox) => {
                   return [
-                    [
-                      [bbox[0], bbox[1]],
-                      [bbox[2], bbox[1]],
-                      [bbox[2], bbox[3]],
-                      [bbox[0], bbox[3]],
-                      [bbox[0], bbox[1]]
-                    ]
+                    [bbox[0], bbox[1]],
+                    [bbox[2], bbox[1]],
+                    [bbox[2], bbox[3]],
+                    [bbox[0], bbox[3]],
+                    [bbox[0], bbox[1]]
                   ];
                 })
               }
@@ -117,31 +115,13 @@
                 "line-color": "rgba(255, 0, 0, 1)"
               },
               "layout": {
-                "line-join": "round",
-                "line-cap": "round",
                 "visibility": "none"
               }
             });
 
-            const cacheBBoxsButton = Object.assign(
-              document.createElement("div"), {
-              innerHTML: "Show cache BBoxs",
-              style: {
-                position: "absolute",
-                top: "10px",
-                left: "10px",
-                padding: "5px 10px",
-                fontSize: "14px",
-                cursor: "pointer",
-                backgroundColor: "rgba(0, 150, 255, 0.5)",
-                color: "white",
-                border: "none",
-                borderRadius: "5px",
-                display: "inline-block",
-                alignItems: "center",
-                zIndex: 1000
-              }
-            });
+            const cacheBBoxsButton = document.createElement("div");
+            cacheBBoxsButton.innerHTML = "Show cache BBoxs";
+            cacheBBoxsButton.style.cssText = "position:absolute;top:10px;left:10px;padding:5px 10px;font-size:14px;cursor:pointer;background-color:rgba(0, 150, 255, 0.5);color:white;border:none;border-radius:5px;display:inline-block;z-index:1000;";
 
             cacheBBoxsButton.onclick = () => {
               const newVisibility = map.getLayoutProperty("cache_bboxs_source_line", "visibility") === "none" ? "visible" : "none";
