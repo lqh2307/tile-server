@@ -53,7 +53,7 @@
         
         const geoJSONSourceColors = {};
 
-        for (geoJSONSource in jsonResponse.geojsons) {
+        for (const geoJSONSource in jsonResponse.geojsons) {
           style.sources[geoJSONSource] = {
             "type": "geojson",
             "data": `${baseURL}/geojsons/${id}/${geoJSONSource}.geojson`
@@ -132,7 +132,7 @@
         map.on("load", () => {
           const layerList = document.getElementById("layerList");
 
-          for (geoJSONSource in geoJSONSourceColors) {
+          for (const geoJSONSource in geoJSONSourceColors) {
             const polygonItem = document.createElement("div");
             const lineItem = document.createElement("div");
             const circleItem = document.createElement("div");

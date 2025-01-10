@@ -535,7 +535,7 @@ function serveSummaryHandler() {
 
       // GeoJSONs info
       for (const id in config.repo.geojsons) {
-        for (layer in config.repo.geojsons[id]) {
+        for (const layer in config.repo.geojsons[id]) {
           const item = config.repo.geojsons[id][layer];
 
           try {

@@ -36,7 +36,7 @@ function getGeoJSONInfoHandler() {
 
       const geojsons = {};
 
-      for (layer in item) {
+      for (const layer in item) {
         geojsons[layer] = `${requestHost}/geojsons/${id}/${layer}.geojson`;
       }
 
