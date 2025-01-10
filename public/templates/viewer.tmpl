@@ -17,13 +17,14 @@
 
   <script>
     const baseURL = "{{base_url}}";
+    const id = "{{id}}";
 
     if (location.search.indexOf("vector") >= 0) {
       maplibregl.setRTLTextPlugin(`${baseURL}/mapbox-gl-rtl-text.js`);
 
       const map = new maplibregl.Map({
         container: "map",
-        style: `${baseURL}/styles/{{id}}/style.json`,
+        style: `${baseURL}/styles/${id}/style.json`,
         hash: true
       });
 
@@ -53,7 +54,7 @@
         position: "topright"
       }).addTo(map);
 
-      fetch(`${baseURL}/styles/{{id}}.json`, {
+      fetch(`${baseURL}/styles/${id}.json`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json"

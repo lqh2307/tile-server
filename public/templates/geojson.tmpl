@@ -12,154 +12,195 @@
 </head>
 
 <body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;">
-  <h1 style="position:absolute;top:5px;right:0;width:240px;margin:0;font-size:18px;">Geometry type</h1>
+  <h1 style="position:absolute;top:5px;right:0;width:240px;margin:0;font-size:18px;">Layer list</h1>
   <div id="map" style="position:absolute;top:0;left:0;right:250px;bottom:0;"></div>
   <div id="layerList" style="position:absolute;top:35px;right:0;bottom:0;width:240px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"></div>
 
   <script>
     const baseURL = "{{base_url}}";
+    const id = "{{id}}";
 
-    const map = new maplibregl.Map({
-      container: "map",
-      hash: true,
-      style: {
-        "version": 8,
-        "sources": {
-          "source": {
-            "type": "geojson",
-            "data": `${baseURL}/geojsons/{{id}}/geojson.geojson`
-          }
+    fetch(`${baseURL}/geojson/${id}.json`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
         },
-        "layers": [
-          {
-            "id": "background",
-            "type": "background",
-            "paint": {
-              "background-color": "#FFF"
-            },
-            "layout": {
-              "visibility": "visible"
+      })
+      .then((response) => {
+        if (response.status === 200) {
+          return response.json();
+        } else {
+          alert(`Failed to fetch GeoJSON info: Status code: ${response.status} - ${response.statusText}`);
+        }
+      })
+      .then((jsonResponse) => {
+        const style = {
+          "version": 8,
+          "sources": {},
+          "layers": [
+            {
+              "id": "background",
+              "type": "background",
+              "paint": {
+                "background-color": "#FFF"
+              },
+              "layout": {
+                "visibility": "visible"
+              }
             }
-          },
-          {
-            "id": "source_polygon",
-            "source": "source",
-            "type": "fill",
-            "paint": {
-              "fill-color": "rgba(255, 0, 0, 0.3)",
-              "fill-antialias": true,
-              "fill-outline-color": "rgba(255, 0, 0, 0.3)"
+          ]
+        };
+        
+        const geoJSONSourceColors = {};
+
+        for (geoJSONSource in jsonResponse.geojsons) {
+          style.sources[geoJSONSource] = {
+            "type": "geojson",
+            "data": `${baseURL}/geojsons/${id}/${geoJSONSource}.geojson`
+          };
+
+          const r = Math.floor(Math.random() * 256);
+          const g = Math.floor(Math.random() * 256);
+          const b = Math.floor(Math.random() * 256);
+          const polygonLayerColor = "rgba(r, g, b, 0.3)";
+          const lineLayerColor = "rgba(r, g, b, 0.6)";
+          const circleLayerColor = "rgba(r, g, b, 0.6)";
+
+          geoJSONSourceColors[geoJSONSource] = [polygonLayerColor, lineLayerColor, circleLayerColor]
+
+          style.layers.push(
+            {
+              "id": `${geoJSONSource}_polygon`,
+              "source": geoJSONSource,
+              "type": "fill",
+              "paint": {
+                "fill-color": polygonLayerColor,
+                "fill-antialias": true,
+                "fill-outline-color": polygonLayerColor
+              },
+              "layout": {
+                "visibility": "visible"
+              },
+              "filter": ["==", "$type", "Polygon"]
             },
-            "layout": {
-              "visibility": "visible"
+            {
+              "id": `${geoJSONSource}_line`,
+              "source": geoJSONSource,
+              "type": "line",
+              "paint": {
+                "line-color": lineLayerColor
+              },
+              "layout": {
+                "line-join": "round",
+                "line-cap": "round",
+                "visibility": "visible"
+              },
+              "filter": ["==", "$type", "LineString"]
             },
-            "filter": ["==", "$type", "Polygon"]
-          },
-          {
-            "id": "source_line",
-            "source": "source",
-            "type": "line",
-            "paint": {
-              "line-color": "rgba(0, 255, 0, 0.6)"
-            },
-            "layout": {
-              "line-join": "round",
-              "line-cap": "round",
-              "visibility": "visible"
-            },
-            "filter": ["==", "$type", "LineString"]
-          },
-          {
-            "id": "source_circle",
-            "source": "source",
-            "type": "circle",
-            "paint": {
-              "circle-color": "rgba(0, 0, 255, 0.8)",
-              "circle-radius": 2
-            },
-            "layout": {
-              "visibility": "visible"
-            },
-            "filter": ["==", "$type", "Point"]
+            {
+              "id": `${geoJSONSource}_circle`,
+              "source": geoJSONSource,
+              "type": "circle",
+              "paint": {
+                "circle-color": circleLayerColor,
+                "circle-radius": 2
+              },
+              "layout": {
+                "visibility": "visible"
+              },
+              "filter": ["==", "$type", "Point"]
+            }
+          );
+        }
+
+        const map = new maplibregl.Map({
+          container: "map",
+          hash: true,
+          style: style
+        });
+
+        map.addControl(new maplibregl.NavigationControl({
+          visualizePitch: true
+        }));
+
+        map.addControl(new MaplibreInspect({
+          showInspectMap: true,
+          showInspectButton: false,
+          useInspectStyle: false
+        }));
+
+        map.on("load", () => {
+          const layerList = document.getElementById("layerList");
+
+          for (geoJSONSource in geoJSONSourceColors) {
+            const polygonItem = document.createElement("div");
+            const lineItem = document.createElement("div");
+            const circleItem = document.createElement("div");
+
+            polygonItem.innerHTML = `
+              <div style="display:flex;align-items:center;cursor:pointer;">
+                <div style="width:15px;height:15px;display:inline-block;background:${geoJSONSourceColors[geoJSONSource][0]};"></div>
+                <span style="margin-left:5px;color:${geoJSONSourceColors[geoJSONSource][0]};">polygon</span>
+              </div>
+            `;
+            lineItem.innerHTML = `
+              <div style="display:flex;align-items:center;cursor:pointer;">
+                <div style="width:15px;height:15px;display:inline-block;background:${geoJSONSourceColors[geoJSONSource][1]};"></div>
+                <span style="margin-left:5px;color:${geoJSONSourceColors[geoJSONSource][1]};">line</span>
+              </div>
+            `;
+            circleItem.innerHTML = `
+              <div style="display:flex;align-items:center;cursor:pointer;">
+                <div style="width:15px;height:15px;display:inline-block;background:${geoJSONSourceColors[geoJSONSource][2]};"></div>
+                <span style="margin-left:5px;color:${geoJSONSourceColors[geoJSONSource][2]};">circle</span>
+              </div>
+            `;
+
+            polygonItem.onclick = () => {
+              const newVisibility = map.getLayoutProperty(`${geoJSONSource}_polygon`, "visibility") === "none" ? "visible" : "none";
+
+              map.setLayoutProperty(`${geoJSONSource}_polygon`, "visibility", newVisibility);
+
+              polygonItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
+            };
+            lineItem.onclick = () => {
+              const newVisibility = map.getLayoutProperty(`${geoJSONSource}_line`, "visibility") === "none" ? "visible" : "none";
+
+              map.setLayoutProperty(`${geoJSONSource}_line`, "visibility", newVisibility);
+
+              lineItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
+            };
+            circleItem.onclick = () => {
+              const newVisibility = map.getLayoutProperty(`${geoJSONSource}_circle`, "visibility") === "none" ? "visible" : "none";
+
+              map.setLayoutProperty(`${geoJSONSource}_circle`, "visibility", newVisibility);
+
+              circleItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
+            };
+
+            layerList.appendChild(polygonItem);
+            layerList.appendChild(lineItem);
+            layerList.appendChild(circleItem);
           }
-        ]
-      }
-    });
+        });
 
-    map.addControl(new maplibregl.NavigationControl({
-      visualizePitch: true
-    }));
+        let currentMarker;
 
-    map.addControl(new MaplibreInspect({
-      showInspectMap: true,
-      showInspectButton: false,
-      useInspectStyle: false
-    }));
+        map.on("click", (event) => {
+          if (currentMarker) {
+            currentMarker.remove();
+          }
 
-    map.on("load", () => {
-      const polygonItem = document.createElement("div");
-      const lineItem = document.createElement("div");
-      const circleItem = document.createElement("div");
+          currentMarker = new maplibregl.Marker()
+            .setLngLat([event.lngLat.lng, event.lngLat.lat])
+            .addTo(map);
 
-      polygonItem.innerHTML = `
-        <div style="display:flex;align-items:center;cursor:pointer;">
-          <div style="width:15px;height:15px;display:inline-block;background:rgba(255, 0, 0, 0.3);"></div>
-          <span style="margin-left:5px;color:rgba(255, 0, 0, 0.3);">polygon</span>
-        </div>
-      `;
-      lineItem.innerHTML = `
-        <div style="display:flex;align-items:center;cursor:pointer;">
-          <div style="width:15px;height:15px;display:inline-block;background:rgba(0, 255, 0, 0.6);"></div>
-          <span style="margin-left:5px;color:rgba(0, 255, 0, 0.6);">line</span>
-        </div>
-      `;
-      circleItem.innerHTML = `
-        <div style="display:flex;align-items:center;cursor:pointer;">
-          <div style="width:15px;height:15px;display:inline-block;background:rgba(0, 0, 255, 0.8);"></div>
-          <span style="margin-left:5px;color:rgba(0, 0, 255, 0.8);">circle</span>
-        </div>
-      `;
-
-      polygonItem.onclick = () => {
-        const newVisibility = map.getLayoutProperty("source_polygon", "visibility") === "none" ? "visible" : "none";
-
-        map.setLayoutProperty("source_polygon", "visibility", newVisibility);
-
-        polygonItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
-      };
-      lineItem.onclick = () => {
-        const newVisibility = map.getLayoutProperty("source_line", "visibility") === "none" ? "visible" : "none";
-
-        map.setLayoutProperty("source_line", "visibility", newVisibility);
-
-        lineItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
-      };
-      circleItem.onclick = () => {
-        const newVisibility = map.getLayoutProperty("source_circle", "visibility") === "none" ? "visible" : "none";
-
-        map.setLayoutProperty("source_circle", "visibility", newVisibility);
-
-        circleItem.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
-      };
-
-      layerList.appendChild(polygonItem);
-      layerList.appendChild(lineItem);
-      layerList.appendChild(circleItem);
-    });
-
-    let currentMarker;
-
-    map.on("click", (event) => {
-      if (currentMarker) {
-        currentMarker.remove();
-      }
-
-      currentMarker = new maplibregl.Marker()
-        .setLngLat([event.lngLat.lng, event.lngLat.lat])
-        .addTo(map);
-
-      alert(`Position: [${event.lngLat.lng}, ${event.lngLat.lat}]`);
-    });
+          alert(`Position: [${event.lngLat.lng}, ${event.lngLat.lat}]`);
+        });
+      })
+      .catch((error) => {
+        alert(`Failed to fetch GeoJSON info: Status code: ${error.message}`);
+      });
   </script>
 </body>
 

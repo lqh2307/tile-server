@@ -18,8 +18,9 @@
 
   <script>
     const baseURL = "{{base_url}}";
+    const id = "{{id}}";
 
-    fetch(`${baseURL}/datas/{{id}}.json`, {
+    fetch(`${baseURL}/datas/${id}.json`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json"
@@ -41,7 +42,7 @@
             "sources": {
               "source": {
                 "type": "vector",
-                "url": `${baseURL}/datas/{{id}}.json`
+                "url": `${baseURL}/datas/${id}.json`
               }
             },
             "layers": []

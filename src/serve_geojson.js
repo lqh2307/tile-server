@@ -32,6 +32,12 @@ function getGeoJSONInfoHandler() {
         return res.status(StatusCodes.NOT_FOUND).send("GeoJSON does not exist");
       }
 
+      const geojsons = {};
+
+      for (layer in item) {
+        geojsons[layer] = `${requestHost}/geojsons/${id}/${layer}.geojson`;
+      }
+
       const requestHost = getRequestHost(req);
 
       res.header("content-type", "application/json");
@@ -39,9 +45,7 @@ function getGeoJSONInfoHandler() {
       return res.status(StatusCodes.OK).send({
         id: id,
         name: id,
-        geojsons: Object.keys(item).map(
-          (layer) => `${requestHost}/geojsons/${id}/${layer}.geojson`
-        ),
+        geojsons: geojsons,
       });
     } catch (error) {
       printLog("error", `Failed to get GeoJSON info "${id}": ${error}`);

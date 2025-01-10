@@ -512,7 +512,9 @@ function serveSummaryHandler() {
         result.data.pg.size;
 
       // Styles info
-      for (const item of config.repo.styles) {
+      for (const id in config.repo.styles) {
+        const item = config.repo.styles[id];
+
         try {
           const stat = await fsPromise.stat(item.path);
 
@@ -533,7 +535,9 @@ function serveSummaryHandler() {
 
       // GeoJSONs info
       for (const id in config.repo.geojsons) {
-        for (item of config.repo.geojsons[id]) {
+        for (layer in config.repo.geojsons[id]) {
+          const item = config.repo.geojsons[id][layer];
+
           try {
             const stat = await fsPromise.stat(item.path);
 
