@@ -138,14 +138,6 @@ async function readSeedFile(isValidate) {
             additionalProperties: {
               type: "object",
               properties: {
-                metadata: {
-                  type: "object",
-                  properties: {
-                    name: {
-                      type: "string",
-                    },
-                  },
-                },
                 url: {
                   type: "string",
                   minLength: 1,
@@ -1118,8 +1110,8 @@ async function seedGeoJSON(
 
   printLog("info", log);
 
-  /* Download geojson.geojson file */
-  const filePath = `${process.env.DATA_DIR}/caches/geojsons/${id}/geojson.geojson`;
+  /* Download GeoJSON file */
+  const filePath = `${process.env.DATA_DIR}/caches/geojsons/${id}/${id}.geojson`;
 
   try {
     let needDownload = false;
@@ -1128,7 +1120,7 @@ async function seedGeoJSON(
       try {
         const [response, geoJSON] = await Promise.all([
           getDataFromURL(
-            geojsonURL.replaceAll("geojson.geojson", `md5/geojson.geojson`),
+            geojsonURL.replaceAll(`${id}.geojson`, `md5/${id}.geojson`),
             timeout,
             "arraybuffer"
           ),

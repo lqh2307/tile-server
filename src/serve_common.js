@@ -40,74 +40,82 @@ async function compileTemplate(template, data) {
  */
 function serveFrontPageHandler() {
   return async (req, res, next) => {
-    const styles = {};
-    const geojsons = {};
-    const datas = {};
-    const fonts = {};
-    const sprites = {};
-
-    const requestHost = getRequestHost(req);
-
-    await Promise.all([
-      ...Object.keys(config.repo.styles).map(async (id) => {
-        const style = config.repo.styles[id];
-
-        if (style.rendered !== undefined) {
-          const { name, center } = style.rendered.tileJSON;
-
-          const [x, y, z] = getXYZFromLonLatZ(center[0], center[1], center[2]);
-
-          styles[id] = {
-            name: name,
-            viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
-            thumbnail: `${requestHost}/styles/${id}/${z}/${x}/${y}.png`,
-          };
-        } else {
-          const { name, zoom, center } = style;
-
-          styles[id] = {
-            name: name,
-            viewer_hash: `#${zoom}/${center[1]}/${center[0]}`,
-          };
-        }
-      }),
-      ...Object.keys(config.repo.geojsons).map(async (id) => {
-        geojsons[id] = {
-          name: config.repo.geojsons[id].name,
-        };
-      }),
-      ...Object.keys(config.repo.datas).map(async (id) => {
-        const data = config.repo.datas[id];
-        const { name, center, format } = data.tileJSON;
-
-        let thumbnail;
-        if (format !== "pbf") {
-          const [x, y, z] = getXYZFromLonLatZ(center[0], center[1], center[2]);
-
-          thumbnail = `${requestHost}/datas/${id}/${z}/${x}/${y}.${format}`;
-        }
-
-        datas[id] = {
-          name: name,
-          format: format,
-          viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
-          thumbnail: thumbnail,
-          source_type: data.sourceType,
-        };
-      }),
-      ...Object.keys(config.repo.fonts).map(async (id) => {
-        fonts[id] = {
-          name: id,
-        };
-      }),
-      ...Object.keys(config.repo.sprites).map(async (id) => {
-        sprites[id] = {
-          name: id,
-        };
-      }),
-    ]);
-
     try {
+      const styles = {};
+      const geojsons = {};
+      const datas = {};
+      const fonts = {};
+      const sprites = {};
+
+      const requestHost = getRequestHost(req);
+
+      await Promise.all([
+        ...Object.keys(config.repo.styles).map(async (id) => {
+          const style = config.repo.styles[id];
+
+          if (style.rendered !== undefined) {
+            const { name, center } = style.rendered.tileJSON;
+
+            const [x, y, z] = getXYZFromLonLatZ(
+              center[0],
+              center[1],
+              center[2]
+            );
+
+            styles[id] = {
+              name: name,
+              viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
+              thumbnail: `${requestHost}/styles/${id}/${z}/${x}/${y}.png`,
+            };
+          } else {
+            const { name, zoom, center } = style;
+
+            styles[id] = {
+              name: name,
+              viewer_hash: `#${zoom}/${center[1]}/${center[0]}`,
+            };
+          }
+        }),
+        ...Object.keys(config.repo.geojsons).map(async (id) => {
+          geojsons[id] = {
+            name: id,
+          };
+        }),
+        ...Object.keys(config.repo.datas).map(async (id) => {
+          const data = config.repo.datas[id];
+          const { name, center, format } = data.tileJSON;
+
+          let thumbnail;
+          if (format !== "pbf") {
+            const [x, y, z] = getXYZFromLonLatZ(
+              center[0],
+              center[1],
+              center[2]
+            );
+
+            thumbnail = `${requestHost}/datas/${id}/${z}/${x}/${y}.${format}`;
+          }
+
+          datas[id] = {
+            name: name,
+            format: format,
+            viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
+            thumbnail: thumbnail,
+            source_type: data.sourceType,
+          };
+        }),
+        ...Object.keys(config.repo.fonts).map(async (id) => {
+          fonts[id] = {
+            name: id,
+          };
+        }),
+        ...Object.keys(config.repo.sprites).map(async (id) => {
+          sprites[id] = {
+            name: id,
+          };
+        }),
+      ]);
+
       const compiled = await compileTemplate("index", {
         styles: styles,
         geojsons: geojsons,
@@ -140,13 +148,14 @@ function serveFrontPageHandler() {
 function serveStyleHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
-    const item = config.repo.styles[id];
-
-    if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Style does not exist");
-    }
 
     try {
+      const item = config.repo.styles[id];
+
+      if (item === undefined) {
+        return res.status(StatusCodes.NOT_FOUND).send("Style does not exist");
+      }
+
       const compiled = await compileTemplate("viewer", {
         id: id,
         name: item.name,
@@ -171,13 +180,14 @@ function serveStyleHandler() {
 function serveDataHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
-    const item = config.repo.datas[id];
-
-    if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Data does not exist");
-    }
 
     try {
+      const item = config.repo.datas[id];
+
+      if (item === undefined) {
+        return res.status(StatusCodes.NOT_FOUND).send("Data does not exist");
+      }
+
       const compiled = await compileTemplate(
         item.tileJSON.format === "pbf" ? "vector_data" : "raster_data",
         {
@@ -205,13 +215,14 @@ function serveDataHandler() {
 function serveGeoJSONHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
-    const item = config.repo.geojsons[id];
-
-    if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("GeoJSON does not exist");
-    }
 
     try {
+      const item = config.repo.geojsons[id];
+
+      if (item === undefined) {
+        return res.status(StatusCodes.NOT_FOUND).send("GeoJSON does not exist");
+      }
+
       const compiled = await compileTemplate("geojson", {
         id: id,
         name: item.name,
@@ -236,13 +247,14 @@ function serveGeoJSONHandler() {
 function serveWMTSHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
-    const item = config.repo.styles[id].rendered;
-
-    if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("WMTS does not exist");
-    }
 
     try {
+      const item = config.repo.styles[id].rendered;
+
+      if (item === undefined) {
+        return res.status(StatusCodes.NOT_FOUND).send("WMTS does not exist");
+      }
+
       const compiled = await compileTemplate("wmts", {
         id: id,
         name: item.tileJSON.name,
@@ -500,9 +512,7 @@ function serveSummaryHandler() {
         result.data.pg.size;
 
       // Styles info
-      for (const id in config.repo.styles) {
-        const item = config.repo.styles[id];
-
+      for (const item of config.repo.styles) {
         try {
           const stat = await fsPromise.stat(item.path);
 
@@ -523,15 +533,15 @@ function serveSummaryHandler() {
 
       // GeoJSONs info
       for (const id in config.repo.geojsons) {
-        const item = config.repo.geojsons[id];
+        for (item of config.repo.geojsons[id]) {
+          try {
+            const stat = await fsPromise.stat(item.path);
 
-        try {
-          const stat = await fsPromise.stat(item.path);
-
-          result.geojson.size += stat.size;
-        } catch (error) {
-          if (item.cache === undefined && error.code === "ENOENT") {
-            throw error;
+            result.geojson.size += stat.size;
+          } catch (error) {
+            if (item.cache === undefined && error.code === "ENOENT") {
+              throw error;
+            }
           }
         }
 

@@ -110,7 +110,7 @@
                   <h3 class="name">{{name}}</h3>
                   <p class="identifier">identifier: {{@key}}</p>
                   <p class="services">
-                    services: <a href="${baseURL}/geojsons/{{@key}}/geojson.geojson">GeoJSON</a>
+                    services: <a href="${baseURL}/geojsons/{{@key}}.json">INFO</a>
                   </p>
                 </div>
                 <div class="viewers">
@@ -543,7 +543,7 @@
     <h1 class="title">Tile server preview</h1>
     <div class="tabs">
       <div class="tab active" onclick="switchTab(event, 'styles-tab')">STYLES ({{style_count}})</div>
-      <div class="tab" onclick="switchTab(event, 'geojsons-tab')">GEOJSONS ({{geojson_count}})</div>
+      <div class="tab" onclick="switchTab(event, 'geojsons-tab')">GEOJSON GROUPS ({{geojson_count}})</div>
       <div class="tab" onclick="switchTab(event, 'datas-tab')">DATAS ({{data_count}})</div>
       <div class="tab" onclick="switchTab(event, 'fonts-tab')">FONTS ({{font_count}})</div>
       <div class="tab" onclick="switchTab(event, 'sprites-tab')">SPRITES ({{sprite_count}})</div>

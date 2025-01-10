@@ -34,17 +34,18 @@ import {
 function getStyleHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
-    const item = config.repo.styles[id];
-
-    /* Check style is used? */
-    if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Style does not exist");
-    }
-
-    /* Get styleJSON */
-    let styleJSON;
 
     try {
+      const item = config.repo.styles[id];
+
+      /* Check style is used? */
+      if (item === undefined) {
+        return res.status(StatusCodes.NOT_FOUND).send("Style does not exist");
+      }
+
+      let styleJSON;
+
+      /* Get styleJSON and cache if not exist if use cache */
       try {
         styleJSON = await getStyle(item.path);
       } catch (error) {
@@ -57,13 +58,11 @@ function getStyleHandler() {
             `Forwarding style "${id}" - To "${item.sourceURL}"...`
           );
 
-          /* Get style */
           styleJSON = await getStyleJSONFromURL(
             item.sourceURL,
             60000 // 1 mins
           );
 
-          /* Cache */
           if (item.storeCache === true) {
             printLog("info", `Caching style "${id}" - File "${item.path}"...`);
 
@@ -179,15 +178,16 @@ function getStyleHandler() {
 function getStyleMD5Handler() {
   return async (req, res, next) => {
     const id = req.params.id;
-    const item = config.repo.styles[id];
 
-    /* Check style is used? */
-    if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Style does not exist");
-    }
-
-    /* Get styleJSON MD5 */
     try {
+      const item = config.repo.styles[id];
+
+      /* Check style is used? */
+      if (item === undefined) {
+        return res.status(StatusCodes.NOT_FOUND).send("Style does not exist");
+      }
+
+      /* Get styleJSON MD5 and Add to header */
       const styleJSON = await getStyle(item.path);
 
       if (req.query.raw !== "true") {
@@ -265,7 +265,6 @@ function getStyleMD5Handler() {
         );
       }
 
-      /* Add MD5 to header */
       res.set({
         etag: calculateMD5(Buffer.from(JSON.stringify(styleJSON), "utf8")),
       });
@@ -292,95 +291,99 @@ function getStyleMD5Handler() {
 function renderStyleHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
-    const item = config.repo.styles[id];
 
-    /* Check rendered is exist? */
-    if (item === undefined || item.rendered === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Rendered does not exist");
-    }
+    try {
+      const item = config.repo.styles[id];
 
-    /* Render style */
-    if (item.rendered.export === true) {
-      printLog("warning", "A render is already running. Skipping render...");
+      /* Check rendered is exist? */
+      if (item === undefined || item.rendered === undefined) {
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .send("Rendered does not exist");
+      }
 
-      return res.status(StatusCodes.OK).send("OK");
-    } else {
-      try {
-        const parsedOptions = JSON.parse(req.query.options);
-
-        setTimeout(() => {
-          item.rendered.export = true;
-
-          if (parsedOptions.storeType === "xyz") {
-            renderXYZTiles(
-              id,
-              parsedOptions.metadata,
-              parsedOptions.tileScale,
-              parsedOptions.tileSize,
-              parsedOptions.bbox,
-              parsedOptions.maxzoom,
-              parsedOptions.concurrency,
-              parsedOptions.storeMD5,
-              parsedOptions.storeTransparent,
-              parsedOptions.createOverview,
-              parsedOptions.refreshBefore?.time ||
-                parsedOptions.refreshBefore?.day ||
-                parsedOptions.refreshBefore?.md5
-            ).finally(() => {
-              item.rendered.export = false;
-            });
-          } else if (parsedOptions.storeType === "mbtiles") {
-            renderMBTilesTiles(
-              id,
-              parsedOptions.metadata,
-              parsedOptions.tileScale,
-              parsedOptions.tileSize,
-              parsedOptions.bbox,
-              parsedOptions.maxzoom,
-              parsedOptions.concurrency,
-              parsedOptions.storeMD5,
-              parsedOptions.storeTransparent,
-              parsedOptions.createOverview,
-              parsedOptions.refreshBefore?.time ||
-                parsedOptions.refreshBefore?.day ||
-                parsedOptions.refreshBefore?.md5
-            ).finally(() => {
-              item.rendered.export = false;
-            });
-          } else if (parsedOptions.storeType === "pg") {
-            renderPostgreSQLTiles(
-              id,
-              parsedOptions.metadata,
-              parsedOptions.tileScale,
-              parsedOptions.tileSize,
-              parsedOptions.bbox,
-              parsedOptions.maxzoom,
-              parsedOptions.concurrency,
-              parsedOptions.storeMD5,
-              parsedOptions.storeTransparent,
-              parsedOptions.createOverview,
-              parsedOptions.refreshBefore?.time ||
-                parsedOptions.refreshBefore?.day ||
-                parsedOptions.refreshBefore?.md5
-            ).finally(() => {
-              item.rendered.export = false;
-            });
-          }
-        }, 0);
+      /* Check export is running? */
+      if (item.rendered.export === true) {
+        printLog("warning", "A render is already running. Skipping render...");
 
         return res.status(StatusCodes.OK).send("OK");
-      } catch (error) {
-        printLog("error", `Failed to render style "${id}": ${error}`);
+      }
 
-        if (error instanceof SyntaxError) {
-          return res
-            .status(StatusCodes.BAD_REQUEST)
-            .send("option parameter is invalid");
-        } else {
-          return res
-            .status(StatusCodes.INTERNAL_SERVER_ERROR)
-            .send("Internal server error");
+      /* Render style */
+      const parsedOptions = JSON.parse(req.query.options);
+
+      setTimeout(() => {
+        item.rendered.export = true;
+
+        if (parsedOptions.storeType === "xyz") {
+          renderXYZTiles(
+            id,
+            parsedOptions.metadata,
+            parsedOptions.tileScale,
+            parsedOptions.tileSize,
+            parsedOptions.bbox,
+            parsedOptions.maxzoom,
+            parsedOptions.concurrency,
+            parsedOptions.storeMD5,
+            parsedOptions.storeTransparent,
+            parsedOptions.createOverview,
+            parsedOptions.refreshBefore?.time ||
+              parsedOptions.refreshBefore?.day ||
+              parsedOptions.refreshBefore?.md5
+          ).finally(() => {
+            item.rendered.export = false;
+          });
+        } else if (parsedOptions.storeType === "mbtiles") {
+          renderMBTilesTiles(
+            id,
+            parsedOptions.metadata,
+            parsedOptions.tileScale,
+            parsedOptions.tileSize,
+            parsedOptions.bbox,
+            parsedOptions.maxzoom,
+            parsedOptions.concurrency,
+            parsedOptions.storeMD5,
+            parsedOptions.storeTransparent,
+            parsedOptions.createOverview,
+            parsedOptions.refreshBefore?.time ||
+              parsedOptions.refreshBefore?.day ||
+              parsedOptions.refreshBefore?.md5
+          ).finally(() => {
+            item.rendered.export = false;
+          });
+        } else if (parsedOptions.storeType === "pg") {
+          renderPostgreSQLTiles(
+            id,
+            parsedOptions.metadata,
+            parsedOptions.tileScale,
+            parsedOptions.tileSize,
+            parsedOptions.bbox,
+            parsedOptions.maxzoom,
+            parsedOptions.concurrency,
+            parsedOptions.storeMD5,
+            parsedOptions.storeTransparent,
+            parsedOptions.createOverview,
+            parsedOptions.refreshBefore?.time ||
+              parsedOptions.refreshBefore?.day ||
+              parsedOptions.refreshBefore?.md5
+          ).finally(() => {
+            item.rendered.export = false;
+          });
         }
+      }, 0);
+
+      return res.status(StatusCodes.OK).send("OK");
+    } catch (error) {
+      printLog("error", `Failed to render style "${id}": ${error}`);
+
+      if (error instanceof SyntaxError) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .send("option parameter is invalid");
+      } else {
+        return res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .send("Internal server error");
       }
     }
   };
@@ -474,17 +477,22 @@ function getRenderedTileHandler() {
 function getRenderedHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
-    const item = config.repo.styles[id];
 
-    /* Check rendered is exist? */
-    if (item === undefined || item.rendered === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Rendered does not exist");
-    }
-
-    /* Get render info */
     try {
+      const item = config.repo.styles[id];
+
+      /* Check rendered is exist? */
+      if (item === undefined || item.rendered === undefined) {
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .send("Rendered does not exist");
+      }
+
+      const requestHost = getRequestHost(req);
+
       res.header("content-type", "application/json");
 
+      /* Get render info */
       return res.status(StatusCodes.OK).send({
         ...item.rendered.tileJSON,
         tilejson: "2.2.0",
@@ -492,10 +500,8 @@ function getRenderedHandler() {
         id: id,
         tiles: [
           req.params.tileSize === undefined
-            ? `${getRequestHost(req)}/styles/${id}/{z}/{x}/{y}.png`
-            : `${getRequestHost(req)}/styles/${id}/${
-                req.params.tileSize
-              }/{z}/{x}/{y}.png`,
+            ? `${requestHost}/styles/${id}/{z}/{x}/{y}.png`
+            : `${requestHost}/styles/${id}/${req.params.tileSize}/{z}/{x}/{y}.png`,
         ],
       });
     } catch (error) {
@@ -558,7 +564,7 @@ function getStyleJSONsListHandler() {
         Object.keys(config.repo.styles).map(async (id) => {
           const item = config.repo.styles[id];
 
-          /* Get styleJSON */
+          /* Get styleJSON and cache if not exist if use cache */
           let styleJSON;
 
           try {
@@ -573,13 +579,11 @@ function getStyleJSONsListHandler() {
                 `Forwarding style "${id}" - To "${item.sourceURL}"...`
               );
 
-              /* Get style */
               styleJSON = await getStyleJSONFromURL(
                 item.sourceURL,
                 60000 // 1 mins
               );
 
-              /* Cache */
               if (item.storeCache === true) {
                 printLog(
                   "info",

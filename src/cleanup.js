@@ -690,8 +690,8 @@ export async function cleanUpGeoJSON(id, cleanUpBefore) {
 
   printLog("info", log);
 
-  /* Remove geojson.geojson file */
-  const filePath = `${process.env.DATA_DIR}/caches/geojsons/${id}/geojson.geojson`;
+  /* Remove GeoJSON file */
+  const filePath = `${process.env.DATA_DIR}/caches/geojsons/${id}/${id}.geojson`;
 
   try {
     let needRemove = false;

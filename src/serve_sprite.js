@@ -15,13 +15,14 @@ import express from "express";
 function getSpriteHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
-    const item = config.repo.sprites[id];
-
-    if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Sprite does not exist");
-    }
 
     try {
+      const item = config.repo.sprites[id];
+
+      if (item === undefined) {
+        return res.status(StatusCodes.NOT_FOUND).send("Sprite does not exist");
+      }
+
       const data = await getSprite(
         id,
         req.url.slice(req.url.lastIndexOf("/") + 1)

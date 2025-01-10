@@ -77,9 +77,9 @@ function getDataTileHandler() {
     const tileName = `${z}/${x}/${y}`;
 
     /* Get tile data */
-    let dataTile;
-
     try {
+      let dataTile;
+
       if (item.sourceType === "mbtiles") {
         try {
           dataTile = await getMBTilesTile(item.source, z, x, y);
@@ -261,13 +261,16 @@ function getDataTileHandler() {
 function getDataHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
-    const item = config.repo.datas[id];
-
-    if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("Data does not exist");
-    }
 
     try {
+      const item = config.repo.datas[id];
+
+      if (item === undefined) {
+        return res.status(StatusCodes.NOT_FOUND).send("Data does not exist");
+      }
+
+      const requestHost = getRequestHost(req);
+
       res.header("content-type", "application/json");
 
       return res.status(StatusCodes.OK).send({
@@ -276,9 +279,7 @@ function getDataHandler() {
         scheme: "xyz",
         id: id,
         tiles: [
-          `${getRequestHost(req)}/datas/${id}/{z}/{x}/{y}.${
-            item.tileJSON.format
-          }`,
+          `${requestHost}/datas/${id}/{z}/{x}/{y}.${item.tileJSON.format}`,
         ],
       });
     } catch (error) {
@@ -319,9 +320,9 @@ function getDataTileMD5Handler() {
     const tileName = `${z}/${x}/${y}`;
 
     /* Get tile data MD5 */
-    let md5;
-
     try {
+      let md5;
+
       if (item.sourceType === "mbtiles") {
         if (item.storeMD5 === true) {
           md5 = await getMBTilesTileMD5(item.source, z, x, y);

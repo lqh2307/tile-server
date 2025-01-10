@@ -7,6 +7,7 @@ import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import { seed } from "./seed.js";
 import express from "express";
+import path from "node:path";
 import {
   downloadGeoJSONFile,
   getGeoJSONFromURL,
@@ -16,53 +17,98 @@ import {
 } from "./geojson.js";
 
 /**
+ * Get geoJSON info handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
+function getGeoJSONInfoHandler() {
+  return async (req, res, next) => {
+    const id = req.params.id;
+
+    try {
+      const item = config.repo.geojsons[id];
+
+      /* Check GeoJSON is used? */
+      if (item === undefined) {
+        return res.status(StatusCodes.NOT_FOUND).send("GeoJSON does not exist");
+      }
+
+      const requestHost = getRequestHost(req);
+
+      res.header("content-type", "application/json");
+
+      return res.status(StatusCodes.OK).send({
+        id: id,
+        name: id,
+        geojsons: Object.keys(item).map(
+          (layer) => `${requestHost}/geojsons/${id}/${layer}.geojson`
+        ),
+      });
+    } catch (error) {
+      printLog("error", `Failed to get GeoJSON info "${id}": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
+/**
  * Get geoJSON handler
  * @returns {(req: any, res: any, next: any) => Promise<any>}
  */
 function getGeoJSONHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
-    const item = config.repo.geojsons[id];
-
-    /* Check GeoJSON is used? */
-    if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("GeoJSON does not exist");
-    }
-
-    /* Get geoJSON */
-    let geoJSON;
 
     try {
+      const item = config.repo.geojsons[id];
+
+      /* Check GeoJSON is used? */
+      if (item === undefined) {
+        return res.status(StatusCodes.NOT_FOUND).send("GeoJSON does not exist");
+      }
+
+      const geoJSONLayer = item[req.params.layer];
+
+      /* Check GeoJSON layer is used? */
+      if (geoJSONLayer === undefined) {
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .send("GeoJSON layer does not exist");
+      }
+
+      let geoJSON;
+
+      /* Get geoJSON and Cache if not exist (if use cache) */
       try {
-        geoJSON = await getGeoJSON(item.path);
+        geoJSON = await getGeoJSON(geoJSONLayer.path);
       } catch (error) {
         if (
-          item.sourceURL !== undefined &&
+          geoJSONLayer.sourceURL !== undefined &&
           error.message === "GeoJSON does not exist"
         ) {
           printLog(
             "info",
-            `Forwarding GeoJSON "${id}" - To "${item.sourceURL}"...`
+            `Forwarding GeoJSON "${id}" - To "${geoJSONLayer.sourceURL}"...`
           );
 
-          /* Get GeoJSON */
           geoJSON = await getGeoJSONFromURL(
-            item.sourceURL,
+            geoJSONLayer.sourceURL,
             60000 // 1 mins
           );
 
-          /* Cache */
-          if (item.storeCache === true) {
+          if (geoJSONLayer.storeCache === true) {
             printLog(
               "info",
               `Caching GeoJSON "${id}" - File "${item.path}"...`
             );
 
-            cacheGeoJSONFile(item.path, JSON.stringify(geoJSON)).catch(
+            cacheGeoJSONFile(geoJSONLayer.path, JSON.stringify(geoJSON)).catch(
               (error) =>
                 printLog(
                   "error",
-                  `Failed to cache GeoJSON "${id}" - File "${item.path}": ${error}`
+                  `Failed to cache GeoJSON "${id}" - File "${geoJSONLayer.path}": ${error}`
                 )
             );
           }
@@ -95,18 +141,27 @@ function getGeoJSONHandler() {
 function getGeoJSONMD5Handler() {
   return async (req, res, next) => {
     const id = req.params.id;
-    const item = config.repo.geojsons[id];
 
-    /* Check GeoJSON is used? */
-    if (item === undefined) {
-      return res.status(StatusCodes.NOT_FOUND).send("GeoJSON does not exist");
-    }
-
-    /* Get geoJSON MD5 */
     try {
-      const geoJSON = await getGeoJSON(item.path);
+      const item = config.repo.geojsons[id];
 
-      /* Add MD5 to header */
+      /* Check GeoJSON is used? */
+      if (item === undefined) {
+        return res.status(StatusCodes.NOT_FOUND).send("GeoJSON does not exist");
+      }
+
+      const geoJSONLayer = item[req.params.layer];
+
+      /* Check GeoJSON layer is used? */
+      if (geoJSONLayer === undefined) {
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .send("GeoJSON layer does not exist");
+      }
+
+      /* Get geoJSON MD5 and Add to header */
+      const geoJSON = await getGeoJSON(geoJSONLayer.path);
+
       res.set({
         etag: calculateMD5(Buffer.from(JSON.stringify(geoJSON), "utf8")),
       });
@@ -139,8 +194,8 @@ function getGeoJSONsListHandler() {
         Object.keys(config.repo.geojsons).map(async (id) => {
           return {
             id: id,
-            name: config.repo.geojsons[id].name,
-            url: `${requestHost}/geojsons/${id}/geojson.geojson`,
+            name: id,
+            url: `${requestHost}/geojsons/${id}.json`,
           };
         })
       );
@@ -205,7 +260,46 @@ export const serve_geojson = {
      * tags:
      *   - name: GeoJSON
      *     description: GeoJSON related endpoints
-     * /geojsons/{id}/geojson.geojson:
+     * /geojsons/{id}.json:
+     *   get:
+     *     tags:
+     *       - GeoJSON
+     *     summary: Get geoJSON info
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         schema:
+     *           type: string
+     *           example: id
+     *         required: true
+     *         description: ID of the GeoJSON
+     *     responses:
+     *       200:
+     *         description: GeoJSON info
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/:id.json", checkReadyMiddleware(), getGeoJSONInfoHandler());
+
+    /**
+     * @swagger
+     * tags:
+     *   - name: GeoJSON
+     *     description: GeoJSON related endpoints
+     * /geojsons/{id}/{layer}.geojson:
      *   get:
      *     tags:
      *       - GeoJSON
@@ -218,6 +312,13 @@ export const serve_geojson = {
      *           example: id
      *         required: true
      *         description: ID of the GeoJSON
+     *       - in: path
+     *         name: layer
+     *         schema:
+     *           type: string
+     *           example: layer
+     *         required: true
+     *         description: Layer of the GeoJSON
      *     responses:
      *       200:
      *         description: GeoJSON
@@ -237,18 +338,14 @@ export const serve_geojson = {
      *       500:
      *         description: Internal server error
      */
-    app.get(
-      "/:id/geojson.geojson",
-      checkReadyMiddleware(),
-      getGeoJSONHandler()
-    );
+    app.get("/:id/:layer.geojson", checkReadyMiddleware(), getGeoJSONHandler());
 
     /**
      * @swagger
      * tags:
      *   - name: GeoJSON
      *     description: GeoJSON related endpoints
-     * /geojsons/{id}/md5/geojson.geojson:
+     * /geojsons/{id}/md5/{layer}.geojson:
      *   get:
      *     tags:
      *       - GeoJSON
@@ -261,12 +358,13 @@ export const serve_geojson = {
      *           example: id
      *         required: true
      *         description: ID of the GeoJSON
-     *       - in: query
-     *         name: raw
+     *       - in: path
+     *         name: layer
      *         schema:
-     *           type: boolean
-     *         required: false
-     *         description: Use raw
+     *           type: string
+     *           example: layer
+     *         required: true
+     *         description: Layer of the GeoJSON
      *     responses:
      *       200:
      *         description: GeoJSON MD5
@@ -287,7 +385,7 @@ export const serve_geojson = {
      *         description: Internal server error
      */
     app.get(
-      "/:id/md5/geojson.geojson",
+      "/:id/md5/:layer.geojson",
       checkReadyMiddleware(),
       getGeoJSONMD5Handler()
     );
@@ -298,76 +396,78 @@ export const serve_geojson = {
   add: async () => {
     await Promise.all(
       Object.keys(config.geojsons).map(async (id) => {
-        const item = config.geojsons[id];
-
-        const geoJSONInfo = {};
-
-        let geoJSON;
-
-        /* Serve GeoJSON */
         try {
-          if (
-            item.geojson.startsWith("https://") === true ||
-            item.geojson.startsWith("http://") === true
-          ) {
-            geoJSONInfo.path = `${process.env.DATA_DIR}/geojsons/${id}/geojson.geojson`;
+          const dataInfo = {};
 
-            /* Download GeoJSON.json file */
-            if ((await isExistFile(geoJSONInfo.path)) === false) {
-              printLog(
-                "info",
-                `Downloading GeoJSON file "${geoJSONInfo.path}" from "${item.geojson}"...`
-              );
+          /* Get GeoJSON infos */
+          await Promise.all(
+            config.geojsons[id].map(async (item) => {
+              /* Get GeoJSON path */
+              const info = {};
 
-              await downloadGeoJSONFile(
-                item.geojson,
-                geoJSONInfo.path,
-                5,
-                300000 // 5 mins
-              );
-            }
-          } else {
-            if (item.cache !== undefined) {
-              geoJSONInfo.path = `${process.env.DATA_DIR}/caches/geojsons/${item.geojson}/geojson.geojson`;
+              if (
+                item.geojson.startsWith("https://") === true ||
+                item.geojson.startsWith("http://") === true
+              ) {
+                info.path = `${process.env.DATA_DIR}/geojsons/${id}/geojson.geojson`;
 
-              const cacheSource = seed.geojsons[item.geojson];
+                /* Download GeoJSON file */
+                if ((await isExistFile(info.path)) === false) {
+                  printLog(
+                    "info",
+                    `Downloading GeoJSON file "${info.path}" from "${item.geojson}"...`
+                  );
 
-              if (cacheSource === undefined) {
-                throw new Error(`Cache GeoJSON "${item.geojson}" is invalid`);
+                  await downloadGeoJSONFile(
+                    item.geojson,
+                    info.path,
+                    5,
+                    300000 // 5 mins
+                  );
+                }
+              } else {
+                if (item.cache !== undefined) {
+                  info.path = `${process.env.DATA_DIR}/caches/geojsons/${item.geojson}/${item.geojson}.geojson`;
+
+                  const cacheSource = seed.geojsons[item.geojson];
+
+                  if (cacheSource === undefined) {
+                    throw new Error(
+                      `Cache GeoJSON "${item.geojson}" is invalid`
+                    );
+                  }
+
+                  if (item.cache.forward === true) {
+                    info.sourceURL = cacheSource.url;
+                    info.storeCache = item.cache.store;
+                  }
+                } else {
+                  info.path = `${process.env.DATA_DIR}/geojsons/${item.geojson}`;
+                }
               }
 
-              if (item.cache.forward === true) {
-                geoJSONInfo.sourceURL = cacheSource.url;
-                geoJSONInfo.storeCache = item.cache.store;
+              /* Read + Validate GeoJSON file + Store GeoJSON info */
+              try {
+                const geoJSON = await getGeoJSON(info.path);
+
+                await validateGeoJSON(geoJSON);
+
+                dataInfo[path.basename(info.path, ".geojson")] = info;
+              } catch (error) {
+                if (
+                  item.cache !== undefined &&
+                  error.message === "GeoJSON does not exist"
+                ) {
+                  dataInfo[item.geojson] = info;
+                } else {
+                  throw error;
+                }
               }
-            } else {
-              geoJSONInfo.path = `${process.env.DATA_DIR}/geojsons/${item.geojson}`;
-            }
-          }
-
-          try {
-            /* Read geojson.geojson file */
-            geoJSON = await getGeoJSON(geoJSONInfo.path);
-
-            /* Validate GeoJSON */
-            await validateGeoJSON(geoJSON);
-
-            /* Store GeoJSON info */
-            geoJSONInfo.name = geoJSON.name || "Unknown";
-          } catch (error) {
-            if (
-              item.cache !== undefined &&
-              error.message === "GeoJSON does not exist"
-            ) {
-              geoJSONInfo.name =
-                seed.geojsons[item.geojson].metadata.name || "Unknown";
-            } else {
-              throw error;
-            }
-          }
+            })
+          );
 
           /* Add to repo */
-          config.repo.geojsons[id] = geoJSONInfo;
+          config.repo.geojsons[id] = dataInfo;
         } catch (error) {
           printLog(
             "error",
