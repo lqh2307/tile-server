@@ -32,13 +32,13 @@ function getGeoJSONInfoHandler() {
         return res.status(StatusCodes.NOT_FOUND).send("GeoJSON does not exist");
       }
 
+      const requestHost = getRequestHost(req);
+
       const geojsons = {};
 
       for (layer in item) {
         geojsons[layer] = `${requestHost}/geojsons/${id}/${layer}.geojson`;
       }
-
-      const requestHost = getRequestHost(req);
 
       res.header("content-type", "application/json");
 
