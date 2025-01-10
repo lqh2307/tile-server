@@ -62,11 +62,12 @@
           const r = Math.floor(Math.random() * 256);
           const g = Math.floor(Math.random() * 256);
           const b = Math.floor(Math.random() * 256);
-          const polygonLayerColor = "rgba(r, g, b, 0.3)";
-          const lineLayerColor = "rgba(r, g, b, 0.6)";
-          const circleLayerColor = "rgba(r, g, b, 0.6)";
 
-          geoJSONSourceColors[geoJSONSource] = [polygonLayerColor, lineLayerColor, circleLayerColor]
+          geoJSONSourceColors[geoJSONSource] = [
+            "rgba(r, g, b, 0.3)",
+            "rgba(r, g, b, 0.6)",
+            "rgba(r, g, b, 0.8)"
+          ];
 
           style.layers.push(
             {
@@ -74,9 +75,9 @@
               "source": geoJSONSource,
               "type": "fill",
               "paint": {
-                "fill-color": polygonLayerColor,
+                "fill-color": geoJSONSourceColors[geoJSONSource][0],
                 "fill-antialias": true,
-                "fill-outline-color": polygonLayerColor
+                "fill-outline-color": geoJSONSourceColors[geoJSONSource][0]
               },
               "layout": {
                 "visibility": "visible"
@@ -88,7 +89,7 @@
               "source": geoJSONSource,
               "type": "line",
               "paint": {
-                "line-color": lineLayerColor
+                "line-color": geoJSONSourceColors[geoJSONSource][1]
               },
               "layout": {
                 "line-join": "round",
@@ -102,7 +103,7 @@
               "source": geoJSONSource,
               "type": "circle",
               "paint": {
-                "circle-color": circleLayerColor,
+                "circle-color": geoJSONSourceColors[geoJSONSource][2],
                 "circle-radius": 2
               },
               "layout": {
