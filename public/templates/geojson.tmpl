@@ -64,9 +64,9 @@
           const b = Math.floor(Math.random() * 256);
 
           geoJSONSourceColors[geoJSONSource] = [
-            "rgba(r, g, b, 0.3)",
-            "rgba(r, g, b, 0.6)",
-            "rgba(r, g, b, 0.8)"
+            `rgba(${r}, ${g}, ${b}, 0.3)`,
+            `rgba(${r}, ${g}, ${b}, 0.6)`,
+            `rgba(${r}, ${g}, ${b}, 0.8)`
           ];
 
           style.layers.push(
