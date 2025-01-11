@@ -458,7 +458,7 @@ export const serve_geojson = {
                 const geoJSON = await getGeoJSON(info.path);
 
                 /* Get GeoJSON info */
-                geometryTypes = getGeoJSONGeometryTypes(geoJSON);
+                info.geometryTypes = getGeoJSONGeometryTypes(geoJSON);
 
                 /* Validate GeoJSON */
                 validateGeoJSON(geoJSON);
