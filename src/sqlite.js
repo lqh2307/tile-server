@@ -32,9 +32,6 @@ export async function openSQLite(filePath, mode, wal) {
           await runSQL(source, "PRAGMA journal_mode=WAL;");
         }
 
-        // Set busy timeout
-        await runSQL(source, "PRAGMA busy_timeout = 5000;");
-
         // Disable mmap if specified
         await runSQL(source, "PRAGMA mmap_size = 0;");
 
