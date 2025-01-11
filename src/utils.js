@@ -604,79 +604,47 @@ export function getRequestHost(req) {
  */
 export function createDataMetadata(metadata) {
   // Default
-  const data = {
-    name: "Unknown",
-    description: "Unknown",
-    attribution: "<b>Viettel HighTech</b>",
-    version: "1.0.0",
-    type: "overlay",
-    format: "png",
-    bounds: [-180, -85.051129, 180, 85.051129],
-    minzoom: 0,
-    maxzoom: 22,
-    cacheBBoxs: [[-180, -85.051129, 180, 85.051129]],
-  };
+  const data = Object.assign(
+    {
+      name: "Unknown",
+      description: "Unknown",
+      attribution: "<b>Viettel HighTech</b>",
+      version: "1.0.0",
+      type: "overlay",
+      format: "png",
+      bounds: [-180, -85.051129, 180, 85.051129],
+      minzoom: 0,
+      maxzoom: 22,
+      cacheBBoxs: [[-180, -85.051129, 180, 85.051129]],
+    },
+    deepClone(metadata)
+  );
 
-  // Overwrite
-  if (metadata !== undefined) {
-    if (metadata.name !== undefined) {
-      data.name = metadata.name;
-    }
-
-    if (metadata.description !== undefined) {
-      data.description = metadata.description;
-    }
-
-    if (metadata.attribution !== undefined) {
-      data.attribution = metadata.attribution;
-    }
-
-    if (metadata.type !== undefined) {
-      data.type = metadata.type;
-    }
-
-    if (metadata.format !== undefined) {
-      data.format = metadata.format;
-    }
-
-    if (metadata.version !== undefined) {
-      data.version = metadata.version;
-    }
-
-    if (metadata.tiles !== undefined) {
-      data.tiles = [...metadata.tiles];
-    }
-
-    if (metadata.bounds !== undefined) {
-      data.bounds = [...metadata.bounds];
-    }
-
-    if (metadata.center !== undefined) {
-      data.center = [...metadata.center];
-    }
-
-    if (metadata.minzoom !== undefined) {
-      data.minzoom = metadata.minzoom;
-    }
-
-    if (metadata.maxzoom !== undefined) {
-      data.maxzoom = metadata.maxzoom;
-    }
-
-    if (metadata.vector_layers !== undefined) {
-      data.vector_layers = deepClone(metadata.vector_layers);
-    }
-
-    if (metadata.tilestats !== undefined) {
-      data.tilestats = deepClone(metadata.tilestats);
-    }
-
-    if (metadata.cacheBBoxs !== undefined) {
-      data.cacheBBoxs = deepClone(metadata.cacheBBoxs);
+  // Delete unused field
+  for (const field in data) {
+    if (
+      [
+        name,
+        description,
+        attribution,
+        type,
+        format,
+        version,
+        tiles,
+        bounds,
+        center,
+        minzoom,
+        maxzoom,
+        vector_layers,
+        center,
+        cacheBBoxs,
+      ].includes(field) === false
+    ) {
+      delete data[field];
     }
   }
 
-  // Calculate center
+  // Calculate center if not exist
   if (data.center === undefined) {
     data.center = [
       (data.bounds[0] + data.bounds[2]) / 2,
@@ -695,66 +663,45 @@ export function createDataMetadata(metadata) {
  */
 export function createRenderedMetadata(metadata) {
   // Default
-  const data = {
-    name: "Unknown",
-    description: "Unknown",
-    attribution: "<b>Viettel HighTech</b>",
-    version: "1.0.0",
-    type: "overlay",
-    format: "png",
-    bounds: [-180, -85.051129, 180, 85.051129],
-    minzoom: 0,
-    maxzoom: 22,
-  };
+  const data = Object.assign(
+    {
+      name: "Unknown",
+      description: "Unknown",
+      attribution: "<b>Viettel HighTech</b>",
+      version: "1.0.0",
+      type: "overlay",
+      format: "png",
+      bounds: [-180, -85.051129, 180, 85.051129],
+      minzoom: 0,
+      maxzoom: 22,
+    },
+    deepClone(metadata)
+  );
 
-  // Overwrite
-  if (metadata !== undefined) {
-    if (metadata.name !== undefined) {
-      data.name = metadata.name;
-    }
-
-    if (metadata.description !== undefined) {
-      data.description = metadata.description;
-    }
-
-    if (metadata.attribution !== undefined) {
-      data.attribution = metadata.attribution;
-    }
-
-    if (metadata.type !== undefined) {
-      data.type = metadata.type;
-    }
-
-    if (metadata.format !== undefined) {
-      data.format = metadata.format;
-    }
-
-    if (metadata.version !== undefined) {
-      data.version = metadata.version;
-    }
-
-    if (metadata.tiles !== undefined) {
-      data.tiles = [...metadata.tiles];
-    }
-
-    if (metadata.bounds !== undefined) {
-      data.bounds = [...metadata.bounds];
-    }
-
-    if (metadata.center !== undefined) {
-      data.center = [...metadata.center];
-    }
-
-    if (metadata.minzoom !== undefined) {
-      data.minzoom = metadata.minzoom;
-    }
-
-    if (metadata.maxzoom !== undefined) {
-      data.maxzoom = metadata.maxzoom;
+  // Delete unused field
+  for (const field in data) {
+    if (
+      [
+        name,
+        description,
+        attribution,
+        type,
+        format,
+        version,
+        tiles,
+        bounds,
+        center,
+        minzoom,
+        maxzoom,
+        vector_layers,
+        center,
+      ].includes(field) === false
+    ) {
+      delete data[field];
     }
   }
 
-  // Calculate center
+  // Calculate center if not exist
   if (data.center === undefined) {
     data.center = [
       (data.bounds[0] + data.bounds[2]) / 2,

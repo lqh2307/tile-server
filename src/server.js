@@ -133,17 +133,17 @@ export async function startServer() {
         printLog("info", "Completed startup!");
 
         /* Clean */
-        seed.styles = undefined;
-        seed.geojsons = undefined;
-        seed.datas = undefined;
-        seed.sprites = undefined;
-        seed.fonts = undefined;
+        delete seed.styles;
+        delete seed.geojsons;
+        delete seed.datas;
+        delete seed.sprites;
+        delete seed.fonts;
 
-        config.styles = undefined;
-        config.geojsons = undefined;
-        config.datas = undefined;
-        config.sprites = undefined;
-        config.fonts = undefined;
+        delete config.styles;
+        delete config.geojsons;
+        delete config.datas;
+        delete config.sprites;
+        delete config.fonts;
       })
       .catch((error) => {
         printLog("error", `Failed to load data: ${error}. Exited!`);

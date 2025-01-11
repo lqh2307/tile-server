@@ -7,7 +7,6 @@ import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import { seed } from "./seed.js";
 import express from "express";
-import path from "node:path";
 import {
   downloadGeoJSONFile,
   getGeoJSONFromURL,
@@ -405,7 +404,9 @@ export const serve_geojson = {
 
           /* Get GeoJSON infos */
           await Promise.all(
-            config.geojsons[id].map(async (item) => {
+            Object.keys(config.geojsons).map(async (layer) => {
+              const item = config.geojsons[layer];
+
               /* Get GeoJSON path */
               const info = {};
 
@@ -456,13 +457,13 @@ export const serve_geojson = {
 
                 await validateGeoJSON(geoJSON);
 
-                dataInfo[path.basename(info.path, ".geojson")] = info;
+                dataInfo[layer] = info;
               } catch (error) {
                 if (
                   item.cache !== undefined &&
                   error.message === "GeoJSON does not exist"
                 ) {
-                  dataInfo[item.geojson] = info;
+                  dataInfo[layer] = info;
                 } else {
                   throw error;
                 }
