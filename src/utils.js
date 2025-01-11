@@ -624,20 +624,20 @@ export function createDataMetadata(metadata) {
   for (const field in data) {
     if (
       [
-        name,
-        description,
-        attribution,
-        type,
-        format,
-        version,
-        tiles,
-        bounds,
-        center,
-        minzoom,
-        maxzoom,
-        vector_layers,
-        center,
-        cacheBBoxs,
+        "name",
+        "description",
+        "attribution",
+        "type",
+        "format",
+        "version",
+        "tiles",
+        "bounds",
+        "center",
+        "minzoom",
+        "maxzoom",
+        "vector_layers",
+        "center",
+        "cacheBBoxs",
       ].includes(field) === false
     ) {
       delete data[field];
@@ -682,19 +682,19 @@ export function createRenderedMetadata(metadata) {
   for (const field in data) {
     if (
       [
-        name,
-        description,
-        attribution,
-        type,
-        format,
-        version,
-        tiles,
-        bounds,
-        center,
-        minzoom,
-        maxzoom,
-        vector_layers,
-        center,
+        "name",
+        "description",
+        "attribution",
+        "type",
+        "format",
+        "version",
+        "tiles",
+        "bounds",
+        "center",
+        "minzoom",
+        "maxzoom",
+        "vector_layers",
+        "center",
       ].includes(field) === false
     ) {
       delete data[field];

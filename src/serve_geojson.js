@@ -404,8 +404,8 @@ export const serve_geojson = {
 
           /* Get GeoJSON infos */
           await Promise.all(
-            Object.keys(config.geojsons).map(async (layer) => {
-              const item = config.geojsons[layer];
+            Object.keys(config.geojsons[id]).map(async (layer) => {
+              const item = config.geojsons[id][layer];
 
               /* Get GeoJSON path */
               const info = {};
