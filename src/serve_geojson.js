@@ -45,6 +45,7 @@ function getGeoJSONInfoHandler() {
       return res.status(StatusCodes.OK).send({
         id: id,
         name: id,
+        info: item.info,
         geojsons: geojsons,
       });
     } catch (error) {
