@@ -59,7 +59,6 @@
             "data": jsonResponse.geojsons[geoJSONSource].url
           };
 
-
           const r = Math.floor(Math.random() * 256);
           const g = Math.floor(Math.random() * 256);
           const b = Math.floor(Math.random() * 256);
@@ -85,7 +84,9 @@
                 "filter": ["==", "$type", "Polygon"]
               }
             );
-          } else if (jsonResponse.geojsons[geoJSONSource].geometryTypes.includes("line") === true) {
+          }
+          
+          if (jsonResponse.geojsons[geoJSONSource].geometryTypes.includes("line") === true) {
             geoJSONSourceColors[geoJSONSource].line = `rgba(${r}, ${g}, ${b}, 0.6)`;
 
             style.layers.push(
@@ -104,7 +105,9 @@
                 "filter": ["==", "$type", "LineString"]
               }
             );
-          } else if (jsonResponse.geojsons[geoJSONSource].geometryTypes.includes("circle") === true) {
+          }
+          
+          if (jsonResponse.geojsons[geoJSONSource].geometryTypes.includes("circle") === true) {
             geoJSONSourceColors[geoJSONSource].circle = `rgba(${r}, ${g}, ${b}, 0.8)`;
 
             style.layers.push(
