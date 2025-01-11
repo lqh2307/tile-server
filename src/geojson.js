@@ -205,9 +205,9 @@ export async function getGeoJSONFromURL(url, timeout) {
 /**
  * Validate GeoJSON
  * @param {object} geoJSON GeoJSON
- * @returns {Promise<void>}
+ * @returns {void}
  */
-export async function validateGeoJSON(geoJSON) {
+export function validateGeoJSON(geoJSON) {
   if ("type" in geoJSON === false) {
     throw new Error("Invalid GeoJSON file");
   }
@@ -229,21 +229,21 @@ export async function validateGeoJSON(geoJSON) {
       break;
     }
 
-    case "Point":
-    case "MultiPoint":
-    case "LineString":
-    case "MultiLineString":
-    case "Polygon":
-    case "MultiPolygon": {
-      if (geoJSON.coordinates === undefined) {
+    case "GeometryCollection": {
+      if (geoJSON.geometries === undefined) {
         throw new Error("Invalid GeoJSON file");
       }
 
       break;
     }
 
-    case "GeometryCollection": {
-      if (geoJSON.geometries === undefined) {
+    case "Polygon":
+    case "MultiPolygon":
+    case "LineString":
+    case "MultiLineString":
+    case "Point":
+    case "MultiPoint": {
+      if (geoJSON.coordinates === undefined) {
         throw new Error("Invalid GeoJSON file");
       }
 
@@ -295,4 +295,108 @@ export async function getGeoJSONCreated(filePath) {
       throw error;
     }
   }
+}
+
+/**
+ * Create GeoJSON metadata
+ * @param {object} geoJSON GeoJSON
+ * @returns {Array<object>}
+ */
+export function createGeoJSONMetadata(geoJSON) {
+  const metadata = {
+    geometryTypes: [],
+  };
+
+  function addGeometryType(type) {
+    switch (type) {
+      case "Polygon":
+      case "MultiPolygon": {
+        if (metadata.geometryTypes.includes("polygon") === false) {
+          metadata.geometryTypes.push("polygon");
+        }
+
+        break;
+      }
+
+      case "LineString":
+      case "MultiLineString": {
+        if (metadata.geometryTypes.includes("line") === false) {
+          metadata.geometryTypes.push("line");
+        }
+
+        break;
+      }
+
+      case "Point":
+      case "MultiPoint": {
+        if (metadata.geometryTypes.includes("circle") === false) {
+          metadata.geometryTypes.push("circle");
+        }
+
+        break;
+      }
+
+      default: {
+        printLog("warning", `Unknown geometry type: "${type}". Skipping...`);
+
+        return;
+      }
+    }
+  }
+
+  switch (geoJSON.type) {
+    case "FeatureCollection": {
+      geoJSON.features.forEach((feature) => {
+        if (feature.geometry.type === "GeometryCollection") {
+          feature.geometry.geometries.forEach((geometry) =>
+            addGeometryType(geometry.type)
+          );
+        } else {
+          addGeometryType(feature.geometry.type);
+        }
+      });
+
+      break;
+    }
+
+    case "Feature": {
+      if (geoJSON.geometry.type === "GeometryCollection") {
+        geoJSON.geometry.geometries.forEach((geometry) =>
+          addGeometryType(geometry.type)
+        );
+      } else {
+        addGeometryType(geoJSON.geometry.type);
+      }
+
+      break;
+    }
+
+    case "GeometryCollection": {
+      geoJSON.geometries.forEach((geometry) => addGeometryType(geometry.type));
+
+      break;
+    }
+
+    case "Polygon":
+    case "MultiPolygon":
+    case "LineString":
+    case "MultiLineString":
+    case "Point":
+    case "MultiPoint": {
+      addGeometryType(geoJSON.type);
+
+      break;
+    }
+
+    default: {
+      printLog(
+        "warning",
+        `Unknown geometry type: "${geoJSON.type}". Skipping...`
+      );
+
+      break;
+    }
+  }
+
+  return metadata;
 }

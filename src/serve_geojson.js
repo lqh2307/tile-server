@@ -8,6 +8,7 @@ import { config } from "./config.js";
 import { seed } from "./seed.js";
 import express from "express";
 import {
+  createGeoJSONMetadata,
   downloadGeoJSONFile,
   getGeoJSONFromURL,
   cacheGeoJSONFile,
@@ -451,11 +452,16 @@ export const serve_geojson = {
                 }
               }
 
-              /* Read + Validate GeoJSON file + Store GeoJSON info */
+              /* Load GeoJSON */
               try {
+                /* Open GeoJSON */
                 const geoJSON = await getGeoJSON(info.path);
 
-                await validateGeoJSON(geoJSON);
+                /* Get GeoJSON info */
+                dataInfo.info = createGeoJSONMetadata(geoJSON);
+
+                /* Validate GeoJSON */
+                validateGeoJSON(geoJSON);
 
                 dataInfo[layer] = info;
               } catch (error) {
