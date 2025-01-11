@@ -7,7 +7,6 @@ import { config } from "./config.js";
 import { seed } from "./seed.js";
 import express from "express";
 import {
-  createDataMetadata,
   isLocalTileURL,
   getRequestHost,
   calculateMD5,
@@ -21,6 +20,7 @@ import {
   getStyle,
 } from "./style.js";
 import {
+  createRenderedMetadata,
   renderPostgreSQLTiles,
   renderMBTilesTiles,
   renderXYZTiles,
@@ -1279,13 +1279,10 @@ export const serve_style = {
           try {
             /* Rendered info */
             const rendered = {
-              tileJSON: createDataMetadata(
-                {
-                  name: styleInfo.name,
-                  description: styleInfo.name,
-                },
-                true
-              ),
+              tileJSON: createRenderedMetadata({
+                name: styleInfo.name,
+                description: styleInfo.name,
+              }),
               styleJSON: {},
               compressionLevel: item.rendered.compressionLevel || 6,
             };

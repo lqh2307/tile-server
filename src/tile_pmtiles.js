@@ -1,6 +1,6 @@
 "use strict";
 
-import { detectFormatAndHeaders } from "./utils.js";
+import { deepClone, detectFormatAndHeaders } from "./utils.js";
 import { PMTiles, FetchSource } from "pmtiles";
 import fs from "node:fs";
 
@@ -51,76 +51,97 @@ export function openPMTiles(filePath) {
 }
 
 /**
- * Get PMTiles infos
+ * Get PMTiles metadata
  * @param {object} pmtilesSource
  * @returns {Promise<object>}
  */
-export async function getPMTilesInfos(pmtilesSource) {
-  const header = await pmtilesSource.getHeader();
+export async function getPMTilesMetadata(pmtilesSource) {
+  /* Default metadata */
+  const metadata = {};
 
-  const metadata = {
-    name: "Unknown",
-    description: "Unknown",
-    attribution: "<b>Viettel HighTech</b>",
-    version: "1.0.0",
-    type: "overlay",
-    ...(await pmtilesSource.getMetadata()),
-  };
+  /* Get metadatas */
+  const [pmtilesHeader, pmtilesMetadata] = await Promise.all([
+    pmtilesSource.getHeader(),
+    pmtilesSource.getMetadata(),
+  ]);
 
-  if (header.tileType === 1) {
+  if (pmtilesMetadata.name !== undefined) {
+    metadata.name = pmtilesMetadata.name;
+  } else {
+    metadata.name = "Unknown";
+  }
+
+  if (pmtilesMetadata.description !== undefined) {
+    metadata.description = pmtilesMetadata.description;
+  } else {
+    metadata.description = "Unknown";
+  }
+
+  if (pmtilesMetadata.attribution !== undefined) {
+    metadata.attribution = pmtilesMetadata.attribution;
+  } else {
+    metadata.attribution = "<b>Viettel HighTech</b>";
+  }
+
+  if (pmtilesMetadata.version !== undefined) {
+    metadata.version = pmtilesMetadata.version;
+  } else {
+    metadata.version = "1.0.0";
+  }
+
+  if (pmtilesHeader.tileType === 1) {
     metadata.format = "pbf";
-  } else if (header.tileType === 2) {
+  } else if (pmtilesHeader.tileType === 2) {
     metadata.format = "png";
-  } else if (header.tileType === 3) {
+  } else if (pmtilesHeader.tileType === 3) {
     metadata.format = "jpeg";
-  } else if (header.tileType === 4) {
+  } else if (pmtilesHeader.tileType === 4) {
     metadata.format = "webp";
-  } else if (header.tileType === 5) {
+  } else if (pmtilesHeader.tileType === 5) {
     metadata.format = "avif";
   } else {
     metadata.format = "png";
   }
 
-  if (header.minZoom !== undefined) {
-    metadata.minzoom = Number(header.minZoom);
+  if (pmtilesHeader.minZoom !== undefined) {
+    metadata.minzoom = pmtilesHeader.minZoom;
   } else {
     metadata.minzoom = 0;
   }
 
-  if (header.maxZoom !== undefined) {
-    metadata.maxzoom = Number(header.maxZoom);
+  if (pmtilesHeader.maxZoom !== undefined) {
+    metadata.maxzoom = pmtilesHeader.maxZoom;
   } else {
     metadata.maxzoom = 22;
   }
 
   if (
-    header.minLon !== undefined &&
-    header.minLat !== undefined &&
-    header.maxLon !== undefined &&
-    header.maxLat !== undefined
+    pmtilesHeader.minLon !== undefined &&
+    pmtilesHeader.minLat !== undefined &&
+    pmtilesHeader.maxLon !== undefined &&
+    pmtilesHeader.maxLat !== undefined
   ) {
     metadata.bounds = [
-      Number(header.minLon),
-      Number(header.minLat),
-      Number(header.maxLon),
-      Number(header.maxLat),
+      pmtilesHeader.minLon,
+      pmtilesHeader.minLat,
+      pmtilesHeader.maxLon,
+      pmtilesHeader.maxLat,
     ];
   } else {
     metadata.bounds = [-180, -85.051129, 180, 85.051129];
   }
 
   if (
-    header.centerLon !== undefined &&
-    header.centerLat !== undefined &&
-    header.centerZoom !== undefined
+    pmtilesHeader.centerLon !== undefined &&
+    pmtilesHeader.centerLat !== undefined &&
+    pmtilesHeader.centerZoom !== undefined
   ) {
     metadata.center = [
-      Number(header.centerLon),
-      Number(header.centerLat),
-      Number(header.centerZoom),
+      pmtilesHeader.centerLon,
+      pmtilesHeader.centerLat,
+      pmtilesHeader.centerZoom,
     ];
   } else {
-    /* Calculate center */
     metadata.center = [
       (metadata.bounds[0] + metadata.bounds[2]) / 2,
       (metadata.bounds[1] + metadata.bounds[3]) / 2,
@@ -128,7 +149,102 @@ export async function getPMTilesInfos(pmtilesSource) {
     ];
   }
 
+  if (pmtilesMetadata.vector_layers !== undefined) {
+    metadata.vector_layers = deepClone(pmtilesMetadata.vector_layers);
+  } else {
+    if (metadata.format === "pbf") {
+      metadata.vector_layers = [];
+    }
+  }
+
   return metadata;
+}
+
+/**
+ * Create PMTiles metadata
+ * @param {object} metadata Metadata object
+ * @returns {object}
+ */
+export function createPMTilesMetadata(metadata) {
+  const data = {};
+
+  if (metadata.name === undefined) {
+    data.name = metadata.name;
+  } else {
+    data.name = "Unknown";
+  }
+
+  if (metadata.description === undefined) {
+    data.description = metadata.description;
+  } else {
+    data.description = "Unknown";
+  }
+
+  if (metadata.attribution === undefined) {
+    data.attribution = metadata.attribution;
+  } else {
+    data.attribution = "<b>Viettel HighTech</b>";
+  }
+
+  if (metadata.version === undefined) {
+    data.version = metadata.version;
+  } else {
+    data.version = "1.0.0";
+  }
+
+  if (metadata.type === undefined) {
+    data.type = metadata.type;
+  } else {
+    data.type = "overlay";
+  }
+
+  if (metadata.format === undefined) {
+    data.format = metadata.format;
+  } else {
+    data.format = "png";
+  }
+
+  if (metadata.minzoom === undefined) {
+    data.minzoom = metadata.minzoom;
+  } else {
+    data.minzoom = 0;
+  }
+
+  if (data.maxzoom === undefined) {
+    data.maxzoom = metadata.maxzoom;
+  } else {
+    data.maxzoom = 0;
+  }
+
+  if (metadata.bounds === undefined) {
+    data.bounds = deepClone(metadata.bounds);
+  } else {
+    data.bounds = [-180, -85.051129, 180, 85.051129];
+  }
+
+  if (metadata.center === undefined) {
+    data.center = [
+      (data.bounds[0] + data.bounds[2]) / 2,
+      (data.bounds[1] + data.bounds[3]) / 2,
+      Math.floor((data.minzoom + data.maxzoom) / 2),
+    ];
+  }
+
+  if (metadata.vector_layers !== undefined) {
+    data.vector_layers = deepClone(metadata.vector_layers);
+  } else {
+    if (data.format === "pbf") {
+      data.vector_layers = [];
+    }
+  }
+
+  if (metadata.cacheBBoxs === undefined) {
+    data.cacheBBoxs = deepClone(metadata.cacheBBoxs);
+  } else {
+    data.cacheBBoxs = [[-180, -85.051129, 180, 85.051129]];
+  }
+
+  return data;
 }
 
 /**

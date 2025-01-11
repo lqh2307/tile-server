@@ -16,6 +16,7 @@ import {
   calculateMD5,
   findFolders,
   findFiles,
+  deepClone,
   delay,
   retry,
 } from "./utils.js";
@@ -452,11 +453,99 @@ export async function getXYZTileFromURL(url, timeout) {
 }
 
 /**
- * Get XYZ infos
+ * Create XYZ metadata
+ * @param {object} metadata Metadata object
+ * @returns {object}
+ */
+export function createXYZMetadata(metadata) {
+  const data = {};
+
+  if (metadata.name === undefined) {
+    data.name = metadata.name;
+  } else {
+    data.name = "Unknown";
+  }
+
+  if (metadata.description === undefined) {
+    data.description = metadata.description;
+  } else {
+    data.description = "Unknown";
+  }
+
+  if (metadata.attribution === undefined) {
+    data.attribution = metadata.attribution;
+  } else {
+    data.attribution = "<b>Viettel HighTech</b>";
+  }
+
+  if (metadata.version === undefined) {
+    data.version = metadata.version;
+  } else {
+    data.version = "1.0.0";
+  }
+
+  if (metadata.type === undefined) {
+    data.type = metadata.type;
+  } else {
+    data.type = "overlay";
+  }
+
+  if (metadata.format === undefined) {
+    data.format = metadata.format;
+  } else {
+    data.format = "png";
+  }
+
+  if (metadata.minzoom === undefined) {
+    data.minzoom = metadata.minzoom;
+  } else {
+    data.minzoom = 0;
+  }
+
+  if (metadata.maxzoom === undefined) {
+    data.maxzoom = metadata.maxzoom;
+  } else {
+    data.maxzoom = 0;
+  }
+
+  if (metadata.bounds === undefined) {
+    data.bounds = deepClone(metadata.bounds);
+  } else {
+    data.bounds = [-180, -85.051129, 180, 85.051129];
+  }
+
+  if (metadata.center === undefined) {
+    data.center = [
+      (data.bounds[0] + data.bounds[2]) / 2,
+      (data.bounds[1] + data.bounds[3]) / 2,
+      Math.floor((data.minzoom + data.maxzoom) / 2),
+    ];
+  }
+
+  if (metadata.vector_layers !== undefined) {
+    data.vector_layers = deepClone(metadata.vector_layers);
+  } else {
+    if (data.format === "pbf") {
+      data.vector_layers = [];
+    }
+  }
+
+  if (metadata.cacheBBoxs === undefined) {
+    data.cacheBBoxs = deepClone(metadata.cacheBBoxs);
+  } else {
+    data.cacheBBoxs = [[-180, -85.051129, 180, 85.051129]];
+  }
+
+  return data;
+}
+
+/**
+ * Get XYZ metadata
  * @param {string} sourcePath XYZ folder path
  * @returns {Promise<object>}
  */
-export async function getXYZInfos(sourcePath) {
+export async function getXYZMetadata(sourcePath) {
+  /* Default metadata */
   const metadata = {
     name: "Unknown",
     description: "Unknown",
@@ -475,6 +564,15 @@ export async function getXYZInfos(sourcePath) {
     Object.assign(metadata, JSON.parse(data));
   } catch (error) {}
 
+  /* Try get tile format */
+  if (metadata.format === undefined) {
+    try {
+      metadata.format = await getXYZFormatFromTiles(sourcePath);
+    } catch (error) {
+      metadata.format = "png";
+    }
+  }
+
   /* Try get min zoom */
   if (metadata.minzoom === undefined) {
     try {
@@ -490,15 +588,6 @@ export async function getXYZInfos(sourcePath) {
       metadata.maxzoom = await getXYZZoomLevelFromTiles(sourcePath, "maxzoom");
     } catch (error) {
       metadata.maxzoom = 22;
-    }
-  }
-
-  /* Try get tile format */
-  if (metadata.format === undefined) {
-    try {
-      metadata.format = await getXYZFormatFromTiles(sourcePath);
-    } catch (error) {
-      metadata.format = "png";
     }
   }
 
@@ -520,7 +609,7 @@ export async function getXYZInfos(sourcePath) {
     ];
   }
 
-  /* Add vector_layers */
+  /* Add missing vector_layers */
   if (metadata.format === "pbf" && metadata.vector_layers === undefined) {
     try {
       const layers = await getXYZLayersFromTiles(sourcePath);

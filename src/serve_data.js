@@ -8,42 +8,44 @@ import { seed } from "./seed.js";
 import sqlite3 from "sqlite3";
 import express from "express";
 import {
+  createXYZMetadata,
   getXYZTileFromURL,
   cacheXYZTileFile,
+  getXYZMetadata,
   getXYZTileMD5,
   openXYZMD5DB,
   validateXYZ,
-  getXYZInfos,
   getXYZTile,
 } from "./tile_xyz.js";
 import {
+  createMBTilesMetadata,
   getMBTilesTileFromURL,
   cacheMBtilesTileData,
   downloadMBTilesFile,
+  getMBTilesMetadata,
   getMBTilesTileMD5,
   validateMBTiles,
-  getMBTilesInfos,
   getMBTilesTile,
   openMBTilesDB,
 } from "./tile_mbtiles.js";
 import {
-  createDataMetadata,
   getRequestHost,
   calculateMD5,
   isExistFile,
   gzipAsync,
 } from "./utils.js";
 import {
+  getPMTilesMetadata,
   validatePMTiles,
-  getPMTilesInfos,
   getPMTilesTile,
   openPMTiles,
 } from "./tile_pmtiles.js";
 import {
+  createPostgreSQLMetadata,
   getPostgreSQLTileFromURL,
   cachePostgreSQLTileData,
+  getPostgreSQLMetadata,
   getPostgreSQLTileMD5,
-  getPostgreSQLInfos,
   validatePostgreSQL,
   getPostgreSQLTile,
   openPostgreSQLDB,
@@ -764,7 +766,7 @@ export const serve_data = {
                 false
               );
 
-              dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
+              dataInfo.tileJSON = await getMBTilesMetadata(dataInfo.source);
             } else {
               if (item.cache !== undefined) {
                 dataInfo.path = `${process.env.DATA_DIR}/caches/mbtiles/${item.mbtiles}/${item.mbtiles}.mbtiles`;
@@ -806,7 +808,7 @@ export const serve_data = {
                 }
 
                 /* Get MBTiles metadata */
-                dataInfo.tileJSON = createDataMetadata({
+                dataInfo.tileJSON = createMBTilesMetadata({
                   ...cacheSource.metadata,
                   cacheBBoxs: cacheSource.bboxs,
                 });
@@ -821,7 +823,7 @@ export const serve_data = {
                 );
 
                 /* Get MBTiles metadata */
-                dataInfo.tileJSON = await getMBTilesInfos(dataInfo.source);
+                dataInfo.tileJSON = await getMBTilesMetadata(dataInfo.source);
               }
             }
 
@@ -840,7 +842,7 @@ export const serve_data = {
               dataInfo.source = openPMTiles(dataInfo.path);
 
               /* Get PMTiles metadata */
-              dataInfo.tileJSON = await getPMTilesInfos(dataInfo.source);
+              dataInfo.tileJSON = await getPMTilesMetadata(dataInfo.source);
             } else {
               dataInfo.path = `${process.env.DATA_DIR}/pmtiles/${item.pmtiles}`;
 
@@ -848,7 +850,7 @@ export const serve_data = {
               dataInfo.source = openPMTiles(dataInfo.path);
 
               /* Get PMTiles metadata */
-              dataInfo.tileJSON = await getPMTilesInfos(dataInfo.source);
+              dataInfo.tileJSON = await getPMTilesMetadata(dataInfo.source);
             }
 
             validatePMTiles(dataInfo.tileJSON);
@@ -895,7 +897,7 @@ export const serve_data = {
               dataInfo.source = dataInfo.path;
 
               /* Get XYZ metadata */
-              dataInfo.tileJSON = createDataMetadata({
+              dataInfo.tileJSON = createXYZMetadata({
                 ...cacheSource.metadata,
                 cacheBBoxs: cacheSource.bboxs,
               });
@@ -905,7 +907,7 @@ export const serve_data = {
               dataInfo.source = dataInfo.path;
 
               /* Get XYZ metadata */
-              dataInfo.tileJSON = await getXYZInfos(dataInfo.source);
+              dataInfo.tileJSON = await getXYZMetadata(dataInfo.source);
             }
 
             validateXYZ(dataInfo.tileJSON);
@@ -932,7 +934,7 @@ export const serve_data = {
               dataInfo.source = await openPostgreSQLDB(dataInfo.path, true);
 
               /* Get PostgreSQL metadata */
-              dataInfo.tileJSON = createDataMetadata({
+              dataInfo.tileJSON = createPostgreSQLMetadata({
                 ...cacheSource.metadata,
                 cacheBBoxs: cacheSource.bboxs,
               });
@@ -943,7 +945,7 @@ export const serve_data = {
               dataInfo.source = await openPostgreSQLDB(dataInfo.path, true);
 
               /* Get PostgreSQL metadata */
-              dataInfo.tileJSON = await getPostgreSQLInfos(dataInfo.source);
+              dataInfo.tileJSON = await getPostgreSQLMetadata(dataInfo.source);
             }
 
             validatePostgreSQL(dataInfo.tileJSON);
