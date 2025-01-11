@@ -303,7 +303,7 @@ export async function getGeoJSONCreated(filePath) {
  * @returns {Array<string>}
  */
 export function getGeoJSONGeometryTypes(geoJSON) {
-   const  geometryTypes: [],
+  const geometryTypes = [];
 
   function addGeometryType(type) {
     switch (type) {
