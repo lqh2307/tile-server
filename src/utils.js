@@ -600,49 +600,47 @@ export function getRequestHost(req) {
 /**
  * Create data tileJSON
  * @param {object} metadata Metadata object
+ * @param {boolean} forRendered Is create metadata for rendered?
  * @returns {object}
  */
-export function createDataMetadata(metadata) {
+export function createDataMetadata(metadata, forRendered) {
   // Default
-  const data = Object.assign(
-    {
-      name: "Unknown",
-      description: "Unknown",
-      attribution: "<b>Viettel HighTech</b>",
-      version: "1.0.0",
-      type: "overlay",
-      format: "png",
-      bounds: [-180, -85.051129, 180, 85.051129],
-      minzoom: 0,
-      maxzoom: 22,
-      cacheBBoxs: [[-180, -85.051129, 180, 85.051129]],
-    },
-    deepClone(metadata)
-  );
+  const fields = [
+    "name",
+    "description",
+    "attribution",
+    "type",
+    "format",
+    "version",
+    "tiles",
+    "bounds",
+    "center",
+    "minzoom",
+    "maxzoom",
+    "vector_layers",
+    "cacheBBoxs",
+  ];
 
-  // Delete unused field
-  for (const field in data) {
-    if (
-      [
-        "name",
-        "description",
-        "attribution",
-        "type",
-        "format",
-        "version",
-        "tiles",
-        "bounds",
-        "center",
-        "minzoom",
-        "maxzoom",
-        "vector_layers",
-        "center",
-        "cacheBBoxs",
-      ].includes(field) === false
-    ) {
-      delete data[field];
-    }
+  const data = {
+    name: "Unknown",
+    description: "Unknown",
+    attribution: "<b>Viettel HighTech</b>",
+    version: "1.0.0",
+    type: "overlay",
+    format: "png",
+    bounds: [-180, -85.051129, 180, 85.051129],
+    minzoom: 0,
+    maxzoom: 22,
+    cacheBBoxs: [[-180, -85.051129, 180, 85.051129]],
+  };
+
+  if (forRendered === true) {
+    fields.pop();
+    fields.pop();
   }
+
+  // Create metadata
+  Object.assign(data, deepClone(metadata));
 
   // Calculate center if not exist
   if (data.center === undefined) {
@@ -653,61 +651,11 @@ export function createDataMetadata(metadata) {
     ];
   }
 
-  return data;
-}
-
-/**
- * Create rendered tileJSON
- * @param {object} metadata Metadata object
- * @returns {object}
- */
-export function createRenderedMetadata(metadata) {
-  // Default
-  const data = Object.assign(
-    {
-      name: "Unknown",
-      description: "Unknown",
-      attribution: "<b>Viettel HighTech</b>",
-      version: "1.0.0",
-      type: "overlay",
-      format: "png",
-      bounds: [-180, -85.051129, 180, 85.051129],
-      minzoom: 0,
-      maxzoom: 22,
-    },
-    deepClone(metadata)
-  );
-
   // Delete unused field
   for (const field in data) {
-    if (
-      [
-        "name",
-        "description",
-        "attribution",
-        "type",
-        "format",
-        "version",
-        "tiles",
-        "bounds",
-        "center",
-        "minzoom",
-        "maxzoom",
-        "vector_layers",
-        "center",
-      ].includes(field) === false
-    ) {
+    if (fields.includes(field) === false) {
       delete data[field];
     }
-  }
-
-  // Calculate center if not exist
-  if (data.center === undefined) {
-    data.center = [
-      (data.bounds[0] + data.bounds[2]) / 2,
-      (data.bounds[1] + data.bounds[3]) / 2,
-      Math.floor((data.minzoom + data.maxzoom) / 2),
-    ];
   }
 
   return data;
