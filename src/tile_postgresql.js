@@ -491,7 +491,7 @@ export function createPostgreSQLMetadata(metadata) {
   if (metadata.maxzoom !== undefined) {
     data.maxzoom = metadata.maxzoom;
   } else {
-    data.maxzoom = 0;
+    data.maxzoom = 22;
   }
 
   if (metadata.bounds !== undefined) {
