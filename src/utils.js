@@ -340,8 +340,8 @@ export function getXYZTileFromBBox(bbox, zooms) {
   const tiles = [];
 
   for (const zoom of zooms) {
-    const [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], zoom, scheme);
-    const [xMax, yMax] = getXYZFromLonLatZ(bbox[2], bbox[1], zoom, scheme);
+    const [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], zoom, "xyz");
+    const [xMax, yMax] = getXYZFromLonLatZ(bbox[2], bbox[1], zoom, "xyz");
 
     for (let x = xMin; x <= xMax; x++) {
       for (let y = yMin; y <= yMax; y++) {

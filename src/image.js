@@ -32,6 +32,7 @@ import {
 import {
   getTilesBoundsFromBBoxs,
   detectFormatAndHeaders,
+  removeEmptyFolders,
   getLonLatFromXYZ,
   getDataFromURL,
   calculateMD5,
@@ -50,6 +51,7 @@ import {
   openXYZMD5DB,
   getXYZTile,
 } from "./tile_xyz.js";
+import os from "os";
 
 sharp.cache(false);
 
@@ -195,7 +197,7 @@ export async function renderImage(
 
                 printLog(
                   "info",
-                  `Forwarding data "${id}" - Tile "${tileName}" - To "${url}"...`
+                  `Forwarding data "${parts[2]}" - Tile "${tileName}" - To "${url}"...`
                 );
 
                 /* Get data */
@@ -208,7 +210,7 @@ export async function renderImage(
                 if (sourceData.storeCache === true) {
                   printLog(
                     "info",
-                    `Caching data "${id}" - Tile "${tileName}"...`
+                    `Caching data "${parts[2]}" - Tile "${tileName}"...`
                   );
 
                   cacheMBtilesTileData(
@@ -222,7 +224,7 @@ export async function renderImage(
                   ).catch((error) =>
                     printLog(
                       "error",
-                      `Failed to cache data "${id}" - Tile "${tileName}": ${error}`
+                      `Failed to cache data "${parts[2]}" - Tile "${tileName}": ${error}`
                     )
                   );
                 }
@@ -285,7 +287,7 @@ export async function renderImage(
 
                 printLog(
                   "info",
-                  `Forwarding data "${id}" - Tile "${tileName}" - To "${url}"...`
+                  `Forwarding data "${parts[2]}" - Tile "${tileName}" - To "${url}"...`
                 );
 
                 /* Get data */
@@ -298,7 +300,7 @@ export async function renderImage(
                 if (sourceData.storeCache === true) {
                   printLog(
                     "info",
-                    `Caching data "${id}" - Tile "${tileName}"...`
+                    `Caching data "${parts[2]}" - Tile "${tileName}"...`
                   );
 
                   cacheXYZTileFile(
@@ -314,7 +316,7 @@ export async function renderImage(
                   ).catch((error) =>
                     printLog(
                       "error",
-                      `Failed to cache data "${id}" - Tile "${tileName}": ${error}`
+                      `Failed to cache data "${parts[2]}" - Tile "${tileName}": ${error}`
                     )
                   );
                 }
@@ -371,7 +373,7 @@ export async function renderImage(
 
                 printLog(
                   "info",
-                  `Forwarding data "${id}" - Tile "${tileName}" - To "${url}"...`
+                  `Forwarding data "${parts[2]}" - Tile "${tileName}" - To "${url}"...`
                 );
 
                 /* Get data */
@@ -384,7 +386,7 @@ export async function renderImage(
                 if (sourceData.storeCache === true) {
                   printLog(
                     "info",
-                    `Caching data "${id}" - Tile "${tileName}"...`
+                    `Caching data "${parts[2]}" - Tile "${tileName}"...`
                   );
 
                   cachePostgreSQLTileData(
@@ -398,7 +400,7 @@ export async function renderImage(
                   ).catch((error) =>
                     printLog(
                       "error",
-                      `Failed to cache data "${id}" - Tile "${tileName}": ${error}`
+                      `Failed to cache data "${parts[2]}" - Tile "${tileName}": ${error}`
                     )
                   );
                 }

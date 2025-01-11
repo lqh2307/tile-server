@@ -617,27 +617,27 @@ export async function downloadMBTilesFile(url, filePath, maxTry, timeout) {
           });
       });
     } catch (error) {
-      if (error.response) {
+      if (error.statusCode !== undefined) {
         if (
-          response.status === StatusCodes.NO_CONTENT ||
-          response.status === StatusCodes.NOT_FOUND
+          error.statusCode === StatusCodes.NO_CONTENT ||
+          error.statusCode === StatusCodes.NOT_FOUND
         ) {
           printLog(
             "error",
-            `Failed to download MBTiles file "${filePath}" from "${url}": Status code: ${response.status} - ${response.statusText}`
+            `Failed to download MBTiles file "${filePath}" from "${url}": ${error}`
           );
 
           return;
         } else {
           throw new Error(
-            `Failed to download MBTiles file "${filePath}" from "${url}": Status code: ${error.response.status} - ${error.response.statusText}`
+            `Failed to download MBTiles file "${filePath}" from "${url}": ${error}`
           );
         }
+      } else {
+        throw new Error(
+          `Failed to download MBTiles file "${filePath}" from "${url}": ${error}`
+        );
       }
-
-      throw new Error(
-        `Failed to download MBTiles file "${filePath}" from "${url}": ${error}`
-      );
     }
   }, maxTry);
 }

@@ -318,9 +318,9 @@ export async function getPostgreSQLMetadata(source) {
   };
 
   /* Get metadatas */
-  const rows = await fetchAll(source, "SELECT name, value FROM metadata;");
+  const data = await source.query(`SELECT name, value FROM metadata;`);
 
-  rows.forEach((row) => {
+  data.rows.forEach((row) => {
     switch (row.name) {
       case "json":
         Object.assign(metadata, JSON.parse(row.value));

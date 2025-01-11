@@ -273,7 +273,7 @@ export async function validateStyle(styleJSON) {
           source.url.startsWith("https://") === false &&
           source.url.startsWith("http://") === false
         ) {
-          throw new Error(`Source "${id}" is invalid data url "${url}"`);
+          throw new Error(`Source "${id}" is invalid data url "${source.url}"`);
         }
       }
 
@@ -318,7 +318,7 @@ export async function validateStyle(styleJSON) {
             tile.startsWith("https://") === false &&
             tile.startsWith("http://") === false
           ) {
-            throw new Error(`Source "${id}" is invalid tile url "${url}"`);
+            throw new Error(`Source "${id}" is invalid tile url "${tile}"`);
           }
         });
       }
