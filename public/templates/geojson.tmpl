@@ -59,59 +59,70 @@
             "data": jsonResponse.geojsons[geoJSONSource].url
           };
 
+
           const r = Math.floor(Math.random() * 256);
           const g = Math.floor(Math.random() * 256);
           const b = Math.floor(Math.random() * 256);
 
-          geoJSONSourceColors[geoJSONSource] = {
-            polygon: `rgba(${r}, ${g}, ${b}, 0.3)`,
-            line: `rgba(${r}, ${g}, ${b}, 0.6)`,
-            circle: `rgba(${r}, ${g}, ${b}, 0.8)`
-          };
+          geoJSONSourceColors[geoJSONSource] = {};
 
-          style.layers.push(
-            {
-              "id": `${geoJSONSource}_polygon`,
-              "source": geoJSONSource,
-              "type": "fill",
-              "paint": {
-                "fill-color": geoJSONSourceColors[geoJSONSource].polygon,
-                "fill-antialias": true,
-                "fill-outline-color": geoJSONSourceColors[geoJSONSource].polygon
-              },
-              "layout": {
-                "visibility": "visible"
-              },
-              "filter": ["==", "$type", "Polygon"]
-            },
-            {
-              "id": `${geoJSONSource}_line`,
-              "source": geoJSONSource,
-              "type": "line",
-              "paint": {
-                "line-color": geoJSONSourceColors[geoJSONSource].line
-              },
-              "layout": {
-                "line-join": "round",
-                "line-cap": "round",
-                "visibility": "visible"
-              },
-              "filter": ["==", "$type", "LineString"]
-            },
-            {
-              "id": `${geoJSONSource}_circle`,
-              "source": geoJSONSource,
-              "type": "circle",
-              "paint": {
-                "circle-color": geoJSONSourceColors[geoJSONSource].circle,
-                "circle-radius": 2
-              },
-              "layout": {
-                "visibility": "visible"
-              },
-              "filter": ["==", "$type", "Point"]
-            }
-          );
+          if (jsonResponse.geojsons[geoJSONSource].geometryTypes.include("polygon") === true) {
+            geoJSONSourceColors[geoJSONSource].polygon = `rgba(${r}, ${g}, ${b}, 0.3)`;
+
+            style.layers.push(
+              {
+                "id": `${geoJSONSource}_polygon`,
+                "source": geoJSONSource,
+                "type": "fill",
+                "paint": {
+                  "fill-color": geoJSONSourceColors[geoJSONSource].polygon,
+                  "fill-antialias": true,
+                  "fill-outline-color": geoJSONSourceColors[geoJSONSource].polygon
+                },
+                "layout": {
+                  "visibility": "visible"
+                },
+                "filter": ["==", "$type", "Polygon"]
+              }
+            );
+          } else if (jsonResponse.geojsons[geoJSONSource].geometryTypes.include("line") === true) {
+            geoJSONSourceColors[geoJSONSource].line = `rgba(${r}, ${g}, ${b}, 0.6)`;
+
+            style.layers.push(
+              {
+                "id": `${geoJSONSource}_line`,
+                "source": geoJSONSource,
+                "type": "line",
+                "paint": {
+                  "line-color": geoJSONSourceColors[geoJSONSource].line
+                },
+                "layout": {
+                  "line-join": "round",
+                  "line-cap": "round",
+                  "visibility": "visible"
+                },
+                "filter": ["==", "$type", "LineString"]
+              }
+            );
+          } else if (jsonResponse.geojsons[geoJSONSource].geometryTypes.include("circle") === true) {
+            geoJSONSourceColors[geoJSONSource].circle = `rgba(${r}, ${g}, ${b}, 0.8)`;
+
+            style.layers.push(
+              {
+                "id": `${geoJSONSource}_circle`,
+                "source": geoJSONSource,
+                "type": "circle",
+                "paint": {
+                  "circle-color": geoJSONSourceColors[geoJSONSource].circle,
+                  "circle-radius": 2
+                },
+                "layout": {
+                  "visibility": "visible"
+                },
+                "filter": ["==", "$type", "Point"]
+              }
+            );
+          }
         }
 
         const map = new maplibregl.Map({

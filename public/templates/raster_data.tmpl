@@ -52,7 +52,7 @@
           }).addTo(map);
         }
 
-        if (jsonResponse.cacheBBoxs) {
+        if (jsonResponse.cacheBBoxs !== undefined) {
           const cacheBBoxsLayer = L.geoJSON({
             type: "MultiLineString",
             coordinates: jsonResponse.cacheBBoxs.map((bbox) => {

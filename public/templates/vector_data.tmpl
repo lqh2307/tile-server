@@ -88,7 +88,7 @@
             layerList.appendChild(item);
           });
 
-          if (jsonResponse.cacheBBoxs) {
+          if (jsonResponse.cacheBBoxs !== undefined) {
             map.addSource("cache_bboxs_source", {
               type: "geojson",
               data: {
