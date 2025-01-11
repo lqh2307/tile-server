@@ -298,21 +298,19 @@ export async function getGeoJSONCreated(filePath) {
 }
 
 /**
- * Create GeoJSON metadata
+ * Get GeoJSON geometry types
  * @param {object} geoJSON GeoJSON
- * @returns {Array<object>}
+ * @returns {Array<string>}
  */
-export function createGeoJSONMetadata(geoJSON) {
-  const metadata = {
-    geometryTypes: [],
-  };
+export function getGeoJSONGeometryTypes(geoJSON) {
+   const  geometryTypes: [],
 
   function addGeometryType(type) {
     switch (type) {
       case "Polygon":
       case "MultiPolygon": {
-        if (metadata.geometryTypes.includes("polygon") === false) {
-          metadata.geometryTypes.push("polygon");
+        if (geometryTypes.includes("polygon") === false) {
+          geometryTypes.push("polygon");
         }
 
         break;
@@ -320,8 +318,8 @@ export function createGeoJSONMetadata(geoJSON) {
 
       case "LineString":
       case "MultiLineString": {
-        if (metadata.geometryTypes.includes("line") === false) {
-          metadata.geometryTypes.push("line");
+        if (geometryTypes.includes("line") === false) {
+          geometryTypes.push("line");
         }
 
         break;
@@ -329,8 +327,8 @@ export function createGeoJSONMetadata(geoJSON) {
 
       case "Point":
       case "MultiPoint": {
-        if (metadata.geometryTypes.includes("circle") === false) {
-          metadata.geometryTypes.push("circle");
+        if (geometryTypes.includes("circle") === false) {
+          geometryTypes.push("circle");
         }
 
         break;
@@ -398,5 +396,5 @@ export function createGeoJSONMetadata(geoJSON) {
     }
   }
 
-  return metadata;
+  return geometryTypes;
 }

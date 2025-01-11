@@ -8,7 +8,7 @@ import { config } from "./config.js";
 import { seed } from "./seed.js";
 import express from "express";
 import {
-  createGeoJSONMetadata,
+  getGeoJSONGeometryTypes,
   downloadGeoJSONFile,
   getGeoJSONFromURL,
   cacheGeoJSONFile,
@@ -45,7 +45,6 @@ function getGeoJSONInfoHandler() {
       return res.status(StatusCodes.OK).send({
         id: id,
         name: id,
-        info: item.info,
         geojsons: geojsons,
       });
     } catch (error) {
@@ -459,7 +458,7 @@ export const serve_geojson = {
                 const geoJSON = await getGeoJSON(info.path);
 
                 /* Get GeoJSON info */
-                dataInfo.info = createGeoJSONMetadata(geoJSON);
+                geometryTypes = getGeoJSONGeometryTypes(geoJSON);
 
                 /* Validate GeoJSON */
                 validateGeoJSON(geoJSON);
