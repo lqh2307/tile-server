@@ -324,16 +324,21 @@ export async function validateStyle(styleJSON) {
 /**
  * Get style
  * @param {string} filePath
- * @returns {Promise<object>}
+ * @param {boolean} isParse
+ * @returns {Promise<object|Buffer>}
  */
-export async function getStyle(filePath) {
+export async function getStyle(filePath, isParse) {
   try {
     const data = await fsPromise.readFile(filePath);
     if (!data) {
       throw new Error("Style does not exist");
     }
 
-    return JSON.parse(data);
+    if (isParse === true) {
+      return JSON.parse(data);
+    } else {
+      return data;
+    }
   } catch (error) {
     if (error.code === "ENOENT") {
       throw new Error("Style does not exist");

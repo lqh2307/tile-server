@@ -88,7 +88,7 @@ function getGeoJSONHandler() {
 
       /* Get geoJSON and Cache if not exist (if use cache) */
       try {
-        geoJSON = await getGeoJSON(geoJSONLayer.path);
+        geoJSON = await getGeoJSON(geoJSONLayer.path, true);
       } catch (error) {
         if (
           geoJSONLayer.sourceURL !== undefined &&
@@ -166,10 +166,10 @@ function getGeoJSONMD5Handler() {
       }
 
       /* Get geoJSON MD5 and Add to header */
-      const geoJSON = await getGeoJSON(geoJSONLayer.path);
+      const geoJSONData = await getGeoJSON(geoJSONLayer.path, false);
 
       res.set({
-        etag: calculateMD5(Buffer.from(JSON.stringify(geoJSON), "utf8")),
+        etag: calculateMD5(geoJSONData),
       });
 
       return res.status(StatusCodes.OK).send();
@@ -457,7 +457,7 @@ export const serve_geojson = {
               /* Load GeoJSON */
               try {
                 /* Open GeoJSON */
-                const geoJSON = await getGeoJSON(info.path);
+                const geoJSON = await getGeoJSON(info.path, true);
 
                 /* Validate and Get GeoJSON info */
                 info.geometryTypes = validateAndGetGeometryTypes(geoJSON);

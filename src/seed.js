@@ -32,6 +32,7 @@ import {
   removeEmptyFolders,
   getDataFromURL,
   validateJSON,
+  calculateMD5,
   delay,
 } from "./utils.js";
 import {
@@ -1118,19 +1119,16 @@ async function seedGeoJSON(
 
     if (refreshTimestamp === true) {
       try {
-        const [response, geoJSON] = await Promise.all([
+        const [response, geoJSONData] = await Promise.all([
           getDataFromURL(
             geojsonURL.replaceAll(`${id}.geojson`, `md5/${id}.geojson`),
             timeout,
             "arraybuffer"
           ),
-          getGeoJSON(filePath),
+          getGeoJSON(filePath, false),
         ]);
 
-        if (
-          response.headers["etag"] !==
-          calculateMD5(Buffer.from(JSON.stringify(geoJSON), "utf8"))
-        ) {
+        if (response.headers["etag"] !== calculateMD5(geoJSONData)) {
           needDownload = true;
         }
       } catch (error) {
@@ -1233,19 +1231,16 @@ async function seedStyle(
 
     if (refreshTimestamp === true) {
       try {
-        const [response, styleJSON] = await Promise.all([
+        const [response, styleJSONData] = await Promise.all([
           getDataFromURL(
             styleURL.replaceAll("style.json", `md5/style.json`),
             timeout,
             "arraybuffer"
           ),
-          getStyle(filePath),
+          getStyle(filePath, false),
         ]);
 
-        if (
-          response.headers["etag"] !==
-          calculateMD5(Buffer.from(JSON.stringify(styleJSON), "utf8"))
-        ) {
+        if (response.headers["etag"] !== calculateMD5(styleJSONData)) {
           needDownload = true;
         }
       } catch (error) {

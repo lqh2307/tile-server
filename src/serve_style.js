@@ -47,7 +47,7 @@ function getStyleHandler() {
 
       /* Get styleJSON and cache if not exist if use cache */
       try {
-        styleJSON = await getStyle(item.path);
+        styleJSON = await getStyle(item.path, true);
       } catch (error) {
         if (
           item.sourceURL !== undefined &&
@@ -188,7 +188,7 @@ function getStyleMD5Handler() {
       }
 
       /* Get styleJSON MD5 and Add to header */
-      const styleJSON = await getStyle(item.path);
+      const styleJSON = await getStyle(item.path, true);
 
       if (req.query.raw !== "true") {
         const requestHost = getRequestHost(req);
@@ -568,7 +568,7 @@ function getStyleJSONsListHandler() {
           let styleJSON;
 
           try {
-            styleJSON = await getStyle(item.path);
+            styleJSON = await getStyle(item.path, true);
           } catch (error) {
             if (
               item.sourceURL !== undefined &&
@@ -1234,7 +1234,7 @@ export const serve_style = {
 
           try {
             /* Read style.json file */
-            styleJSON = await getStyle(styleInfo.path);
+            styleJSON = await getStyle(styleInfo.path, true);
 
             /* Validate style */
             await validateStyle(styleJSON);

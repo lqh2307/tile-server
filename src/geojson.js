@@ -205,16 +205,21 @@ export async function getGeoJSONFromURL(url, timeout) {
 /**
  * Get GeoJSON
  * @param {string} filePath
- * @returns {Promise<object>}
+ * @param {boolean} isParse
+ * @returns {Promise<object|Buffer>}
  */
-export async function getGeoJSON(filePath) {
+export async function getGeoJSON(filePath, isParse) {
   try {
     const data = await fsPromise.readFile(filePath);
     if (!data) {
       throw new Error("GeoJSON does not exist");
     }
 
-    return JSON.parse(data);
+    if (isParse === true) {
+      return JSON.parse(data);
+    } else {
+      return data;
+    }
   } catch (error) {
     if (error.code === "ENOENT") {
       throw new Error("GeoJSON does not exist");
