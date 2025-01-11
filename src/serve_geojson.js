@@ -37,7 +37,10 @@ function getGeoJSONInfoHandler() {
       const geojsons = {};
 
       for (const layer in item) {
-        geojsons[layer] = `${requestHost}/geojsons/${id}/${layer}.geojson`;
+        geojsons[layer] = {
+          url: `${requestHost}/geojsons/${id}/${layer}.geojson`,
+          geometryTypes: item[layer].geometryTypes
+        };
       }
 
       res.header("content-type", "application/json");
