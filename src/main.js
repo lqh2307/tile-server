@@ -137,6 +137,7 @@ async function startClusterServer(opts) {
 
             process.exit(0);
           }
+
           case "restartServer": {
             printLog(
               "info",
@@ -145,6 +146,7 @@ async function startClusterServer(opts) {
 
             process.exit(1);
           }
+
           case "startTask": {
             printLog(
               "info",
@@ -163,6 +165,7 @@ async function startClusterServer(opts) {
 
             break;
           }
+
           case "cancelTask": {
             printLog(
               "info",
@@ -173,6 +176,7 @@ async function startClusterServer(opts) {
 
             break;
           }
+
           default: {
             printLog(
               "warning",
