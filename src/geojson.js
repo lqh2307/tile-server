@@ -203,60 +203,6 @@ export async function getGeoJSONFromURL(url, timeout) {
 }
 
 /**
- * Validate GeoJSON
- * @param {object} geoJSON GeoJSON
- * @returns {void}
- */
-export function validateGeoJSON(geoJSON) {
-  if ("type" in geoJSON === false) {
-    throw new Error("Invalid GeoJSON file");
-  }
-
-  switch (geoJSON.type) {
-    case "FeatureCollection": {
-      if (geoJSON.features === undefined) {
-        throw new Error("Invalid GeoJSON file");
-      }
-
-      break;
-    }
-
-    case "Feature": {
-      if (geoJSON.geometry === undefined || geoJSON.properties === undefined) {
-        throw new Error("Invalid GeoJSON file");
-      }
-
-      break;
-    }
-
-    case "GeometryCollection": {
-      if (geoJSON.geometries === undefined) {
-        throw new Error("Invalid GeoJSON file");
-      }
-
-      break;
-    }
-
-    case "Polygon":
-    case "MultiPolygon":
-    case "LineString":
-    case "MultiLineString":
-    case "Point":
-    case "MultiPoint": {
-      if (geoJSON.coordinates === undefined) {
-        throw new Error("Invalid GeoJSON file");
-      }
-
-      break;
-    }
-
-    default: {
-      throw new Error("Invalid GeoJSON file");
-    }
-  }
-}
-
-/**
  * Get GeoJSON
  * @param {string} filePath
  * @returns {Promise<object>}
@@ -298,11 +244,15 @@ export async function getGeoJSONCreated(filePath) {
 }
 
 /**
- * Get GeoJSON geometry types
+ * Validate GeoJSON and get geometry types
  * @param {object} geoJSON GeoJSON
- * @returns {Array<string>}
+ * @returns {Array<string>} List of geometry types
  */
-export function getGeoJSONGeometryTypes(geoJSON) {
+export function validateAndGetGeometryTypes(geoJSON) {
+  if (!geoJSON.type) {
+    throw new Error("Invalid GeoJSON file");
+  }
+
   const geometryTypes = [];
 
   function addGeometryType(type) {
@@ -335,7 +285,7 @@ export function getGeoJSONGeometryTypes(geoJSON) {
       }
 
       default: {
-        printLog("warning", `Unknown geometry type: "${type}". Skipping...`);
+        throw new Error("Invalid GeoJSON file");
 
         return;
       }
@@ -344,8 +294,16 @@ export function getGeoJSONGeometryTypes(geoJSON) {
 
   switch (geoJSON.type) {
     case "FeatureCollection": {
+      if (Array.isArray(geoJSON.features) === false) {
+        throw new Error("Invalid GeoJSON file");
+      }
+
       geoJSON.features.forEach((feature) => {
         if (feature.geometry.type === "GeometryCollection") {
+          if (Array.isArray(feature.geometry.geometries) === false) {
+            throw new Error("Invalid GeoJSON file");
+          }
+
           feature.geometry.geometries.forEach((geometry) =>
             addGeometryType(geometry.type)
           );
@@ -358,7 +316,15 @@ export function getGeoJSONGeometryTypes(geoJSON) {
     }
 
     case "Feature": {
+      if (!geoJSON.geometry) {
+        throw new Error("Invalid GeoJSON file");
+      }
+
       if (geoJSON.geometry.type === "GeometryCollection") {
+        if (Array.isArray(geoJSON.geometry.geometries) === false) {
+          throw new Error("Invalid GeoJSON file");
+        }
+
         geoJSON.geometry.geometries.forEach((geometry) =>
           addGeometryType(geometry.type)
         );
@@ -370,6 +336,10 @@ export function getGeoJSONGeometryTypes(geoJSON) {
     }
 
     case "GeometryCollection": {
+      if (Array.isArray(geoJSON.geometries) === false) {
+        throw new Error("Invalid GeoJSON file");
+      }
+
       geoJSON.geometries.forEach((geometry) => addGeometryType(geometry.type));
 
       break;
@@ -381,16 +351,17 @@ export function getGeoJSONGeometryTypes(geoJSON) {
     case "MultiLineString":
     case "Point":
     case "MultiPoint": {
+      if (!geoJSON.coordinates) {
+        throw new Error("Invalid GeoJSON file");
+      }
+
       addGeometryType(geoJSON.type);
 
       break;
     }
 
     default: {
-      printLog(
-        "warning",
-        `Unknown geometry type: "${geoJSON.type}". Skipping...`
-      );
+      throw new Error("Invalid GeoJSON file");
 
       break;
     }

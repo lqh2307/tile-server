@@ -8,11 +8,10 @@ import { config } from "./config.js";
 import { seed } from "./seed.js";
 import express from "express";
 import {
-  getGeoJSONGeometryTypes,
+  validateAndGetGeometryTypes,
   downloadGeoJSONFile,
   getGeoJSONFromURL,
   cacheGeoJSONFile,
-  validateGeoJSON,
   getGeoJSON,
 } from "./geojson.js";
 
@@ -39,7 +38,7 @@ function getGeoJSONInfoHandler() {
       for (const layer in item) {
         geojsons[layer] = {
           url: `${requestHost}/geojsons/${id}/${layer}.geojson`,
-          geometryTypes: item[layer].geometryTypes
+          geometryTypes: item[layer].geometryTypes,
         };
       }
 
@@ -460,11 +459,8 @@ export const serve_geojson = {
                 /* Open GeoJSON */
                 const geoJSON = await getGeoJSON(info.path);
 
-                /* Get GeoJSON info */
-                info.geometryTypes = getGeoJSONGeometryTypes(geoJSON);
-
-                /* Validate GeoJSON */
-                validateGeoJSON(geoJSON);
+                /* Validate and Get GeoJSON info */
+                info.geometryTypes = validateAndGetGeometryTypes(geoJSON);
 
                 dataInfo[layer] = info;
               } catch (error) {
