@@ -286,8 +286,6 @@ export function validateAndGetGeometryTypes(geoJSON) {
 
       default: {
         throw new Error("Invalid GeoJSON file");
-
-        return;
       }
     }
   }
@@ -362,8 +360,6 @@ export function validateAndGetGeometryTypes(geoJSON) {
 
     default: {
       throw new Error("Invalid GeoJSON file");
-
-      break;
     }
   }
 
