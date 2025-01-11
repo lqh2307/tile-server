@@ -88,7 +88,7 @@ function getGeoJSONHandler() {
 
       /* Get geoJSON and Cache if not exist (if use cache) */
       try {
-        geoJSON = await getGeoJSON(geoJSONLayer.path, true);
+        geoJSON = await getGeoJSON(geoJSONLayer.path, false);
       } catch (error) {
         if (
           geoJSONLayer.sourceURL !== undefined &&
@@ -101,7 +101,8 @@ function getGeoJSONHandler() {
 
           geoJSON = await getGeoJSONFromURL(
             geoJSONLayer.sourceURL,
-            60000 // 1 mins
+            60000, // 1 mins
+            false
           );
 
           if (geoJSONLayer.storeCache === true) {
@@ -110,12 +111,11 @@ function getGeoJSONHandler() {
               `Caching GeoJSON "${id}" - File "${item.path}"...`
             );
 
-            cacheGeoJSONFile(geoJSONLayer.path, JSON.stringify(geoJSON)).catch(
-              (error) =>
-                printLog(
-                  "error",
-                  `Failed to cache GeoJSON "${id}" - File "${geoJSONLayer.path}": ${error}`
-                )
+            cacheGeoJSONFile(geoJSONLayer.path, geoJSON).catch((error) =>
+              printLog(
+                "error",
+                `Failed to cache GeoJSON "${id}" - File "${geoJSONLayer.path}": ${error}`
+              )
             );
           }
         } else {

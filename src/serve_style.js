@@ -47,7 +47,7 @@ function getStyleHandler() {
 
       /* Get styleJSON and cache if not exist if use cache */
       try {
-        styleJSON = await getStyle(item.path, true);
+        styleJSON = await getStyle(item.path, false);
       } catch (error) {
         if (
           item.sourceURL !== undefined &&
@@ -60,18 +60,18 @@ function getStyleHandler() {
 
           styleJSON = await getStyleJSONFromURL(
             item.sourceURL,
-            60000 // 1 mins
+            60000, // 1 mins
+            false
           );
 
           if (item.storeCache === true) {
             printLog("info", `Caching style "${id}" - File "${item.path}"...`);
 
-            cacheStyleFile(item.path, JSON.stringify(styleJSON)).catch(
-              (error) =>
-                printLog(
-                  "error",
-                  `Failed to cache style "${id}" - File "${item.path}": ${error}`
-                )
+            cacheStyleFile(item.path, styleJSON).catch((error) =>
+              printLog(
+                "error",
+                `Failed to cache style "${id}" - File "${item.path}": ${error}`
+              )
             );
           }
         } else {
@@ -80,6 +80,8 @@ function getStyleHandler() {
       }
 
       if (req.query.raw !== "true") {
+        styleJSON = JSON.parse(styleJSON);
+
         const requestHost = getRequestHost(req);
 
         /* Fix sprite url */
@@ -188,9 +190,11 @@ function getStyleMD5Handler() {
       }
 
       /* Get styleJSON MD5 and Add to header */
-      const styleJSON = await getStyle(item.path, true);
+      let styleJSON = await getStyle(item.path, false);
 
       if (req.query.raw !== "true") {
+        styleJSON = JSON.parse(styleJSON);
+
         const requestHost = getRequestHost(req);
 
         /* Fix sprite url */
@@ -266,7 +270,7 @@ function getStyleMD5Handler() {
       }
 
       res.set({
-        etag: calculateMD5(Buffer.from(JSON.stringify(styleJSON), "utf8")),
+        etag: calculateMD5(styleJSON),
       });
 
       return res.status(StatusCodes.OK).send();
@@ -581,7 +585,8 @@ function getStyleJSONsListHandler() {
 
               styleJSON = await getStyleJSONFromURL(
                 item.sourceURL,
-                60000 // 1 mins
+                60000, // 1 mins
+                true
               );
 
               if (item.storeCache === true) {

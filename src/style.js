@@ -181,11 +181,16 @@ export async function cacheStyleFile(filePath, data) {
  * Get styleJSON from a URL
  * @param {string} url The URL to fetch data from
  * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<object>}
+ * @param {boolean} isParse
+ * @returns {Promise<object|Buffer>}
  */
-export async function getStyleJSONFromURL(url, timeout) {
+export async function getStyleJSONFromURL(url, timeout, isParse) {
   try {
-    const response = await getDataFromURL(url, timeout, "json");
+    const response = await getDataFromURL(
+      url,
+      timeout,
+      isParse === true ? "json" : "arraybuffer"
+    );
 
     return response.data;
   } catch (error) {
