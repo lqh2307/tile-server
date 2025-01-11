@@ -1400,61 +1400,61 @@ export async function renderPostgreSQLTiles(
 export function createRenderedMetadata(metadata) {
   const data = {};
 
-  if (metadata.name === undefined) {
+  if (metadata.name !== undefined) {
     data.name = metadata.name;
   } else {
     data.name = "Unknown";
   }
 
-  if (metadata.description === undefined) {
+  if (metadata.description !== undefined) {
     data.description = metadata.description;
   } else {
     data.description = "Unknown";
   }
 
-  if (metadata.attribution === undefined) {
+  if (metadata.attribution !== undefined) {
     data.attribution = metadata.attribution;
   } else {
     data.attribution = "<b>Viettel HighTech</b>";
   }
 
-  if (metadata.version === undefined) {
+  if (metadata.version !== undefined) {
     data.version = metadata.version;
   } else {
     data.version = "1.0.0";
   }
 
-  if (metadata.type === undefined) {
+  if (metadata.type !== undefined) {
     data.type = metadata.type;
   } else {
     data.type = "overlay";
   }
 
-  if (metadata.format === undefined) {
+  if (metadata.format !== undefined) {
     data.format = metadata.format;
   } else {
     data.format = "png";
   }
 
-  if (metadata.minzoom === undefined) {
+  if (metadata.minzoom !== undefined) {
     data.minzoom = metadata.minzoom;
   } else {
     data.minzoom = 0;
   }
 
-  if (metadata.maxzoom === undefined) {
+  if (metadata.maxzoom !== undefined) {
     data.maxzoom = metadata.maxzoom;
   } else {
     data.maxzoom = 0;
   }
 
-  if (metadata.bounds === undefined) {
+  if (metadata.bounds !== undefined) {
     data.bounds = deepClone(metadata.bounds);
   } else {
     data.bounds = [-180, -85.051129, 180, 85.051129];
   }
 
-  if (metadata.center === undefined) {
+  if (metadata.center !== undefined) {
     data.center = [
       (data.bounds[0] + data.bounds[2]) / 2,
       (data.bounds[1] + data.bounds[3]) / 2,
