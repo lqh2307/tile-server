@@ -66,7 +66,7 @@
 
           geoJSONSourceColors[geoJSONSource] = {};
 
-          if (jsonResponse.geojsons[geoJSONSource].geometryTypes.include("polygon") === true) {
+          if (jsonResponse.geojsons[geoJSONSource].geometryTypes.includes("polygon") === true) {
             geoJSONSourceColors[geoJSONSource].polygon = `rgba(${r}, ${g}, ${b}, 0.3)`;
 
             style.layers.push(
@@ -85,7 +85,7 @@
                 "filter": ["==", "$type", "Polygon"]
               }
             );
-          } else if (jsonResponse.geojsons[geoJSONSource].geometryTypes.include("line") === true) {
+          } else if (jsonResponse.geojsons[geoJSONSource].geometryTypes.includes("line") === true) {
             geoJSONSourceColors[geoJSONSource].line = `rgba(${r}, ${g}, ${b}, 0.6)`;
 
             style.layers.push(
@@ -104,7 +104,7 @@
                 "filter": ["==", "$type", "LineString"]
               }
             );
-          } else if (jsonResponse.geojsons[geoJSONSource].geometryTypes.include("circle") === true) {
+          } else if (jsonResponse.geojsons[geoJSONSource].geometryTypes.includes("circle") === true) {
             geoJSONSourceColors[geoJSONSource].circle = `rgba(${r}, ${g}, ${b}, 0.8)`;
 
             style.layers.push(
