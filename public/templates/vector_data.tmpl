@@ -4,9 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <title>{{name}} - Tile Server</title>
+
   <link rel="stylesheet" type="text/css" href="{{base_url}}/maplibre-gl.css" />
   <link rel="stylesheet" type="text/css" href="{{base_url}}/maplibre-gl-inspect.css" />
+
   <script src="{{base_url}}/maplibre-gl.js"></script>
   <script src="{{base_url}}/maplibre-gl-inspect.js"></script>
 </head>
@@ -130,11 +133,27 @@
             currentMarker.remove();
           }
 
-          currentMarker = new maplibregl.Marker()
+          currentMarker = new maplibregl.Marker({
+            draggable: true
+          })
             .setLngLat([event.lngLat.lng, event.lngLat.lat])
             .addTo(map);
 
           alert(`Position: [${event.lngLat.lng}, ${event.lngLat.lat}]`);
+
+          currentMarker.on("dragend", () => {
+            const lngLat = currentMarker.getLngLat();
+
+            alert(`Position: [${lngLat.lng}, ${lngLat.lat}]`);
+          });
+        });
+
+        map.on("contextmenu", (event) => {
+          if (currentMarker) {
+            currentMarker.remove();
+
+            currentMarker = undefined;
+          }
         });
       })
       .catch((error) => {

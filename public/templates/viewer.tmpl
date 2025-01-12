@@ -42,21 +42,29 @@
           currentMarker.remove();
         }
 
-        currentMarker = new maplibregl.Marker()
+        currentMarker = new maplibregl.Marker({
+          draggable: true
+        })
           .setLngLat([event.lngLat.lng, event.lngLat.lat])
           .addTo(map);
 
         alert(`Position: [${event.lngLat.lng}, ${event.lngLat.lat}]`);
+
+        currentMarker.on("dragend", () => {
+          const lngLat = currentMarker.getLngLat();
+
+          alert(`Position: [${lngLat.lng}, ${lngLat.lat}]`);
+        });
+      });
+
+      map.on("contextmenu", (event) => {
+        if (currentMarker) {
+          currentMarker.remove();
+
+          currentMarker = undefined;
+        }
       });
     } else {
-      const map = L.map("map", {
-        zoomControl: false
-      });
-
-      new L.Control.Zoom({
-        position: "topright"
-      }).addTo(map);
-
       fetch(`${baseURL}/styles/${id}.json`, {
         method: "GET",
         headers: {
@@ -71,6 +79,10 @@
           }
         })
         .then((jsonResponse) => {
+          const map = L.map("map", {
+            zoomControl: false
+          });
+
           for (const tile of jsonResponse.tiles || []) {
             L.tileLayer(tile, {
               minZoom: jsonResponse.minzoom,
@@ -79,26 +91,44 @@
               attribution: jsonResponse.attribution
             }).addTo(map);
           }
+
+          new L.Control.Zoom({
+            position: "topright"
+          }).addTo(map);
+
+          new L.Hash(map)
+
+          let currentMarker;
+
+          map.on("click", (event) => {
+            if (currentMarker) {
+              map.removeLayer(currentMarker);
+            }
+
+            currentMarker = L.marker([event.latlng.lat, event.latlng.lng], {
+              draggable: true
+            }).addTo(map);
+
+            alert(`Position: [${event.latlng.lng}, ${event.latlng.lat}]`);
+
+            currentMarker.on("dragend", () => {
+              const position = currentMarker.getLatLng();
+
+              alert(`Position: [${position.lng}, ${position.lat}]`);
+            });
+          });
+
+          map.on("contextmenu", (event) => {
+            if (currentMarker) {
+              map.removeLayer(currentMarker);
+
+              currentMarker = undefined;
+            }
+          });
         })
         .catch((error) => {
           alert(`Failed to fetch tileJSON: Status code: ${error.message}`);
         });
-
-      setTimeout(function () {
-        new L.Hash(map);
-      }, 0);
-
-      let currentMarker;
-
-      map.on("click", (event) => {
-        if (currentMarker) {
-          map.removeLayer(currentMarker);
-        }
-
-        currentMarker = L.marker([event.latlng.lat, event.latlng.lng]).addTo(map);
-
-        alert(`Position: [${event.latlng.lng}, ${event.latlng.lat}]`);
-      });
     }
   </script>
 </body>

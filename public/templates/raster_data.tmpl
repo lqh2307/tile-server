@@ -4,8 +4,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <title>{{name}} - Tile Server</title>
+
   <link rel="stylesheet" type="text/css" href="{{base_url}}/leaflet.css" />
+
   <script src="{{base_url}}/leaflet.js"></script>
   <script src="{{base_url}}/leaflet-hash.js"></script>
 </head>
@@ -34,14 +37,6 @@
         const map = L.map("map", {
           zoomControl: false
         });
-
-        new L.Control.Zoom({
-          position: "topright",
-        }).addTo(map);
-
-        setTimeout(() => {
-          new L.Hash(map);
-        }, 0);
 
         for (const tile of jsonResponse.tiles || []) {
           L.tileLayer(tile, {
@@ -94,6 +89,12 @@
           document.body.appendChild(cacheBBoxsButton);
         }
 
+        new L.Control.Zoom({
+          position: "topright",
+        }).addTo(map);
+
+        new L.Hash(map);
+
         let currentMarker;
 
         map.on("click", (event) => {
@@ -101,9 +102,25 @@
             map.removeLayer(currentMarker);
           }
 
-          currentMarker = L.marker([event.latlng.lat, event.latlng.lng]).addTo(map);
+          currentMarker = L.marker([event.latlng.lat, event.latlng.lng], {
+            draggable: true
+          }).addTo(map);
 
           alert(`Position: [${event.latlng.lng}, ${event.latlng.lat}]`);
+
+          currentMarker.on("dragend", () => {
+            const position = currentMarker.getLatLng();
+
+            alert(`Position: [${position.lng}, ${position.lat}]`);
+          });
+        });
+
+        map.on("contextmenu", (event) => {
+          if (currentMarker) {
+            map.removeLayer(currentMarker);
+
+            currentMarker = undefined;
+          }
         });
       })
       .catch((error) => {

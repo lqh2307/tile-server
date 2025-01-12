@@ -66,6 +66,7 @@ function serveFrontPageHandler() {
               name: name,
               viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
               thumbnail: `${requestHost}/styles/${id}/${z}/${x}/${y}.png`,
+              cache: style.storeCache === true,
             };
           } else {
             const { name, zoom, center } = style;
@@ -73,6 +74,7 @@ function serveFrontPageHandler() {
             styles[id] = {
               name: name,
               viewer_hash: `#${zoom}/${center[1]}/${center[0]}`,
+              cache: style.storeCache === true,
             };
           }
         }),
@@ -102,6 +104,7 @@ function serveFrontPageHandler() {
             viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
             thumbnail: thumbnail,
             source_type: data.sourceType,
+            cache: data.storeCache === true,
           };
         }),
         ...Object.keys(config.repo.fonts).map(async (id) => {

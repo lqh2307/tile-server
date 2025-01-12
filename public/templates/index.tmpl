@@ -78,7 +78,8 @@
                 {{#if thumbnail}}<img src="{{thumbnail}}" alt="{{name}} preview" />{{else}}<img src="${emptyImageURL}" alt="{{name}} preview" />{{/if}}
                 <div class="details">
                   <h3 class="name">{{name}}</h3>
-                  <p class="identifier">identifier: {{@key}}</p>
+                  <p>identifier: {{@key}}</p>
+                  <p>cache: {{cache}}</p>
                   <p class="services">
                     services: <a href="${baseURL}/styles/{{@key}}/style.json">StyleJSON</a>
                     {{#if thumbnail}}
@@ -108,7 +109,7 @@
                 <img src="${emptyImageURL}" alt="Empty image" />
                 <div class="details">
                   <h3 class="name">{{name}}</h3>
-                  <p class="identifier">identifier: {{@key}}</p>
+                  <p>identifier: {{@key}}</p>
                   <p class="services">
                     services: <a href="${baseURL}/geojsons/{{@key}}.json">INFO</a>
                   </p>
@@ -128,9 +129,9 @@
                 {{#if thumbnail}}<img src="{{thumbnail}}" alt="{{name}} preview" />{{else}}<img src="${emptyImageURL}" alt="{{name}} preview" />{{/if}}
                 <div class="details">
                   <h3 class="name">{{name}}</h3>
-                  <div class="identifier">identifier: {{@key}}</div>
-                  <div class="identifier">type: {{#if thumbnail}}raster{{else}}vector{{/if}}</div>
-                  <div class="identifier">ext: {{source_type}}</div>
+                  <p>identifier: {{@key}}</p>
+                  <p>type: {{#if thumbnail}}raster{{else}}vector{{/if}} | ext: {{source_type}}</p>
+                  <p>cache: {{cache}}</p>
                   <p class="services">
                     services: <a href="${baseURL}/datas/{{@key}}.json">TileJSON</a>
                       | <a href="#" onclick="toggleURL('xyz_data_{{@key}}', event)">XYZ</a>
@@ -156,7 +157,7 @@
                 <img src="${emptyImageURL}" alt="Empty image" />
                 <div class="details">
                   <h3 class="name">{{name}}</h3>
-                  <div class="identifier">identifier: {{@key}}</div>
+                  <p>identifier: {{@key}}</p>
                   <p class="services">
                     services: <a href="#" onclick="toggleURL('font_{{@key}}', event)">URL</a>
                     <input id="font_{{@key}}" style="display:none;cursor:pointer;" type="text" value="${baseURL}/fonts/{{@key}}/{range}.pbf" onclick="copyToClipboard(this)" />
@@ -174,7 +175,7 @@
                 <img src="${baseURL}/sprites/{{@key}}/sprite.png" alt="{{name}} preview" />
                 <div class="details">
                   <h3 class="name">{{name}}</h3>
-                  <div class="identifier">identifier: {{@key}}</div>
+                  <p>identifier: {{@key}}</p>
                   <p class="services">
                     services: <a href="${baseURL}/sprites/{{@key}}/sprite.json">JSON</a>
                     | <a href="${baseURL}/sprites/{{@key}}/sprite.png">PNG</a>
@@ -193,7 +194,7 @@
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Kill</h3>
-                <div class="identifier">Kill server</div>
+                <p>Kill server</p>
               </div>
               <div class="viewers">
                 <a class="btn" href="#" onclick="actionManager(event, 'kill')">Kill server</a>
@@ -205,7 +206,7 @@
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Restart</h3>
-                <div class="identifier">Restart server</div>
+                <p>Restart server</p>
               </div>
               <div class="viewers">
                 <a class="btn" href="#" onclick="actionManager(event, 'restart')">Restart server</a>
@@ -217,7 +218,7 @@
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Cancel sync</h3>
-                <div class="identifier">Cancel clean up/seed styles and datas</div>
+                <p>Cancel clean up/seed styles and datas</p>
               </div>
               <div class="viewers">
                 <a class="btn" href="#" onclick="actionManager(event, 'cancel')">Cancel sync</a>
@@ -229,7 +230,7 @@
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Sync all</h3>
-                <div class="identifier">Start clean up styles and datas then seed styles and datas</div>
+                <p>Start clean up styles and datas then seed styles and datas</p>
               </div>
               <div class="viewers">
                 <a class="btn" href="#" onclick="actionManager(event, 'all')">Sync all</a>
@@ -241,7 +242,7 @@
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Clean styles</h3>
-                <div class="identifier">Start clean up styles</div>
+                <p>Start clean up styles</p>
               </div>
               <div class="viewers">
                 <a class="btn" href="#" onclick="actionManager(event, 'cleanUpStyles')">Clean styles</a>
@@ -253,7 +254,7 @@
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Clean geojsons</h3>
-                <div class="identifier">Start clean up geojsons</div>
+                <p>Start clean up geojsons</p>
               </div>
               <div class="viewers">
                 <a class="btn" href="#" onclick="actionManager(event, 'cleanUpGeoJSONs')">Clean geojsons</a>
@@ -265,7 +266,7 @@
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Clean datas</h3>
-                <div class="identifier">Start clean up datas</div>
+                <p>Start clean up datas</p>
               </div>
               <div class="viewers">
                 <a class="btn" href="#" onclick="actionManager(event, 'cleanUpDatas')">Clean datas</a>
@@ -277,7 +278,7 @@
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Seed styles</h3>
-                <div class="identifier">Start seed styles</div>
+                <p>Start seed styles</p>
               </div>
               <div class="viewers">
                 <a class="btn" href="#" onclick="actionManager(event, 'seedStyles')">Seed styles</a>
@@ -289,7 +290,7 @@
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Seed geojsons</h3>
-                <div class="identifier">Start seed geojsons</div>
+                <p>Start seed geojsons</p>
               </div>
               <div class="viewers">
                 <a class="btn" href="#" onclick="actionManager(event, 'seedGeoJSONs')">Seed geojsons</a>
@@ -301,7 +302,7 @@
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Seed datas</h3>
-                <div class="identifier">Start seed datas</div>
+                <p>Start seed datas</p>
               </div>
               <div class="viewers">
                 <a class="btn" href="#" onclick="actionManager(event, 'seedDatas')">Seed datas</a>
@@ -313,7 +314,7 @@
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Summary</h3>
-                <div class="identifier">Summary</div>
+                <p>Summary</p>
               </div>
               <div class="viewers">
                 <a class="btn" href="${baseURL}/summary">View</a>
@@ -325,7 +326,7 @@
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Config JSON</h3>
-                <div class="identifier">View config.json content</div>
+                <p>View config.json content</p>
               </div>
               <div class="viewers">
                 <a class="btn" href="${baseURL}/config">View</a>
@@ -337,7 +338,7 @@
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Seed JSON</h3>
-                <div class="identifier">View seed.json content</div>
+                <p>View seed.json content</p>
               </div>
               <div class="viewers">
                 <a class="btn" href="${baseURL}/seed">View</a>
@@ -349,7 +350,7 @@
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
                 <h3 class="name">Clean up JSON</h3>
-                <div class="identifier">View cleanup.json content</div>
+                <p>View cleanup.json content</p>
               </div>
               <div class="viewers">
                 <a class="btn" href="${baseURL}/cleanup">View</a>
