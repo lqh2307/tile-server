@@ -42,6 +42,7 @@ function serveFrontPageHandler() {
   return async (req, res, next) => {
     try {
       const styles = {};
+      const geojsons = {};
       const geojsonGroups = {};
       const datas = {};
       const fonts = {};
@@ -79,11 +80,15 @@ function serveFrontPageHandler() {
           }
         }),
         ...Object.keys(config.repo.geojsons).map(async (id) => {
-          geojsonGroups[id] = {};
-
           Object.keys(config.repo.geojsons[id]).map(async (layer) => {
-            geojsonGroups[id][layer] = true;
+            geojsons[`${id}/${layer}`] = {
+              group: id,
+              layer: layer,
+            };
           });
+        }),
+        ...Object.keys(config.repo.geojsons).map(async (id) => {
+          geojsonGroups[id] = true;
         }),
         ...Object.keys(config.repo.datas).map(async (id) => {
           const data = config.repo.datas[id];
@@ -119,15 +124,13 @@ function serveFrontPageHandler() {
 
       const compiled = await compileTemplate("index", {
         styles: styles,
+        geojsons: geojsons,
         geojson_groups: geojsonGroups,
         datas: datas,
         fonts: fonts,
         sprites: sprites,
         style_count: Object.keys(styles).length,
-        geojson_count: Object.values(geojsonGroups).reduce(
-          (count, group) => count + Object.keys(group).length,
-          0
-        ),
+        geojson_count: Object.keys(geojsons).length,
         geojson_group_count: Object.keys(geojsonGroups).length,
         data_count: Object.keys(datas).length,
         font_count: Object.keys(fonts).length,

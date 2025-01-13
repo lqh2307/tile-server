@@ -106,24 +106,22 @@
       } if (tabId === "geojsons-tab") {
         document.querySelector("#geojsons-tab").innerHTML = `
           <div class="box">
-            {{#each geojson_groups}}
-              {{#each this}}
-                <div class="item">
-                  <img src="${emptyImageURL}" alt="Empty image" />
-                  <div class="details">
-                    <h3 class="name">{{@key}}</h3>
-                    <p>identifier: {{@key}}</p>
-                    <p>group: {{../@key}}</p>
-                    <p>layer: {{@key}}</p>
-                    <p class="services">
-                      services: <a href="${baseURL}/geojsons/{{../@key}}/{{@key}}.geojson">GeoJSON</a>
-                    </p>
-                  </div>
-                  <div class="viewers">
-                    <a class="btn" href="${baseURL}/geojsons/{{../@key}}/{{@key}}/">Inspect</a>
-                  </div>
+            {{#each geojsons}}
+              <div class="item">
+                <img src="${emptyImageURL}" alt="Empty image" />
+                <div class="details">
+                  <h3 class="name">{{layer}}</h3>
+                  <p>identifier: {{layer}}</p>
+                  <p>group: {{group}}</p>
+                  <p>layer: {{layer}}</p>
+                  <p class="services">
+                    services: <a href="${baseURL}/geojsons/{{group}}/{{layer}}.geojson">GeoJSON</a>
+                  </p>
                 </div>
-              {{/each}}
+                <div class="viewers">
+                  <a class="btn" href="${baseURL}/geojsons/{{group}}/{{layer}}/">Inspect</a>
+                </div>
+              </div>
             {{/each}}
           </div>
         `;
