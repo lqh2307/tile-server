@@ -464,6 +464,8 @@ export const serve_geojson = {
                   item.cache !== undefined &&
                   error.message === "GeoJSON does not exist"
                 ) {
+                  info.geometryTypes = ["polygon", "line", "circle"];
+
                   dataInfo[layer] = info;
                 } else {
                   throw error;
