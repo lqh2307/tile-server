@@ -17,7 +17,7 @@
 <body style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;">
   <h1 style="position:absolute;top:5px;right:0;width:240px;margin:0;font-size:18px;">Layer list</h1>
   <div id="map" style="position:absolute;top:0;left:0;right:250px;bottom:0;"></div>
-  <div id="layerList" style="position:absolute;top:35px;right:0;bottom:0;width:240px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"></div>
+  <div id="layerList" style="position:absolute;top:35px;right:0;bottom:0;width:240px;">
 
   <script>
     const baseURL = "{{base_url}}";
@@ -74,7 +74,7 @@
             item.innerHTML = `
               <div style="display:flex;align-items:center;cursor:pointer;">
                 <div style="width:15px;height:15px;display:inline-block;background:${layerColor};"></div>
-                <span style="margin-left:5px;color:${layerColor};">${layerId}</span>
+                <span style="margin-left:5px;color:${layerColor};display:inline-block;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${layerId}</span>
               </div>
             `;
 

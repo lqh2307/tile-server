@@ -307,12 +307,28 @@ export function validateAndGetGeometryTypes(geoJSON) {
       }
 
       geoJSON.features.forEach((feature) => {
+        if (feature.type !== "Feature") {
+          throw new Error("Invalid GeoJSON file");
+        }
+
+        if (!feature.geometry) {
+          throw new Error("Invalid GeoJSON file");
+        }
+
         if (feature.geometry.type === "GeometryCollection") {
           if (Array.isArray(feature.geometry.geometries) === false) {
             throw new Error("Invalid GeoJSON file");
           }
 
           feature.geometry.geometries.forEach((geometry) =>
+            if (!geometry.type) {
+              throw new Error("Invalid GeoJSON file");
+            }
+    
+            if (!geometry.coordinates) {
+              throw new Error("Invalid GeoJSON file");
+            }
+
             addGeometryType(geometry.type)
           );
         } else {
@@ -334,6 +350,14 @@ export function validateAndGetGeometryTypes(geoJSON) {
         }
 
         geoJSON.geometry.geometries.forEach((geometry) =>
+          if (!geometry.type) {
+            throw new Error("Invalid GeoJSON file");
+          }
+  
+          if (!geometry.coordinates) {
+            throw new Error("Invalid GeoJSON file");
+          }
+
           addGeometryType(geometry.type)
         );
       } else {
@@ -348,7 +372,17 @@ export function validateAndGetGeometryTypes(geoJSON) {
         throw new Error("Invalid GeoJSON file");
       }
 
-      geoJSON.geometries.forEach((geometry) => addGeometryType(geometry.type));
+      geoJSON.geometries.forEach((geometry) => {
+        if (!geometry.type) {
+          throw new Error("Invalid GeoJSON file");
+        }
+
+        if (!geometry.coordinates) {
+          throw new Error("Invalid GeoJSON file");
+        }
+
+        addGeometryType(geometry.type);
+      });
 
       break;
     }
