@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>{{name}} - Tile Server</title>
+  <title>{{layer}} - Tile Server</title>
 
   <link rel="stylesheet" type="text/css" href="{{base_url}}/maplibre-gl.css" />
   <link rel="stylesheet" type="text/css" href="{{base_url}}/maplibre-gl-inspect.css" />
@@ -22,6 +22,7 @@
   <script>
     const baseURL = "{{base_url}}";
     const id = "{{id}}";
+    const layer = "{{layer}}";
 
     fetch(`${baseURL}/geojsons/${id}.json`, {
         method: "GET",
@@ -54,80 +55,80 @@
           ]
         };
 
-        const geoJSONSourceColors = {};
+        const geoJSONColors = {};
 
         for (const geoJSONSource in jsonResponse.geojsons) {
-          style.sources[geoJSONSource] = {
-            "type": "geojson",
-            "data": jsonResponse.geojsons[geoJSONSource].url
-          };
+          if (geoJSONSource === layer) {
+            style.sources[geoJSONSource] = {
+              "type": "geojson",
+              "data": jsonResponse.geojsons[geoJSONSource].url
+            };
 
-          const r = Math.floor(Math.random() * 256);
-          const g = Math.floor(Math.random() * 256);
-          const b = Math.floor(Math.random() * 256);
+            const r = Math.floor(Math.random() * 256);
+            const g = Math.floor(Math.random() * 256);
+            const b = Math.floor(Math.random() * 256);
 
-          geoJSONSourceColors[geoJSONSource] = {};
+            if (jsonResponse.geojsons[geoJSONSource].geometryTypes.includes("polygon") === true) {
+              geoJSONColors.polygon = `rgba(${r}, ${g}, ${b}, 0.3)`;
 
-          if (jsonResponse.geojsons[geoJSONSource].geometryTypes.includes("polygon") === true) {
-            geoJSONSourceColors[geoJSONSource].polygon = `rgba(${r}, ${g}, ${b}, 0.3)`;
+              style.layers.push(
+                {
+                  "id": `${geoJSONSource}_polygon`,
+                  "source": geoJSONSource,
+                  "type": "fill",
+                  "paint": {
+                    "fill-color": geoJSONColors.polygon,
+                    "fill-antialias": true,
+                    "fill-outline-color": geoJSONColors.polygon
+                  },
+                  "layout": {
+                    "visibility": "visible"
+                  },
+                  "filter": ["==", "$type", "Polygon"]
+                }
+              );
+            }
+            
+            if (jsonResponse.geojsons[geoJSONSource].geometryTypes.includes("line") === true) {
+              geoJSONColors.line = `rgba(${r}, ${g}, ${b}, 0.6)`;
 
-            style.layers.push(
-              {
-                "id": `${geoJSONSource}_polygon`,
-                "source": geoJSONSource,
-                "type": "fill",
-                "paint": {
-                  "fill-color": geoJSONSourceColors[geoJSONSource].polygon,
-                  "fill-antialias": true,
-                  "fill-outline-color": geoJSONSourceColors[geoJSONSource].polygon
-                },
-                "layout": {
-                  "visibility": "visible"
-                },
-                "filter": ["==", "$type", "Polygon"]
-              }
-            );
-          }
-          
-          if (jsonResponse.geojsons[geoJSONSource].geometryTypes.includes("line") === true) {
-            geoJSONSourceColors[geoJSONSource].line = `rgba(${r}, ${g}, ${b}, 0.6)`;
+              style.layers.push(
+                {
+                  "id": `${geoJSONSource}_line`,
+                  "source": geoJSONSource,
+                  "type": "line",
+                  "paint": {
+                    "line-color": geoJSONColors.line
+                  },
+                  "layout": {
+                    "line-join": "round",
+                    "line-cap": "round",
+                    "visibility": "visible"
+                  },
+                  "filter": ["==", "$type", "LineString"]
+                }
+              );
+            }
+            
+            if (jsonResponse.geojsons[geoJSONSource].geometryTypes.includes("circle") === true) {
+              geoJSONColors.circle = `rgba(${r}, ${g}, ${b}, 0.8)`;
 
-            style.layers.push(
-              {
-                "id": `${geoJSONSource}_line`,
-                "source": geoJSONSource,
-                "type": "line",
-                "paint": {
-                  "line-color": geoJSONSourceColors[geoJSONSource].line
-                },
-                "layout": {
-                  "line-join": "round",
-                  "line-cap": "round",
-                  "visibility": "visible"
-                },
-                "filter": ["==", "$type", "LineString"]
-              }
-            );
-          }
-          
-          if (jsonResponse.geojsons[geoJSONSource].geometryTypes.includes("circle") === true) {
-            geoJSONSourceColors[geoJSONSource].circle = `rgba(${r}, ${g}, ${b}, 0.8)`;
-
-            style.layers.push(
-              {
-                "id": `${geoJSONSource}_circle`,
-                "source": geoJSONSource,
-                "type": "circle",
-                "paint": {
-                  "circle-color": geoJSONSourceColors[geoJSONSource].circle,
-                  "circle-radius": 2
-                },
-                "layout": {
-                  "visibility": "visible"
-                },
-                "filter": ["==", "$type", "Point"]
-              }
-            );
+              style.layers.push(
+                {
+                  "id": `${geoJSONSource}_circle`,
+                  "source": geoJSONSource,
+                  "type": "circle",
+                  "paint": {
+                    "circle-color": geoJSONColors.circle,
+                    "circle-radius": 2
+                  },
+                  "layout": {
+                    "visibility": "visible"
+                  },
+                  "filter": ["==", "$type", "Point"]
+                }
+              );
+            }
           }
         }
 
@@ -150,27 +151,25 @@
         map.on("load", () => {
           const layerList = document.getElementById("layerList");
 
-          for (const geoJSONSource in geoJSONSourceColors) {
-            for (const layer in geoJSONSourceColors[geoJSONSource]) {
-              const item = document.createElement("div");
+          for (const layer in geoJSONColors) {
+            const item = document.createElement("div");
 
-              item.innerHTML = `
-                <div style="display:flex;align-items:center;cursor:pointer;">
-                  <div style="width:15px;height:15px;display:inline-block;background:${geoJSONSourceColors[geoJSONSource][layer]};"></div>
-                  <span style="margin-left:5px;color:${geoJSONSourceColors[geoJSONSource][layer]};">${geoJSONSource}_${layer}</span>
-                </div>
-              `;
+            item.innerHTML = `
+              <div style="display:flex;align-items:center;cursor:pointer;">
+                <div style="width:15px;height:15px;display:inline-block;background:${geoJSONColors[layer]};"></div>
+                <span style="margin-left:5px;color:${geoJSONColors[layer]};">${geoJSONSource}_${layer}</span>
+              </div>
+            `;
 
-              item.onclick = () => {
-                const newVisibility = map.getLayoutProperty(`${geoJSONSource}_${layer}`, "visibility") === "none" ? "visible" : "none";
+            item.onclick = () => {
+              const newVisibility = map.getLayoutProperty(`${geoJSONSource}_${layer}`, "visibility") === "none" ? "visible" : "none";
 
-                map.setLayoutProperty(`${geoJSONSource}_${layer}`, "visibility", newVisibility);
+              map.setLayoutProperty(`${geoJSONSource}_${layer}`, "visibility", newVisibility);
 
-                item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
-              };
+              item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
+            };
 
-              layerList.appendChild(item);
-            }
+            layerList.appendChild(item);
           }
         });
 

@@ -42,7 +42,7 @@ function serveFrontPageHandler() {
   return async (req, res, next) => {
     try {
       const styles = {};
-      const geojsons = {};
+      const geojsonGroups = {};
       const datas = {};
       const fonts = {};
       const sprites = {};
@@ -79,9 +79,11 @@ function serveFrontPageHandler() {
           }
         }),
         ...Object.keys(config.repo.geojsons).map(async (id) => {
-          geojsons[id] = {
-            name: id,
-          };
+          geojsonGroups[id] = {};
+
+          Object.keys(config.repo.geojsons[id]).map(async (layer) => {
+            geojsonGroups[id][layer] = true;
+          });
         }),
         ...Object.keys(config.repo.datas).map(async (id) => {
           const data = config.repo.datas[id];
@@ -108,25 +110,25 @@ function serveFrontPageHandler() {
           };
         }),
         ...Object.keys(config.repo.fonts).map(async (id) => {
-          fonts[id] = {
-            name: id,
-          };
+          fonts[id] = true;
         }),
         ...Object.keys(config.repo.sprites).map(async (id) => {
-          sprites[id] = {
-            name: id,
-          };
+          sprites[id] = true;
         }),
       ]);
 
       const compiled = await compileTemplate("index", {
         styles: styles,
-        geojsons: geojsons,
+        geojson_groups: geojsonGroups,
         datas: datas,
         fonts: fonts,
         sprites: sprites,
         style_count: Object.keys(styles).length,
-        geojson_count: Object.keys(geojsons).length,
+        geojson_count: Object.values(geojsonGroups).reduce(
+          (count, group) => count + Object.keys(group).length,
+          0
+        ),
+        geojson_group_count: Object.keys(geojsonGroups).length,
         data_count: Object.keys(datas).length,
         font_count: Object.keys(fonts).length,
         sprite_count: Object.keys(sprites).length,
@@ -212,6 +214,39 @@ function serveDataHandler() {
 }
 
 /**
+ * Serve GeoJSON group handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
+function serveGeoJSONGroupHandler() {
+  return async (req, res, next) => {
+    const id = req.params.id;
+
+    try {
+      const item = config.repo.geojsons[id];
+
+      if (item === undefined) {
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .send("GeoJSON group does not exist");
+      }
+
+      const compiled = await compileTemplate("geojson_group", {
+        id: id,
+        base_url: getRequestHost(req),
+      });
+
+      return res.status(StatusCodes.OK).send(compiled);
+    } catch (error) {
+      printLog("error", `Failed to serve geojson group "${id}": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
+/**
  * Serve GeoJSON handler
  * @returns {(req: any, res: any, next: any) => Promise<any>}
  */
@@ -223,18 +258,26 @@ function serveGeoJSONHandler() {
       const item = config.repo.geojsons[id];
 
       if (item === undefined) {
-        return res.status(StatusCodes.NOT_FOUND).send("GeoJSON does not exist");
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .send("GeoJSON group does not exist");
+      }
+
+      if (item[req.params.layer] === undefined) {
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .send("GeoJSON layer does not exist");
       }
 
       const compiled = await compileTemplate("geojson", {
         id: id,
-        name: item.name,
+        layer: req.params.layer
         base_url: getRequestHost(req),
       });
 
       return res.status(StatusCodes.OK).send(compiled);
     } catch (error) {
-      printLog("error", `Failed to serve geojson "${id}": ${error}`);
+      printLog("error", `Failed to serve geojson group "${id}" - Layer "${layer}": ${error}`);
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -1043,6 +1086,45 @@ export const serve_common = {
        *   get:
        *     tags:
        *       - Common
+       *     summary: Serve geojson group page
+       *     parameters:
+       *       - in: path
+       *         name: id
+       *         schema:
+       *           type: string
+       *           example: id
+       *         required: true
+       *         description: ID of the geojson group
+       *     responses:
+       *       200:
+       *         description: GeoJSON group page
+       *         content:
+       *           text/html:
+       *             schema:
+       *               type: string
+       *       404:
+       *         description: Not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
+       *       500:
+       *         description: Internal server error
+       */
+      app.get("/geojsons/:id/$", checkReadyMiddleware(), serveGeoJSONGroupHandler());
+
+      /**
+       * @swagger
+       * tags:
+       *   - name: Common
+       *     description: Common related endpoints
+       * /geojsons/{id}/{layer}:
+       *   get:
+       *     tags:
+       *       - Common
        *     summary: Serve geojson page
        *     parameters:
        *       - in: path
@@ -1052,6 +1134,13 @@ export const serve_common = {
        *           example: id
        *         required: true
        *         description: ID of the geojson
+       *       - in: path
+       *         name: layer
+       *         schema:
+       *           type: string
+       *           example: layer
+       *         required: true
+       *         description: Layer of the geojson group
        *     responses:
        *       200:
        *         description: GeoJSON page
@@ -1071,7 +1160,7 @@ export const serve_common = {
        *       500:
        *         description: Internal server error
        */
-      app.get("/geojsons/:id/$", checkReadyMiddleware(), serveGeoJSONHandler());
+      app.get("/geojsons/:id/:layer/$", checkReadyMiddleware(), serveGeoJSONHandler());
 
       /* Serve data */
       /**

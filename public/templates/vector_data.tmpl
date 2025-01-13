@@ -81,9 +81,9 @@
             item.onclick = () => {
               const newVisibility = map.getLayoutProperty(`source_${layerId}_polygon`, "visibility") === "none" ? "visible" : "none";
 
-              map.setLayoutProperty(`source_${layerId}_polygon`, "visibility", newVisibility);
-              map.setLayoutProperty(`source_${layerId}_line`, "visibility", newVisibility);
-              map.setLayoutProperty(`source_${layerId}_circle`, "visibility", newVisibility);
+              ["polygon", "line", "circle"].forEach((geometryType) => {
+                map.setLayoutProperty(`source_${layerId}_${geometryType}`, "visibility", newVisibility);
+              });
 
               item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
             };
