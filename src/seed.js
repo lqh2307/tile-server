@@ -1112,7 +1112,7 @@ async function seedGeoJSON(
   printLog("info", log);
 
   /* Download GeoJSON file */
-  const filePath = `${process.env.DATA_DIR}/caches/geojsons/${id}/${id}.geojson`;
+  const filePath = `${process.env.DATA_DIR}/caches/geojsons/${id}/geojson.geojson`;
 
   try {
     let needDownload = false;
@@ -1121,7 +1121,7 @@ async function seedGeoJSON(
       try {
         const [response, geoJSONData] = await Promise.all([
           getDataFromURL(
-            geojsonURL.replaceAll(`${id}.geojson`, `md5/${id}.geojson`),
+            geojsonURL.replaceAll(".geojson", "/md5"),
             timeout,
             "arraybuffer"
           ),
@@ -1233,7 +1233,7 @@ async function seedStyle(
       try {
         const [response, styleJSONData] = await Promise.all([
           getDataFromURL(
-            styleURL.replaceAll("style.json", `md5/style.json`),
+            styleURL.replaceAll("/style.json", "/md5"),
             timeout,
             "arraybuffer"
           ),

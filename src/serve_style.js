@@ -868,7 +868,7 @@ export const serve_style = {
      * tags:
      *   - name: Style
      *     description: Style related endpoints
-     * /styles/{id}/md5/style.json:
+     * /styles/{id}/md5:
      *   get:
      *     tags:
      *       - Style
@@ -906,11 +906,7 @@ export const serve_style = {
      *       500:
      *         description: Internal server error
      */
-    app.get(
-      "/:id/md5/style.json",
-      checkReadyMiddleware(),
-      getStyleMD5Handler()
-    );
+    app.get("/:id/md5", checkReadyMiddleware(), getStyleMD5Handler());
 
     /**
      * @swagger

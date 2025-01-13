@@ -351,7 +351,7 @@ export const serve_geojson = {
      * tags:
      *   - name: GeoJSON
      *     description: GeoJSON related endpoints
-     * /geojsons/{id}/md5/{layer}.geojson:
+     * /geojsons/{id}/{layer}/md5:
      *   get:
      *     tags:
      *       - GeoJSON
@@ -390,11 +390,7 @@ export const serve_geojson = {
      *       500:
      *         description: Internal server error
      */
-    app.get(
-      "/:id/md5/:layer.geojson",
-      checkReadyMiddleware(),
-      getGeoJSONMD5Handler()
-    );
+    app.get("/:id:/:layer/md5", checkReadyMiddleware(), getGeoJSONMD5Handler());
 
     return app;
   },
