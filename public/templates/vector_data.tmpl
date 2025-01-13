@@ -110,7 +110,7 @@
 
             const cacheBBoxsButton = document.createElement("div");
             cacheBBoxsButton.innerHTML = "Hide cache BBoxs";
-            cacheBBoxsButton.style.cssText = "position:absolute;bottom:10px;left:10px;padding:5px 10px;font-size:14px;cursor:pointer;background-color:rgba(0, 150, 255, 0.5);color:white;border:none;border-radius:5px;display:inline-block;z-index:1000;";
+            cacheBBoxsButton.style.cssText = "position:absolute;bottom:10px;left:10px;padding:5px 10px;font-size:14px;cursor:pointer;background:rgba(0, 150, 255, 0.5);color:white;border:none;border-radius:5px;display:inline-block;z-index:1000;";
 
             cacheBBoxsButton.onclick = () => {
               const newVisibility = map.getLayoutProperty("cache_bboxs_source_polygon", "visibility") === "none" ? "visible" : "none";
