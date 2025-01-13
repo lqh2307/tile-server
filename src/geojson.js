@@ -320,17 +320,17 @@ export function validateAndGetGeometryTypes(geoJSON) {
             throw new Error("Invalid GeoJSON file");
           }
 
-          feature.geometry.geometries.forEach((geometry) =>
+          feature.geometry.geometries.forEach((geometry) => {
             if (!geometry.type) {
               throw new Error("Invalid GeoJSON file");
             }
-    
+
             if (!geometry.coordinates) {
               throw new Error("Invalid GeoJSON file");
             }
 
-            addGeometryType(geometry.type)
-          );
+            addGeometryType(geometry.type);
+          });
         } else {
           addGeometryType(feature.geometry.type);
         }
@@ -349,17 +349,17 @@ export function validateAndGetGeometryTypes(geoJSON) {
           throw new Error("Invalid GeoJSON file");
         }
 
-        geoJSON.geometry.geometries.forEach((geometry) =>
+        geoJSON.geometry.geometries.forEach((geometry) => {
           if (!geometry.type) {
             throw new Error("Invalid GeoJSON file");
           }
-  
+
           if (!geometry.coordinates) {
             throw new Error("Invalid GeoJSON file");
           }
 
-          addGeometryType(geometry.type)
-        );
+          addGeometryType(geometry.type);
+        });
       } else {
         addGeometryType(geoJSON.geometry.type);
       }
