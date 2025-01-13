@@ -271,13 +271,16 @@ function serveGeoJSONHandler() {
 
       const compiled = await compileTemplate("geojson", {
         id: id,
-        layer: req.params.layer
+        layer: req.params.layer,
         base_url: getRequestHost(req),
       });
 
       return res.status(StatusCodes.OK).send(compiled);
     } catch (error) {
-      printLog("error", `Failed to serve geojson group "${id}" - Layer "${layer}": ${error}`);
+      printLog(
+        "error",
+        `Failed to serve geojson group "${id}" - Layer "${layer}": ${error}`
+      );
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -1114,7 +1117,11 @@ export const serve_common = {
        *       500:
        *         description: Internal server error
        */
-      app.get("/geojsons/:id/$", checkReadyMiddleware(), serveGeoJSONGroupHandler());
+      app.get(
+        "/geojsons/:id/$",
+        checkReadyMiddleware(),
+        serveGeoJSONGroupHandler()
+      );
 
       /**
        * @swagger
@@ -1160,7 +1167,11 @@ export const serve_common = {
        *       500:
        *         description: Internal server error
        */
-      app.get("/geojsons/:id/:layer/$", checkReadyMiddleware(), serveGeoJSONHandler());
+      app.get(
+        "/geojsons/:id/:layer/$",
+        checkReadyMiddleware(),
+        serveGeoJSONHandler()
+      );
 
       /* Serve data */
       /**
