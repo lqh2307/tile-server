@@ -1112,7 +1112,7 @@ async function seedGeoJSON(
   printLog("info", log);
 
   /* Download GeoJSON file */
-  const filePath = `${process.env.DATA_DIR}/caches/geojsons/${id}/geojson.geojson`;
+  const filePath = `${process.env.DATA_DIR}/caches/geojsons/${id}/${id}.geojson`;
 
   try {
     let needDownload = false;
@@ -1121,7 +1121,7 @@ async function seedGeoJSON(
       try {
         const [response, geoJSONData] = await Promise.all([
           getDataFromURL(
-            geojsonURL.replaceAll(".geojson", "/md5"),
+            geojsonURL.replaceAll(`${id}.geojson`, `${id}/md5`),
             timeout,
             "arraybuffer"
           ),
