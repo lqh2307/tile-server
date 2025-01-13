@@ -48,12 +48,11 @@
     .item {
       background: #fff;
       height: 191px;
-      border: 1px solid #ededed;
-      border-top: none;
+      border: 1px dashed #ccc;
     }
 
     .item:nth-child(odd) {
-      background-color: #fbfbfb;
+      background-color: #ddd;
     }
 
     .item img {
@@ -121,12 +120,13 @@
     }
 
     .tab {
-      border: 1px solid #ddd;
-      background: #f9f9f9;
+      border: 2px solid #ccc;
+      background: #ddd;
       margin-right: 3px;
       user-select: none;
       padding: 10px 10px;
-      font-size: 13px;
+      font-size: 14px;
+      z-index: 1000;
     }
 
     .tab.active {
@@ -137,7 +137,7 @@
 
     .tab-content {
       display: none;
-      border: 2px solid #ddd;
+      border: 2px solid #ccc;
       background: #fff;
     }
 
