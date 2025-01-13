@@ -84,7 +84,7 @@ function serveFrontPageHandler() {
             geojsons[`${id}/${layer}`] = {
               group: id,
               layer: layer,
-              cache: config.repo.geojsons[id].storeCache === true,
+              cache: config.repo.geojsons[id][layer].storeCache === true,
             };
           });
         }),

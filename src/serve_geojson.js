@@ -108,7 +108,7 @@ function getGeoJSONHandler() {
           if (geoJSONLayer.storeCache === true) {
             printLog(
               "info",
-              `Caching GeoJSON "${id}" - File "${item.path}"...`
+              `Caching GeoJSON "${id}" - File "${geoJSONLayer.path}"...`
             );
 
             cacheGeoJSONFile(geoJSONLayer.path, geoJSON).catch((error) =>
