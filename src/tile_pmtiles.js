@@ -277,13 +277,13 @@ export async function getPMTilesTile(pmtilesSource, z, x, y) {
 export function validatePMTiles(metadata) {
   /* Validate name */
   if (metadata.name === undefined) {
-    throw new Error("name is invalid");
+    throw new Error(`"name" property is invalid`);
   }
 
   /* Validate type */
   if (metadata.type !== undefined) {
     if (["baselayer", "overlay"].includes(metadata.type) === false) {
-      throw new Error("type is invalid");
+      throw new Error(`"type" property is invalid`);
     }
   }
 
@@ -292,29 +292,29 @@ export function validatePMTiles(metadata) {
     ["jpeg", "jpg", "pbf", "png", "webp", "gif"].includes(metadata.format) ===
     false
   ) {
-    throw new Error("format is invalid");
+    throw new Error(`"format" property is invalid`);
   }
 
   /* Validate json */
   /*
   if (metadata.format === "pbf" && metadata.json === undefined) {
-    throw new Error(`json is invalid`);
+    throw new Error(`"json" property is invalid`);
   }
   */
 
   /* Validate minzoom */
   if (metadata.minzoom < 0 || metadata.minzoom > 22) {
-    throw new Error("minzoom is invalid");
+    throw new Error(`"minzoom" property is invalid`);
   }
 
   /* Validate maxzoom */
   if (metadata.maxzoom < 0 || metadata.maxzoom > 22) {
-    throw new Error("maxzoom is invalid");
+    throw new Error(`"maxzoom" property is invalid`);
   }
 
   /* Validate minzoom & maxzoom */
   if (metadata.minzoom > metadata.maxzoom) {
-    throw new Error("zoom is invalid");
+    throw new Error(`"zoom" property is invalid`);
   }
 
   /* Validate bounds */
@@ -328,7 +328,7 @@ export function validatePMTiles(metadata) {
       metadata.bounds[0] >= metadata.bounds[2] ||
       metadata.bounds[1] >= metadata.bounds[3]
     ) {
-      throw new Error("bounds is invalid");
+      throw new Error(`"bounds" property is invalid`);
     }
   }
 
@@ -341,7 +341,7 @@ export function validatePMTiles(metadata) {
       metadata.center[2] < 0 ||
       metadata.center[2] > 22
     ) {
-      throw new Error("center is invalid");
+      throw new Error(`"center" property is invalid`);
     }
   }
 }

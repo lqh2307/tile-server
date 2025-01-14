@@ -16,19 +16,21 @@ import {
 } from "./geojson.js";
 
 /**
- * Get geoJSON info handler
+ * Get geoJSON group info handler
  * @returns {(req: any, res: any, next: any) => Promise<any>}
  */
-function getGeoJSONInfoHandler() {
+function getGeoJSONGroupInfoHandler() {
   return async (req, res, next) => {
     const id = req.params.id;
 
     try {
       const item = config.repo.geojsons[id];
 
-      /* Check GeoJSON is used? */
+      /* Check GeoJSON group is used? */
       if (item === undefined) {
-        return res.status(StatusCodes.NOT_FOUND).send("GeoJSON does not exist");
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .send("GeoJSON group does not exist");
       }
 
       const requestHost = getRequestHost(req);
@@ -50,7 +52,48 @@ function getGeoJSONInfoHandler() {
         geojsons: geojsons,
       });
     } catch (error) {
-      printLog("error", `Failed to get GeoJSON info "${id}": ${error}`);
+      printLog("error", `Failed to get GeoJSON group info "${id}": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
+/**
+ * Get geoJSON info handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
+function getGeoJSONInfoHandler() {
+  return async (req, res, next) => {
+    const id = req.params.id;
+
+    try {
+      const item = config.repo.geojsons[id];
+
+      /* Check GeoJSON is used? */
+      if (item === undefined) {
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .send("GeoJSON group does not exist");
+      }
+
+      res.header("content-type", "application/json");
+
+      return res.status(StatusCodes.OK).send({
+        group: id,
+        layer: req.params.layer,
+        url: `${getRequestHost(req)}/geojsons/${id}/${
+          req.params.layer
+        }.geojson`,
+        geometryTypes: item[req.params.layer].geometryTypes,
+      });
+    } catch (error) {
+      printLog(
+        "error",
+        `Failed to get GeoJSON group info "${id}" - Layer "${req.params.layer}": ${error}`
+      );
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -72,7 +115,9 @@ function getGeoJSONHandler() {
 
       /* Check GeoJSON is used? */
       if (item === undefined) {
-        return res.status(StatusCodes.NOT_FOUND).send("GeoJSON does not exist");
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .send("GeoJSON group does not exist");
       }
 
       const geoJSONLayer = item[req.params.layer];
@@ -127,7 +172,10 @@ function getGeoJSONHandler() {
 
       return res.status(StatusCodes.OK).send(geoJSON);
     } catch (error) {
-      printLog("error", `Failed to get GeoJSON "${id}": ${error}`);
+      printLog(
+        "error",
+        `Failed to get GeoJSON group "${id}" - Layer "${req.params.layer}": ${error}`
+      );
 
       if (error.message === "GeoJSON does not exist") {
         return res.status(StatusCodes.NO_CONTENT).send(error.message);
@@ -153,7 +201,9 @@ function getGeoJSONMD5Handler() {
 
       /* Check GeoJSON is used? */
       if (item === undefined) {
-        return res.status(StatusCodes.NOT_FOUND).send("GeoJSON does not exist");
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .send("GeoJSON group does not exist");
       }
 
       const geoJSONLayer = item[req.params.layer];
@@ -174,7 +224,10 @@ function getGeoJSONMD5Handler() {
 
       return res.status(StatusCodes.OK).send();
     } catch (error) {
-      printLog("error", `Failed to get md5 GeoJSON "${id}": ${error}`);
+      printLog(
+        "error",
+        `Failed to get md5 GeoJSON group "${id}" - Layer "${req.params.layer}": ${error}`
+      );
 
       if (error.message === "GeoJSON does not exist") {
         return res.status(StatusCodes.NO_CONTENT).send(error.message);
@@ -188,10 +241,10 @@ function getGeoJSONMD5Handler() {
 }
 
 /**
- * Get GeoJSON list handler
+ * Get GeoJSON group list handler
  * @returns {(req: any, res: any, next: any) => Promise<any>}
  */
-function getGeoJSONsListHandler() {
+function getGeoJSONGroupsListHandler() {
   return async (req, res, next) => {
     try {
       const requestHost = getRequestHost(req);
@@ -208,7 +261,7 @@ function getGeoJSONsListHandler() {
 
       return res.status(StatusCodes.OK).send(result);
     } catch (error) {
-      printLog("error", `Failed to get GeoJSONs": ${error}`);
+      printLog("error", `Failed to get GeoJSON groups": ${error}`);
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -230,10 +283,10 @@ export const serve_geojson = {
      *   get:
      *     tags:
      *       - GeoJSON
-     *     summary: Get all GeoJSONs
+     *     summary: Get all GeoJSON groups
      *     responses:
      *       200:
-     *         description: List of all GeoJSONs
+     *         description: List of all GeoJSON groups
      *         content:
      *           application/json:
      *             schema:
@@ -259,7 +312,11 @@ export const serve_geojson = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/geojsons.json", checkReadyMiddleware(), getGeoJSONsListHandler());
+    app.get(
+      "/geojsons.json",
+      checkReadyMiddleware(),
+      getGeoJSONGroupsListHandler()
+    );
 
     /**
      * @swagger
@@ -267,6 +324,45 @@ export const serve_geojson = {
      *   - name: GeoJSON
      *     description: GeoJSON related endpoints
      * /geojsons/{id}.json:
+     *   get:
+     *     tags:
+     *       - GeoJSON
+     *     summary: Get geoJSON group info
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         schema:
+     *           type: string
+     *           example: id
+     *         required: true
+     *         description: ID of the GeoJSON group
+     *     responses:
+     *       200:
+     *         description: GeoJSON group info
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/:id.json", checkReadyMiddleware(), getGeoJSONGroupInfoHandler());
+
+    /**
+     * @swagger
+     * tags:
+     *   - name: GeoJSON
+     *     description: GeoJSON related endpoints
+     * /geojsons/{id}/{layer}.json:
      *   get:
      *     tags:
      *       - GeoJSON
@@ -279,6 +375,13 @@ export const serve_geojson = {
      *           example: id
      *         required: true
      *         description: ID of the GeoJSON
+     *       - in: path
+     *         name: layer
+     *         schema:
+     *           type: string
+     *           example: layer
+     *         required: true
+     *         description: Layer of the GeoJSON
      *     responses:
      *       200:
      *         description: GeoJSON info
@@ -298,7 +401,11 @@ export const serve_geojson = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/:id.json", checkReadyMiddleware(), getGeoJSONInfoHandler());
+    app.get(
+      "/:id/:layer.json",
+      checkReadyMiddleware(),
+      getGeoJSONInfoHandler()
+    );
 
     /**
      * @swagger

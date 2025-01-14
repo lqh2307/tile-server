@@ -33,7 +33,7 @@
         if (response.status === 200) {
           return response.json();
         } else {
-          alert(`Failed to fetch GeoJSON info: Status code: ${response.status} - ${response.statusText}`);
+          alert(`Failed to fetch GeoJSON group info: Status code: ${response.status} - ${response.statusText}`);
         }
       })
       .then((jsonResponse) => {

@@ -259,14 +259,10 @@ export async function getGeoJSONCreated(filePath) {
  * @returns {Array<string>} List of geometry types
  */
 export function validateAndGetGeometryTypes(geoJSON) {
-  if (!geoJSON.type) {
-    throw new Error("Invalid GeoJSON file");
-  }
-
   const geometryTypes = [];
 
-  function addGeometryType(type) {
-    switch (type) {
+  function addGeometryType(geometryType) {
+    switch (geometryType) {
       case "Polygon":
       case "MultiPolygon": {
         if (geometryTypes.includes("polygon") === false) {
@@ -295,7 +291,7 @@ export function validateAndGetGeometryTypes(geoJSON) {
       }
 
       default: {
-        throw new Error("Invalid GeoJSON file");
+        throw new Error(`"type" property is invalid`);
       }
     }
   }
@@ -303,65 +299,125 @@ export function validateAndGetGeometryTypes(geoJSON) {
   switch (geoJSON.type) {
     case "FeatureCollection": {
       if (Array.isArray(geoJSON.features) === false) {
-        throw new Error("Invalid GeoJSON file");
+        throw new Error(`"features" property is invalid`);
       }
 
-      geoJSON.features.forEach((feature) => {
+      for (const feature of geoJSON.features) {
         if (feature.type !== "Feature") {
-          throw new Error("Invalid GeoJSON file");
+          throw new Error(`"type" property is invalid`);
         }
 
-        if (!feature.geometry) {
-          throw new Error("Invalid GeoJSON file");
+        if (feature.geometry === null) {
+          break;
         }
 
         if (feature.geometry.type === "GeometryCollection") {
           if (Array.isArray(feature.geometry.geometries) === false) {
-            throw new Error("Invalid GeoJSON file");
+            throw new Error(`"geometries" property is invalid`);
           }
 
-          feature.geometry.geometries.forEach((geometry) => {
-            if (!geometry.type) {
-              throw new Error("Invalid GeoJSON file");
+          for (const geometry of feature.geometry.geometries) {
+            if (
+              [
+                "Polygon",
+                "MultiPolygon",
+                "LineString",
+                "MultiLineString",
+                "Point",
+                "MultiPoint",
+              ].includes(geometry.type) === false
+            ) {
+              throw new Error(`"type" property is invalid`);
             }
 
-            if (!geometry.coordinates) {
-              throw new Error("Invalid GeoJSON file");
+            if (
+              geometry.coordinates !== null &&
+              Array.isArray(geometry.coordinates) === false
+            ) {
+              throw new Error(`"coordinates" property is invalid`);
             }
 
             addGeometryType(geometry.type);
-          });
-        } else {
+          }
+        } else if (
+          [
+            "Polygon",
+            "MultiPolygon",
+            "LineString",
+            "MultiLineString",
+            "Point",
+            "MultiPoint",
+          ].includes(feature.geometry.type) === true
+        ) {
+          if (
+            feature.geometry.coordinates !== null &&
+            Array.isArray(feature.geometry.coordinates) === false
+          ) {
+            throw new Error(`"coordinates" property is invalid`);
+          }
+
           addGeometryType(feature.geometry.type);
+        } else {
+          throw new Error(`"type" property is invalid`);
         }
-      });
+      }
 
       break;
     }
 
     case "Feature": {
-      if (!geoJSON.geometry) {
-        throw new Error("Invalid GeoJSON file");
+      if (geoJSON.geometry === null) {
+        break;
       }
 
       if (geoJSON.geometry.type === "GeometryCollection") {
         if (Array.isArray(geoJSON.geometry.geometries) === false) {
-          throw new Error("Invalid GeoJSON file");
+          throw new Error(`"geometries" property is invalid`);
         }
 
-        geoJSON.geometry.geometries.forEach((geometry) => {
-          if (!geometry.type) {
-            throw new Error("Invalid GeoJSON file");
+        for (const geometry of geoJSON.geometry.geometries) {
+          if (
+            [
+              "Polygon",
+              "MultiPolygon",
+              "LineString",
+              "MultiLineString",
+              "Point",
+              "MultiPoint",
+            ].includes(geometry.type) === false
+          ) {
+            throw new Error(`"type" property is invalid`);
           }
 
-          if (!geometry.coordinates) {
-            throw new Error("Invalid GeoJSON file");
+          if (
+            geometry.coordinates !== null &&
+            Array.isArray(geometry.coordinates) === false
+          ) {
+            throw new Error(`"coordinates" property is invalid`);
           }
 
           addGeometryType(geometry.type);
-        });
+        }
+      } else if (
+        [
+          "Polygon",
+          "MultiPolygon",
+          "LineString",
+          "MultiLineString",
+          "Point",
+          "MultiPoint",
+        ].includes(geometry.type) === true
+      ) {
+        if (
+          geometry.coordinates !== null &&
+          Array.isArray(geometry.coordinates) === false
+        ) {
+          throw new Error(`"coordinates" property is invalid`);
+        }
+
+        addGeometryType(geometry.type);
       } else {
-        addGeometryType(geoJSON.geometry.type);
+        throw new Error(`"type" property is invalid`);
       }
 
       break;
@@ -369,20 +425,32 @@ export function validateAndGetGeometryTypes(geoJSON) {
 
     case "GeometryCollection": {
       if (Array.isArray(geoJSON.geometries) === false) {
-        throw new Error("Invalid GeoJSON file");
+        throw new Error(`"geometries" property is invalid`);
       }
 
-      geoJSON.geometries.forEach((geometry) => {
-        if (!geometry.type) {
-          throw new Error("Invalid GeoJSON file");
+      for (const geometry of geoJSON.geometries) {
+        if (
+          [
+            "Polygon",
+            "MultiPolygon",
+            "LineString",
+            "MultiLineString",
+            "Point",
+            "MultiPoint",
+          ].includes(geometry.type) === false
+        ) {
+          throw new Error(`"type" property is invalid`);
         }
 
-        if (!geometry.coordinates) {
-          throw new Error("Invalid GeoJSON file");
+        if (
+          geometry.coordinates !== null &&
+          Array.isArray(geometry.coordinates) === false
+        ) {
+          throw new Error(`"coordinates" property is invalid`);
         }
 
         addGeometryType(geometry.type);
-      });
+      }
 
       break;
     }
@@ -393,8 +461,11 @@ export function validateAndGetGeometryTypes(geoJSON) {
     case "MultiLineString":
     case "Point":
     case "MultiPoint": {
-      if (!geoJSON.coordinates) {
-        throw new Error("Invalid GeoJSON file");
+      if (
+        geoJSON.coordinates !== null &&
+        Array.isArray(geoJSON.coordinates) === false
+      ) {
+        throw new Error(`"coordinates" property is invalid`);
       }
 
       addGeometryType(geoJSON.type);
@@ -403,7 +474,7 @@ export function validateAndGetGeometryTypes(geoJSON) {
     }
 
     default: {
-      throw new Error("Invalid GeoJSON file");
+      throw new Error(`"type" property is invalid`);
     }
   }
 

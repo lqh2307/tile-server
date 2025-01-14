@@ -21,10 +21,10 @@
 
   <script>
     const baseURL = "{{base_url}}";
-    const id = "{{id}}";
+    const group = "{{group}}";
     const layer = "{{layer}}";
 
-    fetch(`${baseURL}/geojsons/${id}.json`, {
+    fetch(`${baseURL}/geojsons/${group}/${layer}.json`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json"
@@ -59,14 +59,14 @@
 
         style.sources[layer] = {
           "type": "geojson",
-          "data": jsonResponse.geojsons[layer].url
+          "data": jsonResponse.url
         };
 
         const r = Math.floor(Math.random() * 256);
         const g = Math.floor(Math.random() * 256);
         const b = Math.floor(Math.random() * 256);
 
-        if (jsonResponse.geojsons[layer].geometryTypes.includes("polygon") === true) {
+        if (jsonResponse.geometryTypes.includes("polygon") === true) {
           geoJSONColors.polygon = `rgba(${r}, ${g}, ${b}, 0.3)`;
 
           style.layers.push(
@@ -87,7 +87,7 @@
           );
         }
 
-        if (jsonResponse.geojsons[layer].geometryTypes.includes("line") === true) {
+        if (jsonResponse.geometryTypes.includes("line") === true) {
           geoJSONColors.line = `rgba(${r}, ${g}, ${b}, 0.6)`;
 
           style.layers.push(
@@ -108,7 +108,7 @@
           );
         }
 
-        if (jsonResponse.geojsons[layer].geometryTypes.includes("circle") === true) {
+        if (jsonResponse.geometryTypes.includes("circle") === true) {
           geoJSONColors.circle = `rgba(${r}, ${g}, ${b}, 0.8)`;
 
           style.layers.push(

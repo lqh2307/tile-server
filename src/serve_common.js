@@ -274,7 +274,7 @@ function serveGeoJSONHandler() {
       }
 
       const compiled = await compileTemplate("geojson", {
-        id: id,
+        group: id,
         layer: req.params.layer,
         base_url: getRequestHost(req),
       });
@@ -283,7 +283,7 @@ function serveGeoJSONHandler() {
     } catch (error) {
       printLog(
         "error",
-        `Failed to serve geojson group "${id}" - Layer "${layer}": ${error}`
+        `Failed to serve GeoJSON group "${id}" - Layer "${layer}": ${error}`
       );
 
       return res
@@ -1093,7 +1093,7 @@ export const serve_common = {
        *   get:
        *     tags:
        *       - Common
-       *     summary: Serve geojson group page
+       *     summary: Serve GeoJSON group page
        *     parameters:
        *       - in: path
        *         name: id
@@ -1101,7 +1101,7 @@ export const serve_common = {
        *           type: string
        *           example: id
        *         required: true
-       *         description: ID of the geojson group
+       *         description: ID of the GeoJSON group
        *     responses:
        *       200:
        *         description: GeoJSON group page
@@ -1136,7 +1136,7 @@ export const serve_common = {
        *   get:
        *     tags:
        *       - Common
-       *     summary: Serve geojson page
+       *     summary: Serve GeoJSON page
        *     parameters:
        *       - in: path
        *         name: id
@@ -1151,7 +1151,7 @@ export const serve_common = {
        *           type: string
        *           example: layer
        *         required: true
-       *         description: Layer of the geojson group
+       *         description: Layer of the GeoJSON
        *     responses:
        *       200:
        *         description: GeoJSON page
