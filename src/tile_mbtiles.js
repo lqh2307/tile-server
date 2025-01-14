@@ -372,50 +372,71 @@ export async function getMBTilesMetadata(source) {
 
   rows.forEach((row) => {
     switch (row.name) {
-      case "json":
+      case "json": {
         Object.assign(metadata, JSON.parse(row.value));
 
         break;
-      case "minzoom":
+      }
+
+      case "minzoom": {
         metadata.minzoom = Number(row.value);
 
         break;
-      case "maxzoom":
+      }
+
+      case "maxzoom": {
         metadata.maxzoom = Number(row.value);
 
         break;
-      case "center":
+      }
+
+      case "center": {
         metadata.center = row.value.split(",").map((elm) => Number(elm));
 
         break;
-      case "format":
+      }
+
+      case "format": {
         metadata.format = row.value;
 
         break;
-      case "bounds":
+      }
+
+      case "bounds": {
         metadata.bounds = row.value.split(",").map((elm) => Number(elm));
 
         break;
-      case "name":
+      }
+
+      case "name": {
         metadata.name = row.value;
 
         break;
-      case "description":
+      }
+
+      case "description": {
         metadata.description = row.value;
 
         break;
-      case "attribution":
+      }
+
+      case "attribution": {
         metadata.attribution = row.value;
 
         break;
-      case "version":
+      }
+
+      case "version": {
         metadata.version = row.value;
 
         break;
-      case "type":
+      }
+
+      case "type": {
         metadata.type = row.value;
 
         break;
+      }
     }
   });
 

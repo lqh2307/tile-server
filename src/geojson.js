@@ -289,10 +289,6 @@ export function validateAndGetGeometryTypes(geoJSON) {
 
         break;
       }
-
-      default: {
-        throw new Error(`"type" property is invalid`);
-      }
     }
   }
 
@@ -308,7 +304,7 @@ export function validateAndGetGeometryTypes(geoJSON) {
         }
 
         if (feature.geometry === null) {
-          break;
+          continue;
         }
 
         if (feature.geometry.type === "GeometryCollection") {
