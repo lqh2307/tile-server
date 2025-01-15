@@ -2,7 +2,6 @@
 
 import { validateJSON } from "./utils.js";
 import fsPromise from "node:fs/promises";
-import os from "os";
 
 let config;
 
@@ -200,30 +199,6 @@ async function readConfigFile(isValidate) {
     );
   }
 
-  /* Fix object */
-  config.options = {
-    listenPort: config.options.listenPort ?? 8080, // default: 8080
-    serverEndpoint: config.options.serverEndpoint ?? true, // default: true
-    serveFrontPage: config.options.serveFrontPage ?? true, // default: true
-    serveSwagger: config.options.serveSwagger ?? true, // default: true
-    loggerFormat:
-      config.options.loggerFormat ??
-      ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent", // default: :date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent
-    taskSchedule: config.options.taskSchedule, // default: undefined
-    postgreSQLBaseURI: config.options.postgreSQLBaseURI, // default: undefined
-    restartServerAfterTask: config.options.restartServerAfterTask ?? true, // default: true
-    process: config.options.process ?? 1, // default: 1
-    thread: config.options.thread ?? os.cpus().length, // default: number of cpu
-  };
-
-  config.repo = {
-    styles: {},
-    geojsons: {},
-    datas: {},
-    fonts: {},
-    sprites: {},
-  };
-
   return config;
 }
 
@@ -233,6 +208,14 @@ async function readConfigFile(isValidate) {
  */
 async function loadConfigFile() {
   config = await readConfigFile(false);
+
+  config.repo = {
+    styles: {},
+    geojsons: {},
+    datas: {},
+    fonts: {},
+    sprites: {},
+  };
 }
 
 export { readConfigFile, loadConfigFile, config };

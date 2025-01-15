@@ -12,7 +12,7 @@ import { runTasks } from "./task.js";
     await runTasks(workerData);
 
     /* Restart server */
-    if (workerData.restartServerAfterTask === true) {
+    if (workerData.restartServerAfterTask !== "false") {
       printLog(
         "info",
         "Completed seed and clean up task. Restarting server..."

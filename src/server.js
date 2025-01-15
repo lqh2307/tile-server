@@ -4,12 +4,12 @@ import { config, loadConfigFile } from "./config.js";
 import { serve_geojson } from "./serve_geojson.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
-import { seed, loadSeedFile } from "./seed.js";
 import { serve_style } from "./serve_style.js";
 import { Worker } from "node:worker_threads";
 import { serve_font } from "./serve_font.js";
 import { serve_data } from "./serve_data.js";
 import { serve_task } from "./serve_task.js";
+import { loadSeedFile } from "./seed.js";
 import { printLog } from "./logger.js";
 import express from "express";
 import morgan from "morgan";
@@ -98,7 +98,14 @@ export async function startServer() {
       .disable("x-powered-by")
       .enable("trust proxy")
       .use(cors())
-      .use(morgan(`[PID = ${process.pid}] ${config.options.loggerFormat}`))
+      .use(
+        morgan(
+          `[PID = ${process.pid}] ${
+            config.options.loggerFormat ||
+            ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent"
+          }`
+        )
+      )
       .use("/", serve_common.init())
       .use("/datas", serve_data.init())
       .use("/geojsons", serve_geojson.init())
@@ -106,10 +113,12 @@ export async function startServer() {
       .use("/sprites", serve_sprite.init())
       .use("/styles", serve_style.init())
       .use("/tasks", serve_task.init())
-      .listen(config.options.listenPort, () => {
+      .listen(config.options.listenPort || 8080, () => {
         printLog(
           "info",
-          `HTTP server is listening on port "${config.options.listenPort}"...`
+          `HTTP server is listening on port "${
+            config.options.listenPort || 8080
+          }"...`
         );
       })
       .on("error", (error) => {

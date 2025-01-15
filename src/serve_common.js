@@ -449,7 +449,7 @@ function serveSummaryHandler() {
         for (const id in seed.datas) {
           const item = seed.datas[id];
 
-          switch (item.sourceType) {
+          switch (item.storeType) {
             case "mbtiles": {
               result.datas[id] = {
                 actual: await countMBTilesTiles(
@@ -824,7 +824,7 @@ export const serve_common = {
       .use("/", express.static("public/resources"))
       .disable("x-powered-by");
 
-    if (config.options.serveSwagger === true) {
+    if (process.env.SERVE_SWAGGER !== "false") {
       app.use("/swagger/index.html", swaggerUi.serve, serveSwagger());
     }
 
@@ -987,7 +987,7 @@ export const serve_common = {
      */
     app.get("/config", serveConfigHandler());
 
-    if (config.options.serverEndpoint === true) {
+    if (process.env.SERVE_SERVER_ENDPOINT !== "false") {
       /**
        * @swagger
        * tags:
@@ -1092,7 +1092,7 @@ export const serve_common = {
      */
     app.get("/styles/:id/wmts.xml", checkReadyMiddleware(), serveWMTSHandler());
 
-    if (config.options.serveFrontPage === true) {
+    if (process.env.SERVE_FRONT_PAGE !== "false") {
       /**
        * @swagger
        * tags:

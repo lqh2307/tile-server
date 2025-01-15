@@ -12,6 +12,7 @@ import {
   startTaskInWorker,
   startServer,
 } from "./server.js";
+import os from "os";
 
 /* Setup commands */
 program
@@ -33,28 +34,25 @@ const argOpts = program.opts();
  */
 async function startClusterServer(opts) {
   if (cluster.isPrimary === true) {
-    // Store data directory
-    process.env.DATA_DIR = opts.dataDir;
-
-    // Store main PID
-    process.env.MAIN_PID = process.pid;
+    // Store ENVs
+    process.env.DATA_DIR = opts.dataDir; // Data dir
+    process.env.MAIN_PID = process.pid; // Main PID
 
     /* Read config.json file */
     printLog("info", `Reading config.json file at "${opts.dataDir}"...`);
 
     const config = await readConfigFile(true);
 
-    // For libuv
-    process.env.UV_THREADPOOL_SIZE = config.options.thread;
-
-    // For gdal
-    process.env.GDAL_NUM_THREADS = "ALL_CPUS";
-
-    // Store postgreSQL base URI
-    process.env.POSTGRESQL_BASE_URI = config.options.postgreSQLBaseURI;
-
-    // Set fallback font
-    process.env.FALLBACK_FONT = "Open Sans Regular";
+    // Store ENVs
+    process.env.UV_THREADPOOL_SIZE = config.options.thread || os.cpus().length; // For libuv
+    process.env.GDAL_NUM_THREADS = "ALL_CPUS"; // For gdal
+    process.env.POSTGRESQL_BASE_URI = config.options.postgreSQLBaseURI; // PostgreSQL base URI
+    process.env.SERVE_SERVER_ENDPOINT = config.options.serverEndpoint; // Serve server endpoint
+    process.env.SERVE_FRONT_PAGE = config.options.serveFrontPage; // Serve front page
+    process.env.SERVE_SWAGGER = config.options.serveSwagger; // Serve swagger
+    process.env.RESTART_SERVER_AFTER_TASK =
+      config.options.restartServerAfterTask; // Restart server after task
+    process.env.FALLBACK_FONT = "Open Sans Regular"; // Fallback font
 
     /* Remove old cache locks */
     printLog(
@@ -66,7 +64,7 @@ async function startClusterServer(opts) {
 
     printLog(
       "info",
-      `Starting server with ${config.options.process} processes...`
+      `Starting server with ${config.options.process || 1} processes...`
     );
 
     /* Setup watch config file change */
@@ -114,7 +112,7 @@ async function startClusterServer(opts) {
     /* Fork servers */
     printLog("info", "Creating workers...");
 
-    for (let i = 0; i < config.options.process; i++) {
+    for (let i = 0; i < config.options.process || 1; i++) {
       cluster.fork();
     }
 
@@ -154,7 +152,7 @@ async function startClusterServer(opts) {
             );
 
             startTaskInWorker({
-              restartServerAfterTask: config.options.restartServerAfterTask,
+              restartServerAfterTask: process.env.RESTART_SERVER_AFTER_TASK,
               cleanUpStyles: message.cleanUpStyles,
               cleanUpGeoJSONs: message.cleanUpGeoJSONs,
               cleanUpDatas: message.cleanUpDatas,
