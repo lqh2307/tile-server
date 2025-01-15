@@ -585,7 +585,9 @@ async function seedMBTilesTiles(
       }
 
       if (needDownload === true) {
-        const targetURL = url.replaceAll("{z}/{x}/{y}", tileName);
+        const tmpY = scheme === "tms" ? (1 << z) - 1 - y : y;
+
+        const targetURL = url.replaceAll("{z}/{x}/{y}", `${z}/${x}/${tmpY}`);
 
         printLog(
           "info",
@@ -597,7 +599,7 @@ async function seedMBTilesTiles(
           source,
           z,
           x,
-          scheme === "tms" ? (1 << z) - 1 - y : y,
+          tmpY,
           maxTry,
           timeout,
           storeMD5,
@@ -790,7 +792,9 @@ async function seedPostgreSQLTiles(
       }
 
       if (needDownload === true) {
-        const targetURL = url.replaceAll("{z}/{x}/{y}", tileName);
+        const tmpY = scheme === "tms" ? (1 << z) - 1 - y : y;
+
+        const targetURL = url.replaceAll("{z}/{x}/{y}", `${z}/${x}/${tmpY}`);
 
         printLog(
           "info",
@@ -802,7 +806,7 @@ async function seedPostgreSQLTiles(
           source,
           z,
           x,
-          scheme === "tms" ? (1 << z) - 1 - y : y,
+          tmpY,
           maxTry,
           timeout,
           storeMD5,
@@ -999,7 +1003,9 @@ async function seedXYZTiles(
       }
 
       if (needDownload === true) {
-        const targetURL = url.replaceAll("{z}/{x}/{y}", tileName);
+        const tmpY = scheme === "tms" ? (1 << z) - 1 - y : y;
+
+        const targetURL = url.replaceAll("{z}/{x}/{y}", `${z}/${x}/${tmpY}`);
 
         printLog(
           "info",
@@ -1012,7 +1018,7 @@ async function seedXYZTiles(
           source,
           z,
           x,
-          scheme === "tms" ? (1 << z) - 1 - y : y,
+          tmpY,
           metadata.format,
           maxTry,
           timeout,

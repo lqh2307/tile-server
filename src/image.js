@@ -192,19 +192,19 @@ export async function renderImage(
               ) {
                 const tmpY = sourceData.scheme === "tms" ? (1 << z) - 1 - y : y;
 
-                const url = sourceData.sourceURL.replaceAll(
+                const targetURL = sourceData.sourceURL.replaceAll(
                   "{z}/{x}/{y}",
                   `${z}/${x}/${tmpY}`
                 );
 
                 printLog(
                   "info",
-                  `Forwarding data "${parts[2]}" - Tile "${tileName}" - To "${url}"...`
+                  `Forwarding data "${parts[2]}" - Tile "${tileName}" - To "${targetURL}"...`
                 );
 
                 /* Get data */
                 dataTile = await getMBTilesTileFromURL(
-                  url,
+                  targetURL,
                   60000 // 1 mins
                 );
 
@@ -284,19 +284,19 @@ export async function renderImage(
               ) {
                 const tmpY = sourceData.scheme === "tms" ? (1 << z) - 1 - y : y;
 
-                const url = sourceData.sourceURL.replaceAll(
+                const targetURL = sourceData.sourceURL.replaceAll(
                   "{z}/{x}/{y}",
                   `${z}/${x}/${tmpY}`
                 );
 
                 printLog(
                   "info",
-                  `Forwarding data "${parts[2]}" - Tile "${tileName}" - To "${url}"...`
+                  `Forwarding data "${parts[2]}" - Tile "${tileName}" - To "${targetURL}"...`
                 );
 
                 /* Get data */
                 dataTile = await getXYZTileFromURL(
-                  url,
+                  targetURL,
                   60000 // 1 mins
                 );
 
@@ -372,19 +372,19 @@ export async function renderImage(
               ) {
                 const tmpY = sourceData.scheme === "tms" ? (1 << z) - 1 - y : y;
 
-                const url = sourceData.sourceURL.replaceAll(
+                const targetURL = sourceData.sourceURL.replaceAll(
                   "{z}/{x}/{y}",
                   `${z}/${x}/${tmpY}`
                 );
 
                 printLog(
                   "info",
-                  `Forwarding data "${parts[2]}" - Tile "${tileName}" - To "${url}"...`
+                  `Forwarding data "${parts[2]}" - Tile "${tileName}" - To "${targetURL}"...`
                 );
 
                 /* Get data */
                 dataTile = await getPostgreSQLTileFromURL(
-                  url,
+                  targetURL,
                   60000 // 1 mins
                 );
 

@@ -92,19 +92,19 @@ function getDataTileHandler() {
           ) {
             const tmpY = item.scheme === "tms" ? (1 << z) - 1 - y : y;
 
-            const url = item.sourceURL.replaceAll(
+            const targetURL = item.sourceURL.replaceAll(
               "{z}/{x}/{y}",
               `${z}/${x}/${tmpY}`
             );
 
             printLog(
               "info",
-              `Forwarding data "${id}" - Tile "${tileName}" - To "${url}"...`
+              `Forwarding data "${id}" - Tile "${tileName}" - To "${targetURL}"...`
             );
 
             /* Get data */
             dataTile = await getMBTilesTileFromURL(
-              url,
+              targetURL,
               60000 // 1 mins
             );
 
@@ -149,19 +149,19 @@ function getDataTileHandler() {
           ) {
             const tmpY = item.scheme === "tms" ? (1 << z) - 1 - y : y;
 
-            const url = item.sourceURL.replaceAll(
+            const targetURL = item.sourceURL.replaceAll(
               "{z}/{x}/{y}",
               `${z}/${x}/${tmpY}`
             );
 
             printLog(
               "info",
-              `Forwarding data "${id}" - Tile "${tileName}" - To "${url}"...`
+              `Forwarding data "${id}" - Tile "${tileName}" - To "${targetURL}"...`
             );
 
             /* Get data */
             dataTile = await getXYZTileFromURL(
-              url,
+              targetURL,
               60000 // 1 mins
             );
 
@@ -200,19 +200,19 @@ function getDataTileHandler() {
           ) {
             const tmpY = item.scheme === "tms" ? (1 << z) - 1 - y : y;
 
-            const url = item.sourceURL.replaceAll(
+            const targetURL = item.sourceURL.replaceAll(
               "{z}/{x}/{y}",
               `${z}/${x}/${tmpY}`
             );
 
             printLog(
               "info",
-              `Forwarding data "${id}" - Tile "${tileName}" - To "${url}"...`
+              `Forwarding data "${id}" - Tile "${tileName}" - To "${targetURL}"...`
             );
 
             /* Get data */
             dataTile = await getPostgreSQLTileFromURL(
-              url,
+              targetURL,
               60000 // 1 mins
             );
 
