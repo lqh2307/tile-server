@@ -455,8 +455,11 @@ function serveSummaryHandler() {
                 actual: await countMBTilesTiles(
                   `${process.env.DATA_DIR}/caches/mbtiles/${id}/${id}.mbtiles`
                 ),
-                expect: getTilesBoundsFromBBoxs(item.bboxs, item.zooms, "tms")
-                  .total,
+                expect: getTilesBoundsFromBBoxs(
+                  item.bboxs,
+                  item.zooms,
+                  item.scheme
+                ).total,
               };
 
               break;
@@ -467,8 +470,11 @@ function serveSummaryHandler() {
                 actual: await countXYZTiles(
                   `${process.env.DATA_DIR}/caches/xyzs/${id}`
                 ),
-                expect: getTilesBoundsFromBBoxs(item.bboxs, item.zooms, "xyz")
-                  .total,
+                expect: getTilesBoundsFromBBoxs(
+                  item.bboxs,
+                  item.zooms,
+                  item.scheme
+                ).total,
               };
 
               break;
@@ -479,8 +485,11 @@ function serveSummaryHandler() {
                 actual: await countPostgreSQLTiles(
                   `${process.env.POSTGRESQL_BASE_URI}/${id}`
                 ),
-                expect: getTilesBoundsFromBBoxs(item.bboxs, item.zooms, "xyz")
-                  .total,
+                expect: getTilesBoundsFromBBoxs(
+                  item.bboxs,
+                  item.zooms,
+                  item.scheme
+                ).total,
               };
 
               break;

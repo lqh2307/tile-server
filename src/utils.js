@@ -83,38 +83,42 @@ export function isLocalTileURL(url) {
  * @returns {Array<number>} Tile indices [x, y, z]
  */
 export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
-  const size = 256 * Math.pow(2, z);
+  const size = 256 * (1 << z);
   const bc = size / 360;
   const cc = size / (2 * Math.PI);
   const zc = size / 2;
-  const maxTileIndex = Math.pow(2, z) - 1;
+  const maxTileIndex = (1 << z) - 1;
 
+  // Limit longitude
   if (lon > 180) {
     lon = 180;
   } else if (lon < -180) {
     lon = -180;
   }
 
-  const px = zc + lon * bc;
-  let x = Math.floor(px / 256);
-  if (x < 0) {
-    x = 0;
-  } else if (x > maxTileIndex) {
-    x = maxTileIndex;
-  }
-
+  // Limit latitude
   if (lat > 85.051129) {
     lat = 85.051129;
   } else if (lat < -85.051129) {
     lat = -85.051129;
   }
 
-  let py = zc - cc * Math.log(Math.tan(Math.PI / 4 + lat * (Math.PI / 360)));
-  if (scheme === "tms") {
-    py = size - py;
+  let x = Math.floor((zc + lon * bc) / 256);
+  let y = Math.floor(
+    (scheme === "tms"
+      ? size -
+        (zc - cc * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360)))
+      : zc - cc * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360))) / 256
+  );
+
+  // Limit x
+  if (x < 0) {
+    x = 0;
+  } else if (x > maxTileIndex) {
+    x = maxTileIndex;
   }
 
-  let y = Math.floor(py / 256);
+  // Limit y
   if (y < 0) {
     y = 0;
   } else if (y > maxTileIndex) {
@@ -140,7 +144,7 @@ export function getLonLatFromXYZ(
   position = "topLeft",
   scheme = "xyz"
 ) {
-  const size = 256 * Math.pow(2, z);
+  const size = 256 * (1 << z);
   const bc = size / 360;
   const cc = size / (2 * Math.PI);
   const zc = size / 2;
@@ -156,13 +160,11 @@ export function getLonLatFromXYZ(
     py = (y + 1) * 256;
   }
 
-  if (scheme === "tms") {
-    py = size - py;
-  }
-
   return [
     (px - zc) / bc,
-    (360 / Math.PI) * (Math.atan(Math.exp((zc - py) / cc)) - Math.PI / 4),
+    (360 / Math.PI) *
+      (Math.atan(Math.exp((zc - (scheme === "tms" ? size - py : py)) / cc)) -
+        Math.PI / 4),
   ];
 }
 
@@ -188,8 +190,19 @@ export function getTilesBoundsFromBBoxs(
     const tilesSummary = {};
 
     for (const zoom of zooms) {
-      const [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], zoom, scheme);
-      const [xMax, yMax] = getXYZFromLonLatZ(bbox[2], bbox[1], zoom, scheme);
+      const maxTileIndex = (1 << zoom) - 1;
+
+      let [xMin, yMin] = getXYZFromLonLatZ(bbox[0], bbox[3], zoom, scheme);
+      let [xMax, yMax] = getXYZFromLonLatZ(bbox[2], bbox[1], zoom, scheme);
+
+      if (scheme === "tms") {
+        [yMin, yMax] = [maxTileIndex - yMax, maxTileIndex - yMin];
+      }
+
+      // Limit yMin <= yMax
+      if (yMin > yMax) {
+        [yMin, yMax] = [yMax, yMin];
+      }
 
       tilesSummary[`${zoom}`] = {
         x: [xMin, xMax],
@@ -247,6 +260,7 @@ export function getBBoxFromCircle(center, radius) {
     yCenter + radius,
   ]);
 
+  // Limit longitude
   if (minLon > 180) {
     minLon = 180;
   } else if (minLon < -180) {
@@ -259,6 +273,7 @@ export function getBBoxFromCircle(center, radius) {
     maxLon = -180;
   }
 
+  // Limit latitude
   if (minLat > 85.051129) {
     minLat = 85.051129;
   } else if (minLat < -85.051129) {
@@ -310,6 +325,7 @@ export function getBBoxFromPoint(points) {
     }
   }
 
+  // Limit longitude
   if (minLon > 180) {
     minLon = 180;
   } else if (minLon < -180) {
@@ -322,6 +338,7 @@ export function getBBoxFromPoint(points) {
     maxLon = -180;
   }
 
+  // Limit latitude
   if (minLat > 85.051129) {
     minLat = 85.051129;
   } else if (minLat < -85.051129) {
