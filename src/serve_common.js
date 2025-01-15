@@ -6,13 +6,13 @@ import { countMBTilesTiles } from "./tile_mbtiles.js";
 import { config, readConfigFile } from "./config.js";
 import { StatusCodes } from "http-status-codes";
 import { readCleanUpFile } from "./cleanup.js";
+import { seed, readSeedFile } from "./seed.js";
 import { countXYZTiles } from "./tile_xyz.js";
 import swaggerUi from "swagger-ui-express";
 import fsPromise from "node:fs/promises";
 import swaggerJsdoc from "swagger-jsdoc";
 import { printLog } from "./logger.js";
 import handlebars from "handlebars";
-import { seed } from "./seed.js";
 import express from "express";
 import {
   getTilesBoundsFromBBoxs,
