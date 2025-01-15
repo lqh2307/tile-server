@@ -43,10 +43,11 @@ async function startClusterServer(opts) {
 
     const config = await readConfigFile(true);
 
+    const numOfProcess = config.options.process || 1; // Number of process
+    const numOfThread = config.options.thread || os.cpus().length; // Number of thread
+
     // Store ENVs
-    process.env.NUM_OF_PROCESS = config.options.process || 1; // Number of process
-    process.env.NUM_OF_THREAD = config.options.thread || os.cpus().length; // Number of thread
-    process.env.UV_THREADPOOL_SIZE = process.env.NUM_OF_THREAD; // For libuv
+    process.env.UV_THREADPOOL_SIZE = numOfThread; // For libuv
     process.env.POSTGRESQL_BASE_URI = config.options.postgreSQLBaseURI; // PostgreSQL base URI
     process.env.SERVE_SERVER_ENDPOINT = config.options.serverEndpoint; // Serve server endpoint
     process.env.SERVE_FRONT_PAGE = config.options.serveFrontPage; // Serve front page
@@ -66,7 +67,7 @@ async function startClusterServer(opts) {
 
     printLog(
       "info",
-      `Starting server with ${process.env.NUM_OF_PROCESS} processes...`
+      `Starting server with ${numOfProcess} processes - ${numOfThread} threads...`
     );
 
     /* Setup watch config file change */
@@ -114,7 +115,7 @@ async function startClusterServer(opts) {
     /* Fork servers */
     printLog("info", "Creating workers...");
 
-    for (let i = 0; i < Number(process.env.NUM_OF_PROCESS) || 1; i++) {
+    for (let i = 0; i < numOfProcess; i++) {
       cluster.fork();
     }
 
