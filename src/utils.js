@@ -173,7 +173,14 @@ export function getLonLatFromXYZ(
  * @param {"xyz"|"tms"} scheme Tile scheme
  * @returns {{ total: number, tilesSummaries: Array<Object<string,object>> }} Object containing total tiles and an array of tile summaries (one per bbox)
  */
-export function getTilesBoundsFromBBoxs(bboxs, zooms, scheme) {
+export function getTilesBoundsFromBBoxs(
+  bboxs = [[-180, -85.051129, 180, 85.051129]],
+  zooms = [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22,
+  ],
+  scheme
+) {
   const tilesSummaries = [];
   let total = 0;
 

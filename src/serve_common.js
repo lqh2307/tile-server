@@ -1,20 +1,26 @@
 "use strict";
 
-import { getPostgreSQLSize } from "./tile_postgresql.js";
+import { countPostgreSQLTiles, getPostgreSQLSize } from "./tile_postgresql.js";
 import { checkReadyMiddleware } from "./middleware.js";
+import { countMBTilesTiles } from "./tile_mbtiles.js";
+import { config, readConfigFile } from "./config.js";
 import { StatusCodes } from "http-status-codes";
+import { readCleanUpFile } from "./cleanup.js";
+import { countXYZTiles } from "./tile_xyz.js";
 import swaggerUi from "swagger-ui-express";
 import fsPromise from "node:fs/promises";
 import swaggerJsdoc from "swagger-jsdoc";
 import { printLog } from "./logger.js";
-import { config } from "./config.js";
 import handlebars from "handlebars";
+import { seed } from "./seed.js";
 import express from "express";
 import {
+  getTilesBoundsFromBBoxs,
   getXYZFromLonLatZ,
   getBBoxFromCircle,
   getBBoxFromPoint,
   getRequestHost,
+  isExistFolder,
   getVersion,
   findFiles,
 } from "./utils.js";
@@ -362,21 +368,12 @@ function serveSwagger() {
 function serveConfigHandler() {
   return async (req, res, next) => {
     try {
-      let configJSON = await fsPromise.readFile(
-        `${process.env.DATA_DIR}/config.json`,
-        "utf8"
-      );
+      let configJSON = await readConfigFile(false);
 
       if (req.query.type === "seed") {
-        configJSON = await fsPromise.readFile(
-          `${process.env.DATA_DIR}/seed.json`,
-          "utf8"
-        );
+        configJSON = await readSeedFile(false);
       } else if (req.query.type === "cleanUp") {
-        configJSON = await fsPromise.readFile(
-          `${process.env.DATA_DIR}/cleanUp.json`,
-          "utf8"
-        );
+        configJSON = await readCleanUpFile(false);
       }
 
       res.header("content-type", "application/json");
@@ -399,175 +396,305 @@ function serveConfigHandler() {
 function serveSummaryHandler() {
   return async (req, res, next) => {
     try {
-      // Init info
-      const result = {
-        font: {
-          count: 0,
-          size: 0,
-        },
-        sprite: {
-          count: 0,
-          size: 0,
-        },
-        data: {
-          count: 0,
-          size: 0,
-          mbtiles: {
-            count: 0,
-            size: 0,
-          },
-          pmtiles: {
-            count: 0,
-            size: 0,
-          },
-          xyz: {
-            count: 0,
-            size: 0,
-          },
-          pg: {
-            count: 0,
-            size: 0,
-          },
-        },
-        geojson: {
-          count: 0,
-          size: 0,
-        },
-        style: {
-          count: 0,
-          size: 0,
-        },
-        rendered: {
-          count: 0,
-        },
-      };
+      let result;
 
-      // Fonts info
-      for (const font in config.repo.fonts) {
-        const dirPath = `${process.env.DATA_DIR}/fonts/${font}`;
-        const fileNames = await findFiles(
-          dirPath,
-          /^\d{1,5}-\d{1,5}\.pbf$/,
-          true
-        );
+      if (req.query.type === "seed") {
+        result = {
+          styles: {},
+          geojsons: {},
+          datas: {},
+          sprites: {},
+          fonts: {},
+        };
 
-        result.font.count += 1;
-
-        for (const fileName of fileNames) {
-          const stat = await fsPromise.stat(`${dirPath}/${fileName}`);
-
-          result.font.size += stat.size;
-        }
-      }
-
-      // Sprites info
-      for (const sprite in config.repo.sprites) {
-        const dirPath = `${process.env.DATA_DIR}/sprites/${sprite}`;
-        const fileNames = await findFiles(
-          dirPath,
-          /^sprite(@\d+x)?\.(json|png)$/,
-          true
-        );
-
-        result.sprite.count += 1;
-
-        for (const fileName of fileNames) {
-          const stat = await fsPromise.stat(`${dirPath}/${fileName}`);
-
-          result.sprite.size += stat.size;
-        }
-      }
-
-      // Datas info
-      for (const id in config.repo.datas) {
-        const item = config.repo.datas[id];
-
-        if (item.sourceType === "mbtiles") {
-          const stat = await fsPromise.stat(item.path);
-
-          result.data.mbtiles.size += stat.size;
-          result.data.mbtiles.count += 1;
-        } else if (item.sourceType === "pmtiles") {
+        // Fonts info
+        for (const id in seed.fonts) {
           if (
-            item.path.startsWith("https://") !== true &&
-            item.path.startsWith("http://") !== true
+            (await isExistFolder(
+              `${process.env.DATA_DIR}/caches/fonts/${id}`
+            )) === true
           ) {
-            const stat = await fsPromise.stat(item.path);
-
-            result.data.pmtiles.size += stat.size;
+            result.fonts[id] = {
+              actual: 1,
+              expect: 1,
+            };
+          } else {
+            result.fonts[id] = {
+              actual: 0,
+              expect: 1,
+            };
           }
+        }
 
-          result.data.pmtiles.count += 1;
-        } else if (item.sourceType === "xyz") {
+        // Sprites info
+        for (const id in seed.sprites) {
+          if (
+            (await isExistFolder(
+              `${process.env.DATA_DIR}/caches/sprites/${id}`
+            )) === true
+          ) {
+            result.sprites[id] = {
+              actual: 1,
+              expect: 1,
+            };
+          } else {
+            result.sprites[id] = {
+              actual: 0,
+              expect: 1,
+            };
+          }
+        }
+
+        // Datas info
+        for (const id in seed.datas) {
+          const item = seed.datas[id];
+
+          switch (item.sourceType) {
+            case "mbtiles": {
+              result.datas[id] = {
+                actual: await countMBTilesTiles(
+                  `${process.env.DATA_DIR}/caches/mbtiles/${id}/${id}.mbtiles`
+                ),
+                expect: getTilesBoundsFromBBoxs(item.bboxs, item.zooms, "tms")
+                  .total,
+              };
+
+              break;
+            }
+
+            case "xyz": {
+              result.datas[id] = {
+                actual: await countXYZTiles(
+                  `${process.env.DATA_DIR}/caches/xyzs/${id}`
+                ),
+                expect: getTilesBoundsFromBBoxs(item.bboxs, item.zooms, "xyz")
+                  .total,
+              };
+
+              break;
+            }
+
+            case "pg": {
+              result.datas[id] = {
+                actual: await countPostgreSQLTiles(
+                  `${process.env.POSTGRESQL_BASE_URI}/${id}`
+                ),
+                expect: getTilesBoundsFromBBoxs(item.bboxs, item.zooms, "xyz")
+                  .total,
+              };
+
+              break;
+            }
+          }
+        }
+
+        // Styles info
+        for (const id in seed.styles) {
+          if (
+            (await isExistFolder(
+              `${process.env.DATA_DIR}/caches/styles/${id}`
+            )) === true
+          ) {
+            result.styles[id] = {
+              actual: 1,
+              expect: 1,
+            };
+          } else {
+            result.styles[id] = {
+              actual: 0,
+              expect: 1,
+            };
+          }
+        }
+
+        // GeoJSONs info
+        for (const id in seed.geojsons) {
+          if (
+            (await isExistFolder(
+              `${process.env.DATA_DIR}/caches/geojsons/${id}`
+            )) === true
+          ) {
+            result.geojsons[id] = {
+              actual: 1,
+              expect: 1,
+            };
+          } else {
+            result.geojsons[id] = {
+              actual: 0,
+              expect: 1,
+            };
+          }
+        }
+      } else {
+        result = {
+          font: {
+            count: 0,
+            size: 0,
+          },
+          sprite: {
+            count: 0,
+            size: 0,
+          },
+          data: {
+            count: 0,
+            size: 0,
+            mbtiles: {
+              count: 0,
+              size: 0,
+            },
+            pmtiles: {
+              count: 0,
+              size: 0,
+            },
+            xyz: {
+              count: 0,
+              size: 0,
+            },
+            pg: {
+              count: 0,
+              size: 0,
+            },
+          },
+          geojson: {
+            count: 0,
+            size: 0,
+          },
+          style: {
+            count: 0,
+            size: 0,
+          },
+          rendered: {
+            count: 0,
+          },
+        };
+
+        // Fonts info
+        for (const id in config.repo.fonts) {
+          const dirPath = `${process.env.DATA_DIR}/fonts/${id}`;
           const fileNames = await findFiles(
-            item.path,
-            /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/,
+            dirPath,
+            /^\d{1,5}-\d{1,5}\.pbf$/,
             true
           );
 
+          result.font.count += 1;
+
           for (const fileName of fileNames) {
-            const stat = await fsPromise.stat(`${item.path}/${fileName}`);
+            const stat = await fsPromise.stat(`${dirPath}/${fileName}`);
 
-            result.data.xyz.size += stat.size;
-          }
-
-          result.data.xyz.count += 1;
-        } else if (item.sourceType === "pg") {
-          result.data.pg.size += await getPostgreSQLSize(item.source, id);
-          result.data.pg.count += 1;
-        }
-      }
-
-      result.data.count =
-        result.data.mbtiles.count +
-        result.data.pmtiles.count +
-        result.data.xyz.count +
-        result.data.pg.count;
-      result.data.size =
-        result.data.mbtiles.size +
-        result.data.pmtiles.size +
-        result.data.xyz.size +
-        result.data.pg.size;
-
-      // Styles info
-      for (const id in config.repo.styles) {
-        const item = config.repo.styles[id];
-
-        try {
-          const stat = await fsPromise.stat(item.path);
-
-          result.style.size += stat.size;
-        } catch (error) {
-          if (item.cache === undefined && error.code === "ENOENT") {
-            throw error;
+            result.font.size += stat.size;
           }
         }
 
-        result.style.count += 1;
+        // Sprites info
+        for (const id in config.repo.sprites) {
+          const dirPath = `${process.env.DATA_DIR}/sprites/${id}`;
+          const fileNames = await findFiles(
+            dirPath,
+            /^sprite(@\d+x)?\.(json|png)$/,
+            true
+          );
 
-        // Rendereds info
-        if (item.rendered !== undefined) {
-          result.rendered.count += 1;
+          result.sprite.count += 1;
+
+          for (const fileName of fileNames) {
+            const stat = await fsPromise.stat(`${dirPath}/${fileName}`);
+
+            result.sprite.size += stat.size;
+          }
         }
-      }
 
-      // GeoJSONs info
-      for (const id in config.repo.geojsons) {
-        for (const layer in config.repo.geojsons[id]) {
-          const item = config.repo.geojsons[id][layer];
+        // Datas info
+        for (const id in config.repo.datas) {
+          const item = config.repo.datas[id];
+
+          if (item.sourceType === "mbtiles") {
+            const stat = await fsPromise.stat(item.path);
+
+            result.data.mbtiles.size += stat.size;
+            result.data.mbtiles.count += 1;
+          } else if (item.sourceType === "pmtiles") {
+            if (
+              item.path.startsWith("https://") !== true &&
+              item.path.startsWith("http://") !== true
+            ) {
+              const stat = await fsPromise.stat(item.path);
+
+              result.data.pmtiles.size += stat.size;
+            }
+
+            result.data.pmtiles.count += 1;
+          } else if (item.sourceType === "xyz") {
+            const fileNames = await findFiles(
+              item.path,
+              /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/,
+              true
+            );
+
+            for (const fileName of fileNames) {
+              const stat = await fsPromise.stat(`${item.path}/${fileName}`);
+
+              result.data.xyz.size += stat.size;
+            }
+
+            result.data.xyz.count += 1;
+          } else if (item.sourceType === "pg") {
+            result.data.pg.size += await getPostgreSQLSize(item.source, id);
+            result.data.pg.count += 1;
+          }
+        }
+
+        result.data.count =
+          result.data.mbtiles.count +
+          result.data.pmtiles.count +
+          result.data.xyz.count +
+          result.data.pg.count;
+        result.data.size =
+          result.data.mbtiles.size +
+          result.data.pmtiles.size +
+          result.data.xyz.size +
+          result.data.pg.size;
+
+        // Styles info
+        for (const id in config.repo.styles) {
+          const item = config.repo.styles[id];
 
           try {
             const stat = await fsPromise.stat(item.path);
 
-            result.geojson.size += stat.size;
+            result.style.size += stat.size;
           } catch (error) {
             if (item.cache === undefined && error.code === "ENOENT") {
               throw error;
             }
           }
+
+          result.style.count += 1;
+
+          // Rendereds info
+          if (item.rendered !== undefined) {
+            result.rendered.count += 1;
+          }
         }
 
-        result.geojson.count += 1;
+        // GeoJSONs info
+        for (const id in config.repo.geojsons) {
+          for (const layer in config.repo.geojsons[id]) {
+            const item = config.repo.geojsons[id][layer];
+
+            try {
+              const stat = await fsPromise.stat(item.path);
+
+              result.geojson.size += stat.size;
+            } catch (error) {
+              if (item.cache === undefined && error.code === "ENOENT") {
+                throw error;
+              }
+            }
+          }
+
+          result.geojson.count += 1;
+        }
       }
 
       res.header("content-type", "application/json");

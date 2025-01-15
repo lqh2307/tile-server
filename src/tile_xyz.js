@@ -949,6 +949,21 @@ export async function getXYZTileCreated(filePath) {
 }
 
 /**
+ * Get the record tile of XYZ folder path
+ * @param {string} sourcePath XYZ folder path
+ * @returns {Promise<number>}
+ */
+export async function countXYZTiles(sourcePath) {
+  const fileNames = await findFiles(
+    sourcePath,
+    /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/,
+    true
+  );
+
+  return fileNames.length;
+}
+
+/**
  * Validate XYZ metadata (no validate json field)
  * @param {object} metadata XYZ metadata
  * @returns {void}

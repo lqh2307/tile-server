@@ -786,6 +786,23 @@ export async function getPostgreSQLSize(source, dbName) {
 }
 
 /**
+ * Get the record tile of PostgreSQL database
+ * @param {string} uri Database URI
+ * @returns {Promise<number>}
+ */
+export async function countPostgreSQLTiles(uri) {
+  const source = await openPostgreSQL(uri, false);
+
+  const data = await source.query("SELECT COUNT(*) AS count FROM tiles;");
+
+  await closePostgreSQLDB(source);
+
+  if (data.rows.length !== 0) {
+    return Number(data.rows[0].count);
+  }
+}
+
+/**
  * Validate PostgreSQL metadata (no validate json field)
  * @param {object} metadata PostgreSQL metadata
  * @returns {void}

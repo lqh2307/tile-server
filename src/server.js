@@ -133,12 +133,6 @@ export async function startServer() {
         printLog("info", "Completed startup!");
 
         /* Clean */
-        delete seed.styles;
-        delete seed.geojsons;
-        delete seed.datas;
-        delete seed.sprites;
-        delete seed.fonts;
-
         delete config.styles;
         delete config.geojsons;
         delete config.datas;

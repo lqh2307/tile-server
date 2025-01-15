@@ -901,6 +901,21 @@ export async function getMBTilesTileCreated(source, z, x, y) {
 }
 
 /**
+ * Get the record tile of MBTiles database
+ * @param {string} filePath MBTiles filepath
+ * @returns {Promise<number>}
+ */
+export async function countMBTilesTiles(filePath) {
+  const source = await openSQLite(filePath, sqlite3.OPEN_READONLY, false);
+
+  const data = await fetchOne(source, "SELECT COUNT(*) AS count FROM tiles;");
+
+  await closeSQLite(source);
+
+  return data?.count;
+}
+
+/**
  * Validate MBTiles metadata (no validate json field)
  * @param {object} metadata MBTiles metadata
  * @returns {void}

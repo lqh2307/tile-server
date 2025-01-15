@@ -35,6 +35,9 @@ export async function openSQLite(filePath, mode, wal) {
         // Disable mmap if specified
         await runSQL(source, "PRAGMA mmap_size = 0;");
 
+        // Set timeout
+        await runSQL(source, "PRAGMA busy_timeout = 30000;");
+
         resolve(source);
       } catch (error) {
         if (source !== undefined) {
