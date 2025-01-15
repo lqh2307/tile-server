@@ -289,7 +289,7 @@ function serveGeoJSONHandler() {
     } catch (error) {
       printLog(
         "error",
-        `Failed to serve GeoJSON group "${id}" - Layer "${layer}": ${error}`
+        `Failed to serve GeoJSON group "${id}" - Layer "${req.params.layer}": ${error}`
       );
 
       return res
