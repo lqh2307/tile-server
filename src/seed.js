@@ -288,6 +288,10 @@ async function readSeedFile(isValidate) {
                   type: "string",
                   minLength: 1,
                 },
+                scheme: {
+                  type: "string",
+                  enum: ["tms", "xyz"],
+                },
                 skip: {
                   type: "boolean",
                 },

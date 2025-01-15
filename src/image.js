@@ -217,7 +217,7 @@ export async function renderImage(
                     sourceData.source,
                     z,
                     x,
-                    y,
+                    sourceData.scheme === "tms" ? (1 << z) - 1 - y : y,
                     dataTile.data,
                     sourceData.storeMD5,
                     sourceData.storeTransparent
@@ -308,7 +308,7 @@ export async function renderImage(
                     sourceData.md5Source,
                     z,
                     x,
-                    y,
+                    sourceData.scheme === "tms" ? (1 << z) - 1 - y : y,
                     sourceData.tileJSON.format,
                     dataTile.data,
                     sourceData.storeMD5,
@@ -393,7 +393,7 @@ export async function renderImage(
                     sourceData.source,
                     z,
                     x,
-                    y,
+                    sourceData.scheme === "tms" ? (1 << z) - 1 - y : y,
                     dataTile.data,
                     sourceData.storeMD5,
                     sourceData.storeTransparent

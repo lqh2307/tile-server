@@ -111,7 +111,7 @@ function getDataTileHandler() {
                 item.source,
                 z,
                 x,
-                y,
+                item.scheme === "tms" ? (1 << z) - 1 - y : y,
                 dataTile.data,
                 item.storeMD5,
                 item.storeTransparent
@@ -164,7 +164,7 @@ function getDataTileHandler() {
                 item.md5Source,
                 z,
                 x,
-                y,
+                item.scheme === "tms" ? (1 << z) - 1 - y : y,
                 item.tileJSON.format,
                 dataTile.data,
                 item.storeMD5,
@@ -209,7 +209,7 @@ function getDataTileHandler() {
                 item.source,
                 z,
                 x,
-                y,
+                item.scheme === "tms" ? (1 << z) - 1 - y : y,
                 dataTile.data,
                 item.storeMD5,
                 item.storeTransparent
@@ -784,6 +784,7 @@ export const serve_data = {
 
                 if (item.cache.forward === true) {
                   dataInfo.sourceURL = cacheSource.url;
+                  dataInfo.scheme = cacheSource.scheme;
                   dataInfo.storeCache = item.cache.store;
                   dataInfo.storeMD5 = cacheSource.storeMD5;
                   dataInfo.storeTransparent = cacheSource.storeTransparent;
@@ -872,6 +873,7 @@ export const serve_data = {
 
               if (item.cache.forward === true) {
                 dataInfo.sourceURL = cacheSource.url;
+                dataInfo.scheme = cacheSource.scheme;
                 dataInfo.storeCache = item.cache.store;
                 dataInfo.storeMD5 = cacheSource.storeMD5;
                 dataInfo.storeTransparent = cacheSource.storeTransparent;
@@ -925,6 +927,7 @@ export const serve_data = {
 
               if (item.cache.forward === true) {
                 dataInfo.sourceURL = cacheSource.url;
+                dataInfo.scheme = cacheSource.scheme;
                 dataInfo.storeCache = item.cache.store;
                 dataInfo.storeMD5 = cacheSource.storeMD5;
                 dataInfo.storeTransparent = cacheSource.storeTransparent;
