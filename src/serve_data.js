@@ -90,7 +90,12 @@ function getDataTileHandler() {
             item.sourceURL !== undefined &&
             error.message === "Tile does not exist"
           ) {
-            const url = item.sourceURL.replaceAll("{z}/{x}/{y}", tileName);
+            const tmpY = item.scheme === "tms" ? (1 << z) - 1 - y : y;
+
+            const url = item.sourceURL.replaceAll(
+              "{z}/{x}/{y}",
+              `${z}/${x}/${tmpY}`
+            );
 
             printLog(
               "info",
@@ -111,7 +116,7 @@ function getDataTileHandler() {
                 item.source,
                 z,
                 x,
-                item.scheme === "tms" ? (1 << z) - 1 - y : y,
+                tmpY,
                 dataTile.data,
                 item.storeMD5,
                 item.storeTransparent
@@ -142,7 +147,12 @@ function getDataTileHandler() {
             item.sourceURL !== undefined &&
             error.message === "Tile does not exist"
           ) {
-            const url = item.sourceURL.replaceAll("{z}/{x}/{y}", tileName);
+            const tmpY = item.scheme === "tms" ? (1 << z) - 1 - y : y;
+
+            const url = item.sourceURL.replaceAll(
+              "{z}/{x}/{y}",
+              `${z}/${x}/${tmpY}`
+            );
 
             printLog(
               "info",
@@ -164,7 +174,7 @@ function getDataTileHandler() {
                 item.md5Source,
                 z,
                 x,
-                item.scheme === "tms" ? (1 << z) - 1 - y : y,
+                tmpY,
                 item.tileJSON.format,
                 dataTile.data,
                 item.storeMD5,
@@ -188,7 +198,12 @@ function getDataTileHandler() {
             item.sourceURL !== undefined &&
             error.message === "Tile does not exist"
           ) {
-            const url = item.sourceURL.replaceAll("{z}/{x}/{y}", tileName);
+            const tmpY = item.scheme === "tms" ? (1 << z) - 1 - y : y;
+
+            const url = item.sourceURL.replaceAll(
+              "{z}/{x}/{y}",
+              `${z}/${x}/${tmpY}`
+            );
 
             printLog(
               "info",
@@ -209,7 +224,7 @@ function getDataTileHandler() {
                 item.source,
                 z,
                 x,
-                item.scheme === "tms" ? (1 << z) - 1 - y : y,
+                tmpY,
                 dataTile.data,
                 item.storeMD5,
                 item.storeTransparent

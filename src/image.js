@@ -190,9 +190,11 @@ export async function renderImage(
                 sourceData.sourceURL !== undefined &&
                 error.message === "Tile does not exist"
               ) {
+                const tmpY = sourceData.scheme === "tms" ? (1 << z) - 1 - y : y;
+
                 const url = sourceData.sourceURL.replaceAll(
                   "{z}/{x}/{y}",
-                  tileName
+                  `${z}/${x}/${tmpY}`
                 );
 
                 printLog(
@@ -217,7 +219,7 @@ export async function renderImage(
                     sourceData.source,
                     z,
                     x,
-                    sourceData.scheme === "tms" ? (1 << z) - 1 - y : y,
+                    tmpY,
                     dataTile.data,
                     sourceData.storeMD5,
                     sourceData.storeTransparent
@@ -280,9 +282,11 @@ export async function renderImage(
                 sourceData.sourceURL !== undefined &&
                 error.message === "Tile does not exist"
               ) {
+                const tmpY = sourceData.scheme === "tms" ? (1 << z) - 1 - y : y;
+
                 const url = sourceData.sourceURL.replaceAll(
                   "{z}/{x}/{y}",
-                  tileName
+                  `${z}/${x}/${tmpY}`
                 );
 
                 printLog(
@@ -308,7 +312,7 @@ export async function renderImage(
                     sourceData.md5Source,
                     z,
                     x,
-                    sourceData.scheme === "tms" ? (1 << z) - 1 - y : y,
+                    tmpY,
                     sourceData.tileJSON.format,
                     dataTile.data,
                     sourceData.storeMD5,
@@ -366,9 +370,11 @@ export async function renderImage(
                 sourceData.sourceURL !== undefined &&
                 error.message === "Tile does not exist"
               ) {
+                const tmpY = sourceData.scheme === "tms" ? (1 << z) - 1 - y : y;
+
                 const url = sourceData.sourceURL.replaceAll(
                   "{z}/{x}/{y}",
-                  tileName
+                  `${z}/${x}/${tmpY}`
                 );
 
                 printLog(
@@ -393,7 +399,7 @@ export async function renderImage(
                     sourceData.source,
                     z,
                     x,
-                    sourceData.scheme === "tms" ? (1 << z) - 1 - y : y,
+                    tmpY,
                     dataTile.data,
                     sourceData.storeMD5,
                     sourceData.storeTransparent
