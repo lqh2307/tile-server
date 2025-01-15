@@ -457,7 +457,8 @@ async function readSeedFile(isValidate) {
  * Seed MBTiles tiles
  * @param {string} id Cache MBTiles ID
  * @param {object} metadata Metadata object
- * @param {string} tileURL Tile URL to download
+ * @param {string} url Tile URL to download
+ * @param {"tms"|"xyz"} scheme Tile scheme
  * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {number} concurrency Concurrency download
@@ -471,7 +472,8 @@ async function readSeedFile(isValidate) {
 async function seedMBTilesTiles(
   id,
   metadata,
-  tileURL,
+  url,
+  scheme,
   bboxs = [[-180, -85.051129, 180, 85.051129]],
   zooms = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
@@ -547,7 +549,7 @@ async function seedMBTilesTiles(
         try {
           const [response, md5] = await Promise.all([
             getDataFromURL(
-              tileURL.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
+              url.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
               timeout,
               "arraybuffer"
             ),
@@ -583,7 +585,7 @@ async function seedMBTilesTiles(
       }
 
       if (needDownload === true) {
-        const targetURL = tileURL.replaceAll("{z}/{x}/{y}", tileName);
+        const targetURL = url.replaceAll("{z}/{x}/{y}", tileName);
 
         printLog(
           "info",
@@ -595,7 +597,7 @@ async function seedMBTilesTiles(
           source,
           z,
           x,
-          y,
+          scheme === "tms" ? (1 << z) - 1 - y : y,
           maxTry,
           timeout,
           storeMD5,
@@ -662,7 +664,8 @@ async function seedMBTilesTiles(
  * Seed PostgreSQL tiles
  * @param {string} id Cache PostgreSQL ID
  * @param {object} metadata Metadata object
- * @param {string} tileURL Tile URL to download
+ * @param {string} url Tile URL to download
+ * @param {"tms"|"xyz"} scheme Tile scheme
  * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {number} concurrency Concurrency download
@@ -676,7 +679,8 @@ async function seedMBTilesTiles(
 async function seedPostgreSQLTiles(
   id,
   metadata,
-  tileURL,
+  url,
+  scheme,
   bboxs = [[-180, -85.051129, 180, 85.051129]],
   zooms = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
@@ -750,7 +754,7 @@ async function seedPostgreSQLTiles(
         try {
           const [response, md5] = await Promise.all([
             getDataFromURL(
-              tileURL.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
+              url.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
               timeout,
               "arraybuffer"
             ),
@@ -786,7 +790,7 @@ async function seedPostgreSQLTiles(
       }
 
       if (needDownload === true) {
-        const targetURL = tileURL.replaceAll("{z}/{x}/{y}", tileName);
+        const targetURL = url.replaceAll("{z}/{x}/{y}", tileName);
 
         printLog(
           "info",
@@ -798,7 +802,7 @@ async function seedPostgreSQLTiles(
           source,
           z,
           x,
-          y,
+          scheme === "tms" ? (1 << z) - 1 - y : y,
           maxTry,
           timeout,
           storeMD5,
@@ -865,7 +869,8 @@ async function seedPostgreSQLTiles(
  * Seed XYZ tiles
  * @param {string} id Cache XYZ ID
  * @param {object} metadata Metadata object
- * @param {string} tileURL Tile URL
+ * @param {string} url Tile URL
+ * @param {"tms"|"xyz"} scheme Tile scheme
  * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {number} concurrency Concurrency to download
@@ -879,7 +884,8 @@ async function seedPostgreSQLTiles(
 async function seedXYZTiles(
   id,
   metadata,
-  tileURL,
+  url,
+  scheme,
   bboxs = [[-180, -85.051129, 180, 85.051129]],
   zooms = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
@@ -955,7 +961,7 @@ async function seedXYZTiles(
         try {
           const [response, md5] = await Promise.all([
             getDataFromURL(
-              tileURL.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
+              url.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
               timeout,
               "arraybuffer"
             ),
@@ -993,7 +999,7 @@ async function seedXYZTiles(
       }
 
       if (needDownload === true) {
-        const targetURL = tileURL.replaceAll("{z}/{x}/{y}", tileName);
+        const targetURL = url.replaceAll("{z}/{x}/{y}", tileName);
 
         printLog(
           "info",
@@ -1006,7 +1012,7 @@ async function seedXYZTiles(
           source,
           z,
           x,
-          y,
+          scheme === "tms" ? (1 << z) - 1 - y : y,
           metadata.format,
           maxTry,
           timeout,
@@ -1079,7 +1085,7 @@ async function seedXYZTiles(
 /**
  * Seed geojson
  * @param {string} id Cache geojson ID
- * @param {string} geojsonURL GeoJSON URL
+ * @param {string} url GeoJSON URL
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
  * @param {string|number} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which file should be refreshed
@@ -1087,7 +1093,7 @@ async function seedXYZTiles(
  */
 async function seedGeoJSON(
   id,
-  geojsonURL,
+  url,
   maxTry = 5,
   timeout = 60000,
   refreshBefore
@@ -1125,7 +1131,7 @@ async function seedGeoJSON(
       try {
         const [response, geoJSONData] = await Promise.all([
           getDataFromURL(
-            geojsonURL.replaceAll(`${id}.geojson`, `${id}/md5`),
+            url.replaceAll(`${id}.geojson`, `${id}/md5`),
             timeout,
             "arraybuffer"
           ),
@@ -1165,10 +1171,10 @@ async function seedGeoJSON(
     if (needDownload === true) {
       printLog(
         "info",
-        `Downloading geojson "${id}" - File "${filePath}" from "${geojsonURL}"...`
+        `Downloading geojson "${id}" - File "${filePath}" from "${url}"...`
       );
 
-      await downloadGeoJSONFile(geojsonURL, filePath, maxTry, timeout);
+      await downloadGeoJSONFile(url, filePath, maxTry, timeout);
     }
   } catch (error) {
     printLog("error", `Failed to seed geojson "${id}": ${error}`);
@@ -1191,19 +1197,13 @@ async function seedGeoJSON(
 /**
  * Seed style
  * @param {string} id Cache style ID
- * @param {string} styleURL Style URL
+ * @param {string} url Style URL
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
  * @param {string|number} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which file should be refreshed
  * @returns {Promise<void>}
  */
-async function seedStyle(
-  id,
-  styleURL,
-  maxTry = 5,
-  timeout = 60000,
-  refreshBefore
-) {
+async function seedStyle(id, url, maxTry = 5, timeout = 60000, refreshBefore) {
   const startTime = Date.now();
 
   let log = `Seeding style "${id}" with:\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}`;
@@ -1237,7 +1237,7 @@ async function seedStyle(
       try {
         const [response, styleJSONData] = await Promise.all([
           getDataFromURL(
-            styleURL.replaceAll("/style.json", "/md5"),
+            url.replaceAll("/style.json", "/md5"),
             timeout,
             "arraybuffer"
           ),
@@ -1277,10 +1277,10 @@ async function seedStyle(
     if (needDownload === true) {
       printLog(
         "info",
-        `Downloading style "${id}" - File "${filePath}" from "${styleURL}"...`
+        `Downloading style "${id}" - File "${filePath}" from "${url}"...`
       );
 
-      await downloadStyleFile(styleURL, filePath, maxTry, timeout);
+      await downloadStyleFile(url, filePath, maxTry, timeout);
     }
   } catch (error) {
     printLog("error", `Failed to seed style "${id}": ${error}`);
