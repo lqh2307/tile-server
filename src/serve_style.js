@@ -87,7 +87,7 @@ function getStyleHandler() {
         /* Fix sprite url */
         if (styleJSON.sprite !== undefined) {
           if (styleJSON.sprite.startsWith("sprites://") === true) {
-            styleJSON.sprite = styleJSON.sprite.replaceAll(
+            styleJSON.sprite = styleJSON.sprite.replace(
               "sprites://",
               `${requestHost}/sprites/`
             );
@@ -97,7 +97,7 @@ function getStyleHandler() {
         /* Fix fonts url */
         if (styleJSON.glyphs !== undefined) {
           if (styleJSON.glyphs.startsWith("fonts://") === true) {
-            styleJSON.glyphs = styleJSON.glyphs.replaceAll(
+            styleJSON.glyphs = styleJSON.glyphs.replace(
               "fonts://",
               `${requestHost}/fonts/`
             );
@@ -200,7 +200,7 @@ function getStyleMD5Handler() {
         /* Fix sprite url */
         if (styleJSON.sprite !== undefined) {
           if (styleJSON.sprite.startsWith("sprites://") === true) {
-            styleJSON.sprite = styleJSON.sprite.replaceAll(
+            styleJSON.sprite = styleJSON.sprite.replace(
               "sprites://",
               `${requestHost}/sprites/`
             );
@@ -210,7 +210,7 @@ function getStyleMD5Handler() {
         /* Fix fonts url */
         if (styleJSON.glyphs !== undefined) {
           if (styleJSON.glyphs.startsWith("fonts://") === true) {
-            styleJSON.glyphs = styleJSON.glyphs.replaceAll(
+            styleJSON.glyphs = styleJSON.glyphs.replace(
               "fonts://",
               `${requestHost}/fonts/`
             );
@@ -612,7 +612,7 @@ function getStyleJSONsListHandler() {
             /* Fix sprite url */
             if (styleJSON.sprite !== undefined) {
               if (styleJSON.sprite.startsWith("sprites://") === true) {
-                styleJSON.sprite = styleJSON.sprite.replaceAll(
+                styleJSON.sprite = styleJSON.sprite.replace(
                   "sprites://",
                   `${requestHost}/sprites/`
                 );
@@ -622,7 +622,7 @@ function getStyleJSONsListHandler() {
             /* Fix fonts url */
             if (styleJSON.glyphs !== undefined) {
               if (styleJSON.glyphs.startsWith("fonts://") === true) {
-                styleJSON.glyphs = styleJSON.glyphs.replaceAll(
+                styleJSON.glyphs = styleJSON.glyphs.replace(
                   "fonts://",
                   `${requestHost}/fonts/`
                 );

@@ -367,12 +367,12 @@ function serveConfigHandler() {
         "utf8"
       );
 
-      if (req.query.type !== "seed") {
+      if (req.query.type === "seed") {
         configJSON = await fsPromise.readFile(
           `${process.env.DATA_DIR}/seed.json`,
           "utf8"
         );
-      } else if (req.query.type !== "cleanUp") {
+      } else if (req.query.type === "cleanUp") {
         configJSON = await fsPromise.readFile(
           `${process.env.DATA_DIR}/cleanUp.json`,
           "utf8"

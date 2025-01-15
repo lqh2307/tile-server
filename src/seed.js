@@ -549,7 +549,7 @@ async function seedMBTilesTiles(
         try {
           const [response, md5] = await Promise.all([
             getDataFromURL(
-              url.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
+              url.replace("{z}/{x}/{y}", `md5/${tileName}`),
               timeout,
               "arraybuffer"
             ),
@@ -587,7 +587,10 @@ async function seedMBTilesTiles(
       if (needDownload === true) {
         const tmpY = scheme === "tms" ? (1 << z) - 1 - y : y;
 
-        const targetURL = url.replaceAll("{z}/{x}/{y}", `${z}/${x}/${tmpY}`);
+        const targetURL = url
+          .replace("{z}", `${z}`)
+          .replace("{x}", `${x}`)
+          .replace("{y}", `${tmpY}`);
 
         printLog(
           "info",
@@ -756,7 +759,7 @@ async function seedPostgreSQLTiles(
         try {
           const [response, md5] = await Promise.all([
             getDataFromURL(
-              url.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
+              url.replace("{z}/{x}/{y}", `md5/${tileName}`),
               timeout,
               "arraybuffer"
             ),
@@ -794,7 +797,10 @@ async function seedPostgreSQLTiles(
       if (needDownload === true) {
         const tmpY = scheme === "tms" ? (1 << z) - 1 - y : y;
 
-        const targetURL = url.replaceAll("{z}/{x}/{y}", `${z}/${x}/${tmpY}`);
+        const targetURL = url
+          .replace("{z}", `${z}`)
+          .replace("{x}", `${x}`)
+          .replace("{y}", `${tmpY}`);
 
         printLog(
           "info",
@@ -965,7 +971,7 @@ async function seedXYZTiles(
         try {
           const [response, md5] = await Promise.all([
             getDataFromURL(
-              url.replaceAll("{z}/{x}/{y}", `md5/${tileName}`),
+              url.replace("{z}/{x}/{y}", `md5/${tileName}`),
               timeout,
               "arraybuffer"
             ),
@@ -1005,7 +1011,10 @@ async function seedXYZTiles(
       if (needDownload === true) {
         const tmpY = scheme === "tms" ? (1 << z) - 1 - y : y;
 
-        const targetURL = url.replaceAll("{z}/{x}/{y}", `${z}/${x}/${tmpY}`);
+        const targetURL = url
+          .replace("{z}", `${z}`)
+          .replace("{x}", `${x}`)
+          .replace("{y}", `${tmpY}`);
 
         printLog(
           "info",
@@ -1137,7 +1146,7 @@ async function seedGeoJSON(
       try {
         const [response, geoJSONData] = await Promise.all([
           getDataFromURL(
-            url.replaceAll(`${id}.geojson`, `${id}/md5`),
+            url.replace(`${id}.geojson`, `${id}/md5`),
             timeout,
             "arraybuffer"
           ),
@@ -1243,7 +1252,7 @@ async function seedStyle(id, url, maxTry = 5, timeout = 60000, refreshBefore) {
       try {
         const [response, styleJSONData] = await Promise.all([
           getDataFromURL(
-            url.replaceAll("/style.json", "/md5"),
+            url.replace("/style.json", "/md5"),
             timeout,
             "arraybuffer"
           ),

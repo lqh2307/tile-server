@@ -92,10 +92,10 @@ function getDataTileHandler() {
           ) {
             const tmpY = item.scheme === "tms" ? (1 << z) - 1 - y : y;
 
-            const targetURL = item.sourceURL.replaceAll(
-              "{z}/{x}/{y}",
-              `${z}/${x}/${tmpY}`
-            );
+            const targetURL = item.sourceURL
+              .replace("{z}", `${z}`)
+              .replace("{x}", `${x}`)
+              .replace("{y}", `${tmpY}`);
 
             printLog(
               "info",
@@ -149,10 +149,10 @@ function getDataTileHandler() {
           ) {
             const tmpY = item.scheme === "tms" ? (1 << z) - 1 - y : y;
 
-            const targetURL = item.sourceURL.replaceAll(
-              "{z}/{x}/{y}",
-              `${z}/${x}/${tmpY}`
-            );
+            const targetURL = item.sourceURL
+              .replace("{z}", `${z}`)
+              .replace("{x}", `${x}`)
+              .replace("{y}", `${tmpY}`);
 
             printLog(
               "info",
@@ -200,10 +200,10 @@ function getDataTileHandler() {
           ) {
             const tmpY = item.scheme === "tms" ? (1 << z) - 1 - y : y;
 
-            const targetURL = item.sourceURL.replaceAll(
-              "{z}/{x}/{y}",
-              `${z}/${x}/${tmpY}`
-            );
+            const targetURL = item.sourceURL
+              .replace("{z}", `${z}`)
+              .replace("{x}", `${x}`)
+              .replace("{y}", `${tmpY}`);
 
             printLog(
               "info",

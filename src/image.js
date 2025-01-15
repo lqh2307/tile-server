@@ -143,11 +143,11 @@ export async function renderImage(
           const x = Number(parts[4]);
           const y = Number(parts[5].slice(0, parts[5].indexOf(".")));
           const tileName = `${z}/${x}/${y}`;
-          const sourceData = config.repo.datas[parts[2]];
+          const item = config.repo.datas[parts[2]];
 
           try {
             /* Get rendered tile */
-            const dataTile = await getPMTilesTile(sourceData.source, z, x, y);
+            const dataTile = await getPMTilesTile(item.source, z, x, y);
 
             /* Unzip pbf rendered tile */
             if (
@@ -166,7 +166,7 @@ export async function renderImage(
               `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
             );
 
-            tileFormat = sourceData.tileJSON.format;
+            tileFormat = item.tileJSON.format;
           }
 
           break;
@@ -177,25 +177,25 @@ export async function renderImage(
           const x = Number(parts[4]);
           const y = Number(parts[5].slice(0, parts[5].indexOf(".")));
           const tileName = `${z}/${x}/${y}`;
-          const sourceData = config.repo.datas[parts[2]];
+          const item = config.repo.datas[parts[2]];
 
           try {
             /* Get rendered tile */
             let dataTile;
 
             try {
-              dataTile = await getMBTilesTile(sourceData.source, z, x, y);
+              dataTile = await getMBTilesTile(item.source, z, x, y);
             } catch (error) {
               if (
-                sourceData.sourceURL !== undefined &&
+                item.sourceURL !== undefined &&
                 error.message === "Tile does not exist"
               ) {
-                const tmpY = sourceData.scheme === "tms" ? (1 << z) - 1 - y : y;
+                const tmpY = item.scheme === "tms" ? (1 << z) - 1 - y : y;
 
-                const targetURL = sourceData.sourceURL.replaceAll(
-                  "{z}/{x}/{y}",
-                  `${z}/${x}/${tmpY}`
-                );
+                const targetURL = item.sourceURL
+                  .replace("{z}", `${z}`)
+                  .replace("{x}", `${x}`)
+                  .replace("{y}", `${tmpY}`);
 
                 printLog(
                   "info",
@@ -209,20 +209,20 @@ export async function renderImage(
                 );
 
                 /* Cache */
-                if (sourceData.storeCache === true) {
+                if (item.storeCache === true) {
                   printLog(
                     "info",
                     `Caching data "${parts[2]}" - Tile "${tileName}"...`
                   );
 
                   cacheMBtilesTileData(
-                    sourceData.source,
+                    item.source,
                     z,
                     x,
                     tmpY,
                     dataTile.data,
-                    sourceData.storeMD5,
-                    sourceData.storeTransparent
+                    item.storeMD5,
+                    item.storeTransparent
                   ).catch((error) =>
                     printLog(
                       "error",
@@ -252,7 +252,7 @@ export async function renderImage(
               `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
             );
 
-            tileFormat = sourceData.tileJSON.format;
+            tileFormat = item.tileJSON.format;
           }
 
           break;
@@ -263,7 +263,7 @@ export async function renderImage(
           const x = Number(parts[4]);
           const y = Number(parts[5].slice(0, parts[5].indexOf(".")));
           const tileName = `${z}/${x}/${y}`;
-          const sourceData = config.repo.datas[parts[2]];
+          const item = config.repo.datas[parts[2]];
 
           try {
             /* Get rendered tile */
@@ -271,23 +271,23 @@ export async function renderImage(
 
             try {
               dataTile = await getXYZTile(
-                sourceData.source,
+                item.source,
                 z,
                 x,
                 y,
-                sourceData.tileJSON.format
+                item.tileJSON.format
               );
             } catch (error) {
               if (
-                sourceData.sourceURL !== undefined &&
+                item.sourceURL !== undefined &&
                 error.message === "Tile does not exist"
               ) {
-                const tmpY = sourceData.scheme === "tms" ? (1 << z) - 1 - y : y;
+                const tmpY = item.scheme === "tms" ? (1 << z) - 1 - y : y;
 
-                const targetURL = sourceData.sourceURL.replaceAll(
-                  "{z}/{x}/{y}",
-                  `${z}/${x}/${tmpY}`
-                );
+                const targetURL = item.sourceURL
+                  .replace("{z}", `${z}`)
+                  .replace("{x}", `${x}`)
+                  .replace("{y}", `${tmpY}`);
 
                 printLog(
                   "info",
@@ -301,22 +301,22 @@ export async function renderImage(
                 );
 
                 /* Cache */
-                if (sourceData.storeCache === true) {
+                if (item.storeCache === true) {
                   printLog(
                     "info",
                     `Caching data "${parts[2]}" - Tile "${tileName}"...`
                   );
 
                   cacheXYZTileFile(
-                    sourceData.source,
-                    sourceData.md5Source,
+                    item.source,
+                    item.md5Source,
                     z,
                     x,
                     tmpY,
-                    sourceData.tileJSON.format,
+                    item.tileJSON.format,
                     dataTile.data,
-                    sourceData.storeMD5,
-                    sourceData.storeTransparent
+                    item.storeMD5,
+                    item.storeTransparent
                   ).catch((error) =>
                     printLog(
                       "error",
@@ -346,7 +346,7 @@ export async function renderImage(
               `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
             );
 
-            tileFormat = sourceData.tileJSON.format;
+            tileFormat = item.tileJSON.format;
           }
 
           break;
@@ -357,25 +357,25 @@ export async function renderImage(
           const x = Number(parts[4]);
           const y = Number(parts[5].slice(0, parts[5].indexOf(".")));
           const tileName = `${z}/${x}/${y}`;
-          const sourceData = config.repo.datas[parts[2]];
+          const item = config.repo.datas[parts[2]];
 
           try {
             /* Get rendered tile */
             let dataTile;
 
             try {
-              dataTile = await getPostgreSQLTile(sourceData.source, z, x, y);
+              dataTile = await getPostgreSQLTile(item.source, z, x, y);
             } catch (error) {
               if (
-                sourceData.sourceURL !== undefined &&
+                item.sourceURL !== undefined &&
                 error.message === "Tile does not exist"
               ) {
-                const tmpY = sourceData.scheme === "tms" ? (1 << z) - 1 - y : y;
+                const tmpY = item.scheme === "tms" ? (1 << z) - 1 - y : y;
 
-                const targetURL = sourceData.sourceURL.replaceAll(
-                  "{z}/{x}/{y}",
-                  `${z}/${x}/${tmpY}`
-                );
+                const targetURL = item.sourceURL
+                  .replace("{z}", `${z}`)
+                  .replace("{x}", `${x}`)
+                  .replace("{y}", `${tmpY}`);
 
                 printLog(
                   "info",
@@ -389,20 +389,20 @@ export async function renderImage(
                 );
 
                 /* Cache */
-                if (sourceData.storeCache === true) {
+                if (item.storeCache === true) {
                   printLog(
                     "info",
                     `Caching data "${parts[2]}" - Tile "${tileName}"...`
                   );
 
                   cachePostgreSQLTileData(
-                    sourceData.source,
+                    item.source,
                     z,
                     x,
                     tmpY,
                     dataTile.data,
-                    sourceData.storeMD5,
-                    sourceData.storeTransparent
+                    item.storeMD5,
+                    item.storeTransparent
                   ).catch((error) =>
                     printLog(
                       "error",
@@ -432,7 +432,7 @@ export async function renderImage(
               `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
             );
 
-            tileFormat = sourceData.tileJSON.format;
+            tileFormat = item.tileJSON.format;
           }
 
           break;
