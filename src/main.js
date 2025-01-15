@@ -44,14 +44,16 @@ async function startClusterServer(opts) {
     const config = await readConfigFile(true);
 
     // Store ENVs
-    process.env.UV_THREADPOOL_SIZE = config.options.thread || os.cpus().length; // For libuv
-    process.env.GDAL_NUM_THREADS = "ALL_CPUS"; // For gdal
+    process.env.NUM_OF_PROCESS = config.options.process || 1; // Number of process
+    process.env.NUM_OF_THREAD = config.options.thread || os.cpus().length; // Number of thread
+    process.env.UV_THREADPOOL_SIZE = process.env.NUM_OF_THREAD; // For libuv
     process.env.POSTGRESQL_BASE_URI = config.options.postgreSQLBaseURI; // PostgreSQL base URI
     process.env.SERVE_SERVER_ENDPOINT = config.options.serverEndpoint; // Serve server endpoint
     process.env.SERVE_FRONT_PAGE = config.options.serveFrontPage; // Serve front page
     process.env.SERVE_SWAGGER = config.options.serveSwagger; // Serve swagger
     process.env.RESTART_SERVER_AFTER_TASK =
       config.options.restartServerAfterTask; // Restart server after task
+    process.env.GDAL_NUM_THREADS = "ALL_CPUS"; // For gdal
     process.env.FALLBACK_FONT = "Open Sans Regular"; // Fallback font
 
     /* Remove old cache locks */
@@ -64,7 +66,7 @@ async function startClusterServer(opts) {
 
     printLog(
       "info",
-      `Starting server with ${config.options.process || 1} processes...`
+      `Starting server with ${process.env.NUM_OF_PROCESS} processes...`
     );
 
     /* Setup watch config file change */
@@ -98,7 +100,7 @@ async function startClusterServer(opts) {
         );
 
         startTaskInWorker({
-          restartServerAfterTask: config.options.restartServerAfterTask,
+          restartServerAfterTask: process.env.RESTART_SERVER_AFTER_TASK,
           cleanUpStyles: true,
           cleanUpGeoJSONs: true,
           cleanUpDatas: true,
@@ -112,7 +114,7 @@ async function startClusterServer(opts) {
     /* Fork servers */
     printLog("info", "Creating workers...");
 
-    for (let i = 0; i < config.options.process || 1; i++) {
+    for (let i = 0; i < Number(process.env.NUM_OF_PROCESS) || 1; i++) {
       cluster.fork();
     }
 
