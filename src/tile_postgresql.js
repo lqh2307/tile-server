@@ -877,5 +877,4 @@ export function validatePostgreSQL(metadata) {
       throw new Error(`"center" property is invalid`);
     }
   }
-  s;
 }

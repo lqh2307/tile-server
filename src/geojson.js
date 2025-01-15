@@ -402,16 +402,16 @@ export function validateAndGetGeometryTypes(geoJSON) {
           "MultiLineString",
           "Point",
           "MultiPoint",
-        ].includes(geometry.type) === true
+        ].includes(geoJSON.geometry.type) === true
       ) {
         if (
-          geometry.coordinates !== null &&
-          Array.isArray(geometry.coordinates) === false
+          geoJSON.geometry.coordinates !== null &&
+          Array.isArray(geoJSON.geometry.coordinates) === false
         ) {
           throw new Error(`"coordinates" property is invalid`);
         }
 
-        addGeometryType(geometry.type);
+        addGeometryType(geoJSON.geometry.type);
       } else {
         throw new Error(`"type" property is invalid`);
       }
