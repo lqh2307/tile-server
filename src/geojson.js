@@ -254,6 +254,17 @@ export async function getGeoJSONCreated(filePath) {
 }
 
 /**
+ * Get the size of GeoJSON
+ * @param {string} filePath The path of the file
+ * @returns {Promise<number>}
+ */
+export async function getGeoJSONSize(filePath) {
+  const stat = await fsPromise.stat(filePath);
+
+  return stat.size;
+}
+
+/**
  * Validate GeoJSON and get geometry types
  * @param {object} geoJSON GeoJSON
  * @returns {Array<string>} List of geometry types

@@ -85,3 +85,22 @@ export async function getFonts(ids, fileName) {
 
   return glyphsProto.glyphs.encode(result);
 }
+
+/**
+ * Get the size of Font folder path
+ * @param {string} pbfDirPath Font dir path
+ * @returns {Promise<number>}
+ */
+export async function getFontSize(pbfDirPath) {
+  const fileNames = await findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/, true);
+
+  let size = 0;
+
+  for (const fileName of fileNames) {
+    const stat = await fsPromise.stat(`${pbfDirPath}/${fileName}`);
+
+    size += stat.size;
+  }
+
+  return size;
+}

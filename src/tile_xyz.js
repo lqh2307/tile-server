@@ -964,6 +964,29 @@ export async function countXYZTiles(sourcePath) {
 }
 
 /**
+ * Get the size of XYZ folder path
+ * @param {string} sourcePath XYZ folder path
+ * @returns {Promise<number>}
+ */
+export async function getXYZSize(sourcePath) {
+  const fileNames = await findFiles(
+    sourcePath,
+    /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/,
+    true
+  );
+
+  let size = 0;
+
+  for (const fileName of fileNames) {
+    const stat = await fsPromise.stat(`${sourcePath}/${fileName}`);
+
+    size += stat.size;
+  }
+
+  return size;
+}
+
+/**
  * Validate XYZ metadata (no validate json field)
  * @param {object} metadata XYZ metadata
  * @returns {void}

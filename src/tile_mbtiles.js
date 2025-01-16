@@ -916,6 +916,17 @@ export async function countMBTilesTiles(filePath) {
 }
 
 /**
+ * Get the size of MBTiles database
+ * @param {string} filePath MBTiles filepath
+ * @returns {Promise<number>}
+ */
+export async function getMBTilesSize(filePath) {
+  const stat = await fsPromise.stat(filePath);
+
+  return stat.size;
+}
+
+/**
  * Validate MBTiles metadata (no validate json field)
  * @param {object} metadata MBTiles metadata
  * @returns {void}

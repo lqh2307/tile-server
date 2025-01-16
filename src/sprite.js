@@ -69,3 +69,26 @@ export async function getSprite(id, fileName) {
     `${process.env.DATA_DIR}/sprites/${id}/${fileName}`
   );
 }
+
+/**
+ * Get the size of Sprite folder path
+ * @param {string} spriteDirPath Sprite dir path
+ * @returns {Promise<number>}
+ */
+export async function getSpriteSize(spriteDirPath) {
+  const fileNames = await findFiles(
+    spriteDirPath,
+    /^sprite(@\d+x)?\.(json|png)$/,
+    true
+  );
+
+  let size = 0;
+
+  for (const fileName of fileNames) {
+    const stat = await fsPromise.stat(`${spriteDirPath}/${fileName}`);
+
+    size += stat.size;
+  }
+
+  return size;
+}

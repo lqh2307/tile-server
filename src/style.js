@@ -371,3 +371,14 @@ export async function getStyleCreated(filePath) {
     }
   }
 }
+
+/**
+ * Get the size of Style
+ * @param {string} filePath The path of the file
+ * @returns {Promise<number>}
+ */
+export async function getStyleSize(filePath) {
+  const stat = await fsPromise.stat(filePath);
+
+  return stat.size;
+}

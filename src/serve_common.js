@@ -1,16 +1,21 @@
 "use strict";
 
 import { countPostgreSQLTiles, getPostgreSQLSize } from "./tile_postgresql.js";
+import { countMBTilesTiles, getMBTilesSize } from "./tile_mbtiles.js";
+import { countXYZTiles, getXYZSize } from "./tile_xyz.js";
 import { checkReadyMiddleware } from "./middleware.js";
-import { countMBTilesTiles } from "./tile_mbtiles.js";
 import { config, readConfigFile } from "./config.js";
+import { getPMTilesSize } from "./tile_pmtiles.js";
 import { StatusCodes } from "http-status-codes";
 import { readCleanUpFile } from "./cleanup.js";
 import { seed, readSeedFile } from "./seed.js";
-import { countXYZTiles } from "./tile_xyz.js";
+import { getGeoJSONSize } from "./geojson.js";
+import { getSpriteSize } from "./sprite.js";
 import swaggerUi from "swagger-ui-express";
+import { getStyleSize } from "./style.js";
 import fsPromise from "node:fs/promises";
 import swaggerJsdoc from "swagger-jsdoc";
+import { getFontSize } from "./font.js";
 import { printLog } from "./logger.js";
 import handlebars from "handlebars";
 import express from "express";
@@ -22,7 +27,6 @@ import {
   getRequestHost,
   isExistFolder,
   getVersion,
-  findFiles,
 } from "./utils.js";
 
 /**
@@ -536,15 +540,15 @@ function serveSummaryHandler() {
         }
       } else {
         result = {
-          font: {
+          fonts: {
             count: 0,
             size: 0,
           },
-          sprite: {
+          sprites: {
             count: 0,
             size: 0,
           },
-          data: {
+          datas: {
             count: 0,
             size: 0,
             mbtiles: {
@@ -555,62 +559,45 @@ function serveSummaryHandler() {
               count: 0,
               size: 0,
             },
-            xyz: {
+            xyzs: {
               count: 0,
               size: 0,
             },
-            pg: {
+            pgs: {
               count: 0,
               size: 0,
             },
           },
-          geojson: {
+          geojsonGroups: {
+            count: 0,
+            geojsons: {
+              count: 0,
+              size: 0,
+            },
+          },
+          styles: {
             count: 0,
             size: 0,
           },
-          style: {
-            count: 0,
-            size: 0,
-          },
-          rendered: {
+          rendereds: {
             count: 0,
           },
         };
 
         // Fonts info
         for (const id in config.repo.fonts) {
-          const dirPath = `${process.env.DATA_DIR}/fonts/${id}`;
-          const fileNames = await findFiles(
-            dirPath,
-            /^\d{1,5}-\d{1,5}\.pbf$/,
-            true
+          result.fonts.size += await getFontSize(
+            `${process.env.DATA_DIR}/fonts/${id}`
           );
-
-          result.font.count += 1;
-
-          for (const fileName of fileNames) {
-            const stat = await fsPromise.stat(`${dirPath}/${fileName}`);
-
-            result.font.size += stat.size;
-          }
+          result.fonts.count += 1;
         }
 
         // Sprites info
         for (const id in config.repo.sprites) {
-          const dirPath = `${process.env.DATA_DIR}/sprites/${id}`;
-          const fileNames = await findFiles(
-            dirPath,
-            /^sprite(@\d+x)?\.(json|png)$/,
-            true
+          result.sprites.size += await getSpriteSize(
+            `${process.env.DATA_DIR}/sprites/${id}`
           );
-
-          result.sprite.count += 1;
-
-          for (const fileName of fileNames) {
-            const stat = await fsPromise.stat(`${dirPath}/${fileName}`);
-
-            result.sprite.size += stat.size;
-          }
+          result.sprites.count += 1;
         }
 
         // Datas info
@@ -618,71 +605,68 @@ function serveSummaryHandler() {
           const item = config.repo.datas[id];
 
           if (item.sourceType === "mbtiles") {
-            const stat = await fsPromise.stat(item.path);
+            try {
+              result.datas.mbtiles.size += await getMBTilesSize(item.path);
+            } catch (error) {
+              if (!(item.cache !== undefined && error.code === "ENOENT")) {
+                throw error;
+              }
+            }
 
-            result.data.mbtiles.size += stat.size;
-            result.data.mbtiles.count += 1;
+            result.datas.mbtiles.count += 1;
           } else if (item.sourceType === "pmtiles") {
             if (
               item.path.startsWith("https://") !== true &&
               item.path.startsWith("http://") !== true
             ) {
-              const stat = await fsPromise.stat(item.path);
-
-              result.data.pmtiles.size += stat.size;
+              result.datas.pmtiles.size += await getPMTilesSize(item.path);
             }
 
-            result.data.pmtiles.count += 1;
+            result.datas.pmtiles.count += 1;
           } else if (item.sourceType === "xyz") {
-            const fileNames = await findFiles(
-              item.path,
-              /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/,
-              true
-            );
-
-            for (const fileName of fileNames) {
-              const stat = await fsPromise.stat(`${item.path}/${fileName}`);
-
-              result.data.xyz.size += stat.size;
+            try {
+              result.datas.xyzs.size += await getXYZSize(item.path);
+            } catch (error) {
+              if (!(item.cache !== undefined && error.code === "ENOENT")) {
+                throw error;
+              }
             }
 
-            result.data.xyz.count += 1;
+            result.datas.xyzs.count += 1;
           } else if (item.sourceType === "pg") {
-            result.data.pg.size += await getPostgreSQLSize(item.source, id);
-            result.data.pg.count += 1;
+            result.datas.pgs.size += await getPostgreSQLSize(item.source, id);
+            result.datas.pgs.count += 1;
           }
         }
 
-        result.data.count =
-          result.data.mbtiles.count +
-          result.data.pmtiles.count +
-          result.data.xyz.count +
-          result.data.pg.count;
-        result.data.size =
-          result.data.mbtiles.size +
-          result.data.pmtiles.size +
-          result.data.xyz.size +
-          result.data.pg.size;
+        result.datas.count =
+          result.datas.mbtiles.count +
+          result.datas.pmtiles.count +
+          result.datas.xyzs.count +
+          result.datas.pgs.count;
+        result.datas.size =
+          result.datas.mbtiles.size +
+          result.datas.pmtiles.size +
+          result.datas.xyzs.size +
+          result.datas.pgs.size;
 
         // Styles info
         for (const id in config.repo.styles) {
           const item = config.repo.styles[id];
 
           try {
-            const stat = await fsPromise.stat(item.path);
-
-            result.style.size += stat.size;
+            result.styles.size += await getStyleSize(item.path);
           } catch (error) {
-            if (item.cache === undefined && error.code === "ENOENT") {
+            if (!(item.cache !== undefined && error.code === "ENOENT")) {
               throw error;
             }
           }
 
-          result.style.count += 1;
+          result.styles.count += 1;
 
           // Rendereds info
           if (item.rendered !== undefined) {
-            result.rendered.count += 1;
+            result.rendereds.count += 1;
           }
         }
 
@@ -692,17 +676,19 @@ function serveSummaryHandler() {
             const item = config.repo.geojsons[id][layer];
 
             try {
-              const stat = await fsPromise.stat(item.path);
-
-              result.geojson.size += stat.size;
+              result.geojsonGroups.geojsons.size += await getGeoJSONSize(
+                item.path
+              );
             } catch (error) {
-              if (item.cache === undefined && error.code === "ENOENT") {
+              if (!(item.cache !== undefined && error.code === "ENOENT")) {
                 throw error;
               }
             }
+
+            result.geojsonGroups.geojsons.count += 1;
           }
 
-          result.geojson.count += 1;
+          result.geojsonGroups.count += 1;
         }
       }
 

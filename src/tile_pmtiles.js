@@ -2,6 +2,7 @@
 
 import { deepClone, detectFormatAndHeaders } from "./utils.js";
 import { PMTiles, FetchSource } from "pmtiles";
+import fsPromise from "node:fs/promises";
 import fs from "node:fs";
 
 /**
@@ -32,7 +33,7 @@ class PMTilesFileSource {
 
 /**
  * Open PMTiles
- * @param {string} filePath
+ * @param {string} filePath PMTiles filepath
  * @returns {object}
  */
 export function openPMTiles(filePath) {
@@ -267,6 +268,17 @@ export async function getPMTilesTile(pmtilesSource, z, x, y) {
     data: data,
     headers: detectFormatAndHeaders(data).headers,
   };
+}
+
+/**
+ * Get the size of PMTiles
+ * @param {string} filePath PMTiles filepath
+ * @returns {Promise<number>}
+ */
+export async function getPMTilesSize(filePath) {
+  const stat = await fsPromise.stat(filePath);
+
+  return stat.size;
 }
 
 /**
