@@ -779,7 +779,7 @@
           })
           .catch((error) => alert(`Failed to restart server: ${error.message}`));
       } else if (action === "kill") {
-        fetch(`${baseURL}/kill`, {
+        fetch(`${baseURL}/restart?type=kill`, {
           method: "GET",
         })
           .then((response) => {

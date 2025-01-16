@@ -738,49 +738,33 @@ function serveHealthHandler() {
 }
 
 /**
- * Restart server handler
+ * Restart/kill server handler
  * @returns {(req: any, res: any, next: any) => Promise<any>}
  */
-function serveRestartHandler() {
+function serveRestartKillHandler() {
   return async (req, res, next) => {
     try {
-      setTimeout(
-        () =>
-          process.send({
-            action: "restartServer",
-          }),
-        0
-      );
+      if (req.query.type === "kill") {
+        setTimeout(
+          () =>
+            process.send({
+              action: "killServer",
+            }),
+          0
+        );
+      } else {
+        setTimeout(
+          () =>
+            process.send({
+              action: "restartServer",
+            }),
+          0
+        );
+      }
 
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
-      printLog("error", `Failed to restart server": ${error}`);
-
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send("Internal server error");
-    }
-  };
-}
-
-/**
- * Kill server handler
- * @returns {(req: any, res: any, next: any) => Promise<any>}
- */
-function serveKillHandler() {
-  return async (req, res, next) => {
-    try {
-      setTimeout(
-        () =>
-          process.send({
-            action: "killServer",
-          }),
-        0
-      );
-
-      return res.status(StatusCodes.OK).send("OK");
-    } catch (error) {
-      printLog("error", `Failed to Killing server": ${error}`);
+      printLog("error", `Failed to restart/kill server": ${error}`);
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -1006,10 +990,19 @@ export const serve_common = {
        *   get:
        *     tags:
        *       - Common
-       *     summary: Restart the server
+       *     summary: Restart/kill the server
+       *     parameters:
+       *       - in: query
+       *         name: type
+       *         schema:
+       *           type: string
+       *           enum: [restart, kill]
+       *           example: restart
+       *         required: false
+       *         description: Action type
        *     responses:
        *       200:
-       *         description: Server will restart
+       *         description: Server will restart/kill
        *         content:
        *           text/plain:
        *             schema:
@@ -1027,39 +1020,7 @@ export const serve_common = {
        *       500:
        *         description: Internal server error
        */
-      app.get("/restart", serveRestartHandler());
-
-      /**
-       * @swagger
-       * tags:
-       *   - name: Common
-       *     description: Common related endpoints
-       * /kill:
-       *   get:
-       *     tags:
-       *       - Common
-       *     summary: Kill the server
-       *     responses:
-       *       200:
-       *         description: Server will be killed
-       *         content:
-       *           text/plain:
-       *             schema:
-       *               type: string
-       *               example: OK
-       *       404:
-       *         description: Not found
-       *       503:
-       *         description: Server is starting up
-       *         content:
-       *           text/plain:
-       *             schema:
-       *               type: string
-       *               example: Starting...
-       *       500:
-       *         description: Internal server error
-       */
-      app.get("/kill", serveKillHandler());
+      app.get("/restart", serveRestartKillHandler());
     }
 
     /**
