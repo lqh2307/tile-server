@@ -35,7 +35,9 @@
       })
       .then((jsonResponse) => {
         const map = L.map("map", {
-          zoomControl: false
+          zoomControl: false,
+          maxBounds: [[-90, -180], [90, 180]],
+          maxBoundsViscosity: 1
         });
 
         for (const tile of jsonResponse.tiles || []) {
