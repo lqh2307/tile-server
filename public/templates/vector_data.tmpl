@@ -39,7 +39,6 @@
       .then((jsonResponse) => {
         const map = new maplibregl.Map({
           container: "map",
-          maxBounds: [[-90, -180], [90, 180]],
           hash: true,
           style: {
             "version": 8,
