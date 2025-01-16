@@ -455,31 +455,61 @@ function serveSummaryHandler() {
 
           switch (item.storeType) {
             case "mbtiles": {
-              result.datas[id] = {
-                actual: await countMBTilesTiles(
-                  `${process.env.DATA_DIR}/caches/mbtiles/${id}/${id}.mbtiles`
-                ),
-                expect: getTilesBoundsFromBBoxs(
-                  item.bboxs,
-                  item.zooms,
-                  item.scheme
-                ).total,
-              };
+              try {
+                result.datas[id] = {
+                  actual: await countMBTilesTiles(
+                    `${process.env.DATA_DIR}/caches/mbtiles/${id}/${id}.mbtiles`
+                  ),
+                  expect: getTilesBoundsFromBBoxs(
+                    item.bboxs,
+                    item.zooms,
+                    item.scheme
+                  ).total,
+                };
+              } catch (error) {
+                if (error.code !== "ENOENT") {
+                  throw error;
+                } else {
+                  result.datas[id] = {
+                    actual: 0,
+                    expect: getTilesBoundsFromBBoxs(
+                      item.bboxs,
+                      item.zooms,
+                      item.scheme
+                    ).total,
+                  };
+                }
+              }
 
               break;
             }
 
             case "xyz": {
-              result.datas[id] = {
-                actual: await countXYZTiles(
-                  `${process.env.DATA_DIR}/caches/xyzs/${id}`
-                ),
-                expect: getTilesBoundsFromBBoxs(
-                  item.bboxs,
-                  item.zooms,
-                  item.scheme
-                ).total,
-              };
+              try {
+                result.datas[id] = {
+                  actual: await countXYZTiles(
+                    `${process.env.DATA_DIR}/caches/xyzs/${id}`
+                  ),
+                  expect: getTilesBoundsFromBBoxs(
+                    item.bboxs,
+                    item.zooms,
+                    item.scheme
+                  ).total,
+                };
+              } catch (error) {
+                if (error.code !== "ENOENT") {
+                  throw error;
+                } else {
+                  result.datas[id] = {
+                    actual: 0,
+                    expect: getTilesBoundsFromBBoxs(
+                      item.bboxs,
+                      item.zooms,
+                      item.scheme
+                    ).total,
+                  };
+                }
+              }
 
               break;
             }
