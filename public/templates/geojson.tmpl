@@ -90,77 +90,78 @@
           ]
         };
 
-        const geoJSONColors = {};
+        const layerColors = {};
 
-        style.sources[layer] = {
-          "type": "geojson",
-          "data": jsonResponse.url
-        };
+        if (jsonResponse.geometryTypes.length > 0) {
+          style.sources[layer] = {
+            "type": "geojson",
+            "data": jsonResponse.url
+          };
 
-        const r = Math.floor(Math.random() * 256);
-        const g = Math.floor(Math.random() * 256);
-        const b = Math.floor(Math.random() * 256);
+          const r = Math.floor(Math.random() * 256);
+          const g = Math.floor(Math.random() * 256);
+          const b = Math.floor(Math.random() * 256);
 
-        if (jsonResponse.geometryTypes.includes("polygon") === true) {
-          geoJSONColors.polygon = `rgba(${r}, ${g}, ${b}, 0.3)`;
+          layerColors[layer] = `rgba(${r}, ${g}, ${b}, 1)`;
 
-          style.layers.push(
-            {
-              "id": `${layer}_polygon`,
-              "source": layer,
-              "type": "fill",
-              "paint": {
-                "fill-color": geoJSONColors.polygon,
-                "fill-antialias": true,
-                "fill-outline-color": geoJSONColors.polygon
-              },
-              "layout": {
-                "visibility": "visible"
-              },
-              "filter": ["==", "$type", "Polygon"]
-            }
-          );
-        }
+          const polygonGeometryIndex = jsonResponse.geometryTypes.indexOf("polygon");
+          if (polygonGeometryIndex > -1) {
+            style.layers.push(
+              {
+                "id": `${layer}_${jsonResponse.geometryTypes[polygonGeometryIndex]}`,
+                "source": layer,
+                "type": "fill",
+                "paint": {
+                  "fill-color": `rgba(${r}, ${g}, ${b}, 0.3)`,
+                  "fill-antialias": true,
+                  "fill-outline-color": `rgba(${r}, ${g}, ${b}, 0.3)`
+                },
+                "layout": {
+                  "visibility": "visible"
+                },
+                "filter": ["==", "$type", "Polygon"]
+              }
+            );
+          }
 
-        if (jsonResponse.geometryTypes.includes("line") === true) {
-          geoJSONColors.line = `rgba(${r}, ${g}, ${b}, 0.6)`;
+          const lineGeometryIndex = jsonResponse.geometryTypes.indexOf("line");
+          if (lineGeometryIndex > -1) {
+            style.layers.push(
+              {
+                "id": `${layer}_${jsonResponse.geometryTypes[lineGeometryIndex]}`,
+                "source": layer,
+                "type": "line",
+                "paint": {
+                  "line-color": `rgba(${r}, ${g}, ${b}, 0.6)`
+                },
+                "layout": {
+                  "line-join": "round",
+                  "line-cap": "round",
+                  "visibility": "visible"
+                },
+                "filter": ["==", "$type", "LineString"]
+              }
+            );
+          }
 
-          style.layers.push(
-            {
-              "id": `${layer}_line`,
-              "source": layer,
-              "type": "line",
-              "paint": {
-                "line-color": geoJSONColors.line
-              },
-              "layout": {
-                "line-join": "round",
-                "line-cap": "round",
-                "visibility": "visible"
-              },
-              "filter": ["==", "$type", "LineString"]
-            }
-          );
-        }
-
-        if (jsonResponse.geometryTypes.includes("circle") === true) {
-          geoJSONColors.circle = `rgba(${r}, ${g}, ${b}, 0.8)`;
-
-          style.layers.push(
-            {
-              "id": `${layer}_circle`,
-              "source": layer,
-              "type": "circle",
-              "paint": {
-                "circle-color": geoJSONColors.circle,
-                "circle-radius": 2
-              },
-              "layout": {
-                "visibility": "visible"
-              },
-              "filter": ["==", "$type", "Point"]
-            }
-          );
+          const circleGeometryIndex = jsonResponse.geometryTypes.indexOf("circle");
+          if (circleGeometryIndex > -1) {
+            style.layers.push(
+              {
+                "id": `${layer}_${jsonResponse.geometryTypes[circleGeometryIndex]}`,
+                "source": layer,
+                "type": "circle",
+                "paint": {
+                  "circle-color": `rgba(${r}, ${g}, ${b}, 0.8)`,
+                  "circle-radius": 2
+                },
+                "layout": {
+                  "visibility": "visible"
+                },
+                "filter": ["==", "$type", "Point"]
+              }
+            );
+          }
         }
 
         const map = new maplibregl.Map({
@@ -180,22 +181,24 @@
         }));
 
         map.on("load", () => {
-          const layerList = document.getElementById("layerList");
+          if (layerColors[layer] !== undefined) {
+            const layerList = document.getElementById("layerList");
 
-          for (const geometryType in geoJSONColors) {
             const item = document.createElement("div");
 
             item.innerHTML = `
               <div style="display:flex;align-items:center;cursor:pointer;">
-                <div style="width:15px;height:15px;display:inline-block;background:${geoJSONColors[geometryType]};"></div>
-                <span style="margin-left:5px;color:${geoJSONColors[geometryType]};display:inline-block;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${layer}_${geometryType}</span>
+                <div style="width:15px;height:15px;display:inline-block;background:${layerColors[layer]};"></div>
+                <span style="margin-left:5px;color:${layerColors[layer]};display:inline-block;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${layer}</span>
               </div>
             `;
 
             item.onclick = () => {
-              const newVisibility = map.getLayoutProperty(`${layer}_${geometryType}`, "visibility") === "none" ? "visible" : "none";
+              const newVisibility = map.getLayoutProperty(`${layer}_${jsonResponse.geometryTypes[0]}`, "visibility") === "none" ? "visible" : "none";
 
-              map.setLayoutProperty(`${layer}_${geometryType}`, "visibility", newVisibility);
+              jsonResponse.geometryTypes.forEach((geometryType) => {
+                map.setLayoutProperty(`${layer}_${geometryType}`, "visibility", newVisibility);
+              });
 
               item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
             };

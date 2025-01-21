@@ -2,7 +2,7 @@
   "name": "tile-server",
   "description": "Vector/Raster tile server for serving/caching xyz/wmts tiles",
   "main": "src/main.js",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "license": "MIT",
   "author": "Huy Le <lqh23072000@gmail.com>",
   "type": "module",
