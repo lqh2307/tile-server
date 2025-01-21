@@ -63,7 +63,7 @@ RUN \
     libpng16-16 \
     libwebp7 \
     libcurl4 \
-    gdal-bin; \
+    gdal-bin;
 
 RUN \
   if [ "${ENABLE_EXPORT}" = "true" ]; then \

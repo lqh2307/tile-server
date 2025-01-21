@@ -44,8 +44,16 @@ apt-get -y install \
   libgif-dev \
   libpng-dev \
   libwebp-dev \
-  libcurl4-openssl-dev \
-  gdal-bin; \
+  libcurl4-openssl-dev;
+```
+
+If use export:
+
+```bash
+apt-get -y install gdal-bin;
+```
+
+```bash
 apt-get -y --purge autoremove; \
 apt-get clean; \
 rm -rf /var/lib/apt/lists/*;
@@ -71,7 +79,7 @@ NODE_ENV=production yarn install;
 Run (without nginx):
 
 ```bash
-USE_NGINX=false yarn run server -d path_to_data_folder
+USE_NGINX=false ENABLE_EXPORT=true yarn run server -d path_to_data_folder
 ```
 
 Run (with nginx):
@@ -86,7 +94,7 @@ yarn run server -d path_to_data_folder;
 Build image:
 
 ```bash
-docker build -t tile-server:0.0.16 .
+docker build --build-arg ENABLE_EXPORT=true -t tile-server:0.0.16 .
 ```
 
 Run container (without nginx):
