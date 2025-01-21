@@ -162,6 +162,8 @@
               }
             );
           }
+        } else {
+          alert(`No geometry found in layer "${layer}". Skipping...`);
         }
 
         const map = new maplibregl.Map({
@@ -180,8 +182,8 @@
           useInspectStyle: false
         }));
 
-        map.on("load", () => {
-          if (layerColors[layer] !== undefined) {
+        if (layerColors[layer] !== undefined) {
+          map.on("load", () => {
             const layerList = document.getElementById("layerList");
 
             const item = document.createElement("div");
@@ -204,8 +206,8 @@
             };
 
             layerList.appendChild(item);
-          }
-        });
+          });
+        }
 
         let currentMarker;
 

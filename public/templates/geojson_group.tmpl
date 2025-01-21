@@ -92,12 +92,12 @@
         const layerColors = {};
 
         for (const layer in jsonResponse.geojsons) {
-          style.sources[layer] = {
-            "type": "geojson",
-            "data": jsonResponse.geojsons[layer].url
-          };
-
           if (jsonResponse.geojsons[layer].geometryTypes.length > 0) {
+            style.sources[layer] = {
+              "type": "geojson",
+              "data": jsonResponse.geojsons[layer].url
+            };
+
             const r = Math.floor(Math.random() * 256);
             const g = Math.floor(Math.random() * 256);
             const b = Math.floor(Math.random() * 256);
@@ -162,6 +162,8 @@
                 }
               );
             }
+          } else {
+            alert(`No geometry found in layer "${layer}". Skipping...`);
           }
         }
 
@@ -185,28 +187,26 @@
           const layerList = document.getElementById("layerList");
 
           for (const layer in layerColors) {
-            if (layerColors[layer] !== undefined) {
-              const item = document.createElement("div");
+            const item = document.createElement("div");
 
-              item.innerHTML = `
-                <div style="display:flex;align-items:center;cursor:pointer;">
-                  <div style="width:15px;height:15px;display:inline-block;background:${layerColors[layer]};"></div>
-                  <span style="margin-left:5px;color:${layerColors[layer]};display:inline-block;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${layer}</span>
-                </div>
-              `;
+            item.innerHTML = `
+              <div style="display:flex;align-items:center;cursor:pointer;">
+                <div style="width:15px;height:15px;display:inline-block;background:${layerColors[layer]};"></div>
+                <span style="margin-left:5px;color:${layerColors[layer]};display:inline-block;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${layer}</span>
+              </div>
+            `;
 
-              item.onclick = () => {
-                const newVisibility = map.getLayoutProperty(`${layer}_${jsonResponse.geojsons[layer].geometryTypes[0]}`, "visibility") === "none" ? "visible" : "none";
+            item.onclick = () => {
+              const newVisibility = map.getLayoutProperty(`${layer}_${jsonResponse.geojsons[layer].geometryTypes[0]}`, "visibility") === "none" ? "visible" : "none";
 
-                jsonResponse.geojsons[layer].geometryTypes.forEach((geometryType) => {
-                  map.setLayoutProperty(`${layer}_${geometryType}`, "visibility", newVisibility);
-                });
+              jsonResponse.geojsons[layer].geometryTypes.forEach((geometryType) => {
+                map.setLayoutProperty(`${layer}_${geometryType}`, "visibility", newVisibility);
+              });
 
-                item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
-              };
+              item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
+            };
 
-              layerList.appendChild(item);
-            }
+            layerList.appendChild(item);
           }
         });
 

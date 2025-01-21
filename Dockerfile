@@ -45,6 +45,8 @@ RUN \
 
 FROM ${TARGET_IMAGE} AS final
 
+ARG ENABLE_EXPORT=true
+
 RUN \
   export DEBIAN_FRONTEND=noninteractive; \
   apt-get -y update; \
@@ -62,6 +64,13 @@ RUN \
     libwebp7 \
     libcurl4 \
     gdal-bin; \
+
+RUN \
+  if [ "${ENABLE_EXPORT}" = "true" ]; then \
+    apt-get -y install gdal-bin; \
+  fi;
+
+RUN \
   apt-get -y --purge autoremove; \
   apt-get clean; \
   rm -rf /var/lib/apt/lists/*;
@@ -73,6 +82,7 @@ COPY --from=builder /usr/local/lib/nodejs /usr/local/lib/nodejs
 COPY --from=builder /tile-server/nginx.conf /etc/nginx/nginx.conf
 
 ENV PATH=/usr/local/lib/nodejs/bin:$PATH
+ENV ENABLE_EXPORT=${ENABLE_EXPORT}
 ENV USE_NGINX=true
 
 VOLUME /tile-server/data

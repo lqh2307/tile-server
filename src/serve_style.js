@@ -908,48 +908,50 @@ export const serve_style = {
      */
     app.get("/:id/md5", checkReadyMiddleware(), getStyleMD5Handler());
 
-    /**
-     * @swagger
-     * tags:
-     *   - name: Style
-     *     description: Style related endpoints
-     * /styles/{id}/export/style.json:
-     *   get:
-     *     tags:
-     *       - Style
-     *     summary: Render style
-     *     parameters:
-     *       - in: query
-     *         name: options
-     *         schema:
-     *           type: object
-     *         required: false
-     *         description: Style render options
-     *     responses:
-     *       200:
-     *         description: Style render is started
-     *         content:
-     *           text/plain:
-     *             schema:
-     *               type: string
-     *               example: OK
-     *       404:
-     *         description: Not found
-     *       503:
-     *         description: Server is starting up
-     *         content:
-     *           text/plain:
-     *             schema:
-     *               type: string
-     *               example: Starting...
-     *       500:
-     *         description: Internal server error
-     */
-    app.get(
-      "/:id/export/style.json",
-      checkReadyMiddleware(),
-      renderStyleHandler()
-    );
+    if (process.env.ENABLE_EXPORT !== "false") {
+      /**
+       * @swagger
+       * tags:
+       *   - name: Style
+       *     description: Style related endpoints
+       * /styles/{id}/export/style.json:
+       *   get:
+       *     tags:
+       *       - Style
+       *     summary: Render style
+       *     parameters:
+       *       - in: query
+       *         name: options
+       *         schema:
+       *           type: object
+       *         required: false
+       *         description: Style render options
+       *     responses:
+       *       200:
+       *         description: Style render is started
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: OK
+       *       404:
+       *         description: Not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
+       *       500:
+       *         description: Internal server error
+       */
+      app.get(
+        "/:id/export/style.json",
+        checkReadyMiddleware(),
+        renderStyleHandler()
+      );
+    }
 
     /**
      * @swagger
