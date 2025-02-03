@@ -1,14 +1,14 @@
 "use strict";
 
 import { countPostgreSQLTiles, getPostgreSQLSize } from "./tile_postgresql.js";
+import { updateConfigFile, readConfigFile, config } from "./config.js";
 import { countMBTilesTiles, getMBTilesSize } from "./tile_mbtiles.js";
+import { updateCleanUpFile, readCleanUpFile } from "./cleanup.js";
+import { seed, readSeedFile, updateSeedFile } from "./seed.js";
 import { countXYZTiles, getXYZSize } from "./tile_xyz.js";
 import { checkReadyMiddleware } from "./middleware.js";
-import { config, readConfigFile } from "./config.js";
 import { getPMTilesSize } from "./tile_pmtiles.js";
 import { StatusCodes } from "http-status-codes";
-import { readCleanUpFile } from "./cleanup.js";
-import { seed, readSeedFile } from "./seed.js";
 import { getGeoJSONSize } from "./geojson.js";
 import { getSpriteSize } from "./sprite.js";
 import swaggerUi from "swagger-ui-express";
@@ -26,6 +26,7 @@ import {
   getBBoxFromPoint,
   getRequestHost,
   isExistFolder,
+  validateJSON,
   getVersion,
 } from "./utils.js";
 
@@ -372,12 +373,14 @@ function serveSwagger() {
 function serveConfigHandler() {
   return async (req, res, next) => {
     try {
-      let configJSON = await readConfigFile(false);
+      let configJSON;
 
       if (req.query.type === "seed") {
         configJSON = await readSeedFile(false);
       } else if (req.query.type === "cleanUp") {
         configJSON = await readCleanUpFile(false);
+      } else {
+        configJSON = await readConfigFile(false);
       }
 
       res.header("content-type", "application/json");
@@ -385,6 +388,977 @@ function serveConfigHandler() {
       return res.status(StatusCodes.OK).send(configJSON);
     } catch (error) {
       printLog("error", `Failed to get config": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
+/**
+ * Update config.json/seed.json/cleanUp.json content handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
+function serveConfigUpdateHandler() {
+  return async (req, res, next) => {
+    try {
+      if (req.query.type === "seed") {
+        await validateJSON(
+          {
+            type: "object",
+            properties: {
+              styles: {
+                type: "object",
+                additionalProperties: {
+                  type: "object",
+                  properties: {
+                    metadata: {
+                      type: "object",
+                      properties: {
+                        name: {
+                          type: "string",
+                        },
+                        zoom: {
+                          type: "integer",
+                          minimum: 0,
+                          maximum: 22,
+                        },
+                        center: {
+                          type: "array",
+                          items: {
+                            type: "number",
+                            minimum: -180,
+                            maximum: 180,
+                          },
+                          minItems: 3,
+                          maxItems: 3,
+                        },
+                      },
+                    },
+                    url: {
+                      type: "string",
+                      minLength: 1,
+                    },
+                    skip: {
+                      type: "boolean",
+                    },
+                    refreshBefore: {
+                      type: "object",
+                      properties: {
+                        time: {
+                          type: "string",
+                          minLength: 1,
+                        },
+                        day: {
+                          type: "integer",
+                          minimum: 0,
+                        },
+                        md5: {
+                          type: "boolean",
+                        },
+                      },
+                      anyOf: [
+                        { required: ["time"] },
+                        { required: ["day"] },
+                        { required: ["md5"] },
+                      ],
+                    },
+                    timeout: {
+                      type: "integer",
+                      minimum: 0,
+                    },
+                    maxTry: {
+                      type: "integer",
+                      minimum: 1,
+                    },
+                  },
+                  required: ["metadata", "url"],
+                },
+              },
+              geojsons: {
+                type: "object",
+                additionalProperties: {
+                  type: "object",
+                  properties: {
+                    url: {
+                      type: "string",
+                      minLength: 1,
+                    },
+                    skip: {
+                      type: "boolean",
+                    },
+                    refreshBefore: {
+                      type: "object",
+                      properties: {
+                        time: {
+                          type: "string",
+                          minLength: 1,
+                        },
+                        day: {
+                          type: "integer",
+                          minimum: 0,
+                        },
+                        md5: {
+                          type: "boolean",
+                        },
+                      },
+                      anyOf: [
+                        { required: ["time"] },
+                        { required: ["day"] },
+                        { required: ["md5"] },
+                      ],
+                    },
+                    timeout: {
+                      type: "integer",
+                      minimum: 0,
+                    },
+                    maxTry: {
+                      type: "integer",
+                      minimum: 1,
+                    },
+                  },
+                  required: ["metadata", "url"],
+                },
+              },
+              datas: {
+                type: "object",
+                additionalProperties: {
+                  type: "object",
+                  properties: {
+                    metadata: {
+                      type: "object",
+                      properties: {
+                        name: {
+                          type: "string",
+                        },
+                        description: {
+                          type: "string",
+                        },
+                        attribution: {
+                          type: "string",
+                        },
+                        version: {
+                          type: "string",
+                        },
+                        type: {
+                          type: "string",
+                          enum: ["baselayer", "overlay"],
+                        },
+                        scheme: {
+                          type: "string",
+                          enum: ["tms", "xyz"],
+                        },
+                        format: {
+                          type: "string",
+                          enum: ["gif", "png", "jpg", "jpeg", "webp", "pbf"],
+                        },
+                        minzoom: {
+                          type: "integer",
+                          minimum: 0,
+                          maximum: 22,
+                        },
+                        maxzoom: {
+                          type: "integer",
+                          minimum: 0,
+                          maximum: 22,
+                        },
+                        bounds: {
+                          type: "array",
+                          items: {
+                            type: "number",
+                            minimum: -180,
+                            maximum: 180,
+                          },
+                          minItems: 4,
+                          maxItems: 4,
+                        },
+                        center: {
+                          type: "array",
+                          items: {
+                            type: "number",
+                            minimum: -180,
+                            maximum: 180,
+                          },
+                          minItems: 3,
+                          maxItems: 3,
+                        },
+                        vector_layers: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              id: {
+                                type: "string",
+                              },
+                              description: {
+                                type: "string",
+                              },
+                              minzoom: {
+                                type: "integer",
+                                minimum: 0,
+                                maximum: 22,
+                              },
+                              maxzoom: {
+                                type: "integer",
+                                minimum: 0,
+                                maximum: 22,
+                              },
+                              fields: {
+                                type: "object",
+                                additionalProperties: {
+                                  type: "string",
+                                },
+                              },
+                            },
+                            required: ["id"],
+                          },
+                          minItems: 0,
+                        },
+                        tilestats: {
+                          type: "object",
+                          properties: {
+                            layerCount: {
+                              type: "integer",
+                            },
+                          },
+                        },
+                      },
+                      required: ["format"],
+                    },
+                    url: {
+                      type: "string",
+                      minLength: 1,
+                    },
+                    scheme: {
+                      type: "string",
+                      enum: ["tms", "xyz"],
+                    },
+                    skip: {
+                      type: "boolean",
+                    },
+                    refreshBefore: {
+                      type: "object",
+                      properties: {
+                        time: {
+                          type: "string",
+                          minLength: 1,
+                        },
+                        day: {
+                          type: "integer",
+                          minimum: 0,
+                        },
+                        md5: {
+                          type: "boolean",
+                        },
+                      },
+                      anyOf: [
+                        { required: ["time"] },
+                        { required: ["day"] },
+                        { required: ["md5"] },
+                      ],
+                    },
+                    zooms: {
+                      type: "array",
+                      items: {
+                        type: "integer",
+                        minimum: 0,
+                        maximum: 22,
+                      },
+                      minItems: 0,
+                      maxItems: 23,
+                    },
+                    bboxs: {
+                      type: "array",
+                      items: {
+                        type: "array",
+                        items: {
+                          type: "number",
+                          minimum: -180,
+                          maximum: 180,
+                        },
+                        minItems: 4,
+                        maxItems: 4,
+                      },
+                      minItems: 1,
+                    },
+                    timeout: {
+                      type: "integer",
+                      minimum: 0,
+                    },
+                    concurrency: {
+                      type: "integer",
+                      minimum: 1,
+                    },
+                    maxTry: {
+                      type: "integer",
+                      minimum: 1,
+                    },
+                    storeType: {
+                      type: "string",
+                      enum: ["xyz", "mbtiles", "pg"],
+                    },
+                    storeMD5: {
+                      type: "boolean",
+                    },
+                    storeTransparent: {
+                      type: "boolean",
+                    },
+                  },
+                  required: ["metadata", "storeType", "url"],
+                },
+              },
+              sprites: {
+                type: "object",
+                additionalProperties: {
+                  type: "object",
+                  properties: {
+                    url: {
+                      type: "string",
+                      minLength: 1,
+                    },
+                    refreshBefore: {
+                      type: "object",
+                      properties: {
+                        time: {
+                          type: "string",
+                          minLength: 1,
+                        },
+                        day: {
+                          type: "integer",
+                          minimum: 0,
+                        },
+                      },
+                      anyOf: [{ required: ["time"] }, { required: ["day"] }],
+                    },
+                    timeout: {
+                      type: "integer",
+                      minimum: 0,
+                    },
+                    maxTry: {
+                      type: "integer",
+                      minimum: 1,
+                    },
+                    skip: {
+                      type: "boolean",
+                    },
+                  },
+                  required: ["url"],
+                },
+              },
+              fonts: {
+                type: "object",
+                additionalProperties: {
+                  type: "object",
+                  properties: {
+                    url: {
+                      type: "string",
+                      minLength: 1,
+                    },
+                    refreshBefore: {
+                      type: "object",
+                      properties: {
+                        time: {
+                          type: "string",
+                          minLength: 1,
+                        },
+                        day: {
+                          type: "integer",
+                          minimum: 0,
+                        },
+                      },
+                      anyOf: [{ required: ["time"] }, { required: ["day"] }],
+                    },
+                    timeout: {
+                      type: "integer",
+                      minimum: 0,
+                    },
+                    maxTry: {
+                      type: "integer",
+                      minimum: 1,
+                    },
+                    skip: {
+                      type: "boolean",
+                    },
+                  },
+                  required: ["url"],
+                },
+              },
+            },
+            required: ["styles", "geojsons", "datas", "sprites", "fonts"],
+            additionalProperties: false,
+          },
+          req.body
+        );
+
+        const config = JSON.parse(await readSeedFile(false));
+
+        Object.keys(req.body.styles).map((id) => {
+          config.styles[id] = req.body.styles[id];
+        });
+
+        Object.keys(req.body.datas).map((id) => {
+          config.datas[id] = req.body.datas[id];
+        });
+
+        Object.keys(req.body.geojsons).map((id) => {
+          config.geojsons[id] = req.body.geojsons[id];
+        });
+
+        Object.keys(req.body.sprites).map((id) => {
+          config.sprites[id] = req.body.sprites[id];
+        });
+
+        Object.keys(req.body.fonts).map((id) => {
+          config.fonts[id] = req.body.fonts[id];
+        });
+
+        await updateSeedFile(config, 60000);
+      } else if (req.query.type === "cleanUp") {
+        await validateJSON(
+          {
+            type: "object",
+            properties: {
+              styles: {
+                type: "object",
+                additionalProperties: {
+                  type: "object",
+                  properties: {
+                    skip: {
+                      type: "boolean",
+                    },
+                    cleanUpBefore: {
+                      type: "object",
+                      properties: {
+                        time: {
+                          type: "string",
+                        },
+                        day: {
+                          type: "integer",
+                          minimum: 0,
+                        },
+                      },
+                      anyOf: [{ required: ["time"] }, { required: ["day"] }],
+                    },
+                  },
+                },
+              },
+              geojsons: {
+                type: "object",
+                additionalProperties: {
+                  type: "object",
+                  properties: {
+                    skip: {
+                      type: "boolean",
+                    },
+                    cleanUpBefore: {
+                      type: "object",
+                      properties: {
+                        time: {
+                          type: "string",
+                        },
+                        day: {
+                          type: "integer",
+                          minimum: 0,
+                        },
+                      },
+                      anyOf: [{ required: ["time"] }, { required: ["day"] }],
+                    },
+                  },
+                },
+              },
+              datas: {
+                type: "object",
+                additionalProperties: {
+                  type: "object",
+                  properties: {
+                    bboxs: {
+                      type: "array",
+                      items: {
+                        type: "array",
+                        items: {
+                          type: "number",
+                          minimum: -180,
+                          maximum: 180,
+                        },
+                        minItems: 4,
+                        maxItems: 4,
+                      },
+                      minItems: 1,
+                    },
+                    zooms: {
+                      type: "array",
+                      items: {
+                        type: "integer",
+                        minimum: 0,
+                        maximum: 22,
+                      },
+                      minItems: 0,
+                      maxItems: 23,
+                    },
+                    skip: {
+                      type: "boolean",
+                    },
+                    cleanUpBefore: {
+                      type: "object",
+                      properties: {
+                        time: {
+                          type: "string",
+                          minLength: 1,
+                        },
+                        day: {
+                          type: "integer",
+                          minimum: 0,
+                        },
+                      },
+                      anyOf: [{ required: ["time"] }, { required: ["day"] }],
+                    },
+                  },
+                },
+              },
+              sprites: {
+                type: "object",
+                additionalProperties: {
+                  type: "object",
+                  properties: {
+                    skip: {
+                      type: "boolean",
+                    },
+                    cleanUpBefore: {
+                      type: "object",
+                      properties: {
+                        time: {
+                          type: "string",
+                          minLength: 1,
+                        },
+                        day: {
+                          type: "integer",
+                          minimum: 0,
+                        },
+                      },
+                      anyOf: [{ required: ["time"] }, { required: ["day"] }],
+                    },
+                  },
+                },
+              },
+              fonts: {
+                type: "object",
+                additionalProperties: {
+                  type: "object",
+                  properties: {
+                    skip: {
+                      type: "boolean",
+                    },
+                    cleanUpBefore: {
+                      type: "object",
+                      properties: {
+                        time: {
+                          type: "string",
+                          minLength: 1,
+                        },
+                        day: {
+                          type: "integer",
+                          minimum: 0,
+                        },
+                      },
+                      anyOf: [{ required: ["time"] }, { required: ["day"] }],
+                    },
+                  },
+                },
+              },
+            },
+            required: ["styles", "geojsons", "datas", "sprites", "fonts"],
+            additionalProperties: false,
+          },
+          req.body
+        );
+
+        const config = JSON.parse(await readCleanUpFile(false));
+
+        Object.keys(req.body.styles).map((id) => {
+          config.styles[id] = req.body.styles[id];
+        });
+
+        Object.keys(req.body.datas).map((id) => {
+          config.datas[id] = req.body.datas[id];
+        });
+
+        Object.keys(req.body.geojsons).map((id) => {
+          config.geojsons[id] = req.body.geojsons[id];
+        });
+
+        Object.keys(req.body.sprites).map((id) => {
+          config.sprites[id] = req.body.sprites[id];
+        });
+
+        Object.keys(req.body.fonts).map((id) => {
+          config.fonts[id] = req.body.fonts[id];
+        });
+
+        await updateCleanUpFile(config, 60000);
+      } else {
+        await validateJSON(
+          {
+            type: "object",
+            properties: {
+              options: {
+                type: "object",
+                properties: {
+                  listenPort: {
+                    type: "integer",
+                    minimum: 0,
+                  },
+                  serverEndpoint: {
+                    type: "boolean",
+                  },
+                  serveFrontPage: {
+                    type: "boolean",
+                  },
+                  serveSwagger: {
+                    type: "boolean",
+                  },
+                  loggerFormat: {
+                    type: "string",
+                    minLength: 1,
+                  },
+                  taskSchedule: {
+                    type: "string",
+                    pattern:
+                      "^([0-5]?\\d|\\*)\\s([0-5]?\\d|\\*)\\s([0-1]?\\d|2[0-3]|\\*)\\s([1-9]|[12]\\d|3[01]|\\*)\\s([1-9]|1[0-2]|\\*)\\s([0-7]|\\*)$|^([0-5]?\\d|\\*)\\s([0-5]?\\d|\\*)\\s([0-1]?\\d|2[0-3]|\\*)\\s([1-9]|[12]\\d|3[01]|\\*)\\s([1-9]|1[0-2]|\\*)$",
+                    minLength: 1,
+                  },
+                  postgreSQLBaseURI: {
+                    type: "string",
+                    pattern:
+                      "^postgres(?:ql)?://(?:(?:[a-zA-Z0-9._~!$&'()*+,;=%-]+)(?::[a-zA-Z0-9._~!$&'()*+,;=%-]+)?@)?(?:[a-zA-Z0-9.-]+|\\[[a-fA-F0-9:]+\\])(?::\\d+)?(?:/[a-zA-Z0-9._~!$&'()*+,;=%-]*)?(?:\\?[a-zA-Z0-9._~!$&'()*+,;=%-]+=[a-zA-Z0-9._~!$&'()*+,;=%-]+(?:&[a-zA-Z0-9._~!$&'()*+,;=%-]+=[a-zA-Z0-9._~!$&'()*+,;=%-]+)*)?$",
+                    minLength: 1,
+                  },
+                  restartServerAfterTask: {
+                    type: "boolean",
+                  },
+                  process: {
+                    type: "integer",
+                    minimum: 1,
+                  },
+                  thread: {
+                    type: "integer",
+                    minimum: 1,
+                  },
+                },
+              },
+              styles: {
+                type: "object",
+                additionalProperties: {
+                  type: "object",
+                  properties: {
+                    style: {
+                      type: "string",
+                      minLength: 1,
+                    },
+                    cache: {
+                      type: "object",
+                      properties: {
+                        forward: {
+                          type: "boolean",
+                        },
+                        store: {
+                          type: "boolean",
+                        },
+                      },
+                    },
+                    rendered: {
+                      type: "object",
+                      properties: {
+                        compressionLevel: {
+                          type: "integer",
+                          minimum: 1,
+                          maximum: 9,
+                        },
+                      },
+                    },
+                  },
+                  required: ["style"],
+                },
+              },
+              geojsons: {
+                type: "object",
+                additionalProperties: {
+                  type: "object",
+                  additionalProperties: {
+                    type: "object",
+                    properties: {
+                      geojson: {
+                        type: "string",
+                        minLength: 1,
+                      },
+                      cache: {
+                        type: "object",
+                        properties: {
+                          forward: {
+                            type: "boolean",
+                          },
+                          store: {
+                            type: "boolean",
+                          },
+                        },
+                      },
+                    },
+                    required: ["geojson"],
+                  },
+                },
+              },
+              datas: {
+                type: "object",
+                additionalProperties: {
+                  type: "object",
+                  properties: {
+                    mbtiles: {
+                      type: "string",
+                      minLength: 1,
+                    },
+                    pmtiles: {
+                      type: "string",
+                      minLength: 1,
+                    },
+                    xyz: {
+                      type: "string",
+                      minLength: 1,
+                    },
+                    pg: {
+                      type: "string",
+                      minLength: 1,
+                    },
+                    cache: {
+                      type: "object",
+                      properties: {
+                        forward: {
+                          type: "boolean",
+                        },
+                        store: {
+                          type: "boolean",
+                        },
+                      },
+                    },
+                  },
+                  anyOf: [
+                    { required: ["mbtiles"] },
+                    { required: ["pmtiles"] },
+                    { required: ["xyz"] },
+                    { required: ["pg"] },
+                  ],
+                },
+              },
+              sprites: {
+                type: "object",
+                additionalProperties: {
+                  type: "boolean",
+                },
+              },
+              fonts: {
+                type: "object",
+                additionalProperties: {
+                  type: "boolean",
+                },
+              },
+            },
+            required: [
+              "options",
+              "styles",
+              "geojsons",
+              "datas",
+              "sprites",
+              "fonts",
+            ],
+            additionalProperties: false,
+          },
+          req.body
+        );
+
+        const config = JSON.parse(await readConfigFile(false));
+
+        Object.assign(config.options, req.body.options);
+
+        Object.keys(req.body.styles).map((id) => {
+          config.styles[id] = req.body.styles[id];
+        });
+
+        Object.keys(req.body.datas).map((id) => {
+          config.datas[id] = req.body.datas[id];
+        });
+
+        Object.keys(req.body.geojsons).map((id) => {
+          config.geojsons[id] = req.body.geojsons[id];
+        });
+
+        Object.keys(req.body.sprites).map((id) => {
+          config.sprites[id] = req.body.sprites[id];
+        });
+
+        Object.keys(req.body.fonts).map((id) => {
+          config.fonts[id] = req.body.fonts[id];
+        });
+
+        await updateConfigFile(config, 60000);
+      }
+
+      return res.status(StatusCodes.OK).send("OK");
+    } catch (error) {
+      printLog("error", `Failed to update config": ${error}`);
+
+      if (error.validateJSON === true) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .send("Config element is invalid");
+      }
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
+/**
+ * Delete config.json/seed.json/cleanUp.json content handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
+function serveConfigDeleteHandler() {
+  return async (req, res, next) => {
+    try {
+      await validateJSON(
+        {
+          type: "object",
+          properties: {
+            styles: {
+              type: "array",
+              items: {
+                type: "string",
+                minLength: 1,
+              },
+              minItems: 1,
+            },
+            geojsons: {
+              type: "array",
+              items: {
+                type: "string",
+                minLength: 1,
+              },
+              minItems: 1,
+            },
+            datas: {
+              type: "array",
+              items: {
+                type: "string",
+                minLength: 1,
+              },
+              minItems: 1,
+            },
+            sprites: {
+              type: "array",
+              items: {
+                type: "string",
+                minLength: 1,
+              },
+              minItems: 1,
+            },
+            fonts: {
+              type: "array",
+              items: {
+                type: "string",
+                minLength: 1,
+              },
+              minItems: 1,
+            },
+          },
+          required: ["styles", "geojsons", "datas", "sprites", "fonts"],
+          additionalProperties: false,
+        },
+        req.body
+      );
+
+      if (req.query.type === "seed") {
+        const config = JSON.parse(await readSeedFile(false));
+
+        Object.keys(req.body.styles).map((id) => {
+          delete config.styles[id];
+        });
+
+        Object.keys(req.body.datas).map((id) => {
+          delete config.datas[id];
+        });
+
+        Object.keys(req.body.geojsons).map((id) => {
+          delete config.geojsons[id];
+        });
+
+        Object.keys(req.body.sprites).map((id) => {
+          delete config.sprites[id];
+        });
+
+        Object.keys(req.body.fonts).map((id) => {
+          delete config.fonts[id];
+        });
+
+        await updateSeedFile(config, 60000);
+      } else if (req.query.type === "cleanUp") {
+        const config = JSON.parse(await readCleanUpFile(false));
+
+        Object.keys(req.body.styles).map((id) => {
+          delete config.styles[id];
+        });
+
+        Object.keys(req.body.datas).map((id) => {
+          delete config.datas[id];
+        });
+
+        Object.keys(req.body.geojsons).map((id) => {
+          delete config.geojsons[id];
+        });
+
+        Object.keys(req.body.sprites).map((id) => {
+          delete config.sprites[id];
+        });
+
+        Object.keys(req.body.fonts).map((id) => {
+          delete config.fonts[id];
+        });
+
+        await updateCleanUpFile(config, 60000);
+      } else {
+        const config = JSON.parse(await readConfigFile(false));
+
+        Object.keys(req.body.styles).map((id) => {
+          delete config.styles[id];
+        });
+
+        Object.keys(req.body.datas).map((id) => {
+          delete config.datas[id];
+        });
+
+        Object.keys(req.body.geojsons).map((id) => {
+          delete config.geojsons[id];
+        });
+
+        Object.keys(req.body.sprites).map((id) => {
+          delete config.sprites[id];
+        });
+
+        Object.keys(req.body.fonts).map((id) => {
+          delete config.fonts[id];
+        });
+
+        await updateConfigFile(config, 60000);
+      }
+
+      return res.status(StatusCodes.OK).send("OK");
+    } catch (error) {
+      printLog("error", `Failed to delete config": ${error}`);
+
+      if (error.validateJSON === true) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .send("Config element is invalid");
+      }
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -998,8 +1972,76 @@ export const serve_common = {
      *               example: Starting...
      *       500:
      *         description: Internal server error
+     *   post:
+     *     tags:
+     *       - Common
+     *     summary: Update config
+     *     parameters:
+     *       - in: query
+     *         name: type
+     *         schema:
+     *           type: string
+     *           enum: [config, seed, cleanUp]
+     *           example: config
+     *         required: false
+     *         description: Config type
+     *     responses:
+     *       200:
+     *         description: Config is updated
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *       400:
+     *         description: Bad request
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     *   delete:
+     *     tags:
+     *       - Common
+     *     summary: Update config
+     *     parameters:
+     *       - in: query
+     *         name: type
+     *         schema:
+     *           type: string
+     *           enum: [config, seed, cleanUp]
+     *           example: config
+     *         required: false
+     *         description: Config type
+     *     responses:
+     *       200:
+     *         description: Config is updated
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *       400:
+     *         description: Bad request
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
      */
     app.get("/config", serveConfigHandler());
+    app.post("/config", serveConfigUpdateHandler());
+    app.delete("/config", serveConfigDeleteHandler());
 
     if (process.env.SERVE_SERVER_ENDPOINT !== "false") {
       /**

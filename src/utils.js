@@ -470,15 +470,31 @@ export async function removeEmptyFolders(folderPath, regex) {
  * @returns {Promise<void>}
  */
 export async function removeOldCacheLocks() {
-  const fileNames = await findFiles(
-    `${process.env.DATA_DIR}/caches`,
+  let fileNames = await findFiles(
+    `${process.env.DATA_DIR}`,
+    /^.*\.(lock|tmp)$/,
+    false
+  );
+
+  await Promise.all(
+    fileNames.map(
+      (fileName) => fsPromise.rm(`${process.env.DATA_DIR}/${fileName}`),
+      {
+        force: true,
+      }
+    )
+  );
+
+  fileNames = await findFiles(
+    `${process.env.DATA_DIR}/caches/xyzs`,
     /^.*\.(lock|tmp)$/,
     true
   );
 
   await Promise.all(
     fileNames.map(
-      (fileName) => fsPromise.rm(`${process.env.DATA_DIR}/caches/${fileName}`),
+      (fileName) =>
+        fsPromise.rm(`${process.env.DATA_DIR}/caches/xyzs/${fileName}`),
       {
         force: true,
       }
@@ -733,6 +749,8 @@ export async function validateJSON(schema, jsonData) {
         .join();
     }
   } catch (error) {
+    error.validateJSON = true;
+
     throw error;
   }
 }

@@ -31,12 +31,14 @@ import {
   openPostgreSQLDB,
 } from "./tile_postgresql.js";
 
+let cleanUp;
+
 /**
  * Read cleanup.json file
  * @param {boolean} isValidate Is validate file?
  * @returns {Promise<object>}
  */
-export async function readCleanUpFile(isValidate) {
+async function readCleanUpFile(isValidate) {
   /* Read cleanup.json file */
   const data = await fsPromise.readFile(
     `${process.env.DATA_DIR}/cleanup.json`,
@@ -210,6 +212,14 @@ export async function readCleanUpFile(isValidate) {
 }
 
 /**
+ * Load cleanup.json file
+ * @returns {Promise<void>}
+ */
+async function loadCleanUpFile() {
+  cleanUp = await readCleanUpFile(true);
+}
+
+/**
  * Clean up MBTiles tiles
  * @param {string} id Clean up MBTiles ID
  * @param {Array<number>} zooms Array of specific zoom levels
@@ -217,7 +227,7 @@ export async function readCleanUpFile(isValidate) {
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-export async function cleanUpMBTilesTiles(
+async function cleanUpMBTilesTiles(
   id,
   zooms = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
@@ -365,7 +375,7 @@ export async function cleanUpMBTilesTiles(
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-export async function cleanUpPostgreSQLTiles(
+async function cleanUpPostgreSQLTiles(
   id,
   zooms = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
@@ -513,7 +523,7 @@ export async function cleanUpPostgreSQLTiles(
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-export async function cleanUpXYZTiles(
+async function cleanUpXYZTiles(
   id,
   format,
   zooms = [
@@ -670,7 +680,7 @@ export async function cleanUpXYZTiles(
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-export async function cleanUpGeoJSON(id, cleanUpBefore) {
+async function cleanUpGeoJSON(id, cleanUpBefore) {
   const startTime = Date.now();
 
   let log = `Cleaning up geojson "${id}" with:`;
@@ -750,7 +760,7 @@ export async function cleanUpGeoJSON(id, cleanUpBefore) {
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-export async function cleanUpStyle(id, cleanUpBefore) {
+async function cleanUpStyle(id, cleanUpBefore) {
   const startTime = Date.now();
 
   let log = `Cleaning up style "${id}" with:`;
@@ -821,3 +831,77 @@ export async function cleanUpStyle(id, cleanUpBefore) {
     `Completed clean up style "${id}" after ${(doneTime - startTime) / 1000}s!`
   );
 }
+
+/**
+ * Update cleanup.json file with lock
+ * @param {Object<any>} cleanUp Clean up object
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<void>}
+ */
+async function updateCleanUpFile(cleanUp, timeout) {
+  const startTime = Date.now();
+
+  const filePath = `${process.env.DATA_DIR}/cleanup.json`;
+  const lockFilePath = `${filePath}.lock`;
+  let lockFileHandle;
+
+  while (Date.now() - startTime <= timeout) {
+    try {
+      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
+
+      const tempFilePath = `${filePath}.tmp`;
+
+      try {
+        await fsPromise.writeFile(
+          tempFilePath,
+          JSON.stringify(cleanUp, null, 2),
+          "utf8"
+        );
+
+        await fsPromise.rename(tempFilePath, filePath);
+      } catch (error) {
+        await fsPromise.rm(tempFilePath, {
+          force: true,
+        });
+
+        throw error;
+      }
+
+      await lockFileHandle.close();
+
+      await fsPromise.rm(lockFilePath, {
+        force: true,
+      });
+
+      return;
+    } catch (error) {
+      if (error.code === "EEXIST") {
+        await delay(50);
+      } else {
+        if (lockFileHandle !== undefined) {
+          await lockFileHandle.close();
+
+          await fsPromise.rm(lockFilePath, {
+            force: true,
+          });
+        }
+
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(`Timeout to access lock file`);
+}
+
+export {
+  cleanUpPostgreSQLTiles,
+  cleanUpMBTilesTiles,
+  updateCleanUpFile,
+  readCleanUpFile,
+  loadCleanUpFile,
+  cleanUpXYZTiles,
+  cleanUpGeoJSON,
+  cleanUpStyle,
+  cleanUp,
+};
