@@ -13,37 +13,22 @@ import { getGeoJSONSize } from "./geojson.js";
 import { getSpriteSize } from "./sprite.js";
 import swaggerUi from "swagger-ui-express";
 import { getStyleSize } from "./style.js";
-import fsPromise from "node:fs/promises";
 import swaggerJsdoc from "swagger-jsdoc";
 import { getFontSize } from "./font.js";
 import { printLog } from "./logger.js";
-import handlebars from "handlebars";
 import express from "express";
 import {
   getTilesBoundsFromBBoxs,
   getXYZFromLonLatZ,
   getBBoxFromCircle,
   getBBoxFromPoint,
+  compileTemplate,
   getRequestHost,
   isExistFolder,
   validateJSON,
   getVersion,
+  getJSONSchema,
 } from "./utils.js";
-
-/**
- * Compile template
- * @param {string} template
- * @param {object} data
- * @returns {Promise<string>}
- */
-async function compileTemplate(template, data) {
-  const fileData = await fsPromise.readFile(
-    `public/templates/${template}.tmpl`,
-    "utf8"
-  );
-
-  return handlebars.compile(fileData)(data);
-}
 
 /**
  * Serve front page handler
@@ -56,8 +41,8 @@ function serveFrontPageHandler() {
       const geojsons = {};
       const geojsonGroups = {};
       const datas = {};
-      const fonts = {};
       const sprites = {};
+      const fonts = {};
 
       const requestHost = getRequestHost(req);
 
@@ -91,22 +76,22 @@ function serveFrontPageHandler() {
           }
         }),
         ...Object.keys(config.repo.geojsons).map(async (id) => {
+          geojsonGroups[id] = true;
+
           Object.keys(config.repo.geojsons[id]).map(async (layer) => {
+            const geojson = config.repo.geojsons[id][layer];
+
             geojsons[`${id}/${layer}`] = {
               group: id,
               layer: layer,
-              cache: config.repo.geojsons[id][layer].storeCache === true,
+              cache: geojson.storeCache === true,
             };
           });
-        }),
-        ...Object.keys(config.repo.geojsons).map(async (id) => {
-          geojsonGroups[id] = true;
         }),
         ...Object.keys(config.repo.datas).map(async (id) => {
           const data = config.repo.datas[id];
           const { name, center, format } = data.tileJSON;
 
-          let thumbnail;
           if (format !== "pbf") {
             const [x, y, z] = getXYZFromLonLatZ(
               center[0],
@@ -114,23 +99,29 @@ function serveFrontPageHandler() {
               center[2]
             );
 
-            thumbnail = `${requestHost}/datas/${id}/${z}/${x}/${y}.${format}`;
+            datas[id] = {
+              name: name,
+              format: format,
+              viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
+              thumbnail: `${requestHost}/datas/${id}/${z}/${x}/${y}.${format}`,
+              source_type: data.sourceType,
+              cache: data.storeCache === true,
+            };
+          } else {
+            datas[id] = {
+              name: name,
+              format: format,
+              viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
+              source_type: data.sourceType,
+              cache: data.storeCache === true,
+            };
           }
-
-          datas[id] = {
-            name: name,
-            format: format,
-            viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
-            thumbnail: thumbnail,
-            source_type: data.sourceType,
-            cache: data.storeCache === true,
-          };
-        }),
-        ...Object.keys(config.repo.fonts).map(async (id) => {
-          fonts[id] = true;
         }),
         ...Object.keys(config.repo.sprites).map(async (id) => {
           sprites[id] = true;
+        }),
+        ...Object.keys(config.repo.fonts).map(async (id) => {
+          fonts[id] = true;
         }),
       ]);
 
@@ -152,7 +143,7 @@ function serveFrontPageHandler() {
 
       return res.status(StatusCodes.OK).send(compiled);
     } catch (error) {
-      printLog("error", `Failed to serve front page": ${error}`);
+      printLog("error", `Failed to serve front page: ${error}`);
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -252,7 +243,7 @@ function serveGeoJSONGroupHandler() {
 
       return res.status(StatusCodes.OK).send(compiled);
     } catch (error) {
-      printLog("error", `Failed to serve geojson group "${id}": ${error}`);
+      printLog("error", `Failed to serve GeoJSON group "${id}": ${error}`);
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -387,7 +378,7 @@ function serveConfigHandler() {
 
       return res.status(StatusCodes.OK).send(configJSON);
     } catch (error) {
-      printLog("error", `Failed to get config": ${error}`);
+      printLog("error", `Failed to get config: ${error}`);
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -404,392 +395,7 @@ function serveConfigUpdateHandler() {
   return async (req, res, next) => {
     try {
       if (req.query.type === "seed") {
-        await validateJSON(
-          {
-            type: "object",
-            properties: {
-              styles: {
-                type: "object",
-                additionalProperties: {
-                  type: "object",
-                  properties: {
-                    metadata: {
-                      type: "object",
-                      properties: {
-                        name: {
-                          type: "string",
-                        },
-                        zoom: {
-                          type: "integer",
-                          minimum: 0,
-                          maximum: 22,
-                        },
-                        center: {
-                          type: "array",
-                          items: {
-                            type: "number",
-                            minimum: -180,
-                            maximum: 180,
-                          },
-                          minItems: 3,
-                          maxItems: 3,
-                        },
-                      },
-                    },
-                    url: {
-                      type: "string",
-                      minLength: 1,
-                    },
-                    skip: {
-                      type: "boolean",
-                    },
-                    refreshBefore: {
-                      type: "object",
-                      properties: {
-                        time: {
-                          type: "string",
-                          minLength: 1,
-                        },
-                        day: {
-                          type: "integer",
-                          minimum: 0,
-                        },
-                        md5: {
-                          type: "boolean",
-                        },
-                      },
-                      anyOf: [
-                        { required: ["time"] },
-                        { required: ["day"] },
-                        { required: ["md5"] },
-                      ],
-                    },
-                    timeout: {
-                      type: "integer",
-                      minimum: 0,
-                    },
-                    maxTry: {
-                      type: "integer",
-                      minimum: 1,
-                    },
-                  },
-                  required: ["metadata", "url"],
-                },
-              },
-              geojsons: {
-                type: "object",
-                additionalProperties: {
-                  type: "object",
-                  properties: {
-                    url: {
-                      type: "string",
-                      minLength: 1,
-                    },
-                    skip: {
-                      type: "boolean",
-                    },
-                    refreshBefore: {
-                      type: "object",
-                      properties: {
-                        time: {
-                          type: "string",
-                          minLength: 1,
-                        },
-                        day: {
-                          type: "integer",
-                          minimum: 0,
-                        },
-                        md5: {
-                          type: "boolean",
-                        },
-                      },
-                      anyOf: [
-                        { required: ["time"] },
-                        { required: ["day"] },
-                        { required: ["md5"] },
-                      ],
-                    },
-                    timeout: {
-                      type: "integer",
-                      minimum: 0,
-                    },
-                    maxTry: {
-                      type: "integer",
-                      minimum: 1,
-                    },
-                  },
-                  required: ["metadata", "url"],
-                },
-              },
-              datas: {
-                type: "object",
-                additionalProperties: {
-                  type: "object",
-                  properties: {
-                    metadata: {
-                      type: "object",
-                      properties: {
-                        name: {
-                          type: "string",
-                        },
-                        description: {
-                          type: "string",
-                        },
-                        attribution: {
-                          type: "string",
-                        },
-                        version: {
-                          type: "string",
-                        },
-                        type: {
-                          type: "string",
-                          enum: ["baselayer", "overlay"],
-                        },
-                        scheme: {
-                          type: "string",
-                          enum: ["tms", "xyz"],
-                        },
-                        format: {
-                          type: "string",
-                          enum: ["gif", "png", "jpg", "jpeg", "webp", "pbf"],
-                        },
-                        minzoom: {
-                          type: "integer",
-                          minimum: 0,
-                          maximum: 22,
-                        },
-                        maxzoom: {
-                          type: "integer",
-                          minimum: 0,
-                          maximum: 22,
-                        },
-                        bounds: {
-                          type: "array",
-                          items: {
-                            type: "number",
-                            minimum: -180,
-                            maximum: 180,
-                          },
-                          minItems: 4,
-                          maxItems: 4,
-                        },
-                        center: {
-                          type: "array",
-                          items: {
-                            type: "number",
-                            minimum: -180,
-                            maximum: 180,
-                          },
-                          minItems: 3,
-                          maxItems: 3,
-                        },
-                        vector_layers: {
-                          type: "array",
-                          items: {
-                            type: "object",
-                            properties: {
-                              id: {
-                                type: "string",
-                              },
-                              description: {
-                                type: "string",
-                              },
-                              minzoom: {
-                                type: "integer",
-                                minimum: 0,
-                                maximum: 22,
-                              },
-                              maxzoom: {
-                                type: "integer",
-                                minimum: 0,
-                                maximum: 22,
-                              },
-                              fields: {
-                                type: "object",
-                                additionalProperties: {
-                                  type: "string",
-                                },
-                              },
-                            },
-                            required: ["id"],
-                          },
-                          minItems: 0,
-                        },
-                        tilestats: {
-                          type: "object",
-                          properties: {
-                            layerCount: {
-                              type: "integer",
-                            },
-                          },
-                        },
-                      },
-                      required: ["format"],
-                    },
-                    url: {
-                      type: "string",
-                      minLength: 1,
-                    },
-                    scheme: {
-                      type: "string",
-                      enum: ["tms", "xyz"],
-                    },
-                    skip: {
-                      type: "boolean",
-                    },
-                    refreshBefore: {
-                      type: "object",
-                      properties: {
-                        time: {
-                          type: "string",
-                          minLength: 1,
-                        },
-                        day: {
-                          type: "integer",
-                          minimum: 0,
-                        },
-                        md5: {
-                          type: "boolean",
-                        },
-                      },
-                      anyOf: [
-                        { required: ["time"] },
-                        { required: ["day"] },
-                        { required: ["md5"] },
-                      ],
-                    },
-                    zooms: {
-                      type: "array",
-                      items: {
-                        type: "integer",
-                        minimum: 0,
-                        maximum: 22,
-                      },
-                      minItems: 0,
-                      maxItems: 23,
-                    },
-                    bboxs: {
-                      type: "array",
-                      items: {
-                        type: "array",
-                        items: {
-                          type: "number",
-                          minimum: -180,
-                          maximum: 180,
-                        },
-                        minItems: 4,
-                        maxItems: 4,
-                      },
-                      minItems: 1,
-                    },
-                    timeout: {
-                      type: "integer",
-                      minimum: 0,
-                    },
-                    concurrency: {
-                      type: "integer",
-                      minimum: 1,
-                    },
-                    maxTry: {
-                      type: "integer",
-                      minimum: 1,
-                    },
-                    storeType: {
-                      type: "string",
-                      enum: ["xyz", "mbtiles", "pg"],
-                    },
-                    storeMD5: {
-                      type: "boolean",
-                    },
-                    storeTransparent: {
-                      type: "boolean",
-                    },
-                  },
-                  required: ["metadata", "storeType", "url"],
-                },
-              },
-              sprites: {
-                type: "object",
-                additionalProperties: {
-                  type: "object",
-                  properties: {
-                    url: {
-                      type: "string",
-                      minLength: 1,
-                    },
-                    refreshBefore: {
-                      type: "object",
-                      properties: {
-                        time: {
-                          type: "string",
-                          minLength: 1,
-                        },
-                        day: {
-                          type: "integer",
-                          minimum: 0,
-                        },
-                      },
-                      anyOf: [{ required: ["time"] }, { required: ["day"] }],
-                    },
-                    timeout: {
-                      type: "integer",
-                      minimum: 0,
-                    },
-                    maxTry: {
-                      type: "integer",
-                      minimum: 1,
-                    },
-                    skip: {
-                      type: "boolean",
-                    },
-                  },
-                  required: ["url"],
-                },
-              },
-              fonts: {
-                type: "object",
-                additionalProperties: {
-                  type: "object",
-                  properties: {
-                    url: {
-                      type: "string",
-                      minLength: 1,
-                    },
-                    refreshBefore: {
-                      type: "object",
-                      properties: {
-                        time: {
-                          type: "string",
-                          minLength: 1,
-                        },
-                        day: {
-                          type: "integer",
-                          minimum: 0,
-                        },
-                      },
-                      anyOf: [{ required: ["time"] }, { required: ["day"] }],
-                    },
-                    timeout: {
-                      type: "integer",
-                      minimum: 0,
-                    },
-                    maxTry: {
-                      type: "integer",
-                      minimum: 1,
-                    },
-                    skip: {
-                      type: "boolean",
-                    },
-                  },
-                  required: ["url"],
-                },
-              },
-            },
-            required: ["styles", "geojsons", "datas", "sprites", "fonts"],
-            additionalProperties: false,
-          },
-          req.body
-        );
+        validateJSON(await getJSONSchema("seed"), req.body);
 
         const config = JSON.parse(await readSeedFile(false));
 
@@ -797,12 +403,12 @@ function serveConfigUpdateHandler() {
           config.styles[id] = req.body.styles[id];
         });
 
-        Object.keys(req.body.datas).map((id) => {
-          config.datas[id] = req.body.datas[id];
-        });
-
         Object.keys(req.body.geojsons).map((id) => {
           config.geojsons[id] = req.body.geojsons[id];
+        });
+
+        Object.keys(req.body.datas).map((id) => {
+          config.datas[id] = req.body.datas[id];
         });
 
         Object.keys(req.body.sprites).map((id) => {
@@ -815,163 +421,7 @@ function serveConfigUpdateHandler() {
 
         await updateSeedFile(config, 60000);
       } else if (req.query.type === "cleanUp") {
-        await validateJSON(
-          {
-            type: "object",
-            properties: {
-              styles: {
-                type: "object",
-                additionalProperties: {
-                  type: "object",
-                  properties: {
-                    skip: {
-                      type: "boolean",
-                    },
-                    cleanUpBefore: {
-                      type: "object",
-                      properties: {
-                        time: {
-                          type: "string",
-                        },
-                        day: {
-                          type: "integer",
-                          minimum: 0,
-                        },
-                      },
-                      anyOf: [{ required: ["time"] }, { required: ["day"] }],
-                    },
-                  },
-                },
-              },
-              geojsons: {
-                type: "object",
-                additionalProperties: {
-                  type: "object",
-                  properties: {
-                    skip: {
-                      type: "boolean",
-                    },
-                    cleanUpBefore: {
-                      type: "object",
-                      properties: {
-                        time: {
-                          type: "string",
-                        },
-                        day: {
-                          type: "integer",
-                          minimum: 0,
-                        },
-                      },
-                      anyOf: [{ required: ["time"] }, { required: ["day"] }],
-                    },
-                  },
-                },
-              },
-              datas: {
-                type: "object",
-                additionalProperties: {
-                  type: "object",
-                  properties: {
-                    bboxs: {
-                      type: "array",
-                      items: {
-                        type: "array",
-                        items: {
-                          type: "number",
-                          minimum: -180,
-                          maximum: 180,
-                        },
-                        minItems: 4,
-                        maxItems: 4,
-                      },
-                      minItems: 1,
-                    },
-                    zooms: {
-                      type: "array",
-                      items: {
-                        type: "integer",
-                        minimum: 0,
-                        maximum: 22,
-                      },
-                      minItems: 0,
-                      maxItems: 23,
-                    },
-                    skip: {
-                      type: "boolean",
-                    },
-                    cleanUpBefore: {
-                      type: "object",
-                      properties: {
-                        time: {
-                          type: "string",
-                          minLength: 1,
-                        },
-                        day: {
-                          type: "integer",
-                          minimum: 0,
-                        },
-                      },
-                      anyOf: [{ required: ["time"] }, { required: ["day"] }],
-                    },
-                  },
-                },
-              },
-              sprites: {
-                type: "object",
-                additionalProperties: {
-                  type: "object",
-                  properties: {
-                    skip: {
-                      type: "boolean",
-                    },
-                    cleanUpBefore: {
-                      type: "object",
-                      properties: {
-                        time: {
-                          type: "string",
-                          minLength: 1,
-                        },
-                        day: {
-                          type: "integer",
-                          minimum: 0,
-                        },
-                      },
-                      anyOf: [{ required: ["time"] }, { required: ["day"] }],
-                    },
-                  },
-                },
-              },
-              fonts: {
-                type: "object",
-                additionalProperties: {
-                  type: "object",
-                  properties: {
-                    skip: {
-                      type: "boolean",
-                    },
-                    cleanUpBefore: {
-                      type: "object",
-                      properties: {
-                        time: {
-                          type: "string",
-                          minLength: 1,
-                        },
-                        day: {
-                          type: "integer",
-                          minimum: 0,
-                        },
-                      },
-                      anyOf: [{ required: ["time"] }, { required: ["day"] }],
-                    },
-                  },
-                },
-              },
-            },
-            required: ["styles", "geojsons", "datas", "sprites", "fonts"],
-            additionalProperties: false,
-          },
-          req.body
-        );
+        validateJSON(await getJSONSchema("cleanup"), req.body);
 
         const config = JSON.parse(await readCleanUpFile(false));
 
@@ -979,12 +429,12 @@ function serveConfigUpdateHandler() {
           config.styles[id] = req.body.styles[id];
         });
 
-        Object.keys(req.body.datas).map((id) => {
-          config.datas[id] = req.body.datas[id];
-        });
-
         Object.keys(req.body.geojsons).map((id) => {
           config.geojsons[id] = req.body.geojsons[id];
+        });
+
+        Object.keys(req.body.datas).map((id) => {
+          config.datas[id] = req.body.datas[id];
         });
 
         Object.keys(req.body.sprites).map((id) => {
@@ -997,182 +447,7 @@ function serveConfigUpdateHandler() {
 
         await updateCleanUpFile(config, 60000);
       } else {
-        await validateJSON(
-          {
-            type: "object",
-            properties: {
-              options: {
-                type: "object",
-                properties: {
-                  listenPort: {
-                    type: "integer",
-                    minimum: 0,
-                  },
-                  serverEndpoint: {
-                    type: "boolean",
-                  },
-                  serveFrontPage: {
-                    type: "boolean",
-                  },
-                  serveSwagger: {
-                    type: "boolean",
-                  },
-                  loggerFormat: {
-                    type: "string",
-                    minLength: 1,
-                  },
-                  taskSchedule: {
-                    type: "string",
-                    pattern:
-                      "^([0-5]?\\d|\\*)\\s([0-5]?\\d|\\*)\\s([0-1]?\\d|2[0-3]|\\*)\\s([1-9]|[12]\\d|3[01]|\\*)\\s([1-9]|1[0-2]|\\*)\\s([0-7]|\\*)$|^([0-5]?\\d|\\*)\\s([0-5]?\\d|\\*)\\s([0-1]?\\d|2[0-3]|\\*)\\s([1-9]|[12]\\d|3[01]|\\*)\\s([1-9]|1[0-2]|\\*)$",
-                    minLength: 1,
-                  },
-                  postgreSQLBaseURI: {
-                    type: "string",
-                    pattern:
-                      "^postgres(?:ql)?://(?:(?:[a-zA-Z0-9._~!$&'()*+,;=%-]+)(?::[a-zA-Z0-9._~!$&'()*+,;=%-]+)?@)?(?:[a-zA-Z0-9.-]+|\\[[a-fA-F0-9:]+\\])(?::\\d+)?(?:/[a-zA-Z0-9._~!$&'()*+,;=%-]*)?(?:\\?[a-zA-Z0-9._~!$&'()*+,;=%-]+=[a-zA-Z0-9._~!$&'()*+,;=%-]+(?:&[a-zA-Z0-9._~!$&'()*+,;=%-]+=[a-zA-Z0-9._~!$&'()*+,;=%-]+)*)?$",
-                    minLength: 1,
-                  },
-                  restartServerAfterTask: {
-                    type: "boolean",
-                  },
-                  process: {
-                    type: "integer",
-                    minimum: 1,
-                  },
-                  thread: {
-                    type: "integer",
-                    minimum: 1,
-                  },
-                },
-              },
-              styles: {
-                type: "object",
-                additionalProperties: {
-                  type: "object",
-                  properties: {
-                    style: {
-                      type: "string",
-                      minLength: 1,
-                    },
-                    cache: {
-                      type: "object",
-                      properties: {
-                        forward: {
-                          type: "boolean",
-                        },
-                        store: {
-                          type: "boolean",
-                        },
-                      },
-                    },
-                    rendered: {
-                      type: "object",
-                      properties: {
-                        compressionLevel: {
-                          type: "integer",
-                          minimum: 1,
-                          maximum: 9,
-                        },
-                      },
-                    },
-                  },
-                  required: ["style"],
-                },
-              },
-              geojsons: {
-                type: "object",
-                additionalProperties: {
-                  type: "object",
-                  additionalProperties: {
-                    type: "object",
-                    properties: {
-                      geojson: {
-                        type: "string",
-                        minLength: 1,
-                      },
-                      cache: {
-                        type: "object",
-                        properties: {
-                          forward: {
-                            type: "boolean",
-                          },
-                          store: {
-                            type: "boolean",
-                          },
-                        },
-                      },
-                    },
-                    required: ["geojson"],
-                  },
-                },
-              },
-              datas: {
-                type: "object",
-                additionalProperties: {
-                  type: "object",
-                  properties: {
-                    mbtiles: {
-                      type: "string",
-                      minLength: 1,
-                    },
-                    pmtiles: {
-                      type: "string",
-                      minLength: 1,
-                    },
-                    xyz: {
-                      type: "string",
-                      minLength: 1,
-                    },
-                    pg: {
-                      type: "string",
-                      minLength: 1,
-                    },
-                    cache: {
-                      type: "object",
-                      properties: {
-                        forward: {
-                          type: "boolean",
-                        },
-                        store: {
-                          type: "boolean",
-                        },
-                      },
-                    },
-                  },
-                  anyOf: [
-                    { required: ["mbtiles"] },
-                    { required: ["pmtiles"] },
-                    { required: ["xyz"] },
-                    { required: ["pg"] },
-                  ],
-                },
-              },
-              sprites: {
-                type: "object",
-                additionalProperties: {
-                  type: "boolean",
-                },
-              },
-              fonts: {
-                type: "object",
-                additionalProperties: {
-                  type: "boolean",
-                },
-              },
-            },
-            required: [
-              "options",
-              "styles",
-              "geojsons",
-              "datas",
-              "sprites",
-              "fonts",
-            ],
-            additionalProperties: false,
-          },
-          req.body
-        );
+        validateJSON(await getJSONSchema("config"), req.body);
 
         const config = JSON.parse(await readConfigFile(false));
 
@@ -1182,12 +457,12 @@ function serveConfigUpdateHandler() {
           config.styles[id] = req.body.styles[id];
         });
 
-        Object.keys(req.body.datas).map((id) => {
-          config.datas[id] = req.body.datas[id];
-        });
-
         Object.keys(req.body.geojsons).map((id) => {
           config.geojsons[id] = req.body.geojsons[id];
+        });
+
+        Object.keys(req.body.datas).map((id) => {
+          config.datas[id] = req.body.datas[id];
         });
 
         Object.keys(req.body.sprites).map((id) => {
@@ -1203,7 +478,7 @@ function serveConfigUpdateHandler() {
 
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
-      printLog("error", `Failed to update config": ${error}`);
+      printLog("error", `Failed to update config: ${error}`);
 
       if (error.validateJSON === true) {
         return res
@@ -1225,56 +500,7 @@ function serveConfigUpdateHandler() {
 function serveConfigDeleteHandler() {
   return async (req, res, next) => {
     try {
-      await validateJSON(
-        {
-          type: "object",
-          properties: {
-            styles: {
-              type: "array",
-              items: {
-                type: "string",
-                minLength: 1,
-              },
-              minItems: 1,
-            },
-            geojsons: {
-              type: "array",
-              items: {
-                type: "string",
-                minLength: 1,
-              },
-              minItems: 1,
-            },
-            datas: {
-              type: "array",
-              items: {
-                type: "string",
-                minLength: 1,
-              },
-              minItems: 1,
-            },
-            sprites: {
-              type: "array",
-              items: {
-                type: "string",
-                minLength: 1,
-              },
-              minItems: 1,
-            },
-            fonts: {
-              type: "array",
-              items: {
-                type: "string",
-                minLength: 1,
-              },
-              minItems: 1,
-            },
-          },
-          required: ["styles", "geojsons", "datas", "sprites", "fonts"],
-          additionalProperties: false,
-        },
-        req.body
-      );
+      validateJSON(await getJSONSchema("delete"), req.body);
 
       if (req.query.type === "seed") {
         const config = JSON.parse(await readSeedFile(false));
@@ -1283,12 +509,12 @@ function serveConfigDeleteHandler() {
           delete config.styles[id];
         });
 
-        Object.keys(req.body.datas).map((id) => {
-          delete config.datas[id];
-        });
-
         Object.keys(req.body.geojsons).map((id) => {
           delete config.geojsons[id];
+        });
+
+        Object.keys(req.body.datas).map((id) => {
+          delete config.datas[id];
         });
 
         Object.keys(req.body.sprites).map((id) => {
@@ -1307,12 +533,12 @@ function serveConfigDeleteHandler() {
           delete config.styles[id];
         });
 
-        Object.keys(req.body.datas).map((id) => {
-          delete config.datas[id];
-        });
-
         Object.keys(req.body.geojsons).map((id) => {
           delete config.geojsons[id];
+        });
+
+        Object.keys(req.body.datas).map((id) => {
+          delete config.datas[id];
         });
 
         Object.keys(req.body.sprites).map((id) => {
@@ -1331,12 +557,12 @@ function serveConfigDeleteHandler() {
           delete config.styles[id];
         });
 
-        Object.keys(req.body.datas).map((id) => {
-          delete config.datas[id];
-        });
-
         Object.keys(req.body.geojsons).map((id) => {
           delete config.geojsons[id];
+        });
+
+        Object.keys(req.body.datas).map((id) => {
+          delete config.datas[id];
         });
 
         Object.keys(req.body.sprites).map((id) => {
@@ -1352,7 +578,7 @@ function serveConfigDeleteHandler() {
 
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
-      printLog("error", `Failed to delete config": ${error}`);
+      printLog("error", `Failed to delete config: ${error}`);
 
       if (error.validateJSON === true) {
         return res
@@ -1386,35 +612,35 @@ function serveSummaryHandler() {
         };
 
         await Promise.all([
-          ...Object.keys(seed.fonts).map(async (id) => {
+          ...Object.keys(seed.styles).map(async (id) => {
             if (
               (await isExistFolder(
-                `${process.env.DATA_DIR}/caches/fonts/${id}`
+                `${process.env.DATA_DIR}/caches/styles/${id}`
               )) === true
             ) {
-              result.fonts[id] = {
+              result.styles[id] = {
                 actual: 1,
                 expect: 1,
               };
             } else {
-              result.fonts[id] = {
+              result.styles[id] = {
                 actual: 0,
                 expect: 1,
               };
             }
           }),
-          ...Object.keys(seed.sprites).map(async (id) => {
+          ...Object.keys(seed.geojsons).map(async (id) => {
             if (
               (await isExistFolder(
-                `${process.env.DATA_DIR}/caches/sprites/${id}`
+                `${process.env.DATA_DIR}/caches/geojsons/${id}`
               )) === true
             ) {
-              result.sprites[id] = {
+              result.geojsons[id] = {
                 actual: 1,
                 expect: 1,
               };
             } else {
-              result.sprites[id] = {
+              result.geojsons[id] = {
                 actual: 0,
                 expect: 1,
               };
@@ -1500,35 +726,35 @@ function serveSummaryHandler() {
               }
             }
           }),
-          ...Object.keys(seed.styles).map(async (id) => {
+          ...Object.keys(seed.sprites).map(async (id) => {
             if (
               (await isExistFolder(
-                `${process.env.DATA_DIR}/caches/styles/${id}`
+                `${process.env.DATA_DIR}/caches/sprites/${id}`
               )) === true
             ) {
-              result.styles[id] = {
+              result.sprites[id] = {
                 actual: 1,
                 expect: 1,
               };
             } else {
-              result.styles[id] = {
+              result.sprites[id] = {
                 actual: 0,
                 expect: 1,
               };
             }
           }),
-          ...Object.keys(seed.geojsons).map(async (id) => {
+          ...Object.keys(seed.fonts).map(async (id) => {
             if (
               (await isExistFolder(
-                `${process.env.DATA_DIR}/caches/geojsons/${id}`
+                `${process.env.DATA_DIR}/caches/fonts/${id}`
               )) === true
             ) {
-              result.geojsons[id] = {
+              result.fonts[id] = {
                 actual: 1,
                 expect: 1,
               };
             } else {
-              result.geojsons[id] = {
+              result.fonts[id] = {
                 actual: 0,
                 expect: 1,
               };
@@ -1537,13 +763,19 @@ function serveSummaryHandler() {
         ]);
       } else {
         result = {
-          fonts: {
+          styles: {
             count: 0,
             size: 0,
+            rendereds: {
+              count: 0,
+            },
           },
-          sprites: {
+          geojsonGroups: {
             count: 0,
-            size: 0,
+            geojsons: {
+              count: 0,
+              size: 0,
+            },
           },
           datas: {
             count: 0,
@@ -1565,34 +797,53 @@ function serveSummaryHandler() {
               size: 0,
             },
           },
-          geojsonGroups: {
-            count: 0,
-            geojsons: {
-              count: 0,
-              size: 0,
-            },
-          },
-          styles: {
+          sprites: {
             count: 0,
             size: 0,
-            rendereds: {
-              count: 0,
-            },
+          },
+          fonts: {
+            count: 0,
+            size: 0,
           },
         };
 
         await Promise.all([
-          ...Object.keys(config.repo.fonts).map(async (id) => {
-            result.fonts.size += await getFontSize(
-              `${process.env.DATA_DIR}/fonts/${id}`
-            );
-            result.fonts.count += 1;
+          ...Object.keys(config.repo.styles).map(async (id) => {
+            const item = config.repo.styles[id];
+
+            try {
+              result.styles.size += await getStyleSize(item.path);
+            } catch (error) {
+              if (!(item.cache !== undefined && error.code === "ENOENT")) {
+                throw error;
+              }
+            }
+
+            result.styles.count += 1;
+
+            // Rendereds info
+            if (item.rendered !== undefined) {
+              result.styles.rendereds.count += 1;
+            }
           }),
-          ...Object.keys(config.repo.sprites).map(async (id) => {
-            result.sprites.size += await getSpriteSize(
-              `${process.env.DATA_DIR}/sprites/${id}`
-            );
-            result.sprites.count += 1;
+          ...Object.keys(config.repo.geojsons).map(async (id) => {
+            for (const layer in config.repo.geojsons[id]) {
+              const item = config.repo.geojsons[id][layer];
+
+              try {
+                result.geojsonGroups.geojsons.size += await getGeoJSONSize(
+                  item.path
+                );
+              } catch (error) {
+                if (!(item.cache !== undefined && error.code === "ENOENT")) {
+                  throw error;
+                }
+              }
+
+              result.geojsonGroups.geojsons.count += 1;
+            }
+
+            result.geojsonGroups.count += 1;
           }),
           ...Object.keys(config.repo.datas).map(async (id) => {
             const item = config.repo.datas[id];
@@ -1650,42 +901,17 @@ function serveSummaryHandler() {
               }
             }
           }),
-          ...Object.keys(config.repo.styles).map(async (id) => {
-            const item = config.repo.styles[id];
-
-            try {
-              result.styles.size += await getStyleSize(item.path);
-            } catch (error) {
-              if (!(item.cache !== undefined && error.code === "ENOENT")) {
-                throw error;
-              }
-            }
-
-            result.styles.count += 1;
-
-            // Rendereds info
-            if (item.rendered !== undefined) {
-              result.styles.rendereds.count += 1;
-            }
+          ...Object.keys(config.repo.sprites).map(async (id) => {
+            result.sprites.size += await getSpriteSize(
+              `${process.env.DATA_DIR}/sprites/${id}`
+            );
+            result.sprites.count += 1;
           }),
-          ...Object.keys(config.repo.geojsons).map(async (id) => {
-            for (const layer in config.repo.geojsons[id]) {
-              const item = config.repo.geojsons[id][layer];
-
-              try {
-                result.geojsonGroups.geojsons.size += await getGeoJSONSize(
-                  item.path
-                );
-              } catch (error) {
-                if (!(item.cache !== undefined && error.code === "ENOENT")) {
-                  throw error;
-                }
-              }
-
-              result.geojsonGroups.geojsons.count += 1;
-            }
-
-            result.geojsonGroups.count += 1;
+          ...Object.keys(config.repo.fonts).map(async (id) => {
+            result.fonts.size += await getFontSize(
+              `${process.env.DATA_DIR}/fonts/${id}`
+            );
+            result.fonts.count += 1;
           }),
         ]);
 
@@ -1705,7 +931,7 @@ function serveSummaryHandler() {
 
       return res.status(StatusCodes.OK).send(result);
     } catch (error) {
-      printLog("error", `Failed to get summary": ${error}`);
+      printLog("error", `Failed to get summary: ${error}`);
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -1723,7 +949,7 @@ function serveHealthHandler() {
     try {
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
-      printLog("error", `Failed to check health server": ${error}`);
+      printLog("error", `Failed to check health server: ${error}`);
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -1759,7 +985,7 @@ function serveRestartKillHandler() {
 
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
-      printLog("error", `Failed to restart/kill server": ${error}`);
+      printLog("error", `Failed to restart/kill server: ${error}`);
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)

@@ -4,6 +4,7 @@ import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { exec } from "child_process";
+import handlebars from "handlebars";
 import https from "node:https";
 import http from "node:http";
 import crypto from "crypto";
@@ -16,6 +17,21 @@ import util from "util";
 import Ajv from "ajv";
 
 sharp.cache(false);
+
+/**
+ * Compile template
+ * @param {"index"|"viewer"|"vector_data"|"raster_data"|"geojson_group"|"geojson"|"wmts"} template
+ * @param {object} data
+ * @returns {Promise<string>}
+ */
+export async function compileTemplate(template, data) {
+  const fileData = await fsPromise.readFile(
+    `public/templates/${template}.tmpl`,
+    "utf8"
+  );
+
+  return handlebars.compile(fileData)(data);
+}
 
 /**
  * Get data from URL
@@ -734,9 +750,9 @@ export const inflateAsync = util.promisify(zlib.inflate);
  * Validate tileJSON
  * @param {object} schema JSON schema
  * @param {object} jsonData JSON data
- * @returns
+ * @returns {void}
  */
-export async function validateJSON(schema, jsonData) {
+export function validateJSON(schema, jsonData) {
   try {
     const validate = new Ajv({
       allErrors: true,
@@ -772,6 +788,15 @@ export function deepClone(obj) {
  */
 export function getVersion() {
   return JSON.parse(fs.readFileSync("package.json", "utf8")).version;
+}
+
+/**
+ * Get JSON schema
+ * @param {"delete"|"cleanup"|"config"|"seed"} schema
+ * @returns {Promise<object>}
+ */
+export async function getJSONSchema(schema) {
+  return JSON.parse(await fsPromise.readFile(`schema/${schema}.json`, "utf8"));
 }
 
 /**
