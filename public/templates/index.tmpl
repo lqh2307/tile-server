@@ -512,7 +512,6 @@
       } else if (tabId === "actions-tab") {
         document.querySelector("#actions-tab").innerHTML = `
           <div class="box">
-            {{#if serve_server_endpoint}}
             <div class="item">
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
@@ -563,7 +562,6 @@
                 <a class="btn" href="#" onclick="actionManager(event, 'restart')">Restart server</a>
               </div>
             </div>
-            {{/if}}
             <div class="item">
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">

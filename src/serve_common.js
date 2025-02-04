@@ -126,7 +126,6 @@ function serveFrontPageHandler() {
       ]);
 
       const compiled = await compileTemplate("index", {
-        serve_server_endpoint: process.env.SERVE_SERVER_ENDPOINT === "true",
         enable_export: process.env.ENABLE_EXPORT === "true",
         styles: styles,
         geojsons: geojsons,
@@ -1183,168 +1182,166 @@ export const serve_common = {
      */
     app.get("/health", serveHealthHandler());
 
-    if (process.env.SERVE_SERVER_ENDPOINT !== "false") {
-      /**
-       * @swagger
-       * tags:
-       *   - name: Common
-       *     description: Common related endpoints
-       * /config:
-       *   get:
-       *     tags:
-       *       - Common
-       *     summary: Get config
-       *     parameters:
-       *       - in: query
-       *         name: type
-       *         schema:
-       *           type: string
-       *           enum: [config, seed, cleanUp]
-       *           example: config
-       *         required: false
-       *         description: Config type
-       *     responses:
-       *       200:
-       *         description: Config
-       *         content:
-       *           application/json:
-       *             schema:
-       *               type: object
-       *       404:
-       *         description: Not found
-       *       503:
-       *         description: Server is starting up
-       *         content:
-       *           text/plain:
-       *             schema:
-       *               type: string
-       *               example: Starting...
-       *       500:
-       *         description: Internal server error
-       *   post:
-       *     tags:
-       *       - Common
-       *     summary: Update config
-       *     parameters:
-       *       - in: query
-       *         name: type
-       *         schema:
-       *           type: string
-       *           enum: [config, seed, cleanUp]
-       *           example: config
-       *         required: false
-       *         description: Config type
-       *       - in: query
-       *         name: restart
-       *         schema:
-       *           type: boolean
-       *         required: false
-       *         description: Restart server after change
-       *     responses:
-       *       200:
-       *         description: Config is updated
-       *         content:
-       *           application/json:
-       *             schema:
-       *               type: object
-       *       400:
-       *         description: Bad request
-       *       404:
-       *         description: Not found
-       *       503:
-       *         description: Server is starting up
-       *         content:
-       *           text/plain:
-       *             schema:
-       *               type: string
-       *               example: Starting...
-       *       500:
-       *         description: Internal server error
-       *   delete:
-       *     tags:
-       *       - Common
-       *     summary: Update config
-       *     parameters:
-       *       - in: query
-       *         name: type
-       *         schema:
-       *           type: string
-       *           enum: [config, seed, cleanUp]
-       *           example: config
-       *         required: false
-       *         description: Config type
-       *       - in: query
-       *         name: restart
-       *         schema:
-       *           type: boolean
-       *         required: false
-       *         description: Restart server after change
-       *     responses:
-       *       200:
-       *         description: Config is updated
-       *         content:
-       *           application/json:
-       *             schema:
-       *               type: object
-       *       400:
-       *         description: Bad request
-       *       404:
-       *         description: Not found
-       *       503:
-       *         description: Server is starting up
-       *         content:
-       *           text/plain:
-       *             schema:
-       *               type: string
-       *               example: Starting...
-       *       500:
-       *         description: Internal server error
-       */
-      app.get("/config", serveConfigHandler());
-      app.post("/config", serveConfigUpdateHandler());
-      app.delete("/config", serveConfigDeleteHandler());
+    /**
+     * @swagger
+     * tags:
+     *   - name: Common
+     *     description: Common related endpoints
+     * /config:
+     *   get:
+     *     tags:
+     *       - Common
+     *     summary: Get config
+     *     parameters:
+     *       - in: query
+     *         name: type
+     *         schema:
+     *           type: string
+     *           enum: [config, seed, cleanUp]
+     *           example: config
+     *         required: false
+     *         description: Config type
+     *     responses:
+     *       200:
+     *         description: Config
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     *   post:
+     *     tags:
+     *       - Common
+     *     summary: Update config
+     *     parameters:
+     *       - in: query
+     *         name: type
+     *         schema:
+     *           type: string
+     *           enum: [config, seed, cleanUp]
+     *           example: config
+     *         required: false
+     *         description: Config type
+     *       - in: query
+     *         name: restart
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Restart server after change
+     *     responses:
+     *       200:
+     *         description: Config is updated
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *       400:
+     *         description: Bad request
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     *   delete:
+     *     tags:
+     *       - Common
+     *     summary: Update config
+     *     parameters:
+     *       - in: query
+     *         name: type
+     *         schema:
+     *           type: string
+     *           enum: [config, seed, cleanUp]
+     *           example: config
+     *         required: false
+     *         description: Config type
+     *       - in: query
+     *         name: restart
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Restart server after change
+     *     responses:
+     *       200:
+     *         description: Config is updated
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *       400:
+     *         description: Bad request
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/config", serveConfigHandler());
+    app.post("/config", serveConfigUpdateHandler());
+    app.delete("/config", serveConfigDeleteHandler());
 
-      /**
-       * @swagger
-       * tags:
-       *   - name: Common
-       *     description: Common related endpoints
-       * /restart:
-       *   get:
-       *     tags:
-       *       - Common
-       *     summary: Restart/kill the server
-       *     parameters:
-       *       - in: query
-       *         name: type
-       *         schema:
-       *           type: string
-       *           enum: [restart, kill]
-       *           example: restart
-       *         required: false
-       *         description: Action type
-       *     responses:
-       *       200:
-       *         description: Server will restart/kill
-       *         content:
-       *           text/plain:
-       *             schema:
-       *               type: string
-       *               example: OK
-       *       404:
-       *         description: Not found
-       *       503:
-       *         description: Server is starting up
-       *         content:
-       *           text/plain:
-       *             schema:
-       *               type: string
-       *               example: Starting...
-       *       500:
-       *         description: Internal server error
-       */
-      app.get("/restart", serveRestartKillHandler());
-    }
+    /**
+     * @swagger
+     * tags:
+     *   - name: Common
+     *     description: Common related endpoints
+     * /restart:
+     *   get:
+     *     tags:
+     *       - Common
+     *     summary: Restart/kill the server
+     *     parameters:
+     *       - in: query
+     *         name: type
+     *         schema:
+     *           type: string
+     *           enum: [restart, kill]
+     *           example: restart
+     *         required: false
+     *         description: Action type
+     *     responses:
+     *       200:
+     *         description: Server will restart/kill
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: OK
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/restart", serveRestartKillHandler());
 
     /**
      * @swagger

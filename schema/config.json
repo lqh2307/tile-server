@@ -8,9 +8,6 @@
           "type": "integer",
           "minimum": 0
         },
-        "serverEndpoint": {
-          "type": "boolean"
-        },
         "serveFrontPage": {
           "type": "boolean"
         },

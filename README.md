@@ -115,7 +115,6 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
 {
   "options": {
     "listenPort": 8080,
-    "serverEndpoint": true,
     "serveFrontPage": true,
     "serveSwagger": true,
     "loggerFormat": ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
