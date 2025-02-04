@@ -396,9 +396,15 @@ function serveConfigUpdateHandler() {
   return async (req, res, next) => {
     try {
       if (req.query.type === "seed") {
-        validateJSON(await getJSONSchema("seed"), req.body);
+        try {
+          validateJSON(await getJSONSchema("seed"), req.body);
+        } catch (error) {
+          return res
+            .status(StatusCodes.BAD_REQUEST)
+            .send(`Config element is invalid: ${error.message}`);
+        }
 
-        const config = JSON.parse(await readSeedFile(false));
+        const config = await readSeedFile(false);
 
         Object.keys(req.body.styles).map((id) => {
           config.styles[id] = req.body.styles[id];
@@ -422,9 +428,15 @@ function serveConfigUpdateHandler() {
 
         await updateSeedFile(config, 60000);
       } else if (req.query.type === "cleanUp") {
-        validateJSON(await getJSONSchema("cleanup"), req.body);
+        try {
+          validateJSON(await getJSONSchema("cleanup"), req.body);
+        } catch (error) {
+          return res
+            .status(StatusCodes.BAD_REQUEST)
+            .send(`Config element is invalid: ${error.message}`);
+        }
 
-        const config = JSON.parse(await readCleanUpFile(false));
+        const config = await readCleanUpFile(false);
 
         Object.keys(req.body.styles).map((id) => {
           config.styles[id] = req.body.styles[id];
@@ -448,9 +460,15 @@ function serveConfigUpdateHandler() {
 
         await updateCleanUpFile(config, 60000);
       } else {
-        validateJSON(await getJSONSchema("config"), req.body);
+        try {
+          validateJSON(await getJSONSchema("config"), req.body);
+        } catch (error) {
+          return res
+            .status(StatusCodes.BAD_REQUEST)
+            .send(`Config element is invalid: ${error.message}`);
+        }
 
-        const config = JSON.parse(await readConfigFile(false));
+        const config = await readConfigFile(false);
 
         Object.assign(config.options, req.body.options);
 
@@ -491,12 +509,6 @@ function serveConfigUpdateHandler() {
     } catch (error) {
       printLog("error", `Failed to update config: ${error}`);
 
-      if (error.validateJSON === true) {
-        return res
-          .status(StatusCodes.BAD_REQUEST)
-          .send("Config element is invalid");
-      }
-
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .send("Internal server error");
@@ -511,10 +523,16 @@ function serveConfigUpdateHandler() {
 function serveConfigDeleteHandler() {
   return async (req, res, next) => {
     try {
-      validateJSON(await getJSONSchema("delete"), req.body);
+      try {
+        validateJSON(await getJSONSchema("delete"), req.body);
+      } catch (error) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .send(`Config element is invalid: ${error.message}`);
+      }
 
       if (req.query.type === "seed") {
-        const config = JSON.parse(await readSeedFile(false));
+        const config = await readSeedFile(false);
 
         Object.keys(req.body.styles).map((id) => {
           delete config.styles[id];
@@ -538,7 +556,7 @@ function serveConfigDeleteHandler() {
 
         await updateSeedFile(config, 60000);
       } else if (req.query.type === "cleanUp") {
-        const config = JSON.parse(await readCleanUpFile(false));
+        const config = await readCleanUpFile(false);
 
         Object.keys(req.body.styles).map((id) => {
           delete config.styles[id];
@@ -562,7 +580,7 @@ function serveConfigDeleteHandler() {
 
         await updateCleanUpFile(config, 60000);
       } else {
-        const config = JSON.parse(await readConfigFile(false));
+        const config = await readConfigFile(false);
 
         Object.keys(req.body.styles).map((id) => {
           delete config.styles[id];
@@ -600,12 +618,6 @@ function serveConfigDeleteHandler() {
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
       printLog("error", `Failed to delete config: ${error}`);
-
-      if (error.validateJSON === true) {
-        return res
-          .status(StatusCodes.BAD_REQUEST)
-          .send("Config element is invalid");
-      }
 
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -1040,7 +1052,7 @@ function calculateHandler() {
     } catch (error) {
       printLog("error", `Failed to calculate bbox: ${error}`);
 
-      if (error instanceof SyntaxError) {
+      if (error instanceof TypeError) {
         return res
           .status(StatusCodes.BAD_REQUEST)
           .send("points or circle query parameter is invalid");

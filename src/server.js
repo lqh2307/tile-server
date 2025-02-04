@@ -106,6 +106,7 @@ export async function startServer() {
           }`
         )
       )
+      .use(express.json())
       .use("/", serve_common.init())
       .use("/datas", serve_data.init())
       .use("/geojsons", serve_geojson.init())

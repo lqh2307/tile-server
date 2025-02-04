@@ -765,8 +765,6 @@ export function validateJSON(schema, jsonData) {
         .join();
     }
   } catch (error) {
-    error.validateJSON = true;
-
     throw error;
   }
 }
