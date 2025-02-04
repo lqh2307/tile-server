@@ -12,10 +12,10 @@ import { runTasks } from "./task.js";
     await runTasks(workerData);
 
     /* Restart server */
-    if (workerData.restartServerAfterTask !== "false") {
+    if (workerData.restart !== "false") {
       printLog(
         "info",
-        "Completed seed and clean up task. Restarting server..."
+        "Completed seed and clean up tasks. Restarting server..."
       );
 
       parentPort.postMessage({

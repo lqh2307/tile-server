@@ -52,8 +52,6 @@ async function startClusterServer(opts) {
     process.env.SERVE_SERVER_ENDPOINT = config.options.serverEndpoint; // Serve server endpoint
     process.env.SERVE_FRONT_PAGE = config.options.serveFrontPage; // Serve front page
     process.env.SERVE_SWAGGER = config.options.serveSwagger; // Serve swagger
-    process.env.RESTART_SERVER_AFTER_TASK =
-      config.options.restartServerAfterTask; // Restart server after task
     process.env.GDAL_NUM_THREADS = "ALL_CPUS"; // For gdal
     process.env.FALLBACK_FONT = "Open Sans Regular"; // Fallback font
 
@@ -101,7 +99,7 @@ async function startClusterServer(opts) {
         );
 
         startTaskInWorker({
-          restartServerAfterTask: process.env.RESTART_SERVER_AFTER_TASK,
+          restart: true,
           cleanUpStyles: true,
           cleanUpGeoJSONs: true,
           cleanUpDatas: true,
@@ -155,7 +153,7 @@ async function startClusterServer(opts) {
             );
 
             startTaskInWorker({
-              restartServerAfterTask: process.env.RESTART_SERVER_AFTER_TASK,
+              restart: message.restart,
               cleanUpStyles: message.cleanUpStyles,
               cleanUpGeoJSONs: message.cleanUpGeoJSONs,
               cleanUpDatas: message.cleanUpDatas,

@@ -22,6 +22,7 @@ function startTaskHandler() {
             seedStyles: req.query.seedStyles === "true",
             seedGeoJSONs: req.query.seedGeoJSONs === "true",
             seedDatas: req.query.seedDatas === "true",
+            restart: req.query.restart === "true",
           }),
         0
       );
@@ -114,6 +115,12 @@ export const serve_task = {
      *           type: boolean
      *         required: false
      *         description: Run seed datas
+     *       - in: query
+     *         name: restart
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Restart server after run task
      *     responses:
      *       200:
      *         description: Task started successfully

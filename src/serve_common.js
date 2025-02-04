@@ -25,9 +25,9 @@ import {
   compileTemplate,
   getRequestHost,
   isExistFolder,
+  getJSONSchema,
   validateJSON,
   getVersion,
-  getJSONSchema,
 } from "./utils.js";
 
 /**
@@ -476,6 +476,16 @@ function serveConfigUpdateHandler() {
         await updateConfigFile(config, 60000);
       }
 
+      if (req.query.restart === "true") {
+        setTimeout(
+          () =>
+            process.send({
+              action: "restartServer",
+            }),
+          0
+        );
+      }
+
       return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
       printLog("error", `Failed to update config: ${error}`);
@@ -574,6 +584,16 @@ function serveConfigDeleteHandler() {
         });
 
         await updateConfigFile(config, 60000);
+      }
+
+      if (req.query.restart === "true") {
+        setTimeout(
+          () =>
+            process.send({
+              action: "restartServer",
+            }),
+          0
+        );
       }
 
       return res.status(StatusCodes.OK).send("OK");
@@ -1211,6 +1231,12 @@ export const serve_common = {
      *           example: config
      *         required: false
      *         description: Config type
+     *       - in: query
+     *         name: restart
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Restart server after change
      *     responses:
      *       200:
      *         description: Config is updated
@@ -1244,6 +1270,12 @@ export const serve_common = {
      *           example: config
      *         required: false
      *         description: Config type
+     *       - in: query
+     *         name: restart
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Restart server after change
      *     responses:
      *       200:
      *         description: Config is updated
