@@ -1004,6 +1004,7 @@ async function updateSeedFile(seed, timeout) {
 export {
   seedPostgreSQLTiles,
   seedMBTilesTiles,
+  updateSeedFile,
   readSeedFile,
   seedXYZTiles,
   loadSeedFile,
