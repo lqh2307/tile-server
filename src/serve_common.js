@@ -126,6 +126,8 @@ function serveFrontPageHandler() {
       ]);
 
       const compiled = await compileTemplate("index", {
+        serve_server_endpoint: process.env.SERVE_SERVER_ENDPOINT === "true",
+        enable_export: process.env.ENABLE_EXPORT === "true",
         styles: styles,
         geojsons: geojsons,
         geojson_groups: geojsonGroups,
@@ -1181,127 +1183,127 @@ export const serve_common = {
      */
     app.get("/health", serveHealthHandler());
 
-    /**
-     * @swagger
-     * tags:
-     *   - name: Common
-     *     description: Common related endpoints
-     * /config:
-     *   get:
-     *     tags:
-     *       - Common
-     *     summary: Get config
-     *     parameters:
-     *       - in: query
-     *         name: type
-     *         schema:
-     *           type: string
-     *           enum: [config, seed, cleanUp]
-     *           example: config
-     *         required: false
-     *         description: Config type
-     *     responses:
-     *       200:
-     *         description: Config
-     *         content:
-     *           application/json:
-     *             schema:
-     *               type: object
-     *       404:
-     *         description: Not found
-     *       503:
-     *         description: Server is starting up
-     *         content:
-     *           text/plain:
-     *             schema:
-     *               type: string
-     *               example: Starting...
-     *       500:
-     *         description: Internal server error
-     *   post:
-     *     tags:
-     *       - Common
-     *     summary: Update config
-     *     parameters:
-     *       - in: query
-     *         name: type
-     *         schema:
-     *           type: string
-     *           enum: [config, seed, cleanUp]
-     *           example: config
-     *         required: false
-     *         description: Config type
-     *       - in: query
-     *         name: restart
-     *         schema:
-     *           type: boolean
-     *         required: false
-     *         description: Restart server after change
-     *     responses:
-     *       200:
-     *         description: Config is updated
-     *         content:
-     *           application/json:
-     *             schema:
-     *               type: object
-     *       400:
-     *         description: Bad request
-     *       404:
-     *         description: Not found
-     *       503:
-     *         description: Server is starting up
-     *         content:
-     *           text/plain:
-     *             schema:
-     *               type: string
-     *               example: Starting...
-     *       500:
-     *         description: Internal server error
-     *   delete:
-     *     tags:
-     *       - Common
-     *     summary: Update config
-     *     parameters:
-     *       - in: query
-     *         name: type
-     *         schema:
-     *           type: string
-     *           enum: [config, seed, cleanUp]
-     *           example: config
-     *         required: false
-     *         description: Config type
-     *       - in: query
-     *         name: restart
-     *         schema:
-     *           type: boolean
-     *         required: false
-     *         description: Restart server after change
-     *     responses:
-     *       200:
-     *         description: Config is updated
-     *         content:
-     *           application/json:
-     *             schema:
-     *               type: object
-     *       400:
-     *         description: Bad request
-     *       404:
-     *         description: Not found
-     *       503:
-     *         description: Server is starting up
-     *         content:
-     *           text/plain:
-     *             schema:
-     *               type: string
-     *               example: Starting...
-     *       500:
-     *         description: Internal server error
-     */
-    app.get("/config", serveConfigHandler());
-    app.post("/config", serveConfigUpdateHandler());
-    app.delete("/config", serveConfigDeleteHandler());
-
     if (process.env.SERVE_SERVER_ENDPOINT !== "false") {
+      /**
+       * @swagger
+       * tags:
+       *   - name: Common
+       *     description: Common related endpoints
+       * /config:
+       *   get:
+       *     tags:
+       *       - Common
+       *     summary: Get config
+       *     parameters:
+       *       - in: query
+       *         name: type
+       *         schema:
+       *           type: string
+       *           enum: [config, seed, cleanUp]
+       *           example: config
+       *         required: false
+       *         description: Config type
+       *     responses:
+       *       200:
+       *         description: Config
+       *         content:
+       *           application/json:
+       *             schema:
+       *               type: object
+       *       404:
+       *         description: Not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
+       *       500:
+       *         description: Internal server error
+       *   post:
+       *     tags:
+       *       - Common
+       *     summary: Update config
+       *     parameters:
+       *       - in: query
+       *         name: type
+       *         schema:
+       *           type: string
+       *           enum: [config, seed, cleanUp]
+       *           example: config
+       *         required: false
+       *         description: Config type
+       *       - in: query
+       *         name: restart
+       *         schema:
+       *           type: boolean
+       *         required: false
+       *         description: Restart server after change
+       *     responses:
+       *       200:
+       *         description: Config is updated
+       *         content:
+       *           application/json:
+       *             schema:
+       *               type: object
+       *       400:
+       *         description: Bad request
+       *       404:
+       *         description: Not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
+       *       500:
+       *         description: Internal server error
+       *   delete:
+       *     tags:
+       *       - Common
+       *     summary: Update config
+       *     parameters:
+       *       - in: query
+       *         name: type
+       *         schema:
+       *           type: string
+       *           enum: [config, seed, cleanUp]
+       *           example: config
+       *         required: false
+       *         description: Config type
+       *       - in: query
+       *         name: restart
+       *         schema:
+       *           type: boolean
+       *         required: false
+       *         description: Restart server after change
+       *     responses:
+       *       200:
+       *         description: Config is updated
+       *         content:
+       *           application/json:
+       *             schema:
+       *               type: object
+       *       400:
+       *         description: Bad request
+       *       404:
+       *         description: Not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
+       *       500:
+       *         description: Internal server error
+       */
+      app.get("/config", serveConfigHandler());
+      app.post("/config", serveConfigUpdateHandler());
+      app.delete("/config", serveConfigDeleteHandler());
+
       /**
        * @swagger
        * tags:

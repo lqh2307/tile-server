@@ -392,7 +392,7 @@
                     <a class="btn" href="${baseURL}/styles/{{@key}}/?vector{{viewer_hash}}">Client Render</a>
                     {{#if thumbnail}}
                       <a class="btn" href="${baseURL}/styles/{{@key}}/?raster{{viewer_hash}}">Backend Render</a>
-                      <a class="btn" href="#" onclick="showExportRenderDialog(event, '{{@key}}')">Export Render</a>
+                      {{#if enable_export}}<a class="btn" href="#" onclick="showExportRenderDialog(event, '{{@key}}')">Export Render</a>{{/if}}
                     {{/if}}
                 </div>
               </div>
@@ -512,6 +512,37 @@
       } else if (tabId === "actions-tab") {
         document.querySelector("#actions-tab").innerHTML = `
           <div class="box">
+            {{#if serve_server_endpoint}}
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Config JSON</h3>
+                <p>description: View config.json content</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="${baseURL}/config?type=config">View</a>
+              </div>
+            </div>
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Seed JSON</h3>
+                <p>description: View seed.json content</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="${baseURL}/config?type=seed">View</a>
+              </div>
+            </div>
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Clean up JSON</h3>
+                <p>description: View cleanup.json content</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="${baseURL}/config?type=cleanUp">View</a>
+              </div>
+            </div>
             <div class="item">
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
@@ -532,6 +563,7 @@
                 <a class="btn" href="#" onclick="actionManager(event, 'restart')">Restart server</a>
               </div>
             </div>
+            {{/if}}
             <div class="item">
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
@@ -632,36 +664,6 @@
                 <a class="btn" href="${baseURL}/summary?type=seed">View</a>
               </div>
             </div>
-            <div class="item">
-              <img src="${emptyImageURL}" alt="Empty image" />
-              <div class="details">
-                <h3 class="name">Config JSON</h3>
-                <p>description: View config.json content</p>
-              </div>
-              <div class="viewers">
-                <a class="btn" href="${baseURL}/config?type=config">View</a>
-              </div>
-            </div>
-            <div class="item">
-              <img src="${emptyImageURL}" alt="Empty image" />
-              <div class="details">
-                <h3 class="name">Seed JSON</h3>
-                <p>description: View seed.json content</p>
-              </div>
-              <div class="viewers">
-                <a class="btn" href="${baseURL}/config?type=seed">View</a>
-              </div>
-            </div>
-            <div class="item">
-              <img src="${emptyImageURL}" alt="Empty image" />
-              <div class="details">
-                <h3 class="name">Clean up JSON</h3>
-                <p>description: View cleanup.json content</p>
-              </div>
-              <div class="viewers">
-                <a class="btn" href="${baseURL}/config?type=cleanUp">View</a>
-              </div>
-            </div>
           </div>
         `;
       }
@@ -671,7 +673,7 @@
       event.preventDefault();
 
       if (action === "all") {
-        fetch(`${baseURL}/tasks/start?seedStyles=true&cleanUpStyles=true&cleanUpDatas=true&seedDatas=true&seedGeoJSONs=true&cleanUpGeoJSONs=true`, {
+        fetch(`${baseURL}/tasks/start?seedStyles=true&cleanUpStyles=true&cleanUpDatas=true&seedDatas=true&seedGeoJSONs=true&cleanUpGeoJSONs=true&restart=true`, {
           method: "GET",
         })
           .then((response) => {
@@ -683,7 +685,7 @@
           })
           .catch((error) => alert(`Failed to start clean up/seed tasks: ${error.message}`));
       } else if (action === "cleanUpStyles") {
-        fetch(`${baseURL}/tasks/start?cleanUpStyles=true`, {
+        fetch(`${baseURL}/tasks/start?cleanUpStyles=true&restart=true`, {
           method: "GET",
         })
           .then((response) => {
@@ -695,7 +697,7 @@
           })
           .catch((error) => alert(`Failed to clean up styles: ${error.message}`));
       } else if (action === "cleanUpGeoJSONs") {
-        fetch(`${baseURL}/tasks/start?cleanUpGeoJSONs=true`, {
+        fetch(`${baseURL}/tasks/start?cleanUpGeoJSONs=true&restart=true`, {
           method: "GET",
         })
           .then((response) => {
@@ -707,7 +709,7 @@
           })
           .catch((error) => alert(`Failed to clean up geojsons: ${error.message}`));
       } else if (action === "cleanUpDatas") {
-        fetch(`${baseURL}/tasks/start?cleanUpDatas=true`, {
+        fetch(`${baseURL}/tasks/start?cleanUpDatas=true&restart=true`, {
           method: "GET",
         })
           .then((response) => {
@@ -719,7 +721,7 @@
           })
           .catch((error) => alert(`Failed to start clean up datas: ${error.message}`));
       } else if (action === "seedStyles") {
-        fetch(`${baseURL}/tasks/start?seedStyles=true`, {
+        fetch(`${baseURL}/tasks/start?seedStyles=true&restart=true`, {
           method: "GET",
         })
           .then((response) => {
@@ -731,7 +733,7 @@
           })
           .catch((error) => alert(`Failed to start seed styles: ${error.message}`));
       } else if (action === "seedGeoJSONs") {
-        fetch(`${baseURL}/tasks/start?seedGeoJSONs=true`, {
+        fetch(`${baseURL}/tasks/start?seedGeoJSONs=true&restart=true`, {
           method: "GET",
         })
           .then((response) => {
@@ -743,7 +745,7 @@
           })
           .catch((error) => alert(`Failed to start seed geojsons: ${error.message}`));
       } else if (action === "seedDatas") {
-        fetch(`${baseURL}/tasks/start?seedDatas=true`, {
+        fetch(`${baseURL}/tasks/start?seedDatas=true&restart=true`, {
           method: "GET",
         })
           .then((response) => {
