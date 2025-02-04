@@ -401,7 +401,7 @@ function serveConfigUpdateHandler() {
         } catch (error) {
           return res
             .status(StatusCodes.BAD_REQUEST)
-            .send(`Config element is invalid: ${error.message}`);
+            .send(`Config element is invalid: ${error}`);
         }
 
         const config = await readSeedFile(false);
@@ -433,7 +433,7 @@ function serveConfigUpdateHandler() {
         } catch (error) {
           return res
             .status(StatusCodes.BAD_REQUEST)
-            .send(`Config element is invalid: ${error.message}`);
+            .send(`Config element is invalid: ${error}`);
         }
 
         const config = await readCleanUpFile(false);
@@ -465,7 +465,7 @@ function serveConfigUpdateHandler() {
         } catch (error) {
           return res
             .status(StatusCodes.BAD_REQUEST)
-            .send(`Config element is invalid: ${error.message}`);
+            .send(`Config element is invalid: ${error}`);
         }
 
         const config = await readConfigFile(false);
@@ -528,29 +528,29 @@ function serveConfigDeleteHandler() {
       } catch (error) {
         return res
           .status(StatusCodes.BAD_REQUEST)
-          .send(`Config element is invalid: ${error.message}`);
+          .send(`Config element is invalid: ${error}`);
       }
 
       if (req.query.type === "seed") {
         const config = await readSeedFile(false);
 
-        Object.keys(req.body.styles).map((id) => {
+        req.body.styles.map((id) => {
           delete config.styles[id];
         });
 
-        Object.keys(req.body.geojsons).map((id) => {
+        req.body.geojsons.map((id) => {
           delete config.geojsons[id];
         });
 
-        Object.keys(req.body.datas).map((id) => {
+        req.body.datas.map((id) => {
           delete config.datas[id];
         });
 
-        Object.keys(req.body.sprites).map((id) => {
+        req.body.sprites.map((id) => {
           delete config.sprites[id];
         });
 
-        Object.keys(req.body.fonts).map((id) => {
+        req.body.fonts.map((id) => {
           delete config.fonts[id];
         });
 
@@ -558,23 +558,23 @@ function serveConfigDeleteHandler() {
       } else if (req.query.type === "cleanUp") {
         const config = await readCleanUpFile(false);
 
-        Object.keys(req.body.styles).map((id) => {
+        req.body.styles.map((id) => {
           delete config.styles[id];
         });
 
-        Object.keys(req.body.geojsons).map((id) => {
+        req.body.geojsons.map((id) => {
           delete config.geojsons[id];
         });
 
-        Object.keys(req.body.datas).map((id) => {
+        req.body.datas.map((id) => {
           delete config.datas[id];
         });
 
-        Object.keys(req.body.sprites).map((id) => {
+        req.body.sprites.map((id) => {
           delete config.sprites[id];
         });
 
-        Object.keys(req.body.fonts).map((id) => {
+        req.body.fonts.map((id) => {
           delete config.fonts[id];
         });
 
@@ -582,23 +582,23 @@ function serveConfigDeleteHandler() {
       } else {
         const config = await readConfigFile(false);
 
-        Object.keys(req.body.styles).map((id) => {
+        req.body.styles.map((id) => {
           delete config.styles[id];
         });
 
-        Object.keys(req.body.geojsons).map((id) => {
+        req.body.geojsons.map((id) => {
           delete config.geojsons[id];
         });
 
-        Object.keys(req.body.datas).map((id) => {
+        req.body.datas.map((id) => {
           delete config.datas[id];
         });
 
-        Object.keys(req.body.sprites).map((id) => {
+        req.body.sprites.map((id) => {
           delete config.sprites[id];
         });
 
-        Object.keys(req.body.fonts).map((id) => {
+        req.body.fonts.map((id) => {
           delete config.fonts[id];
         });
 
