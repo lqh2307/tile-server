@@ -90,14 +90,17 @@
         };
 
         const layerColors = {};
+        const polygonLayers = [];
+        const lineLayers = [];
+        const circleLayers = [];
 
         for (const layer in jsonResponse.geojsons) {
-          if (jsonResponse.geojsons[layer].geometryTypes.length > 0) {
-            style.sources[layer] = {
-              "type": "geojson",
-              "data": jsonResponse.geojsons[layer].url
-            };
+          style.sources[layer] = {
+            "type": "geojson",
+            "data": jsonResponse.geojsons[layer].url
+          };
 
+          if (jsonResponse.geojsons[layer].geometryTypes.length > 0) {
             const r = Math.floor(Math.random() * 256);
             const g = Math.floor(Math.random() * 256);
             const b = Math.floor(Math.random() * 256);
@@ -106,7 +109,7 @@
 
             const polygonGeometryIndex = jsonResponse.geojsons[layer].geometryTypes.indexOf("polygon");
             if (polygonGeometryIndex > -1) {
-              style.layers.push(
+              polygonLayers.push(
                 {
                   "id": `${layer}_${jsonResponse.geojsons[layer].geometryTypes[polygonGeometryIndex]}`,
                   "source": layer,
@@ -126,7 +129,7 @@
 
             const lineGeometryIndex = jsonResponse.geojsons[layer].geometryTypes.indexOf("line");
             if (lineGeometryIndex > -1) {
-              style.layers.push(
+              lineLayers.push(
                 {
                   "id": `${layer}_${jsonResponse.geojsons[layer].geometryTypes[lineGeometryIndex]}`,
                   "source": layer,
@@ -146,7 +149,7 @@
 
             const circleGeometryIndex = jsonResponse.geojsons[layer].geometryTypes.indexOf("circle");
             if (circleGeometryIndex > -1) {
-              style.layers.push(
+              circleLayers.push(
                 {
                   "id": `${layer}_${jsonResponse.geojsons[layer].geometryTypes[circleGeometryIndex]}`,
                   "source": layer,
@@ -166,6 +169,8 @@
             alert(`No geometry found in layer "${layer}". Skipping...`);
           }
         }
+
+        style.layers.push(...polygonLayers, ...lineLayers, ...circleLayers);
 
         const map = new maplibregl.Map({
           container: "map",
