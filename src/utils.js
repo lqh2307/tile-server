@@ -25,12 +25,9 @@ sharp.cache(false);
  * @returns {Promise<string>}
  */
 export async function compileTemplate(template, data) {
-  const fileData = await fsPromise.readFile(
-    `public/templates/${template}.tmpl`,
-    "utf8"
-  );
-
-  return handlebars.compile(fileData)(data);
+  return handlebars.compile(
+    await fsPromise.readFile(`public/templates/${template}.tmpl`, "utf8")
+  )(data);
 }
 
 /**
