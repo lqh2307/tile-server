@@ -486,31 +486,15 @@ export async function removeOldCacheLocks() {
   let fileNames = await findFiles(
     `${process.env.DATA_DIR}`,
     /^.*\.(lock|tmp)$/,
-    false
-  );
-
-  await Promise.all(
-    fileNames.map(
-      (fileName) => fsPromise.rm(`${process.env.DATA_DIR}/${fileName}`),
-      {
-        force: true,
-      }
-    )
-  );
-
-  fileNames = await findFiles(
-    `${process.env.DATA_DIR}/caches/xyzs`,
-    /^.*\.(lock|tmp)$/,
+    true,
     true
   );
 
   await Promise.all(
-    fileNames.map(
-      (fileName) =>
-        fsPromise.rm(`${process.env.DATA_DIR}/caches/xyzs/${fileName}`),
-      {
+    fileNames.map((fileName) =>
+      fsPromise.rm(fileName, {
         force: true,
-      }
+      })
     )
   );
 }
@@ -558,9 +542,15 @@ export async function isExistFile(filePath) {
  * @param {string} dirPath The directory path to search
  * @param {RegExp} regex The regex to match files
  * @param {boolean} recurse Whether to search recursively in subdirectories
+ * @param {boolean} includeDirPath Whether to include directory path
  * @returns {Promise<string>} Array of filepaths matching the regex
  */
-export async function findFiles(dirPath, regex, recurse = false) {
+export async function findFiles(
+  dirPath,
+  regex,
+  recurse = false,
+  includeDirPath = false
+) {
   const entries = await fsPromise.readdir(dirPath, {
     withFileTypes: true,
   });
@@ -568,16 +558,31 @@ export async function findFiles(dirPath, regex, recurse = false) {
   const results = [];
 
   for (const entry of entries) {
-    if (entry.isFile() === true && regex.test(entry.name) === true) {
-      results.push(entry.name);
-    } else if (entry.isDirectory() === true && recurse === true) {
-      const fileNames = await findFiles(
-        `${dirPath}/${entry.name}`,
-        regex,
-        recurse
-      );
+    if (entry.isDirectory() === true) {
+      if (recurse === true) {
+        const fileNames = await findFiles(
+          `${dirPath}/${entry.name}`,
+          regex,
+          recurse,
+          includeDirPath
+        );
 
-      results.push(...fileNames.map((fileName) => `${entry.name}/${fileName}`));
+        fileNames.forEach((fileName) => {
+          if (includeDirPath === true) {
+            results.push(`${dirPath}/${entry.name}/${fileName}`);
+          } else {
+            results.push(`${entry.name}/${fileName}`);
+          }
+        });
+      }
+    } else {
+      if (regex.test(entry.name) === true) {
+        if (includeDirPath === true) {
+          results.push(`${dirPath}/${entry.name}`);
+        } else {
+          results.push(entry.name);
+        }
+      }
     }
   }
 
@@ -589,9 +594,15 @@ export async function findFiles(dirPath, regex, recurse = false) {
  * @param {string} dirPath The directory path to search
  * @param {RegExp} regex The regex to match folders
  * @param {boolean} recurse Whether to search recursively in subdirectories
+ * @param {boolean} includeDirPath Whether to include directory path
  * @returns {Promise<string>} Array of folder paths matching the regex
  */
-export async function findFolders(dirPath, regex, recurse = false) {
+export async function findFolders(
+  dirPath,
+  regex,
+  recurse = false,
+  includeDirPath = false
+) {
   const entries = await fsPromise.readdir(dirPath, {
     withFileTypes: true,
   });
@@ -601,21 +612,28 @@ export async function findFolders(dirPath, regex, recurse = false) {
   for (const entry of entries) {
     if (entry.isDirectory() === true) {
       if (regex.test(entry.name) === true) {
-        results.push(entry.name);
+        if (includeDirPath === true) {
+          results.push(`${dirPath}/${entry.name}`);
+        } else {
+          results.push(entry.name);
+        }
       }
 
       if (recurse === true) {
         const directoryNames = await findFolders(
           `${dirPath}/${entry.name}`,
           regex,
-          recurse
+          recurse,
+          includeDirPath
         );
 
-        results.push(
-          ...directoryNames.map(
-            (directoryName) => `${entry.name}/${directoryName}`
-          )
-        );
+        directoryNames.forEach((directoryName) => {
+          if (includeDirPath === true) {
+            results.push(`${dirPath}/${entry.name}/${directoryName}`);
+          } else {
+            results.push(`${entry.name}/${directoryName}`);
+          }
+        });
       }
     }
   }

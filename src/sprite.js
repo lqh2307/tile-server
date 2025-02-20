@@ -13,8 +13,8 @@ sharp.cache(false);
  */
 export async function validateSprite(spriteDirPath) {
   const [jsonSpriteFileNames, pngSpriteNames] = await Promise.all([
-    findFiles(spriteDirPath, /^sprite(@\d+x)?\.json$/, false),
-    findFiles(spriteDirPath, /^sprite(@\d+x)?\.png$/, false),
+    findFiles(spriteDirPath, /^sprite(@\d+x)?\.json$/, false, true),
+    findFiles(spriteDirPath, /^sprite(@\d+x)?\.png$/, false, true),
   ]);
 
   if (jsonSpriteFileNames.length !== pngSpriteNames.length) {
@@ -29,7 +29,7 @@ export async function validateSprite(spriteDirPath) {
     fileNameWoExts.map(async (fileNameWoExt) => {
       /* Validate JSON sprite */
       const fileData = await fsPromise.readFile(
-        `${spriteDirPath}/${fileNameWoExt}.json`,
+        `${fileNameWoExt}.json`,
         "utf8"
       );
 
@@ -47,9 +47,7 @@ export async function validateSprite(spriteDirPath) {
       });
 
       /* Validate PNG sprite */
-      const pngMetadata = await sharp(
-        `${spriteDirPath}/${fileNameWoExt}.png`
-      ).metadata();
+      const pngMetadata = await sharp(`${fileNameWoExt}.png`).metadata();
 
       if (pngMetadata.format !== "png") {
         throw new Error("Invalid PNG file");
@@ -79,13 +77,14 @@ export async function getSpriteSize(spriteDirPath) {
   const fileNames = await findFiles(
     spriteDirPath,
     /^sprite(@\d+x)?\.(json|png)$/,
+    false,
     true
   );
 
   let size = 0;
 
   for (const fileName of fileNames) {
-    const stat = await fsPromise.stat(`${spriteDirPath}/${fileName}`);
+    const stat = await fsPromise.stat(fileName);
 
     size += stat.size;
   }

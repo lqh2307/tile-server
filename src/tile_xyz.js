@@ -27,7 +27,7 @@ import {
  * @returns {Promise<Array<string>>}
  */
 async function getXYZLayersFromTiles(sourcePath) {
-  const pbfFilePaths = await findFiles(sourcePath, /^\d+\.pbf$/, true);
+  const pbfFilePaths = await findFiles(sourcePath, /^\d+\.pbf$/, true, true);
   let totalTasks = pbfFilePaths.length;
   const layerNames = new Set();
   let activeTasks = 0;
@@ -54,7 +54,7 @@ async function getXYZLayersFromTiles(sourcePath) {
     (async () => {
       try {
         vectorTileProto.tile
-          .decode(await fsPromise.readFile(`${sourcePath}/${pbfFilePath}`))
+          .decode(await fsPromise.readFile(pbfFilePath))
           .layers.map((layer) => layer.name)
           .forEach((layer) => layerNames.add(layer));
       } catch (error) {
@@ -83,12 +83,13 @@ async function getXYZLayersFromTiles(sourcePath) {
  * @returns {Promise<string>}
  */
 async function getXYZFormatFromTiles(sourcePath) {
-  const zFolders = await findFolders(sourcePath, /^\d+$/, false);
+  const zFolders = await findFolders(sourcePath, /^\d+$/, false, false);
 
   for (const zFolder of zFolders) {
     const xFolders = await findFolders(
       `${sourcePath}/${zFolder}`,
       /^\d+$/,
+      false,
       false
     );
 
@@ -96,6 +97,7 @@ async function getXYZFormatFromTiles(sourcePath) {
       const yFiles = await findFiles(
         `${sourcePath}/${zFolder}/${xFolder}`,
         /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/,
+        false,
         false
       );
 
@@ -112,13 +114,14 @@ async function getXYZFormatFromTiles(sourcePath) {
  * @returns {Promise<Array<number>>} Bounding box in format [minLon, minLat, maxLon, maxLat]
  */
 async function getXYZBBoxFromTiles(sourcePath) {
-  const zFolders = await findFolders(sourcePath, /^\d+$/, false);
+  const zFolders = await findFolders(sourcePath, /^\d+$/, false, false);
   const boundsArr = [];
 
   for (const zFolder of zFolders) {
     const xFolders = await findFolders(
       `${sourcePath}/${zFolder}`,
       /^\d+$/,
+      false,
       false
     );
 
@@ -130,6 +133,7 @@ async function getXYZBBoxFromTiles(sourcePath) {
         let yFiles = await findFiles(
           `${sourcePath}/${zFolder}/${xFolder}`,
           /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/,
+          false,
           false
         );
 
@@ -164,7 +168,7 @@ async function getXYZBBoxFromTiles(sourcePath) {
  * @returns {Promise<number>}
  */
 async function getXYZZoomLevelFromTiles(sourcePath, zoomType) {
-  const folders = await findFolders(sourcePath, /^\d+$/, false);
+  const folders = await findFolders(sourcePath, /^\d+$/, false, false);
 
   return zoomType === "minzoom"
     ? Math.min(...folders.map((folder) => Number(folder)))
@@ -957,7 +961,8 @@ export async function countXYZTiles(sourcePath) {
   const fileNames = await findFiles(
     sourcePath,
     /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/,
-    true
+    true,
+    false
   );
 
   return fileNames.length;
@@ -972,13 +977,14 @@ export async function getXYZSize(sourcePath) {
   const fileNames = await findFiles(
     sourcePath,
     /^\d+\.(gif|png|jpg|jpeg|webp|pbf)$/,
+    true,
     true
   );
 
   let size = 0;
 
   for (const fileName of fileNames) {
-    const stat = await fsPromise.stat(`${sourcePath}/${fileName}`);
+    const stat = await fsPromise.stat(fileName);
 
     size += stat.size;
   }

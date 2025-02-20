@@ -15,7 +15,12 @@ const glyphsProto = protobuf(fs.readFileSync("public/protos/glyphs.proto"));
  * @returns {Promise<void>}
  */
 export async function validateFont(pbfDirPath) {
-  const pbfFileNames = await findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/);
+  const pbfFileNames = await findFiles(
+    pbfDirPath,
+    /^\d{1,5}-\d{1,5}\.pbf$/,
+    false,
+    false
+  );
 
   if (pbfFileNames.length === 0) {
     throw new Error("Missing some PBF files");
@@ -92,12 +97,17 @@ export async function getFonts(ids, fileName) {
  * @returns {Promise<number>}
  */
 export async function getFontSize(pbfDirPath) {
-  const fileNames = await findFiles(pbfDirPath, /^\d{1,5}-\d{1,5}\.pbf$/, true);
+  const fileNames = await findFiles(
+    pbfDirPath,
+    /^\d{1,5}-\d{1,5}\.pbf$/,
+    false,
+    true
+  );
 
   let size = 0;
 
   for (const fileName of fileNames) {
-    const stat = await fsPromise.stat(`${pbfDirPath}/${fileName}`);
+    const stat = await fsPromise.stat(fileName);
 
     size += stat.size;
   }
