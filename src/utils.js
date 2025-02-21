@@ -484,7 +484,7 @@ export async function removeEmptyFolders(folderPath, regex) {
  */
 export async function removeOldCacheLocks() {
   let fileNames = await findFiles(
-    `${process.env.DATA_DIR}`,
+    `${process.env.DATA_DIR}/caches`,
     /^.*\.(lock|tmp)$/,
     true,
     true
