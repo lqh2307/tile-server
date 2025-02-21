@@ -575,13 +575,11 @@ export async function findFiles(
           }
         });
       }
-    } else {
-      if (regex.test(entry.name) === true) {
-        if (includeDirPath === true) {
-          results.push(`${dirPath}/${entry.name}`);
-        } else {
-          results.push(entry.name);
-        }
+    } else if (regex.test(entry.name) === true) {
+      if (includeDirPath === true) {
+        results.push(`${dirPath}/${entry.name}`);
+      } else {
+        results.push(entry.name);
       }
     }
   }
