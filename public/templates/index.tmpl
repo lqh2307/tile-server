@@ -305,7 +305,6 @@
   <script>
     const baseURL = "{{base_url}}";
     const emptyImageURL = `${baseURL}/images/placeholder.png`;
-    const enableExport = {{enable_export}};
 
     function toggleURL(id, event) {
       event.preventDefault();
@@ -393,7 +392,7 @@
                     <a class="btn" href="${baseURL}/styles/{{@key}}/?vector{{viewer_hash}}">Client Render</a>
                     {{#if thumbnail}}
                       <a class="btn" href="${baseURL}/styles/{{@key}}/?raster{{viewer_hash}}">Backend Render</a>
-                      {{#if ${enableExport}}}<a class="btn" href="#" onclick="showExportRenderDialog(event, '{{@key}}')">Export Render</a>{{/if}}
+                      {{#if enable_export}}<a class="btn" href="#" onclick="showExportRenderDialog(event, '{{@key}}')">Export Render</a>{{/if}}
                     {{/if}}
                 </div>
               </div>

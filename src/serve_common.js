@@ -64,6 +64,7 @@ function serveFrontPageHandler() {
               viewer_hash: `#${center[2]}/${center[1]}/${center[0]}`,
               thumbnail: `${requestHost}/styles/${id}/${z}/${x}/${y}.png`,
               cache: style.storeCache === true,
+              enable_export: process.env.ENABLE_EXPORT === "true",
             };
           } else {
             const { name, zoom, center } = style;
@@ -126,7 +127,6 @@ function serveFrontPageHandler() {
       ]);
 
       const compiled = await compileTemplate("index", {
-        enable_export: process.env.ENABLE_EXPORT === "true",
         styles: styles,
         geojsons: geojsons,
         geojson_groups: geojsonGroups,
