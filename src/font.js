@@ -49,11 +49,11 @@ export async function getFonts(ids, fileName) {
       } catch (error) {
         printLog(
           "warning",
-          `Failed to get font "${font}": ${error}. Using fallback font "${process.env.FALLBACK_FONT}"...`
+          `Failed to get font "${font}": ${error}. Using fallback font "Open Sans Regular"...`
         );
 
         return await fsPromise.readFile(
-          `public/resources/fonts/${process.env.FALLBACK_FONT}/${fileName}`
+          `public/resources/fonts/Open Sans Regular/${fileName}`
         );
       }
     })

@@ -187,23 +187,31 @@ export const serve_sprite = {
   },
 
   add: async () => {
-    await Promise.all(
-      Object.keys(config.sprites).map(async (id) => {
-        try {
-          /* Validate sprite */
-          const dirPath = `${process.env.DATA_DIR}/sprites/${id}`;
+    if (config.sprites === undefined) {
+      printLog("info", "No sprites in config. Skipping...");
+    } else {
+      const ids = Object.keys(config.sprites);
 
-          await validateSprite(dirPath);
+      printLog("info", `Loading ${ids.length} sprites...`);
 
-          /* Add to repo */
-          config.repo.sprites[id] = true;
-        } catch (error) {
-          printLog(
-            "error",
-            `Failed to load sprite "${id}": ${error}. Skipping...`
-          );
-        }
-      })
-    );
+      await Promise.all(
+        ids.map(async (id) => {
+          try {
+            /* Validate sprite */
+            const dirPath = `${process.env.DATA_DIR}/sprites/${id}`;
+
+            await validateSprite(dirPath);
+
+            /* Add to repo */
+            config.repo.sprites[id] = true;
+          } catch (error) {
+            printLog(
+              "error",
+              `Failed to load sprite "${id}": ${error}. Skipping...`
+            );
+          }
+        })
+      );
+    }
   },
 };

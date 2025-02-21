@@ -1184,149 +1184,184 @@ export const serve_style = {
   },
 
   add: async () => {
-    await Promise.all(
-      Object.keys(config.styles).map(async (id) => {
-        const item = config.styles[id];
+    if (config.styles === undefined) {
+      printLog("info", "No styles in config. Skipping...");
+    } else {
+      const ids = Object.keys(config.styles);
 
-        let isCanServeRendered = false;
+      printLog("info", `Loading ${ids.length} styles...`);
 
-        const styleInfo = {};
+      await Promise.all(
+        ids.map(async (id) => {
+          const item = config.styles[id];
 
-        let styleJSON;
+          let isCanServeRendered = false;
 
-        /* Serve style */
-        try {
-          if (
-            item.style.startsWith("https://") === true ||
-            item.style.startsWith("http://") === true
-          ) {
-            styleInfo.path = `${process.env.DATA_DIR}/styles/${id}/style.json`;
+          const styleInfo = {};
 
-            /* Download style.json file */
-            if ((await isExistFile(styleInfo.path)) === false) {
-              printLog(
-                "info",
-                `Downloading style file "${styleInfo.path}" from "${item.style}"...`
-              );
+          let styleJSON;
 
-              await downloadStyleFile(
-                item.style,
-                styleInfo.path,
-                5,
-                300000 // 5 mins
-              );
-            }
-          } else {
-            if (item.cache !== undefined) {
-              styleInfo.path = `${process.env.DATA_DIR}/caches/styles/${item.style}/style.json`;
-
-              const cacheSource = seed.styles[item.style];
-
-              if (cacheSource === undefined) {
-                throw new Error(`Cache style "${item.style}" is invalid`);
-              }
-
-              if (item.cache.forward === true) {
-                styleInfo.sourceURL = cacheSource.url;
-                styleInfo.storeCache = item.cache.store;
-              }
-            } else {
-              styleInfo.path = `${process.env.DATA_DIR}/styles/${item.style}`;
-            }
-          }
-
+          /* Serve style */
           try {
-            /* Read style.json file */
-            styleJSON = await getStyle(styleInfo.path, true);
-
-            /* Validate style */
-            await validateStyle(styleJSON);
-
-            /* Store style info */
-            styleInfo.name = styleJSON.name || "Unknown";
-            styleInfo.zoom = styleJSON.zoom || 0;
-            styleInfo.center = styleJSON.center || [0, 0, 0];
-
-            /* Mark to serve rendered */
-            isCanServeRendered = true;
-          } catch (error) {
             if (
-              item.cache !== undefined &&
-              error.message === "Style does not exist"
+              item.style.startsWith("https://") === true ||
+              item.style.startsWith("http://") === true
             ) {
-              styleInfo.name =
-                seed.styles[item.style].metadata.name || "Unknown";
-              styleInfo.zoom = seed.styles[item.style].metadata.zoom || 0;
-              styleInfo.center = seed.styles[item.style].metadata.center || [
-                0, 0, 0,
-              ];
+              styleInfo.path = `${process.env.DATA_DIR}/styles/${id}/style.json`;
 
-              /* Mark to serve rendered */
-              isCanServeRendered = false;
+              /* Download style.json file */
+              if ((await isExistFile(styleInfo.path)) === false) {
+                printLog(
+                  "info",
+                  `Downloading style file "${styleInfo.path}" from "${item.style}"...`
+                );
+
+                await downloadStyleFile(
+                  item.style,
+                  styleInfo.path,
+                  5,
+                  300000 // 5 mins
+                );
+              }
             } else {
-              throw error;
-            }
-          }
+              if (item.cache !== undefined) {
+                styleInfo.path = `${process.env.DATA_DIR}/caches/styles/${item.style}/style.json`;
 
-          /* Add to repo */
-          config.repo.styles[id] = styleInfo;
-        } catch (error) {
-          printLog(
-            "error",
-            `Failed to load style "${id}": ${error}. Skipping...`
-          );
-        }
+                const cacheSource = seed.styles?.[item.style];
 
-        /* Serve rendered */
-        if (item.rendered !== undefined && isCanServeRendered === true) {
-          try {
-            /* Rendered info */
-            const rendered = {
-              tileJSON: createRenderedMetadata({
-                name: styleInfo.name,
-                description: styleInfo.name,
-              }),
-              styleJSON: {},
-              compressionLevel: item.rendered.compressionLevel || 6,
-            };
-
-            /* Fix center */
-            if (styleJSON.center?.length >= 2 && styleJSON.zoom) {
-              rendered.tileJSON.center = [
-                styleJSON.center[0],
-                styleJSON.center[1],
-                Math.floor(styleJSON.zoom),
-              ];
-            }
-
-            /* Fix sources */
-            await Promise.all(
-              Object.keys(styleJSON.sources).map(async (id) => {
-                const source = styleJSON.sources[id];
-
-                if (source.tiles !== undefined) {
-                  const tiles = new Set(
-                    source.tiles.map((tile) => {
-                      if (isLocalTileURL(tile) === true) {
-                        const sourceID = tile.split("/")[2];
-                        const sourceData = config.repo.datas[sourceID];
-
-                        tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
-                      }
-
-                      return tile;
-                    })
-                  );
-
-                  source.tiles = Array.from(tiles);
+                if (cacheSource === undefined) {
+                  throw new Error(`Cache style "${item.style}" is invalid`);
                 }
 
-                if (source.urls !== undefined) {
-                  const otherUrls = [];
+                if (item.cache.forward === true) {
+                  styleInfo.sourceURL = cacheSource.url;
+                  styleInfo.storeCache = item.cache.store;
+                }
+              } else {
+                styleInfo.path = `${process.env.DATA_DIR}/styles/${item.style}`;
+              }
+            }
 
-                  source.urls.forEach((url) => {
-                    if (isLocalTileURL(url) === true) {
-                      const sourceID = url.split("/")[2];
+            try {
+              /* Read style.json file */
+              styleJSON = await getStyle(styleInfo.path, true);
+
+              /* Validate style */
+              await validateStyle(styleJSON);
+
+              /* Store style info */
+              styleInfo.name = styleJSON.name || "Unknown";
+              styleInfo.zoom = styleJSON.zoom || 0;
+              styleInfo.center = styleJSON.center || [0, 0, 0];
+
+              /* Mark to serve rendered */
+              isCanServeRendered = true;
+            } catch (error) {
+              if (
+                item.cache !== undefined &&
+                error.message === "Style does not exist"
+              ) {
+                styleInfo.name =
+                  seed.styles[item.style].metadata.name || "Unknown";
+                styleInfo.zoom = seed.styles[item.style].metadata.zoom || 0;
+                styleInfo.center = seed.styles[item.style].metadata.center || [
+                  0, 0, 0,
+                ];
+
+                /* Mark to serve rendered */
+                isCanServeRendered = false;
+              } else {
+                throw error;
+              }
+            }
+
+            /* Add to repo */
+            config.repo.styles[id] = styleInfo;
+          } catch (error) {
+            printLog(
+              "error",
+              `Failed to load style "${id}": ${error}. Skipping...`
+            );
+          }
+
+          /* Serve rendered */
+          if (item.rendered !== undefined && isCanServeRendered === true) {
+            try {
+              /* Rendered info */
+              const rendered = {
+                tileJSON: createRenderedMetadata({
+                  name: styleInfo.name,
+                  description: styleInfo.name,
+                }),
+                styleJSON: {},
+                compressionLevel: item.rendered.compressionLevel || 6,
+              };
+
+              /* Fix center */
+              if (styleJSON.center?.length >= 2 && styleJSON.zoom) {
+                rendered.tileJSON.center = [
+                  styleJSON.center[0],
+                  styleJSON.center[1],
+                  Math.floor(styleJSON.zoom),
+                ];
+              }
+
+              /* Fix sources */
+              await Promise.all(
+                Object.keys(styleJSON.sources).map(async (id) => {
+                  const source = styleJSON.sources[id];
+
+                  if (source.tiles !== undefined) {
+                    const tiles = new Set(
+                      source.tiles.map((tile) => {
+                        if (isLocalTileURL(tile) === true) {
+                          const sourceID = tile.split("/")[2];
+                          const sourceData = config.repo.datas[sourceID];
+
+                          tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+                        }
+
+                        return tile;
+                      })
+                    );
+
+                    source.tiles = Array.from(tiles);
+                  }
+
+                  if (source.urls !== undefined) {
+                    const otherUrls = [];
+
+                    source.urls.forEach((url) => {
+                      if (isLocalTileURL(url) === true) {
+                        const sourceID = url.split("/")[2];
+                        const sourceData = config.repo.datas[sourceID];
+
+                        const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
+
+                        if (source.tiles !== undefined) {
+                          if (source.tiles.includes(tile) === false) {
+                            source.tiles.push(tile);
+                          }
+                        } else {
+                          source.tiles = [tile];
+                        }
+                      } else {
+                        if (otherUrls.includes(url) === false) {
+                          otherUrls.push(url);
+                        }
+                      }
+                    });
+
+                    if (otherUrls.length === 0) {
+                      delete source.urls;
+                    } else {
+                      source.urls = otherUrls;
+                    }
+                  }
+
+                  if (source.url !== undefined) {
+                    if (isLocalTileURL(source.url) === true) {
+                      const sourceID = source.url.split("/")[2];
                       const sourceData = config.repo.datas[sourceID];
 
                       const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
@@ -1338,82 +1373,56 @@ export const serve_style = {
                       } else {
                         source.tiles = [tile];
                       }
-                    } else {
-                      if (otherUrls.includes(url) === false) {
-                        otherUrls.push(url);
+
+                      delete source.url;
+                    }
+                  }
+
+                  if (
+                    source.url === undefined &&
+                    source.urls === undefined &&
+                    source.tiles !== undefined
+                  ) {
+                    if (source.tiles.length === 1) {
+                      if (isLocalTileURL(source.tiles[0]) === true) {
+                        const sourceID = source.tiles[0].split("/")[2];
+                        const sourceData = config.repo.datas[sourceID];
+
+                        styleJSON.sources[id] = {
+                          ...sourceData.tileJSON,
+                          ...source,
+                          tiles: [source.tiles[0]],
+                        };
                       }
                     }
-                  });
-
-                  if (otherUrls.length === 0) {
-                    delete source.urls;
-                  } else {
-                    source.urls = otherUrls;
                   }
-                }
 
-                if (source.url !== undefined) {
-                  if (isLocalTileURL(source.url) === true) {
-                    const sourceID = source.url.split("/")[2];
-                    const sourceData = config.repo.datas[sourceID];
-
-                    const tile = `${sourceData.sourceType}://${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
-
-                    if (source.tiles !== undefined) {
-                      if (source.tiles.includes(tile) === false) {
-                        source.tiles.push(tile);
-                      }
-                    } else {
-                      source.tiles = [tile];
-                    }
-
-                    delete source.url;
+                  // Add atribution
+                  if (
+                    source.attribution &&
+                    rendered.tileJSON.attribution.includes(
+                      source.attribution
+                    ) === false
+                  ) {
+                    rendered.tileJSON.attribution += ` | ${source.attribution}`;
                   }
-                }
+                })
+              );
 
-                if (
-                  source.url === undefined &&
-                  source.urls === undefined &&
-                  source.tiles !== undefined
-                ) {
-                  if (source.tiles.length === 1) {
-                    if (isLocalTileURL(source.tiles[0]) === true) {
-                      const sourceID = source.tiles[0].split("/")[2];
-                      const sourceData = config.repo.datas[sourceID];
+              /* Add styleJSON */
+              rendered.styleJSON = styleJSON;
 
-                      styleJSON.sources[id] = {
-                        ...sourceData.tileJSON,
-                        ...source,
-                        tiles: [source.tiles[0]],
-                      };
-                    }
-                  }
-                }
-
-                // Add atribution
-                if (
-                  source.attribution &&
-                  rendered.tileJSON.attribution.includes(source.attribution) ===
-                    false
-                ) {
-                  rendered.tileJSON.attribution += ` | ${source.attribution}`;
-                }
-              })
-            );
-
-            /* Add styleJSON */
-            rendered.styleJSON = styleJSON;
-
-            /* Add to repo */
-            config.repo.styles[id].rendered = rendered;
-          } catch (error) {
-            printLog(
-              "error",
-              `Failed to load rendered "${id}": ${error}. Skipping...`
-            );
+              /* Add to repo */
+              config.repo.styles[id].rendered = rendered;
+            } catch (error) {
+              printLog(
+                "error",
+                `Failed to load rendered "${id}": ${error}. Skipping...`
+              );
+            }
           }
-        }
-      })
-    );
+        })
+      );
+    }
   },
 };

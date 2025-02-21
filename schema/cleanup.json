@@ -148,7 +148,5 @@
         }
       }
     }
-  },
-  "required": ["styles", "geojsons", "datas", "sprites", "fonts"],
-  "additionalProperties": false
+  }
 }

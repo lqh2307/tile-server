@@ -46,43 +46,47 @@ export async function runTasks(opts) {
     /* Clean up styles */
     if (opts.cleanUpStyles === true) {
       try {
-        const ids = Object.keys(cleanUpData.styles);
+        if (cleanUpData.styles === undefined) {
+          printLog("info", "No styles in cleanup. Skipping...");
+        } else {
+          const ids = Object.keys(cleanUpData.styles);
 
-        printLog("info", `Starting clean up ${ids.length} styles...`);
+          printLog("info", `Starting clean up ${ids.length} styles...`);
 
-        const startTime = Date.now();
+          const startTime = Date.now();
 
-        for (const id of ids) {
-          const cleanUpStyleItem = cleanUpData.styles[id];
+          for (const id of ids) {
+            const cleanUpStyleItem = cleanUpData.styles[id];
 
-          if (cleanUpStyleItem.skip === true) {
-            printLog("info", `Skipping clean up style "${id}"...`);
+            if (cleanUpStyleItem.skip === true) {
+              printLog("info", `Skipping clean up style "${id}"...`);
 
-            continue;
+              continue;
+            }
+
+            try {
+              await cleanUpStyle(
+                id,
+                cleanUpStyleItem.refreshBefore?.time ||
+                  cleanUpStyleItem.refreshBefore?.day
+              );
+            } catch (error) {
+              printLog(
+                "error",
+                `Failed to clean up style "${id}": ${error}. Skipping...`
+              );
+            }
           }
 
-          try {
-            await cleanUpStyle(
-              id,
-              cleanUpStyleItem.refreshBefore?.time ||
-                cleanUpStyleItem.refreshBefore?.day
-            );
-          } catch (error) {
-            printLog(
-              "error",
-              `Failed to clean up style "${id}": ${error}. Skipping...`
-            );
-          }
+          const doneTime = Date.now();
+
+          printLog(
+            "info",
+            `Completed clean up ${ids.length} styles after: ${
+              (doneTime - startTime) / 1000
+            }s!`
+          );
         }
-
-        const doneTime = Date.now();
-
-        printLog(
-          "info",
-          `Completed clean up ${ids.length} styles after: ${
-            (doneTime - startTime) / 1000
-          }s!`
-        );
       } catch (error) {
         printLog("error", `Failed to clean up styles: ${error}. Exited!`);
       }
@@ -91,43 +95,47 @@ export async function runTasks(opts) {
     /* Clean up geojsons */
     if (opts.cleanUpGeoJSONs === true) {
       try {
-        const ids = Object.keys(cleanUpData.geojsons);
+        if (cleanUpData.geojsons === undefined) {
+          printLog("info", "No geojsons in cleanup. Skipping...");
+        } else {
+          const ids = Object.keys(cleanUpData.geojsons);
 
-        printLog("info", `Starting clean up ${ids.length} geojsons...`);
+          printLog("info", `Starting clean up ${ids.length} geojsons...`);
 
-        const startTime = Date.now();
+          const startTime = Date.now();
 
-        for (const id of ids) {
-          const cleanUpGeoJSONItem = cleanUpData.geojsons[id];
+          for (const id of ids) {
+            const cleanUpGeoJSONItem = cleanUpData.geojsons[id];
 
-          if (cleanUpGeoJSONItem.skip === true) {
-            printLog("info", `Skipping clean up geojson "${id}"...`);
+            if (cleanUpGeoJSONItem.skip === true) {
+              printLog("info", `Skipping clean up geojson "${id}"...`);
 
-            continue;
+              continue;
+            }
+
+            try {
+              await cleanUpGeoJSON(
+                id,
+                cleanUpGeoJSONItem.refreshBefore?.time ||
+                  cleanUpGeoJSONItem.refreshBefore?.day
+              );
+            } catch (error) {
+              printLog(
+                "error",
+                `Failed to clean up geojson "${id}": ${error}. Skipping...`
+              );
+            }
           }
 
-          try {
-            await cleanUpGeoJSON(
-              id,
-              cleanUpGeoJSONItem.refreshBefore?.time ||
-                cleanUpGeoJSONItem.refreshBefore?.day
-            );
-          } catch (error) {
-            printLog(
-              "error",
-              `Failed to clean up geojson "${id}": ${error}. Skipping...`
-            );
-          }
+          const doneTime = Date.now();
+
+          printLog(
+            "info",
+            `Completed clean up ${ids.length} geojsons after: ${
+              (doneTime - startTime) / 1000
+            }s!`
+          );
         }
-
-        const doneTime = Date.now();
-
-        printLog(
-          "info",
-          `Completed clean up ${ids.length} geojsons after: ${
-            (doneTime - startTime) / 1000
-          }s!`
-        );
       } catch (error) {
         printLog("error", `Failed to clean up geojsons: ${error}. Exited!`);
       }
@@ -136,65 +144,69 @@ export async function runTasks(opts) {
     /* Clean up datas */
     if (opts.cleanUpDatas === true) {
       try {
-        const ids = Object.keys(cleanUpData.datas);
+        if (cleanUpData.datas === undefined) {
+          printLog("info", "No datas in cleanup. Skipping...");
+        } else {
+          const ids = Object.keys(cleanUpData.datas);
 
-        printLog("info", `Starting clean up ${ids.length} datas...`);
+          printLog("info", `Starting clean up ${ids.length} datas...`);
 
-        const startTime = Date.now();
+          const startTime = Date.now();
 
-        for (const id of ids) {
-          const seedDataItem = seedData.datas[id];
-          const cleanUpDataItem = cleanUpData.datas[id];
+          for (const id of ids) {
+            const seedDataItem = seedData.datas[id];
+            const cleanUpDataItem = cleanUpData.datas[id];
 
-          if (cleanUpDataItem.skip === true) {
-            printLog("info", `Skipping clean up data "${id}"...`);
+            if (cleanUpDataItem.skip === true) {
+              printLog("info", `Skipping clean up data "${id}"...`);
 
-            continue;
-          }
+              continue;
+            }
 
-          try {
-            if (seedDataItem.storeType === "xyz") {
-              await cleanUpXYZTiles(
-                id,
-                seedDataItem.metadata.format,
-                cleanUpDataItem.zooms,
-                cleanUpDataItem.bboxs,
-                cleanUpDataItem.cleanUpBefore?.time ||
-                  cleanUpDataItem.cleanUpBefore?.day
-              );
-            } else if (seedDataItem.storeType === "mbtiles") {
-              await cleanUpMBTilesTiles(
-                id,
-                cleanUpDataItem.zooms,
-                cleanUpDataItem.bboxs,
-                cleanUpDataItem.cleanUpBefore?.time ||
-                  cleanUpDataItem.cleanUpBefore?.day
-              );
-            } else if (seedDataItem.storeType === "pg") {
-              await cleanUpPostgreSQLTiles(
-                id,
-                cleanUpDataItem.zooms,
-                cleanUpDataItem.bboxs,
-                cleanUpDataItem.cleanUpBefore?.time ||
-                  cleanUpDataItem.cleanUpBefore?.day
+            try {
+              if (seedDataItem.storeType === "xyz") {
+                await cleanUpXYZTiles(
+                  id,
+                  seedDataItem.metadata.format,
+                  cleanUpDataItem.zooms,
+                  cleanUpDataItem.bboxs,
+                  cleanUpDataItem.cleanUpBefore?.time ||
+                    cleanUpDataItem.cleanUpBefore?.day
+                );
+              } else if (seedDataItem.storeType === "mbtiles") {
+                await cleanUpMBTilesTiles(
+                  id,
+                  cleanUpDataItem.zooms,
+                  cleanUpDataItem.bboxs,
+                  cleanUpDataItem.cleanUpBefore?.time ||
+                    cleanUpDataItem.cleanUpBefore?.day
+                );
+              } else if (seedDataItem.storeType === "pg") {
+                await cleanUpPostgreSQLTiles(
+                  id,
+                  cleanUpDataItem.zooms,
+                  cleanUpDataItem.bboxs,
+                  cleanUpDataItem.cleanUpBefore?.time ||
+                    cleanUpDataItem.cleanUpBefore?.day
+                );
+              }
+            } catch (error) {
+              printLog(
+                "error",
+                `Failed to clean up data "${id}": ${error}. Skipping...`
               );
             }
-          } catch (error) {
-            printLog(
-              "error",
-              `Failed to clean up data "${id}": ${error}. Skipping...`
-            );
           }
+
+          const doneTime = Date.now();
+
+          printLog(
+            "info",
+            `Completed clean up ${ids.length} datas after: ${
+              (doneTime - startTime) / 1000
+            }s!`
+          );
         }
-
-        const doneTime = Date.now();
-
-        printLog(
-          "info",
-          `Completed clean up ${ids.length} datas after: ${
-            (doneTime - startTime) / 1000
-          }s!`
-        );
       } catch (error) {
         printLog("error", `Failed to clean up datas: ${error}. Exited!`);
       }
@@ -203,47 +215,51 @@ export async function runTasks(opts) {
     /* Run seed styles */
     if (opts.seedStyles === true) {
       try {
-        const ids = Object.keys(seedData.styles);
+        if (seedData.styles === undefined) {
+          printLog("info", "No styles in seed. Skipping...");
+        } else {
+          const ids = Object.keys(seedData.styles);
 
-        printLog("info", `Starting seed ${ids.length} styles...`);
+          printLog("info", `Starting seed ${ids.length} styles...`);
 
-        const startTime = Date.now();
+          const startTime = Date.now();
 
-        for (const id of ids) {
-          const seedStyleItem = seedData.styles[id];
+          for (const id of ids) {
+            const seedStyleItem = seedData.styles[id];
 
-          if (seedStyleItem.skip === true) {
-            printLog("info", `Skipping seed style "${id}"...`);
+            if (seedStyleItem.skip === true) {
+              printLog("info", `Skipping seed style "${id}"...`);
 
-            continue;
+              continue;
+            }
+
+            try {
+              await seedStyle(
+                id,
+                seedStyleItem.url,
+                seedStyleItem.maxTry,
+                seedStyleItem.timeout,
+                seedStyleItem.refreshBefore?.time ||
+                  seedStyleItem.refreshBefore?.day ||
+                  seedStyleItem.refreshBefore?.md5
+              );
+            } catch (error) {
+              printLog(
+                "error",
+                `Failed to seed style "${id}": ${error}. Skipping...`
+              );
+            }
           }
 
-          try {
-            await seedStyle(
-              id,
-              seedStyleItem.url,
-              seedStyleItem.maxTry,
-              seedStyleItem.timeout,
-              seedStyleItem.refreshBefore?.time ||
-                seedStyleItem.refreshBefore?.day ||
-                seedStyleItem.refreshBefore?.md5
-            );
-          } catch (error) {
-            printLog(
-              "error",
-              `Failed to seed style "${id}": ${error}. Skipping...`
-            );
-          }
+          const doneTime = Date.now();
+
+          printLog(
+            "info",
+            `Completed seed ${ids.length} styles after: ${
+              (doneTime - startTime) / 1000
+            }s!`
+          );
         }
-
-        const doneTime = Date.now();
-
-        printLog(
-          "info",
-          `Completed seed ${ids.length} styles after: ${
-            (doneTime - startTime) / 1000
-          }s!`
-        );
       } catch (error) {
         printLog("error", `Failed to seed styles: ${error}. Exited!`);
       }
@@ -252,47 +268,51 @@ export async function runTasks(opts) {
     /* Run seed geojsons */
     if (opts.seedGeoJSONs === true) {
       try {
-        const ids = Object.keys(seedData.geojsons);
+        if (seedData.geojsons === undefined) {
+          printLog("info", "No geojsons in seed. Skipping...");
+        } else {
+          const ids = Object.keys(seedData.geojsons);
 
-        printLog("info", `Starting seed ${ids.length} geojsons...`);
+          printLog("info", `Starting seed ${ids.length} geojsons...`);
 
-        const startTime = Date.now();
+          const startTime = Date.now();
 
-        for (const id of ids) {
-          const seedGeoJSONItem = seedData.geojsons[id];
+          for (const id of ids) {
+            const seedGeoJSONItem = seedData.geojsons[id];
 
-          if (seedGeoJSONItem.skip === true) {
-            printLog("info", `Skipping seed geojson "${id}"...`);
+            if (seedGeoJSONItem.skip === true) {
+              printLog("info", `Skipping seed geojson "${id}"...`);
 
-            continue;
+              continue;
+            }
+
+            try {
+              await seedGeoJSON(
+                id,
+                seedGeoJSONItem.url,
+                seedGeoJSONItem.maxTry,
+                seedGeoJSONItem.timeout,
+                seedGeoJSONItem.refreshBefore?.time ||
+                  seedGeoJSONItem.refreshBefore?.day ||
+                  seedGeoJSONItem.refreshBefore?.md5
+              );
+            } catch (error) {
+              printLog(
+                "error",
+                `Failed to seed geojson "${id}": ${error}. Skipping...`
+              );
+            }
           }
 
-          try {
-            await seedGeoJSON(
-              id,
-              seedGeoJSONItem.url,
-              seedGeoJSONItem.maxTry,
-              seedGeoJSONItem.timeout,
-              seedGeoJSONItem.refreshBefore?.time ||
-                seedGeoJSONItem.refreshBefore?.day ||
-                seedGeoJSONItem.refreshBefore?.md5
-            );
-          } catch (error) {
-            printLog(
-              "error",
-              `Failed to seed geojson "${id}": ${error}. Skipping...`
-            );
-          }
+          const doneTime = Date.now();
+
+          printLog(
+            "info",
+            `Completed seed ${ids.length} geojsons after: ${
+              (doneTime - startTime) / 1000
+            }s!`
+          );
         }
-
-        const doneTime = Date.now();
-
-        printLog(
-          "info",
-          `Completed seed ${ids.length} geojsons after: ${
-            (doneTime - startTime) / 1000
-          }s!`
-        );
       } catch (error) {
         printLog("error", `Failed to seed geojsons: ${error}. Exited!`);
       }
@@ -301,90 +321,94 @@ export async function runTasks(opts) {
     /* Run seed datas */
     if (opts.seedDatas === true) {
       try {
-        const ids = Object.keys(seedData.datas);
+        if (seedData.datas === undefined) {
+          printLog("info", "No datas in seed. Skipping...");
+        } else {
+          const ids = Object.keys(seedData.datas);
 
-        printLog("info", `Starting seed ${ids.length} datas...`);
+          printLog("info", `Starting seed ${ids.length} datas...`);
 
-        const startTime = Date.now();
+          const startTime = Date.now();
 
-        for (const id of ids) {
-          const seedDataItem = seedData.datas[id];
+          for (const id of ids) {
+            const seedDataItem = seedData.datas[id];
 
-          if (seedDataItem.skip === true) {
-            printLog("info", `Skipping seed data "${id}"...`);
+            if (seedDataItem.skip === true) {
+              printLog("info", `Skipping seed data "${id}"...`);
 
-            continue;
-          }
+              continue;
+            }
 
-          try {
-            if (seedDataItem.storeType === "xyz") {
-              await seedXYZTiles(
-                id,
-                seedDataItem.metadata,
-                seedDataItem.url,
-                seedDataItem.scheme,
-                seedDataItem.bboxs,
-                seedDataItem.zooms,
-                seedDataItem.concurrency,
-                seedDataItem.maxTry,
-                seedDataItem.timeout,
-                seedDataItem.storeMD5,
-                seedDataItem.storeTransparent,
-                seedDataItem.refreshBefore?.time ||
-                  seedDataItem.refreshBefore?.day ||
-                  seedDataItem.refreshBefore?.md5
-              );
-            } else if (seedDataItem.storeType === "mbtiles") {
-              await seedMBTilesTiles(
-                id,
-                seedDataItem.metadata,
-                seedDataItem.url,
-                seedDataItem.scheme,
-                seedDataItem.bboxs,
-                seedDataItem.zooms,
-                seedDataItem.concurrency,
-                seedDataItem.maxTry,
-                seedDataItem.timeout,
-                seedDataItem.storeMD5,
-                seedDataItem.storeTransparent,
-                seedDataItem.refreshBefore?.time ||
-                  seedDataItem.refreshBefore?.day ||
-                  seedDataItem.refreshBefore?.md5
-              );
-            } else if (seedDataItem.storeType === "pg") {
-              await seedPostgreSQLTiles(
-                id,
-                seedDataItem.metadata,
-                seedDataItem.url,
-                seedDataItem.scheme,
-                seedDataItem.bboxs,
-                seedDataItem.zooms,
-                seedDataItem.concurrency,
-                seedDataItem.maxTry,
-                seedDataItem.timeout,
-                seedDataItem.storeMD5,
-                seedDataItem.storeTransparent,
-                seedDataItem.refreshBefore?.time ||
-                  seedDataItem.refreshBefore?.day ||
-                  seedDataItem.refreshBefore?.md5
+            try {
+              if (seedDataItem.storeType === "xyz") {
+                await seedXYZTiles(
+                  id,
+                  seedDataItem.metadata,
+                  seedDataItem.url,
+                  seedDataItem.scheme,
+                  seedDataItem.bboxs,
+                  seedDataItem.zooms,
+                  seedDataItem.concurrency,
+                  seedDataItem.maxTry,
+                  seedDataItem.timeout,
+                  seedDataItem.storeMD5,
+                  seedDataItem.storeTransparent,
+                  seedDataItem.refreshBefore?.time ||
+                    seedDataItem.refreshBefore?.day ||
+                    seedDataItem.refreshBefore?.md5
+                );
+              } else if (seedDataItem.storeType === "mbtiles") {
+                await seedMBTilesTiles(
+                  id,
+                  seedDataItem.metadata,
+                  seedDataItem.url,
+                  seedDataItem.scheme,
+                  seedDataItem.bboxs,
+                  seedDataItem.zooms,
+                  seedDataItem.concurrency,
+                  seedDataItem.maxTry,
+                  seedDataItem.timeout,
+                  seedDataItem.storeMD5,
+                  seedDataItem.storeTransparent,
+                  seedDataItem.refreshBefore?.time ||
+                    seedDataItem.refreshBefore?.day ||
+                    seedDataItem.refreshBefore?.md5
+                );
+              } else if (seedDataItem.storeType === "pg") {
+                await seedPostgreSQLTiles(
+                  id,
+                  seedDataItem.metadata,
+                  seedDataItem.url,
+                  seedDataItem.scheme,
+                  seedDataItem.bboxs,
+                  seedDataItem.zooms,
+                  seedDataItem.concurrency,
+                  seedDataItem.maxTry,
+                  seedDataItem.timeout,
+                  seedDataItem.storeMD5,
+                  seedDataItem.storeTransparent,
+                  seedDataItem.refreshBefore?.time ||
+                    seedDataItem.refreshBefore?.day ||
+                    seedDataItem.refreshBefore?.md5
+                );
+              }
+            } catch (error) {
+              printLog(
+                "error",
+                `Failed to seed data "${id}": ${error}. Skipping...`
               );
             }
-          } catch (error) {
-            printLog(
-              "error",
-              `Failed to seed data "${id}": ${error}. Skipping...`
-            );
           }
+
+          const doneTime = Date.now();
+
+          printLog(
+            "info",
+            `Completed seed ${ids.length} datas after: ${
+              (doneTime - startTime) / 1000
+            }s!`
+          );
         }
-
-        const doneTime = Date.now();
-
-        printLog(
-          "info",
-          `Completed seed ${ids.length} datas after: ${
-            (doneTime - startTime) / 1000
-          }s!`
-        );
       } catch (error) {
         printLog("error", `Failed to seed datas: ${error}. Exited!`);
       }

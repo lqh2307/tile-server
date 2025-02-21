@@ -744,57 +744,153 @@ export const serve_data = {
   },
 
   add: async () => {
-    await Promise.all(
-      Object.keys(config.datas).map(async (id) => {
-        try {
-          const item = config.datas[id];
-          const dataInfo = {};
+    if (config.datas === undefined) {
+      printLog("info", "No datas in config. Skipping...");
+    } else {
+      const ids = Object.keys(config.datas);
 
-          /* Load data */
-          if (item.mbtiles !== undefined) {
-            dataInfo.sourceType = "mbtiles";
+      printLog("info", `Loading ${ids.length} datas...`);
 
-            if (
-              item.mbtiles.startsWith("https://") === true ||
-              item.mbtiles.startsWith("http://") === true
-            ) {
-              dataInfo.path = `${process.env.DATA_DIR}/mbtiles/${id}/${id}.mbtiles`;
+      await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const item = config.datas[id];
+            const dataInfo = {};
 
-              /* Download MBTiles file if not exist */
-              if ((await isExistFile(dataInfo.path)) === false) {
-                printLog(
-                  "info",
-                  `Downloading MBTiles file "${dataInfo.path}" from "${item.mbtiles}"...`
-                );
+            /* Load data */
+            if (item.mbtiles !== undefined) {
+              dataInfo.sourceType = "mbtiles";
 
-                await downloadMBTilesFile(
-                  item.mbtiles,
+              if (
+                item.mbtiles.startsWith("https://") === true ||
+                item.mbtiles.startsWith("http://") === true
+              ) {
+                dataInfo.path = `${process.env.DATA_DIR}/mbtiles/${id}/${id}.mbtiles`;
+
+                /* Download MBTiles file if not exist */
+                if ((await isExistFile(dataInfo.path)) === false) {
+                  printLog(
+                    "info",
+                    `Downloading MBTiles file "${dataInfo.path}" from "${item.mbtiles}"...`
+                  );
+
+                  await downloadMBTilesFile(
+                    item.mbtiles,
+                    dataInfo.path,
+                    5,
+                    3600000 // 1 hour
+                  );
+                }
+
+                dataInfo.source = await openMBTilesDB(
                   dataInfo.path,
-                  5,
-                  3600000 // 1 hour
+                  sqlite3.OPEN_READONLY,
+                  false
                 );
+
+                dataInfo.tileJSON = await getMBTilesMetadata(dataInfo.source);
+              } else {
+                if (item.cache !== undefined) {
+                  dataInfo.path = `${process.env.DATA_DIR}/caches/mbtiles/${item.mbtiles}/${item.mbtiles}.mbtiles`;
+
+                  const cacheSource = seed.datas?.[item.mbtiles];
+
+                  if (
+                    cacheSource === undefined ||
+                    cacheSource.storeType !== "mbtiles"
+                  ) {
+                    throw new Error(
+                      `Cache mbtiles data "${item.mbtiles}" is invalid`
+                    );
+                  }
+
+                  if (item.cache.forward === true) {
+                    dataInfo.sourceURL = cacheSource.url;
+                    dataInfo.scheme = cacheSource.scheme;
+                    dataInfo.storeCache = item.cache.store;
+                    dataInfo.storeMD5 = cacheSource.storeMD5;
+                    dataInfo.storeTransparent = cacheSource.storeTransparent;
+                  }
+
+                  /* Open MBTiles */
+                  if (
+                    dataInfo.storeCache === true ||
+                    (await isExistFile(dataInfo.path)) === false
+                  ) {
+                    dataInfo.source = await openMBTilesDB(
+                      dataInfo.path,
+                      sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
+                      false
+                    );
+                  } else {
+                    dataInfo.source = await openMBTilesDB(
+                      dataInfo.path,
+                      sqlite3.OPEN_READONLY,
+                      false
+                    );
+                  }
+
+                  /* Get MBTiles metadata */
+                  dataInfo.tileJSON = createMBTilesMetadata({
+                    ...cacheSource.metadata,
+                    cacheBBoxs: cacheSource.bboxs,
+                  });
+                } else {
+                  dataInfo.path = `${process.env.DATA_DIR}/mbtiles/${item.mbtiles}`;
+
+                  /* Open MBTiles */
+                  dataInfo.source = await openMBTilesDB(
+                    dataInfo.path,
+                    sqlite3.OPEN_READONLY,
+                    false
+                  );
+
+                  /* Get MBTiles metadata */
+                  dataInfo.tileJSON = await getMBTilesMetadata(dataInfo.source);
+                }
               }
 
-              dataInfo.source = await openMBTilesDB(
-                dataInfo.path,
-                sqlite3.OPEN_READONLY,
-                false
-              );
+              /* Validate MBTiles */
+              validateMBTiles(dataInfo.tileJSON);
+            } else if (item.pmtiles !== undefined) {
+              dataInfo.sourceType = "pmtiles";
 
-              dataInfo.tileJSON = await getMBTilesMetadata(dataInfo.source);
-            } else {
+              if (
+                item.pmtiles.startsWith("https://") === true ||
+                item.pmtiles.startsWith("http://") === true
+              ) {
+                dataInfo.path = item.pmtiles;
+
+                /* Open PMTiles */
+                dataInfo.source = openPMTiles(dataInfo.path);
+
+                /* Get PMTiles metadata */
+                dataInfo.tileJSON = await getPMTilesMetadata(dataInfo.source);
+              } else {
+                dataInfo.path = `${process.env.DATA_DIR}/pmtiles/${item.pmtiles}`;
+
+                /* Open PMTiles */
+                dataInfo.source = openPMTiles(dataInfo.path);
+
+                /* Get PMTiles metadata */
+                dataInfo.tileJSON = await getPMTilesMetadata(dataInfo.source);
+              }
+
+              validatePMTiles(dataInfo.tileJSON);
+            } else if (item.xyz !== undefined) {
+              dataInfo.sourceType = "xyz";
+
               if (item.cache !== undefined) {
-                dataInfo.path = `${process.env.DATA_DIR}/caches/mbtiles/${item.mbtiles}/${item.mbtiles}.mbtiles`;
+                dataInfo.path = `${process.env.DATA_DIR}/caches/xyzs/${item.xyz}`;
+                const md5FilePath = `${dataInfo.path}/${item.xyz}.sqlite`;
 
-                const cacheSource = seed.datas[item.mbtiles];
+                const cacheSource = seed.datas?.[item.xyz];
 
                 if (
                   cacheSource === undefined ||
-                  cacheSource.storeType !== "mbtiles"
+                  cacheSource.storeType !== "xyz"
                 ) {
-                  throw new Error(
-                    `Cache mbtiles data "${item.mbtiles}" is invalid`
-                  );
+                  throw new Error(`Cache xyz data "${item.xyz}" is invalid`);
                 }
 
                 if (item.cache.forward === true) {
@@ -805,179 +901,96 @@ export const serve_data = {
                   dataInfo.storeTransparent = cacheSource.storeTransparent;
                 }
 
-                /* Open MBTiles */
                 if (
                   dataInfo.storeCache === true ||
-                  (await isExistFile(dataInfo.path)) === false
+                  (await isExistFile(md5FilePath)) === false
                 ) {
-                  dataInfo.source = await openMBTilesDB(
-                    dataInfo.path,
+                  dataInfo.md5Source = await openXYZMD5DB(
+                    md5FilePath,
                     sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
                     false
                   );
                 } else {
-                  dataInfo.source = await openMBTilesDB(
-                    dataInfo.path,
+                  dataInfo.md5Source = await openXYZMD5DB(
+                    md5FilePath,
                     sqlite3.OPEN_READONLY,
                     false
                   );
                 }
 
-                /* Get MBTiles metadata */
-                dataInfo.tileJSON = createMBTilesMetadata({
+                dataInfo.source = dataInfo.path;
+
+                /* Get XYZ metadata */
+                dataInfo.tileJSON = createXYZMetadata({
                   ...cacheSource.metadata,
                   cacheBBoxs: cacheSource.bboxs,
                 });
               } else {
-                dataInfo.path = `${process.env.DATA_DIR}/mbtiles/${item.mbtiles}`;
+                dataInfo.path = `${process.env.DATA_DIR}/xyzs/${item.xyz}`;
 
-                /* Open MBTiles */
-                dataInfo.source = await openMBTilesDB(
-                  dataInfo.path,
-                  sqlite3.OPEN_READONLY,
-                  false
-                );
+                dataInfo.source = dataInfo.path;
 
-                /* Get MBTiles metadata */
-                dataInfo.tileJSON = await getMBTilesMetadata(dataInfo.source);
-              }
-            }
-
-            /* Validate MBTiles */
-            validateMBTiles(dataInfo.tileJSON);
-          } else if (item.pmtiles !== undefined) {
-            dataInfo.sourceType = "pmtiles";
-
-            if (
-              item.pmtiles.startsWith("https://") === true ||
-              item.pmtiles.startsWith("http://") === true
-            ) {
-              dataInfo.path = item.pmtiles;
-
-              /* Open PMTiles */
-              dataInfo.source = openPMTiles(dataInfo.path);
-
-              /* Get PMTiles metadata */
-              dataInfo.tileJSON = await getPMTilesMetadata(dataInfo.source);
-            } else {
-              dataInfo.path = `${process.env.DATA_DIR}/pmtiles/${item.pmtiles}`;
-
-              /* Open PMTiles */
-              dataInfo.source = openPMTiles(dataInfo.path);
-
-              /* Get PMTiles metadata */
-              dataInfo.tileJSON = await getPMTilesMetadata(dataInfo.source);
-            }
-
-            validatePMTiles(dataInfo.tileJSON);
-          } else if (item.xyz !== undefined) {
-            dataInfo.sourceType = "xyz";
-
-            if (item.cache !== undefined) {
-              dataInfo.path = `${process.env.DATA_DIR}/caches/xyzs/${item.xyz}`;
-              const md5FilePath = `${dataInfo.path}/${item.xyz}.sqlite`;
-
-              const cacheSource = seed.datas[item.xyz];
-
-              if (
-                cacheSource === undefined ||
-                cacheSource.storeType !== "xyz"
-              ) {
-                throw new Error(`Cache xyz data "${item.xyz}" is invalid`);
+                /* Get XYZ metadata */
+                dataInfo.tileJSON = await getXYZMetadata(dataInfo.source);
               }
 
-              if (item.cache.forward === true) {
-                dataInfo.sourceURL = cacheSource.url;
-                dataInfo.scheme = cacheSource.scheme;
-                dataInfo.storeCache = item.cache.store;
-                dataInfo.storeMD5 = cacheSource.storeMD5;
-                dataInfo.storeTransparent = cacheSource.storeTransparent;
-              }
+              validateXYZ(dataInfo.tileJSON);
+            } else if (item.pg !== undefined) {
+              dataInfo.sourceType = "pg";
 
-              if (
-                dataInfo.storeCache === true ||
-                (await isExistFile(md5FilePath)) === false
-              ) {
-                dataInfo.md5Source = await openXYZMD5DB(
-                  md5FilePath,
-                  sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE,
-                  false
-                );
+              if (item.cache !== undefined) {
+                dataInfo.path = `${process.env.POSTGRESQL_BASE_URI}/${id}`;
+
+                const cacheSource = seed.datas?.[item.pg];
+
+                if (
+                  cacheSource === undefined ||
+                  cacheSource.storeType !== "pg"
+                ) {
+                  throw new Error(`Cache pg data "${item.pg}" is invalid`);
+                }
+
+                if (item.cache.forward === true) {
+                  dataInfo.sourceURL = cacheSource.url;
+                  dataInfo.scheme = cacheSource.scheme;
+                  dataInfo.storeCache = item.cache.store;
+                  dataInfo.storeMD5 = cacheSource.storeMD5;
+                  dataInfo.storeTransparent = cacheSource.storeTransparent;
+                }
+
+                /* Open PostgreSQL */
+                dataInfo.source = await openPostgreSQLDB(dataInfo.path, true);
+
+                /* Get PostgreSQL metadata */
+                dataInfo.tileJSON = createPostgreSQLMetadata({
+                  ...cacheSource.metadata,
+                  cacheBBoxs: cacheSource.bboxs,
+                });
               } else {
-                dataInfo.md5Source = await openXYZMD5DB(
-                  md5FilePath,
-                  sqlite3.OPEN_READONLY,
-                  false
+                dataInfo.path = `${process.env.POSTGRESQL_BASE_URI}/${id}`;
+
+                /* Open PostgreSQL */
+                dataInfo.source = await openPostgreSQLDB(dataInfo.path, true);
+
+                /* Get PostgreSQL metadata */
+                dataInfo.tileJSON = await getPostgreSQLMetadata(
+                  dataInfo.source
                 );
               }
 
-              dataInfo.source = dataInfo.path;
-
-              /* Get XYZ metadata */
-              dataInfo.tileJSON = createXYZMetadata({
-                ...cacheSource.metadata,
-                cacheBBoxs: cacheSource.bboxs,
-              });
-            } else {
-              dataInfo.path = `${process.env.DATA_DIR}/xyzs/${item.xyz}`;
-
-              dataInfo.source = dataInfo.path;
-
-              /* Get XYZ metadata */
-              dataInfo.tileJSON = await getXYZMetadata(dataInfo.source);
+              validatePostgreSQL(dataInfo.tileJSON);
             }
 
-            validateXYZ(dataInfo.tileJSON);
-          } else if (item.pg !== undefined) {
-            dataInfo.sourceType = "pg";
-
-            if (item.cache !== undefined) {
-              dataInfo.path = `${process.env.POSTGRESQL_BASE_URI}/${id}`;
-
-              const cacheSource = seed.datas[item.pg];
-
-              if (cacheSource === undefined || cacheSource.storeType !== "pg") {
-                throw new Error(`Cache pg data "${item.pg}" is invalid`);
-              }
-
-              if (item.cache.forward === true) {
-                dataInfo.sourceURL = cacheSource.url;
-                dataInfo.scheme = cacheSource.scheme;
-                dataInfo.storeCache = item.cache.store;
-                dataInfo.storeMD5 = cacheSource.storeMD5;
-                dataInfo.storeTransparent = cacheSource.storeTransparent;
-              }
-
-              /* Open PostgreSQL */
-              dataInfo.source = await openPostgreSQLDB(dataInfo.path, true);
-
-              /* Get PostgreSQL metadata */
-              dataInfo.tileJSON = createPostgreSQLMetadata({
-                ...cacheSource.metadata,
-                cacheBBoxs: cacheSource.bboxs,
-              });
-            } else {
-              dataInfo.path = `${process.env.POSTGRESQL_BASE_URI}/${id}`;
-
-              /* Open PostgreSQL */
-              dataInfo.source = await openPostgreSQLDB(dataInfo.path, true);
-
-              /* Get PostgreSQL metadata */
-              dataInfo.tileJSON = await getPostgreSQLMetadata(dataInfo.source);
-            }
-
-            validatePostgreSQL(dataInfo.tileJSON);
+            /* Add to repo */
+            config.repo.datas[id] = dataInfo;
+          } catch (error) {
+            printLog(
+              "error",
+              `Failed to load data "${id}": ${error}. Skipping...`
+            );
           }
-
-          /* Add to repo */
-          config.repo.datas[id] = dataInfo;
-        } catch (error) {
-          printLog(
-            "error",
-            `Failed to load data "${id}": ${error}. Skipping...`
-          );
-        }
-      })
-    );
+        })
+      );
+    }
   },
 };

@@ -503,93 +503,115 @@ export const serve_geojson = {
   },
 
   add: async () => {
-    await Promise.all(
-      Object.keys(config.geojsons).map(async (id) => {
-        try {
-          const dataInfo = {};
+    if (config.geojsons === undefined) {
+      printLog("info", "No GeoJSON groups in config. Skipping...");
+    } else {
+      const ids = Object.keys(config.geojsons);
 
-          /* Get GeoJSON infos */
-          await Promise.all(
-            Object.keys(config.geojsons[id]).map(async (layer) => {
-              const item = config.geojsons[id][layer];
+      printLog("info", `Loading ${ids.length} GeoJSON groups...`);
 
-              /* Get GeoJSON path */
-              const info = {};
+      await Promise.all(
+        ids.map(async (id) => {
+          try {
+            if (config.geojsons[id] === undefined) {
+              printLog(
+                "info",
+                `No geojson group in GeoJSON groups id "${id}". Skipping...`
+              );
+            } else {
+              const layers = Object.keys(config.geojsons[id]);
 
-              if (
-                item.geojson.startsWith("https://") === true ||
-                item.geojson.startsWith("http://") === true
-              ) {
-                info.path = `${process.env.DATA_DIR}/geojsons/${id}/geojson.geojson`;
+              printLog(
+                "info",
+                `Loading ${layers.length} GeoJSON in GeoJSON groups id "${id}"...`
+              );
 
-                /* Download GeoJSON file */
-                if ((await isExistFile(info.path)) === false) {
-                  printLog(
-                    "info",
-                    `Downloading GeoJSON file "${info.path}" from "${item.geojson}"...`
-                  );
+              const dataInfo = {};
 
-                  await downloadGeoJSONFile(
-                    item.geojson,
-                    info.path,
-                    5,
-                    300000 // 5 mins
-                  );
-                }
-              } else {
-                if (item.cache !== undefined) {
-                  info.path = `${process.env.DATA_DIR}/caches/geojsons/${item.geojson}/${item.geojson}.geojson`;
+              /* Get GeoJSON infos */
+              await Promise.all(
+                layers.map(async (layer) => {
+                  const item = config.geojsons[id][layer];
 
-                  const cacheSource = seed.geojsons[item.geojson];
+                  /* Get GeoJSON path */
+                  const info = {};
 
-                  if (cacheSource === undefined) {
-                    throw new Error(
-                      `Cache GeoJSON "${item.geojson}" is invalid`
-                    );
+                  if (
+                    item.geojson.startsWith("https://") === true ||
+                    item.geojson.startsWith("http://") === true
+                  ) {
+                    info.path = `${process.env.DATA_DIR}/geojsons/${id}/geojson.geojson`;
+
+                    /* Download GeoJSON file */
+                    if ((await isExistFile(info.path)) === false) {
+                      printLog(
+                        "info",
+                        `Downloading GeoJSON file "${info.path}" from "${item.geojson}"...`
+                      );
+
+                      await downloadGeoJSONFile(
+                        item.geojson,
+                        info.path,
+                        5,
+                        300000 // 5 mins
+                      );
+                    }
+                  } else {
+                    if (item.cache !== undefined) {
+                      info.path = `${process.env.DATA_DIR}/caches/geojsons/${item.geojson}/${item.geojson}.geojson`;
+
+                      const cacheSource = seed.geojsons?.[item.geojson];
+
+                      if (cacheSource === undefined) {
+                        throw new Error(
+                          `Cache GeoJSON "${item.geojson}" is invalid`
+                        );
+                      }
+
+                      if (item.cache.forward === true) {
+                        info.sourceURL = cacheSource.url;
+                        info.storeCache = item.cache.store;
+                      }
+                    } else {
+                      info.path = `${process.env.DATA_DIR}/geojsons/${item.geojson}`;
+                    }
                   }
 
-                  if (item.cache.forward === true) {
-                    info.sourceURL = cacheSource.url;
-                    info.storeCache = item.cache.store;
+                  /* Load GeoJSON */
+                  try {
+                    /* Open GeoJSON */
+                    const geoJSON = await getGeoJSON(info.path, true);
+
+                    /* Validate and Get GeoJSON info */
+                    info.geometryTypes = validateAndGetGeometryTypes(geoJSON);
+
+                    dataInfo[layer] = info;
+                  } catch (error) {
+                    if (
+                      item.cache !== undefined &&
+                      error.message === "GeoJSON does not exist"
+                    ) {
+                      info.geometryTypes = ["polygon", "line", "circle"];
+
+                      dataInfo[layer] = info;
+                    } else {
+                      throw error;
+                    }
                   }
-                } else {
-                  info.path = `${process.env.DATA_DIR}/geojsons/${item.geojson}`;
-                }
-              }
+                })
+              );
 
-              /* Load GeoJSON */
-              try {
-                /* Open GeoJSON */
-                const geoJSON = await getGeoJSON(info.path, true);
-
-                /* Validate and Get GeoJSON info */
-                info.geometryTypes = validateAndGetGeometryTypes(geoJSON);
-
-                dataInfo[layer] = info;
-              } catch (error) {
-                if (
-                  item.cache !== undefined &&
-                  error.message === "GeoJSON does not exist"
-                ) {
-                  info.geometryTypes = ["polygon", "line", "circle"];
-
-                  dataInfo[layer] = info;
-                } else {
-                  throw error;
-                }
-              }
-            })
-          );
-
-          /* Add to repo */
-          config.repo.geojsons[id] = dataInfo;
-        } catch (error) {
-          printLog(
-            "error",
-            `Failed to load GeoJSON "${id}": ${error}. Skipping...`
-          );
-        }
-      })
-    );
+              /* Add to repo */
+              config.repo.geojsons[id] = dataInfo;
+            }
+          } catch (error) {
+            printLog(
+              "error",
+              `Failed to load GeoJSON group "${id}": ${error}. Skipping...`
+            );
+          }
+        })
+      );
+    }
   },
 };

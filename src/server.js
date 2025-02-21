@@ -94,18 +94,17 @@ export async function startServer() {
     /* Start HTTP server */
     printLog("info", "Starting HTTP server...");
 
+    const loggerFormat = `[PID = ${process.pid}] ${
+      config.options?.loggerFormat ||
+      ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent"
+    }`;
+    const listenPort = config.options?.listenPort || 8080;
+
     express()
       .disable("x-powered-by")
       .enable("trust proxy")
       .use(cors())
-      .use(
-        morgan(
-          `[PID = ${process.pid}] ${
-            config.options.loggerFormat ||
-            ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent"
-          }`
-        )
-      )
+      .use(morgan(loggerFormat))
       .use(express.json())
       .use("/", serve_common.init())
       .use("/datas", serve_data.init())
@@ -114,13 +113,8 @@ export async function startServer() {
       .use("/sprites", serve_sprite.init())
       .use("/styles", serve_style.init())
       .use("/tasks", serve_task.init())
-      .listen(config.options.listenPort || 8080, () => {
-        printLog(
-          "info",
-          `HTTP server is listening on port "${
-            config.options.listenPort || 8080
-          }"...`
-        );
+      .listen(listenPort, () => {
+        printLog("info", `HTTP server is listening on port "${listenPort}"...`);
       })
       .on("error", (error) => {
         printLog("error", `HTTP server is stopped by: ${error}`);

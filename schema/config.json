@@ -152,7 +152,5 @@
         "type": "boolean"
       }
     }
-  },
-  "required": ["options", "styles", "geojsons", "datas", "sprites", "fonts"],
-  "additionalProperties": false
+  }
 }

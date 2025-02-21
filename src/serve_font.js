@@ -171,23 +171,31 @@ export const serve_font = {
   },
 
   add: async () => {
-    await Promise.all(
-      Object.keys(config.fonts).map(async (id) => {
-        try {
-          /* Validate font */
-          const dirPath = `${process.env.DATA_DIR}/fonts/${id}`;
+    if (config.fonts === undefined) {
+      printLog("info", "No fonts in config. Skipping...");
+    } else {
+      const ids = Object.keys(config.fonts);
 
-          await validateFont(dirPath);
+      printLog("info", `Loading ${ids.length} fonts...`);
 
-          /* Add to repo */
-          config.repo.fonts[id] = true;
-        } catch (error) {
-          printLog(
-            "error",
-            `Failed to load font "${id}": ${error}. Skipping...`
-          );
-        }
-      })
-    );
+      await Promise.all(
+        ids.map(async (id) => {
+          try {
+            /* Validate font */
+            const dirPath = `${process.env.DATA_DIR}/fonts/${id}`;
+
+            await validateFont(dirPath);
+
+            /* Add to repo */
+            config.repo.fonts[id] = true;
+          } catch (error) {
+            printLog(
+              "error",
+              `Failed to load font "${id}": ${error}. Skipping...`
+            );
+          }
+        })
+      );
+    }
   },
 };

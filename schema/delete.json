@@ -41,7 +41,5 @@
       },
       "minItems": 0
     }
-  },
-  "required": ["styles", "geojsons", "datas", "sprites", "fonts"],
-  "additionalProperties": false
+  }
 }

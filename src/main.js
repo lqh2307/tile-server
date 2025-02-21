@@ -43,16 +43,15 @@ async function startClusterServer(opts) {
 
     const config = await readConfigFile(true);
 
-    const numOfProcess = config.options.process || 1; // Number of process
-    const numOfThread = config.options.thread || os.cpus().length; // Number of thread
+    const numOfProcess = config.options?.process || 1; // Number of process
+    const numOfThread = config.options?.thread || os.cpus().length; // Number of thread
 
     // Store ENVs
     process.env.UV_THREADPOOL_SIZE = numOfThread; // For libuv
-    process.env.POSTGRESQL_BASE_URI = config.options.postgreSQLBaseURI; // PostgreSQL base URI
-    process.env.SERVE_FRONT_PAGE = config.options.serveFrontPage; // Serve front page
-    process.env.SERVE_SWAGGER = config.options.serveSwagger; // Serve swagger
+    process.env.POSTGRESQL_BASE_URI = config.options?.postgreSQLBaseURI; // PostgreSQL base URI
+    process.env.SERVE_FRONT_PAGE = config.options?.serveFrontPage; // Serve front page
+    process.env.SERVE_SWAGGER = config.options?.serveSwagger; // Serve swagger
     process.env.GDAL_NUM_THREADS = "ALL_CPUS"; // For gdal
-    process.env.FALLBACK_FONT = "Open Sans Regular"; // Fallback font
 
     /* Remove old cache locks */
     printLog(
@@ -85,7 +84,7 @@ async function startClusterServer(opts) {
     }
 
     /* Setup cron */
-    if (config.options.taskSchedule !== undefined) {
+    if (config.options?.taskSchedule !== undefined) {
       printLog(
         "info",
         `Schedule run seed and clean up tasks at: "${config.options.taskSchedule}"`
