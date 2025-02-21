@@ -802,9 +802,7 @@
         event.preventDefault();
 
         try {
-          const options = JSON.parse(document.getElementById("jsonOptionsInput").value.trim());
-
-          fetch(`${baseURL}/styles/${styleID}/export/style.json?options=${encodeURIComponent(JSON.stringify(options))}`, {
+          fetch(`${baseURL}/styles/${styleID}/export/style.json?options=${document.getElementById("jsonOptionsInput").value}`, {
             method: "GET",
           })
             .then((response) => {
