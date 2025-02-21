@@ -9,7 +9,9 @@ import express from "express";
 import {
   isLocalTileURL,
   getRequestHost,
+  getJSONSchema,
   calculateMD5,
+  validateJSON,
   isExistFile,
 } from "./utils.js";
 import {
@@ -315,6 +317,14 @@ function renderStyleHandler() {
 
       /* Render style */
       const parsedOptions = JSON.parse(req.query.options);
+
+      try {
+        validateJSON(await getJSONSchema("render"), parsedOptions);
+      } catch (error) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .send(`Options is invalid: ${error}`);
+      }
 
       setTimeout(() => {
         item.rendered.export = true;
