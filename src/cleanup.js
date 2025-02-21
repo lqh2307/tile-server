@@ -15,6 +15,7 @@ import {
 import {
   getMBTilesTileCreated,
   removeMBTilesTile,
+  compactMBTiles,
   closeMBTilesDB,
   openMBTilesDB,
 } from "./tile_mbtiles.js";
@@ -196,6 +197,9 @@ async function cleanUpMBTilesTiles(
   while (activeTasks > 0) {
     await delay(50);
   }
+
+  /* Compact MBTiles */
+  await compactMBTiles(source);
 
   /* Close MBTiles SQLite database */
   if (source !== undefined) {

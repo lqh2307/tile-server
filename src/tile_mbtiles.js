@@ -591,6 +591,15 @@ export function createMBTilesMetadata(metadata) {
 }
 
 /**
+ * Compact MBTiles
+ * @param {sqlite3.Database} source SQLite database instance
+ * @returns {Promise<void>}
+ */
+export async function compactMBTiles(source) {
+  await runSQL(source, "VACUUM;");
+}
+
+/**
  * Close MBTiles
  * @param {sqlite3.Database} source SQLite database instance
  * @returns {Promise<void>}
