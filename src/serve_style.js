@@ -308,85 +308,102 @@ function renderStyleHandler() {
           .send("Rendered does not exist");
       }
 
-      /* Check export is running? */
-      if (item.rendered.export === true) {
-        printLog("warning", "A render is already running. Skipping render...");
+      if (req.query.cancel === "true") {
+        /* Check export is not running? */
+        if (item.rendered.export !== true) {
+          printLog(
+            "warning",
+            "No render is currently running. Skipping cancel render..."
+          );
+
+          return res.status(StatusCodes.OK).send("OK");
+        }
+
+        ///////////////// Doing /////////////////
+      } else {
+        /* Check export is running? */
+        if (item.rendered.export === true) {
+          printLog(
+            "warning",
+            "A render is already running. Skipping render..."
+          );
+
+          return res.status(StatusCodes.OK).send("OK");
+        }
+
+        /* Render style */
+        const parsedOptions = JSON.parse(req.query.options);
+
+        try {
+          validateJSON(await getJSONSchema("render"), parsedOptions);
+        } catch (error) {
+          return res
+            .status(StatusCodes.BAD_REQUEST)
+            .send(`Options is invalid: ${error}`);
+        }
+
+        setTimeout(() => {
+          item.rendered.export = true;
+
+          if (parsedOptions.storeType === "xyz") {
+            renderXYZTiles(
+              id,
+              parsedOptions.metadata,
+              parsedOptions.tileScale,
+              parsedOptions.tileSize,
+              parsedOptions.bbox,
+              parsedOptions.maxzoom,
+              parsedOptions.concurrency,
+              parsedOptions.storeMD5,
+              parsedOptions.storeTransparent,
+              parsedOptions.createOverview,
+              parsedOptions.refreshBefore?.time ||
+                parsedOptions.refreshBefore?.day ||
+                parsedOptions.refreshBefore?.md5
+            ).finally(() => {
+              item.rendered.export = false;
+            });
+          } else if (parsedOptions.storeType === "mbtiles") {
+            renderMBTilesTiles(
+              id,
+              parsedOptions.metadata,
+              parsedOptions.tileScale,
+              parsedOptions.tileSize,
+              parsedOptions.bbox,
+              parsedOptions.maxzoom,
+              parsedOptions.concurrency,
+              parsedOptions.storeMD5,
+              parsedOptions.storeTransparent,
+              parsedOptions.createOverview,
+              parsedOptions.refreshBefore?.time ||
+                parsedOptions.refreshBefore?.day ||
+                parsedOptions.refreshBefore?.md5
+            ).finally(() => {
+              item.rendered.export = false;
+            });
+          } else if (parsedOptions.storeType === "pg") {
+            renderPostgreSQLTiles(
+              id,
+              parsedOptions.metadata,
+              parsedOptions.tileScale,
+              parsedOptions.tileSize,
+              parsedOptions.bbox,
+              parsedOptions.maxzoom,
+              parsedOptions.concurrency,
+              parsedOptions.storeMD5,
+              parsedOptions.storeTransparent,
+              parsedOptions.createOverview,
+              parsedOptions.refreshBefore?.time ||
+                parsedOptions.refreshBefore?.day ||
+                parsedOptions.refreshBefore?.md5
+            ).finally(() => {
+              item.rendered.export = false;
+            });
+          }
+        }, 0);
 
         return res.status(StatusCodes.OK).send("OK");
       }
-
-      /* Render style */
-      const parsedOptions = JSON.parse(req.query.options);
-
-      try {
-        validateJSON(await getJSONSchema("render"), parsedOptions);
-      } catch (error) {
-        return res
-          .status(StatusCodes.BAD_REQUEST)
-          .send(`Options is invalid: ${error}`);
-      }
-
-      setTimeout(() => {
-        item.rendered.export = true;
-
-        if (parsedOptions.storeType === "xyz") {
-          renderXYZTiles(
-            id,
-            parsedOptions.metadata,
-            parsedOptions.tileScale,
-            parsedOptions.tileSize,
-            parsedOptions.bbox,
-            parsedOptions.maxzoom,
-            parsedOptions.concurrency,
-            parsedOptions.storeMD5,
-            parsedOptions.storeTransparent,
-            parsedOptions.createOverview,
-            parsedOptions.refreshBefore?.time ||
-              parsedOptions.refreshBefore?.day ||
-              parsedOptions.refreshBefore?.md5
-          ).finally(() => {
-            item.rendered.export = false;
-          });
-        } else if (parsedOptions.storeType === "mbtiles") {
-          renderMBTilesTiles(
-            id,
-            parsedOptions.metadata,
-            parsedOptions.tileScale,
-            parsedOptions.tileSize,
-            parsedOptions.bbox,
-            parsedOptions.maxzoom,
-            parsedOptions.concurrency,
-            parsedOptions.storeMD5,
-            parsedOptions.storeTransparent,
-            parsedOptions.createOverview,
-            parsedOptions.refreshBefore?.time ||
-              parsedOptions.refreshBefore?.day ||
-              parsedOptions.refreshBefore?.md5
-          ).finally(() => {
-            item.rendered.export = false;
-          });
-        } else if (parsedOptions.storeType === "pg") {
-          renderPostgreSQLTiles(
-            id,
-            parsedOptions.metadata,
-            parsedOptions.tileScale,
-            parsedOptions.tileSize,
-            parsedOptions.bbox,
-            parsedOptions.maxzoom,
-            parsedOptions.concurrency,
-            parsedOptions.storeMD5,
-            parsedOptions.storeTransparent,
-            parsedOptions.createOverview,
-            parsedOptions.refreshBefore?.time ||
-              parsedOptions.refreshBefore?.day ||
-              parsedOptions.refreshBefore?.md5
-          ).finally(() => {
-            item.rendered.export = false;
-          });
-        }
-      }, 0);
-
-      return res.status(StatusCodes.OK).send("OK");
     } catch (error) {
       printLog("error", `Failed to render style "${id}": ${error}`);
 
@@ -936,6 +953,12 @@ export const serve_style = {
        *           type: object
        *         required: false
        *         description: Style render options
+       *       - in: query
+       *         name: cancel
+       *         schema:
+       *           type: boolean
+       *         required: false
+       *         description: Cancel render
        *     responses:
        *       200:
        *         description: Style render is started
