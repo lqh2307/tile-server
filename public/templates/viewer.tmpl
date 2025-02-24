@@ -39,8 +39,6 @@
     const id = "{{id}}";
 
     if (location.search.indexOf("vector") >= 0) {
-      maplibregl.setRTLTextPlugin(`${baseURL}/mapbox-gl-rtl-text.js`);
-
       const map = new maplibregl.Map({
         container: "map",
         style: `${baseURL}/styles/${id}/style.json`,
