@@ -566,6 +566,8 @@ export async function updatePostgreSQLMetadata(source, metadataAdds, timeout) {
   await Promise.all(
     Object.entries({
       ...metadataAdds,
+      center: metadataAdds.center.join(","),
+      bounds: metadataAdds.bounds.join(","),
       scheme: "xyz",
     }).map(([name, value]) =>
       source.query({

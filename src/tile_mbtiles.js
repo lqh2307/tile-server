@@ -687,6 +687,8 @@ export async function updateMBTilesMetadata(source, metadataAdds, timeout) {
       await Promise.all(
         Object.entries({
           ...metadataAdds,
+          center: metadataAdds.center.join(","),
+          bounds: metadataAdds.bounds.join(","),
           scheme: "tms",
         }).map(([name, value]) =>
           runSQL(
