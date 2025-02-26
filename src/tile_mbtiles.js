@@ -702,7 +702,7 @@ export async function updateMBTilesMetadata(source, metadataAdds, timeout) {
             DO UPDATE SET value = excluded.value;
             `,
             name,
-            JSON.stringify(value)
+            typeof value === "object" ? JSON.stringify(value) : value
           )
         )
       );

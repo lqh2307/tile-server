@@ -579,7 +579,10 @@ export async function updatePostgreSQLMetadata(source, metadataAdds, timeout) {
         ON CONFLICT (name)
         DO UPDATE SET value = excluded.value;
         `,
-        values: [name, JSON.stringify(value)],
+        values: [
+          name,
+          typeof value === "object" ? JSON.stringify(value) : value,
+        ],
         statement_timeout: timeout,
       })
     )
