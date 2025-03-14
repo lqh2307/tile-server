@@ -143,13 +143,39 @@
     "sprites": {
       "type": "object",
       "additionalProperties": {
-        "type": "boolean"
+        "type": "object",
+        "properties": {
+          "cache": {
+            "type": "object",
+            "properties": {
+              "forward": {
+                "type": "boolean"
+              },
+              "store": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
       }
     },
     "fonts": {
       "type": "object",
       "additionalProperties": {
-        "type": "boolean"
+        "type": "object",
+        "properties": {
+          "cache": {
+            "type": "object",
+            "properties": {
+              "forward": {
+                "type": "boolean"
+              },
+              "store": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
       }
     }
   }

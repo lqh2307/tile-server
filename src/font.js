@@ -1,9 +1,9 @@
 "use strict";
 
+import { getDataFromURL, findFiles, delay, retry } from "./utils.js";
 import fsPromise from "node:fs/promises";
 import protobuf from "protocol-buffers";
 import { printLog } from "./logger.js";
-import { findFiles } from "./utils.js";
 import { config } from "./config.js";
 import fs from "node:fs";
 
@@ -113,4 +113,177 @@ export async function getFontSize(pbfDirPath) {
   }
 
   return size;
+}
+
+/**
+ * Create font file with lock
+ * @param {string} filePath File path to store font file
+ * @param {Buffer} data Font buffer
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<void>}
+ */
+async function createFontFile(filePath, data, timeout) {
+  const startTime = Date.now();
+
+  const lockFilePath = `${filePath}.lock`;
+  let lockFileHandle;
+
+  while (Date.now() - startTime <= timeout) {
+    try {
+      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
+
+      const tempFilePath = `${filePath}.tmp`;
+
+      try {
+        await fsPromise.mkdir(path.dirname(filePath), {
+          recursive: true,
+        });
+
+        await fsPromise.writeFile(tempFilePath, data);
+
+        await fsPromise.rename(tempFilePath, filePath);
+      } catch (error) {
+        await fsPromise.rm(tempFilePath, {
+          force: true,
+        });
+
+        throw error;
+      }
+
+      await lockFileHandle.close();
+
+      await fsPromise.rm(lockFilePath, {
+        force: true,
+      });
+
+      return;
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        await fsPromise.mkdir(path.dirname(filePath), {
+          recursive: true,
+        });
+
+        continue;
+      } else if (error.code === "EEXIST") {
+        await delay(50);
+      } else {
+        if (lockFileHandle !== undefined) {
+          await lockFileHandle.close();
+
+          await fsPromise.rm(lockFilePath, {
+            force: true,
+          });
+        }
+
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(`Timeout to access lock file`);
+}
+
+/**
+ * Remove font file with lock
+ * @param {string} filePath File path to remove font file
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<void>}
+ */
+async function removeFontFile(filePath, timeout) {
+  const startTime = Date.now();
+
+  const lockFilePath = `${filePath}.lock`;
+  let lockFileHandle;
+
+  while (Date.now() - startTime <= timeout) {
+    try {
+      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
+
+      await fsPromise.rm(filePath, {
+        force: true,
+      });
+
+      await lockFileHandle.close();
+
+      await fsPromise.rm(lockFilePath, {
+        force: true,
+      });
+
+      return;
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        return;
+      } else if (error.code === "EEXIST") {
+        await delay(50);
+      } else {
+        if (lockFileHandle !== undefined) {
+          await lockFileHandle.close();
+
+          await fsPromise.rm(lockFilePath, {
+            force: true,
+          });
+        }
+
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(`Timeout to access lock file`);
+}
+
+/**
+ * Cache font file
+ * @param {string} sourcePath Font folder path
+ * @param {string} fontStack Fontstack
+ * @returns {Promise<void>}
+ */
+export async function cacheFontFile(sourcePath, fontStack) {
+  await createFontFile(
+    `${sourcePath}/${fontStack}.pbf`,
+    data,
+    300000 // 5 mins
+  );
+}
+
+/**
+ * Download font file
+ * @param {string} url The URL to download the file from
+ * @param {string} id Font ID
+ * @param {string} fontStack Fontstack
+ * @param {number} maxTry Number of retry attempts on failure
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<void>}
+ */
+export async function downloadFontFile(url, id, fontStack, maxTry, timeout) {
+  await retry(async () => {
+    try {
+      // Get data from URL
+      const response = await getDataFromURL(url, timeout, "arraybuffer");
+
+      // Store data to file
+      await cacheFontFile(
+        `${process.env.DATA_DIR}/caches/fonts/${id}`,
+        fontStack
+      );
+    } catch (error) {
+      printLog(
+        "error",
+        `Failed to download font stack "${fontStack}" from "${url}": ${error}`
+      );
+
+      if (error.statusCode !== undefined) {
+        if (
+          error.statusCode === StatusCodes.NO_CONTENT ||
+          error.statusCode === StatusCodes.NOT_FOUND
+        ) {
+          return;
+        } else {
+          throw error;
+        }
+      } else {
+        throw error;
+      }
+    }
+  }, maxTry);
 }
