@@ -16,9 +16,13 @@ function startTaskHandler() {
         () =>
           process.send({
             action: "startTask",
+            cleanUpSprites: req.query.cleanUpSprites === "true",
+            cleanUpFonts: req.query.cleanUpFonts === "true",
             cleanUpStyles: req.query.cleanUpStyles === "true",
             cleanUpGeoJSONs: req.query.cleanUpGeoJSONs === "true",
             cleanUpDatas: req.query.cleanUpDatas === "true",
+            seedSprites: req.query.seedSprites === "true",
+            seedFonts: req.query.seedFonts === "true",
             seedStyles: req.query.seedStyles === "true",
             seedGeoJSONs: req.query.seedGeoJSONs === "true",
             seedDatas: req.query.seedDatas === "true",
@@ -80,6 +84,18 @@ export const serve_task = {
      *     summary: Start task
      *     parameters:
      *       - in: query
+     *         name: cleanUpSprites
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Run clean up sprites
+     *       - in: query
+     *         name: cleanUpFonts
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Run clean up fonts
+     *       - in: query
      *         name: cleanUpStyles
      *         schema:
      *           type: boolean
@@ -97,6 +113,18 @@ export const serve_task = {
      *           type: boolean
      *         required: false
      *         description: Run clean up datas
+     *       - in: query
+     *         name: seedSprites
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Run seed sprites
+     *       - in: query
+     *         name: seedFonts
+     *         schema:
+     *           type: boolean
+     *         required: false
+     *         description: Run seed fonts
      *       - in: query
      *         name: seedStyles
      *         schema:

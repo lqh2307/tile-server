@@ -98,9 +98,13 @@ async function startClusterServer(opts) {
 
         startTaskInWorker({
           restart: true,
+          cleanUpSprites: true,
+          cleanUpFonts: true,
           cleanUpStyles: true,
           cleanUpGeoJSONs: true,
           cleanUpDatas: true,
+          seedSprites: true,
+          seedFonts: true,
           seedStyles: true,
           seedGeoJSONs: true,
           seedDatas: true,
@@ -152,9 +156,13 @@ async function startClusterServer(opts) {
 
             startTaskInWorker({
               restart: message.restart,
+              cleanUpSprites: message.cleanUpSprites,
+              cleanUpFonts: message.cleanUpFonts,
               cleanUpStyles: message.cleanUpStyles,
               cleanUpGeoJSONs: message.cleanUpGeoJSONs,
               cleanUpDatas: message.cleanUpDatas,
+              seedSprites: message.seedSprites,
+              seedFonts: message.seedFonts,
               seedStyles: message.seedStyles,
               seedGeoJSONs: message.seedGeoJSONs,
               seedDatas: message.seedDatas,

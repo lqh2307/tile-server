@@ -7,7 +7,9 @@ import {
   cleanUpXYZTiles,
   readCleanUpFile,
   cleanUpGeoJSON,
+  cleanUpSprite,
   cleanUpStyle,
+  cleanUpFont,
 } from "./cleanup.js";
 import {
   seedPostgreSQLTiles,
@@ -15,7 +17,9 @@ import {
   readSeedFile,
   seedXYZTiles,
   seedGeoJSON,
+  seedSprite,
   seedStyle,
+  seedFont,
 } from "./seed.js";
 
 /**
@@ -25,9 +29,13 @@ import {
  */
 export async function runTasks(opts) {
   if (
+    opts.cleanUpSprites === true ||
+    opts.cleanUpFonts === true ||
     opts.cleanUpStyles === true ||
     opts.cleanUpGeoJSONs === true ||
     opts.cleanUpDatas === true ||
+    opts.seedSprites === true ||
+    opts.seedFonts === true ||
     opts.seedStyles === true ||
     opts.seedGeoJSONs === true ||
     opts.seedDatas === true
@@ -42,6 +50,104 @@ export async function runTasks(opts) {
       readCleanUpFile(true),
       readSeedFile(true),
     ]);
+
+    /* Clean up sprites */
+    if (opts.cleanUpSprites === true) {
+      try {
+        if (cleanUpData.sprites === undefined) {
+          printLog("info", "No sprites in cleanup. Skipping...");
+        } else {
+          const ids = Object.keys(cleanUpData.sprites);
+
+          printLog("info", `Starting clean up ${ids.length} sprites...`);
+
+          const startTime = Date.now();
+
+          for (const id of ids) {
+            const cleanUpSpriteItem = cleanUpData.sprites[id];
+
+            if (cleanUpSpriteItem.skip === true) {
+              printLog("info", `Skipping clean up sprite "${id}"...`);
+
+              continue;
+            }
+
+            try {
+              await cleanUpSprite(
+                id,
+                cleanUpSpriteItem.refreshBefore?.time ||
+                  cleanUpSpriteItem.refreshBefore?.day
+              );
+            } catch (error) {
+              printLog(
+                "error",
+                `Failed to clean up sprite "${id}": ${error}. Skipping...`
+              );
+            }
+          }
+
+          const doneTime = Date.now();
+
+          printLog(
+            "info",
+            `Completed clean up ${ids.length} sprites after: ${
+              (doneTime - startTime) / 1000
+            }s!`
+          );
+        }
+      } catch (error) {
+        printLog("error", `Failed to clean up sprites: ${error}. Exited!`);
+      }
+    }
+
+    /* Clean up fonts */
+    if (opts.cleanUpFonts === true) {
+      try {
+        if (cleanUpData.fonts === undefined) {
+          printLog("info", "No fonts in cleanup. Skipping...");
+        } else {
+          const ids = Object.keys(cleanUpData.fonts);
+
+          printLog("info", `Starting clean up ${ids.length} fonts...`);
+
+          const startTime = Date.now();
+
+          for (const id of ids) {
+            const cleanUpFontItem = cleanUpData.fonts[id];
+
+            if (cleanUpFontItem.skip === true) {
+              printLog("info", `Skipping clean up font "${id}"...`);
+
+              continue;
+            }
+
+            try {
+              await cleanUpFont(
+                id,
+                cleanUpFontItem.refreshBefore?.time ||
+                  cleanUpFontItem.refreshBefore?.day
+              );
+            } catch (error) {
+              printLog(
+                "error",
+                `Failed to clean up font "${id}": ${error}. Skipping...`
+              );
+            }
+          }
+
+          const doneTime = Date.now();
+
+          printLog(
+            "info",
+            `Completed clean up ${ids.length} fonts after: ${
+              (doneTime - startTime) / 1000
+            }s!`
+          );
+        }
+      } catch (error) {
+        printLog("error", `Failed to clean up fonts: ${error}. Exited!`);
+      }
+    }
 
     /* Clean up styles */
     if (opts.cleanUpStyles === true) {
