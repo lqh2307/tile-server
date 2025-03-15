@@ -129,13 +129,13 @@ export async function removeFontFile(filePath, timeout) {
 /**
  * Cache font file
  * @param {string} sourcePath Font folder path
- * @param {string} fontStack Fontstack
+ * @param {string} range Fontstack range
  * @param {Buffer} data Font buffer
  * @returns {Promise<void>}
  */
-export async function cacheFontFile(sourcePath, fontStack, data) {
+export async function cacheFontFile(sourcePath, range, data) {
   await createFontFile(
-    `${sourcePath}/${fontStack}.pbf`,
+    `${sourcePath}/${range}.pbf`,
     data,
     300000 // 5 mins
   );
@@ -145,12 +145,12 @@ export async function cacheFontFile(sourcePath, fontStack, data) {
  * Download font file
  * @param {string} url The URL to download the file from
  * @param {string} id Font ID
- * @param {string} fontStack Fontstack
+ * @param {string} range Fontstack range
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
-export async function downloadFontFile(url, id, fontStack, maxTry, timeout) {
+export async function downloadFontFile(url, id, range, maxTry, timeout) {
   await retry(async () => {
     try {
       // Get data from URL
@@ -159,13 +159,13 @@ export async function downloadFontFile(url, id, fontStack, maxTry, timeout) {
       // Store data to file
       await cacheFontFile(
         `${process.env.DATA_DIR}/caches/fonts/${id}`,
-        fontStack,
+        range,
         response.data
       );
     } catch (error) {
       printLog(
         "error",
-        `Failed to download font stack "${fontStack}" from "${url}": ${error}`
+        `Failed to download font range "${range}" from "${url}": ${error}`
       );
 
       if (error.statusCode !== undefined) {
@@ -182,6 +182,25 @@ export async function downloadFontFile(url, id, fontStack, maxTry, timeout) {
       }
     }
   }, maxTry);
+}
+
+/**
+ * Get created of font
+ * @param {string} filePath The path of the file
+ * @returns {Promise<number>}
+ */
+export async function getFontCreated(filePath) {
+  try {
+    const stats = await fsPromise.stat(filePath);
+
+    return stats.ctimeMs;
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      throw new Error("Font created does not exist");
+    } else {
+      throw error;
+    }
+  }
 }
 
 /**

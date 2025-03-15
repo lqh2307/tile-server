@@ -1,7 +1,9 @@
 "use strict";
 
 import { getGeoJSONCreated, removeGeoJSONFile } from "./geojson.js";
+import { getSpriteCreated, removeSpriteFile } from "./sprite.js";
 import { removeStyleFile, getStyleCreated } from "./style.js";
+import { getFontCreated, removeFontFile } from "./font.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
@@ -37,7 +39,7 @@ let cleanUp;
 
 /**
  * Read cleanup.json file
- * @param {boolean} isValidate Is validate file?
+ * @param {boolean} isValidate Is validate file content?
  * @returns {Promise<object>}
  */
 async function readCleanUpFile(isValidate) {
@@ -58,11 +60,73 @@ async function readCleanUpFile(isValidate) {
 }
 
 /**
- * Load cleanup.json file
+ * Load cleanup.json file content to global variable
  * @returns {Promise<void>}
  */
 async function loadCleanUpFile() {
   cleanUp = await readCleanUpFile(true);
+}
+
+/**
+ * Update cleanup.json file content with lock
+ * @param {Object<any>} cleanUp Clean up object
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<void>}
+ */
+async function updateCleanUpFile(cleanUp, timeout) {
+  const startTime = Date.now();
+
+  const filePath = `${process.env.DATA_DIR}/cleanup.json`;
+  const lockFilePath = `${filePath}.lock`;
+  let lockFileHandle;
+
+  while (Date.now() - startTime <= timeout) {
+    try {
+      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
+
+      const tempFilePath = `${filePath}.tmp`;
+
+      try {
+        await fsPromise.writeFile(
+          tempFilePath,
+          JSON.stringify(cleanUp, null, 2),
+          "utf8"
+        );
+
+        await fsPromise.rename(tempFilePath, filePath);
+      } catch (error) {
+        await fsPromise.rm(tempFilePath, {
+          force: true,
+        });
+
+        throw error;
+      }
+
+      await lockFileHandle.close();
+
+      await fsPromise.rm(lockFilePath, {
+        force: true,
+      });
+
+      return;
+    } catch (error) {
+      if (error.code === "EEXIST") {
+        await delay(50);
+      } else {
+        if (lockFileHandle !== undefined) {
+          await lockFileHandle.close();
+
+          await fsPromise.rm(lockFilePath, {
+            force: true,
+          });
+        }
+
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(`Timeout to access lock file`);
 }
 
 /**
@@ -73,15 +137,7 @@ async function loadCleanUpFile() {
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-async function cleanUpMBTilesTiles(
-  id,
-  zooms = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22,
-  ],
-  bboxs = [[-180, -85.051129, 180, 85.051129]],
-  cleanUpBefore
-) {
+async function cleanUpMBTilesTiles(id, zooms, bboxs, cleanUpBefore) {
   const startTime = Date.now();
 
   const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
@@ -120,7 +176,7 @@ async function cleanUpMBTilesTiles(
   const mutex = new Mutex();
 
   let activeTasks = 0;
-  let remainingTasks = total;
+  let completeTasks = 0;
 
   async function cleanUpMBTilesTileData(z, x, y) {
     const tileName = `${z}/${x}/${y}`;
@@ -147,7 +203,10 @@ async function cleanUpMBTilesTiles(
       }
 
       if (needRemove === true) {
-        printLog("info", `Removing data "${id}" - Tile "${tileName}"...`);
+        printLog(
+          "info",
+          `Removing data "${id}" - Tile "${tileName}" - ${completeTasks}/${total}...`
+        );
 
         await removeMBTilesTile(
           source,
@@ -160,7 +219,7 @@ async function cleanUpMBTilesTiles(
     } catch (error) {
       printLog(
         "error",
-        `Failed to clean up data "${id}" - Tile "${tileName}": ${error}`
+        `Failed to clean up data "${id}" - Tile "${tileName}" - ${completeTasks}/${total}: ${error}`
       );
     }
   }
@@ -179,7 +238,7 @@ async function cleanUpMBTilesTiles(
           await mutex.runExclusive(() => {
             activeTasks++;
 
-            remainingTasks--;
+            completeTasks++;
           });
 
           /* Run a task */
@@ -224,15 +283,7 @@ async function cleanUpMBTilesTiles(
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-async function cleanUpPostgreSQLTiles(
-  id,
-  zooms = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22,
-  ],
-  bboxs = [[-180, -85.051129, 180, 85.051129]],
-  cleanUpBefore
-) {
+async function cleanUpPostgreSQLTiles(id, zooms, bboxs, cleanUpBefore) {
   const startTime = Date.now();
 
   const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
@@ -270,7 +321,7 @@ async function cleanUpPostgreSQLTiles(
   const mutex = new Mutex();
 
   let activeTasks = 0;
-  let remainingTasks = total;
+  let completeTasks = 0;
 
   async function cleanUpPostgreSQLTileData(z, x, y) {
     const tileName = `${z}/${x}/${y}`;
@@ -297,7 +348,10 @@ async function cleanUpPostgreSQLTiles(
       }
 
       if (needRemove === true) {
-        printLog("info", `Removing data "${id}" - Tile "${tileName}"...`);
+        printLog(
+          "info",
+          `Removing data "${id}" - Tile "${tileName}" - ${completeTasks}/${total}...`
+        );
 
         await removePostgreSQLTile(
           source,
@@ -310,7 +364,7 @@ async function cleanUpPostgreSQLTiles(
     } catch (error) {
       printLog(
         "error",
-        `Failed to clean up data "${id}" - Tile "${tileName}": ${error}`
+        `Failed to clean up data "${id}" - Tile "${tileName}" - ${completeTasks}/${total}: ${error}`
       );
     }
   }
@@ -329,7 +383,7 @@ async function cleanUpPostgreSQLTiles(
           await mutex.runExclusive(() => {
             activeTasks++;
 
-            remainingTasks--;
+            completeTasks++;
           });
 
           /* Run a task */
@@ -372,16 +426,7 @@ async function cleanUpPostgreSQLTiles(
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
  * @returns {Promise<void>}
  */
-async function cleanUpXYZTiles(
-  id,
-  format,
-  zooms = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22,
-  ],
-  bboxs = [[-180, -85.051129, 180, 85.051129]],
-  cleanUpBefore
-) {
+async function cleanUpXYZTiles(id, format, zooms, bboxs, cleanUpBefore) {
   const startTime = Date.now();
 
   const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
@@ -420,7 +465,7 @@ async function cleanUpXYZTiles(
   const mutex = new Mutex();
 
   let activeTasks = 0;
-  let remainingTasks = total;
+  let completeTasks = 0;
 
   async function cleanUpXYZTileData(z, x, y) {
     const tileName = `${z}/${x}/${y}`;
@@ -449,7 +494,10 @@ async function cleanUpXYZTiles(
       }
 
       if (needRemove === true) {
-        printLog("info", `Removing data "${id}" - Tile "${tileName}"...`);
+        printLog(
+          "info",
+          `Removing data "${id}" - Tile "${tileName}" - ${completeTasks}/${total}...`
+        );
 
         await removeXYZTile(
           id,
@@ -464,7 +512,7 @@ async function cleanUpXYZTiles(
     } catch (error) {
       printLog(
         "error",
-        `Failed to clean up data "${id}" - Tile "${tileName}": ${error}`
+        `Failed to clean up data "${id}" - Tile "${tileName}" - ${completeTasks}/${total}: ${error}`
       );
     }
   }
@@ -483,7 +531,7 @@ async function cleanUpXYZTiles(
           await mutex.runExclusive(() => {
             activeTasks++;
 
-            remainingTasks--;
+            completeTasks++;
           });
 
           /* Run a task */
@@ -629,48 +677,62 @@ async function cleanUpSprite(id, cleanUpBefore) {
 
   printLog("info", log);
 
-  /* Remove GeoJSON file */
-  const filePath = `${process.env.DATA_DIR}/caches/geojsons/${id}/${id}.geojson`;
+  /* Remove sprite files */
+  async function cleanUpSpriteData(fileName) {
+    const filePath = `${process.env.DATA_DIR}/caches/sprites/${id}/${fileName}`;
 
-  try {
-    let needRemove = false;
+    try {
+      let needRemove = false;
 
-    if (cleanUpTimestamp !== undefined) {
-      try {
-        const created = await getGeoJSONCreated(filePath);
+      if (cleanUpTimestamp !== undefined) {
+        try {
+          const created = await getSpriteCreated(filePath);
 
-        if (!created || created < cleanUpTimestamp) {
-          needRemove = true;
+          if (!created || created < cleanUpTimestamp) {
+            needRemove = true;
+          }
+        } catch (error) {
+          if (error.message === "Sprite created does not exist") {
+            needRemove = true;
+          } else {
+            throw error;
+          }
         }
-      } catch (error) {
-        if (error.message === "GeoJSON created does not exist") {
-          needRemove = true;
-        } else {
-          throw error;
-        }
+      } else {
+        needRemove = true;
       }
-    } else {
-      needRemove = true;
-    }
 
-    printLog("info", "Removing geojson...");
+      if (needRemove === true) {
+        printLog(
+          "info",
+          `Removing sprite "${id}" - File "${fileName}"...`
+        );
 
-    if (needRemove === true) {
-      printLog("info", `Removing geojson "${id}" - File "${filePath}"...`);
-
-      await removeGeoJSONFile(
-        filePath,
-        300000 // 5 mins
+        await removeSpriteFile(
+          filePath,
+          300000 // 5 mins
+        );
+      }
+    } catch (error) {
+      printLog(
+        "error",
+        `Failed to clean up sprite "${id}" - File "${fileName}": ${error}`
       );
     }
-  } catch (error) {
-    printLog("error", `Failed to clean up geojson "${id}": ${error}`);
   }
+
+  printLog("info", "Removing sprites...");
+
+  await Promise.all(
+    ["sprite.json", "sprite.png", "sprite@2x.json", "sprite@2x.png"].map(
+      (fileName) => cleanUpSpriteData(fileName)
+    )
+  );
 
   /* Remove parent folders if empty */
   await removeEmptyFolders(
     `${process.env.DATA_DIR}/caches/geojsons/${id}`,
-    /^.*\.geojson$/
+    /^.*\.(json|png)$/
   );
 
   const doneTime = Date.now();
@@ -709,48 +771,60 @@ async function cleanUpFont(id, cleanUpBefore) {
 
   printLog("info", log);
 
-  /* Remove GeoJSON file */
-  const filePath = `${process.env.DATA_DIR}/caches/geojsons/${id}/${id}.geojson`;
+  /* Remove font files */
+  async function cleanUpFontData(start, end) {
+    const range = `${start}-${end}`;
+    const filePath = `${process.env.DATA_DIR}/caches/fonts/${id}/${range}.pbf`;
 
-  try {
-    let needRemove = false;
+    try {
+      let needRemove = false;
 
-    if (cleanUpTimestamp !== undefined) {
-      try {
-        const created = await getGeoJSONCreated(filePath);
+      if (cleanUpTimestamp !== undefined) {
+        try {
+          const created = await getFontCreated(filePath);
 
-        if (!created || created < cleanUpTimestamp) {
-          needRemove = true;
+          if (!created || created < cleanUpTimestamp) {
+            needRemove = true;
+          }
+        } catch (error) {
+          if (error.message === "Font created does not exist") {
+            needRemove = true;
+          } else {
+            throw error;
+          }
         }
-      } catch (error) {
-        if (error.message === "GeoJSON created does not exist") {
-          needRemove = true;
-        } else {
-          throw error;
-        }
+      } else {
+        needRemove = true;
       }
-    } else {
-      needRemove = true;
-    }
 
-    printLog("info", "Removing geojson...");
+      if (needRemove === true) {
+        printLog("info", `Removing font "${id}" - Range "${range}"...`);
 
-    if (needRemove === true) {
-      printLog("info", `Removing geojson "${id}" - File "${filePath}"...`);
-
-      await removeGeoJSONFile(
-        filePath,
-        300000 // 5 mins
+        await removeFontFile(
+          filePath,
+          300000 // 5 mins
+        );
+      }
+    } catch (error) {
+      printLog(
+        "error",
+        `Failed to clean up font "${id}" -  Range "${range}": ${error}`
       );
     }
-  } catch (error) {
-    printLog("error", `Failed to clean up geojson "${id}": ${error}`);
   }
+
+  printLog("info", "Removing fonts...");
+
+  await Promise.all(
+    Array.from({ length: 256 }, (_, i) =>
+      cleanUpFontData(i * 256, i * 256 + 255)
+    )
+  );
 
   /* Remove parent folders if empty */
   await removeEmptyFolders(
-    `${process.env.DATA_DIR}/caches/geojsons/${id}`,
-    /^.*\.geojson$/
+    `${process.env.DATA_DIR}/caches/fonts/${id}`,
+    /^.*\.pbf$/
   );
 
   const doneTime = Date.now();
@@ -839,68 +913,6 @@ async function cleanUpStyle(id, cleanUpBefore) {
     "info",
     `Completed clean up style "${id}" after ${(doneTime - startTime) / 1000}s!`
   );
-}
-
-/**
- * Update cleanup.json file with lock
- * @param {Object<any>} cleanUp Clean up object
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-async function updateCleanUpFile(cleanUp, timeout) {
-  const startTime = Date.now();
-
-  const filePath = `${process.env.DATA_DIR}/cleanup.json`;
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      const tempFilePath = `${filePath}.tmp`;
-
-      try {
-        await fsPromise.writeFile(
-          tempFilePath,
-          JSON.stringify(cleanUp, null, 2),
-          "utf8"
-        );
-
-        await fsPromise.rename(tempFilePath, filePath);
-      } catch (error) {
-        await fsPromise.rm(tempFilePath, {
-          force: true,
-        });
-
-        throw error;
-      }
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access lock file`);
 }
 
 export {

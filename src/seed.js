@@ -5,7 +5,6 @@ import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
 import sqlite3 from "sqlite3";
-import os from "os";
 import {
   downloadGeoJSONFile,
   getGeoJSONCreated,
@@ -49,7 +48,7 @@ let seed;
 
 /**
  * Read seed.json file
- * @param {boolean} isValidate Is validate file?
+ * @param {boolean} isValidate Is validate file content?
  * @returns {Promise<object>}
  */
 async function readSeedFile(isValidate) {
@@ -67,6 +66,76 @@ async function readSeedFile(isValidate) {
   }
 
   return seed;
+}
+
+/**
+ * Load seed.json file content to global variable
+ * @returns {Promise<void>}
+ */
+async function loadSeedFile() {
+  seed = await readSeedFile(true);
+}
+
+/**
+ * Update seed.json file content with lock
+ * @param {Object<any>} seed Seed object
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<void>}
+ */
+async function updateSeedFile(seed, timeout) {
+  const startTime = Date.now();
+
+  const filePath = `${process.env.DATA_DIR}/seed.json`;
+  const lockFilePath = `${filePath}.lock`;
+  let lockFileHandle;
+
+  while (Date.now() - startTime <= timeout) {
+    try {
+      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
+
+      const tempFilePath = `${filePath}.tmp`;
+
+      try {
+        await fsPromise.writeFile(
+          tempFilePath,
+          JSON.stringify(seed, null, 2),
+          "utf8"
+        );
+
+        await fsPromise.rename(tempFilePath, filePath);
+      } catch (error) {
+        await fsPromise.rm(tempFilePath, {
+          force: true,
+        });
+
+        throw error;
+      }
+
+      await lockFileHandle.close();
+
+      await fsPromise.rm(lockFilePath, {
+        force: true,
+      });
+
+      return;
+    } catch (error) {
+      if (error.code === "EEXIST") {
+        await delay(50);
+      } else {
+        if (lockFileHandle !== undefined) {
+          await lockFileHandle.close();
+
+          await fsPromise.rm(lockFilePath, {
+            force: true,
+          });
+        }
+
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(`Timeout to access lock file`);
 }
 
 /**
@@ -90,14 +159,11 @@ async function seedMBTilesTiles(
   metadata,
   url,
   scheme,
-  bboxs = [[-180, -85.051129, 180, 85.051129]],
-  zooms = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22,
-  ],
-  concurrency = os.cpus().length,
-  maxTry = 5,
-  timeout = 60000,
+  bboxs,
+  zooms,
+  concurrency,
+  maxTry,
+  timeout,
   storeMD5 = false,
   storeTransparent = false,
   refreshBefore
@@ -302,14 +368,11 @@ async function seedPostgreSQLTiles(
   metadata,
   url,
   scheme,
-  bboxs = [[-180, -85.051129, 180, 85.051129]],
-  zooms = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22,
-  ],
-  concurrency = os.cpus().length,
-  maxTry = 5,
-  timeout = 60000,
+  bboxs,
+  zooms,
+  concurrency,
+  maxTry,
+  timeout,
   storeMD5 = false,
   storeTransparent = false,
   refreshBefore
@@ -512,14 +575,11 @@ async function seedXYZTiles(
   metadata,
   url,
   scheme,
-  bboxs = [[-180, -85.051129, 180, 85.051129]],
-  zooms = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22,
-  ],
-  concurrency = os.cpus().length,
-  maxTry = 5,
-  timeout = 60000,
+  bboxs,
+  zooms,
+  concurrency,
+  maxTry,
+  timeout,
   storeMD5 = false,
   storeTransparent = false,
   refreshBefore
@@ -722,13 +782,7 @@ async function seedXYZTiles(
  * @param {string|number} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which file should be refreshed
  * @returns {Promise<void>}
  */
-async function seedGeoJSON(
-  id,
-  url,
-  maxTry = 5,
-  timeout = 60000,
-  refreshBefore
-) {
+async function seedGeoJSON(id, url, maxTry, timeout, refreshBefore) {
   const startTime = Date.now();
 
   let log = `Seeding geojson "${id}" with:\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}`;
@@ -834,13 +888,7 @@ async function seedGeoJSON(
  * @param {string|number} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which file should be refreshed
  * @returns {Promise<void>}
  */
-async function seedSprite(
-  id,
-  url,
-  maxTry = 5,
-  timeout = 60000,
-  refreshBefore
-) {
+async function seedSprite(id, url, maxTry, timeout, refreshBefore) {
   const startTime = Date.now();
 
   let log = `Seeding sprite "${id}" with:\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}`;
@@ -921,13 +969,7 @@ async function seedSprite(
  * @param {string|number} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which file should be refreshed
  * @returns {Promise<void>}
  */
-async function seedFont(
-  id,
-  url,
-  maxTry = 5,
-  timeout = 60000,
-  refreshBefore
-) {
+async function seedFont(id, url, maxTry, timeout, refreshBefore) {
   const startTime = Date.now();
 
   let log = `Seeding font "${id}" with:\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}`;
@@ -1008,7 +1050,7 @@ async function seedFont(
  * @param {string|number} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which file should be refreshed
  * @returns {Promise<void>}
  */
-async function seedStyle(id, url, maxTry = 5, timeout = 60000, refreshBefore) {
+async function seedStyle(id, url, maxTry, timeout, refreshBefore) {
   const startTime = Date.now();
 
   let log = `Seeding style "${id}" with:\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}`;
@@ -1103,76 +1145,6 @@ async function seedStyle(id, url, maxTry = 5, timeout = 60000, refreshBefore) {
     "info",
     `Completed seeding style "${id}" after ${(doneTime - startTime) / 1000}s!`
   );
-}
-
-/**
- * Load seed.json file
- * @returns {Promise<void>}
- */
-async function loadSeedFile() {
-  seed = await readSeedFile(true);
-}
-
-/**
- * Update seed.json file with lock
- * @param {Object<any>} seed Seed object
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-async function updateSeedFile(seed, timeout) {
-  const startTime = Date.now();
-
-  const filePath = `${process.env.DATA_DIR}/seed.json`;
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      const tempFilePath = `${filePath}.tmp`;
-
-      try {
-        await fsPromise.writeFile(
-          tempFilePath,
-          JSON.stringify(seed, null, 2),
-          "utf8"
-        );
-
-        await fsPromise.rename(tempFilePath, filePath);
-      } catch (error) {
-        await fsPromise.rm(tempFilePath, {
-          force: true,
-        });
-
-        throw error;
-      }
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access lock file`);
 }
 
 export {

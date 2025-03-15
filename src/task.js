@@ -21,6 +21,7 @@ import {
   seedStyle,
   seedFont,
 } from "./seed.js";
+import os from "os";
 
 /**
  * Run clean up and seed tasks
@@ -50,6 +51,15 @@ export async function runTasks(opts) {
       readCleanUpFile(true),
       readSeedFile(true),
     ]);
+
+    const defaultZooms = [
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+      21, 22,
+    ];
+    const defaultBBoxs = [[-180, -85.051129, 180, 85.051129]];
+    const defaultTimeout = 60000;
+    const defaultMaxTry = 5;
+    const defaultConcurrency = os.cpus().length;
 
     /* Clean up sprites */
     if (opts.cleanUpSprites === true) {
@@ -274,24 +284,24 @@ export async function runTasks(opts) {
                 await cleanUpXYZTiles(
                   id,
                   seedDataItem.metadata.format,
-                  cleanUpDataItem.zooms,
-                  cleanUpDataItem.bboxs,
+                  cleanUpDataItem.zooms || defaultZooms,
+                  cleanUpDataItem.bboxs || defaultBBoxs,
                   cleanUpDataItem.cleanUpBefore?.time ||
                     cleanUpDataItem.cleanUpBefore?.day
                 );
               } else if (seedDataItem.storeType === "mbtiles") {
                 await cleanUpMBTilesTiles(
                   id,
-                  cleanUpDataItem.zooms,
-                  cleanUpDataItem.bboxs,
+                  cleanUpDataItem.zooms || defaultZooms,
+                  cleanUpDataItem.bboxs || defaultBBoxs,
                   cleanUpDataItem.cleanUpBefore?.time ||
                     cleanUpDataItem.cleanUpBefore?.day
                 );
               } else if (seedDataItem.storeType === "pg") {
                 await cleanUpPostgreSQLTiles(
                   id,
-                  cleanUpDataItem.zooms,
-                  cleanUpDataItem.bboxs,
+                  cleanUpDataItem.zooms || defaultZooms,
+                  cleanUpDataItem.bboxs || defaultBBoxs,
                   cleanUpDataItem.cleanUpBefore?.time ||
                     cleanUpDataItem.cleanUpBefore?.day
                 );
@@ -343,8 +353,8 @@ export async function runTasks(opts) {
               await seedStyle(
                 id,
                 seedStyleItem.url,
-                seedStyleItem.maxTry,
-                seedStyleItem.timeout,
+                seedStyleItem.maxTry || defaultMaxTry,
+                seedStyleItem.timeout || defaultTimeout,
                 seedStyleItem.refreshBefore?.time ||
                   seedStyleItem.refreshBefore?.day ||
                   seedStyleItem.refreshBefore?.md5
@@ -396,8 +406,8 @@ export async function runTasks(opts) {
               await seedGeoJSON(
                 id,
                 seedGeoJSONItem.url,
-                seedGeoJSONItem.maxTry,
-                seedGeoJSONItem.timeout,
+                seedGeoJSONItem.maxTry || defaultMaxTry,
+                seedGeoJSONItem.timeout || defaultTimeout,
                 seedGeoJSONItem.refreshBefore?.time ||
                   seedGeoJSONItem.refreshBefore?.day ||
                   seedGeoJSONItem.refreshBefore?.md5
@@ -452,11 +462,11 @@ export async function runTasks(opts) {
                   seedDataItem.metadata,
                   seedDataItem.url,
                   seedDataItem.scheme,
-                  seedDataItem.bboxs,
-                  seedDataItem.zooms,
-                  seedDataItem.concurrency,
-                  seedDataItem.maxTry,
-                  seedDataItem.timeout,
+                  seedDataItem.zooms || defaultZooms,
+                  seedDataItem.bboxs || defaultBBoxs,
+                  seedDataItem.concurrency || defaultConcurrency,
+                  seedDataItem.maxTry || defaultMaxTry,
+                  seedDataItem.timeout || defaultTimeout,
                   seedDataItem.storeMD5,
                   seedDataItem.storeTransparent,
                   seedDataItem.refreshBefore?.time ||
@@ -469,11 +479,11 @@ export async function runTasks(opts) {
                   seedDataItem.metadata,
                   seedDataItem.url,
                   seedDataItem.scheme,
-                  seedDataItem.bboxs,
-                  seedDataItem.zooms,
-                  seedDataItem.concurrency,
-                  seedDataItem.maxTry,
-                  seedDataItem.timeout,
+                  seedDataItem.zooms || defaultZooms,
+                  seedDataItem.bboxs || defaultBBoxs,
+                  seedDataItem.concurrency || defaultConcurrency,
+                  seedDataItem.maxTry || defaultMaxTry,
+                  seedDataItem.timeout || defaultTimeout,
                   seedDataItem.storeMD5,
                   seedDataItem.storeTransparent,
                   seedDataItem.refreshBefore?.time ||
@@ -486,11 +496,11 @@ export async function runTasks(opts) {
                   seedDataItem.metadata,
                   seedDataItem.url,
                   seedDataItem.scheme,
-                  seedDataItem.bboxs,
-                  seedDataItem.zooms,
-                  seedDataItem.concurrency,
-                  seedDataItem.maxTry,
-                  seedDataItem.timeout,
+                  seedDataItem.zooms || defaultZooms,
+                  seedDataItem.bboxs || defaultBBoxs,
+                  seedDataItem.concurrency || defaultConcurrency,
+                  seedDataItem.maxTry || defaultMaxTry,
+                  seedDataItem.timeout || defaultTimeout,
                   seedDataItem.storeMD5,
                   seedDataItem.storeTransparent,
                   seedDataItem.refreshBefore?.time ||
