@@ -211,14 +211,14 @@ export const serve_sprite = {
               }
 
               if (item.cache.forward === true) {
-                info.sourceURL = cacheSource.url;
-                info.storeCache = item.cache.store;
+                spriteInfo.sourceURL = cacheSource.url;
+                spriteInfo.storeCache = item.cache.store;
               }
             } else {
-              info.path = `${process.env.DATA_DIR}/sprites/${item.sprite}`;
+              spriteInfo.path = `${process.env.DATA_DIR}/sprites/${item.sprite}`;
 
               /* Validate sprite */
-              await validateSprite(info.path);
+              await validateSprite(spriteInfo.path);
             }
 
             /* Add to repo */

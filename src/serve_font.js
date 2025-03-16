@@ -194,14 +194,14 @@ export const serve_font = {
               }
 
               if (item.cache.forward === true) {
-                info.sourceURL = cacheSource.url;
-                info.storeCache = item.cache.store;
+                fontInfo.sourceURL = cacheSource.url;
+                fontInfo.storeCache = item.cache.store;
               }
             } else {
-              info.path = `${process.env.DATA_DIR}/fonts/${item.font}`;
+              fontInfo.path = `${process.env.DATA_DIR}/fonts/${item.font}`;
 
               /* Validate font */
-              await validateFont(info.path);
+              await validateFont(fontInfo.path);
             }
 
             /* Add to repo */

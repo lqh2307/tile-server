@@ -526,7 +526,7 @@ export const serve_geojson = {
                 `Loading ${layers.length} GeoJSON in GeoJSON groups id "${id}"...`
               );
 
-              const dataInfo = {};
+              const geojsonsInfo = {};
 
               /* Get GeoJSON infos */
               await Promise.all(
@@ -534,31 +534,31 @@ export const serve_geojson = {
                   const item = config.geojsons[id][layer];
 
                   /* Get GeoJSON path */
-                  const info = {};
+                  const geojsonInfo = {};
 
                   if (
                     item.geojson.startsWith("https://") === true ||
                     item.geojson.startsWith("http://") === true
                   ) {
-                    info.path = `${process.env.DATA_DIR}/geojsons/${id}/geojson.geojson`;
+                    geojsonInfo.path = `${process.env.DATA_DIR}/geojsons/${id}/geojson.geojson`;
 
                     /* Download GeoJSON file */
-                    if ((await isExistFile(info.path)) === false) {
+                    if ((await isExistFile(geojsonInfo.path)) === false) {
                       printLog(
                         "info",
-                        `Downloading GeoJSON file "${info.path}" - From "${item.geojson}"...`
+                        `Downloading GeoJSON file "${geojsonInfo.path}" - From "${item.geojson}"...`
                       );
 
                       await downloadGeoJSONFile(
                         item.geojson,
-                        info.path,
+                        geojsonInfo.path,
                         5,
                         300000 // 5 mins
                       );
                     }
                   } else {
                     if (item.cache !== undefined) {
-                      info.path = `${process.env.DATA_DIR}/caches/geojsons/${item.geojson}/${item.geojson}.geojson`;
+                      geojsonInfo.path = `${process.env.DATA_DIR}/caches/geojsons/${item.geojson}/${item.geojson}.geojson`;
 
                       const cacheSource = seed.geojsons?.[item.geojson];
 
@@ -569,31 +569,32 @@ export const serve_geojson = {
                       }
 
                       if (item.cache.forward === true) {
-                        info.sourceURL = cacheSource.url;
-                        info.storeCache = item.cache.store;
+                        geojsonInfo.sourceURL = cacheSource.url;
+                        geojsonInfo.storeCache = item.cache.store;
                       }
                     } else {
-                      info.path = `${process.env.DATA_DIR}/geojsons/${item.geojson}`;
+                      geojsonInfo.path = `${process.env.DATA_DIR}/geojsons/${item.geojson}`;
                     }
                   }
 
                   /* Load GeoJSON */
                   try {
                     /* Open GeoJSON */
-                    const geoJSON = await getGeoJSON(info.path, true);
+                    const geoJSON = await getGeoJSON(geojsonInfo.path, true);
 
                     /* Validate and Get GeoJSON info */
-                    info.geometryTypes = validateAndGetGeometryTypes(geoJSON);
+                    geojsonInfo.geometryTypes =
+                      validateAndGetGeometryTypes(geoJSON);
 
-                    dataInfo[layer] = info;
+                    geojsonsInfo[layer] = geojsonInfo;
                   } catch (error) {
                     if (
                       item.cache !== undefined &&
                       error.message === "GeoJSON does not exist"
                     ) {
-                      info.geometryTypes = ["polygon", "line", "circle"];
+                      geojsonInfo.geometryTypes = ["polygon", "line", "circle"];
 
-                      dataInfo[layer] = info;
+                      geojsonsInfo[layer] = geojsonInfo;
                     } else {
                       throw error;
                     }
@@ -602,7 +603,7 @@ export const serve_geojson = {
               );
 
               /* Add to repo */
-              config.repo.geojsons[id] = dataInfo;
+              config.repo.geojsons[id] = geojsonsInfo;
             }
           } catch (error) {
             printLog(
