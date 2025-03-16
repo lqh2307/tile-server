@@ -180,14 +180,32 @@ export const serve_font = {
 
       await Promise.all(
         ids.map(async (id) => {
-          try {
-            /* Validate font */
-            const dirPath = `${process.env.DATA_DIR}/fonts/${id}`;
+          const item = config.fonts[id];
+          const fontInfo = {};
 
-            await validateFont(dirPath);
+          try {
+            if (item.cache !== undefined) {
+              fontInfo.path = `${process.env.DATA_DIR}/caches/fonts/${item.font}`;
+
+              const cacheSource = seed.fonts?.[item.font];
+
+              if (cacheSource === undefined) {
+                throw new Error(`Cache font "${item.font}" is invalid`);
+              }
+
+              if (item.cache.forward === true) {
+                info.sourceURL = cacheSource.url;
+                info.storeCache = item.cache.store;
+              }
+            } else {
+              info.path = `${process.env.DATA_DIR}/fonts/${item.font}`;
+
+              /* Validate font */
+              await validateFont(info.path);
+            }
 
             /* Add to repo */
-            config.repo.fonts[id] = true;
+            config.repo.fonts[id] = fontInfo;
           } catch (error) {
             printLog(
               "error",

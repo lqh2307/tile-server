@@ -193,12 +193,20 @@ docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-s
     }
   },
   "sprites": {
-    "liberty": {},
-    "basic": {}
+    "liberty": {
+      "sprite": "liberty"
+    },
+    "basic": {
+      "sprite": "basic"
+    }
   },
   "fonts": {
-    "Open Sans Regular": {},
-    "Times New Roman": {}
+    "Open Sans Regular": {
+      "font": "Open Sans Regular"
+    },
+    "Times New Roman": {
+      "font": "Times New Roman"
+    }
   }
 }
 ```

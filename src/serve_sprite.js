@@ -6,6 +6,7 @@ import { StatusCodes } from "http-status-codes";
 import { getRequestHost } from "./utils.js";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
+import { seed } from "./seed.js";
 import express from "express";
 
 /**
@@ -196,14 +197,32 @@ export const serve_sprite = {
 
       await Promise.all(
         ids.map(async (id) => {
-          try {
-            /* Validate sprite */
-            const dirPath = `${process.env.DATA_DIR}/sprites/${id}`;
+          const item = config.sprites[id];
+          const spriteInfo = {};
 
-            await validateSprite(dirPath);
+          try {
+            if (item.cache !== undefined) {
+              spriteInfo.path = `${process.env.DATA_DIR}/caches/sprites/${item.sprite}`;
+
+              const cacheSource = seed.sprites?.[item.sprite];
+
+              if (cacheSource === undefined) {
+                throw new Error(`Cache sprite "${item.sprite}" is invalid`);
+              }
+
+              if (item.cache.forward === true) {
+                info.sourceURL = cacheSource.url;
+                info.storeCache = item.cache.store;
+              }
+            } else {
+              info.path = `${process.env.DATA_DIR}/sprites/${item.sprite}`;
+
+              /* Validate sprite */
+              await validateSprite(info.path);
+            }
 
             /* Add to repo */
-            config.repo.sprites[id] = true;
+            config.repo.sprites[id] = spriteInfo;
           } catch (error) {
             printLog(
               "error",
