@@ -948,15 +948,15 @@ async function seedSprite(id, url, maxTry, timeout, refreshBefore) {
 
   /* Remove parent folders if empty */
   await removeEmptyFolders(
-    `${process.env.DATA_DIR}/caches/geojsons/${id}`,
-    /^.*\.geojson$/
+    `${process.env.DATA_DIR}/caches/sprites/${id}`,
+    /^.*\.(json|png)$/
   );
 
   const doneTime = Date.now();
 
   printLog(
     "info",
-    `Completed seeding geojson "${id}" after ${(doneTime - startTime) / 1000}s!`
+    `Completed seeding sprite "${id}" after ${(doneTime - startTime) / 1000}s!`
   );
 }
 
@@ -964,15 +964,16 @@ async function seedSprite(id, url, maxTry, timeout, refreshBefore) {
  * Seed font
  * @param {string} id Cache font ID
  * @param {string} url Font URL
+ * @param {number} concurrency Concurrency download
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
  * @param {string|number} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which file should be refreshed
  * @returns {Promise<void>}
  */
-async function seedFont(id, url, maxTry, timeout, refreshBefore) {
+async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
   const startTime = Date.now();
 
-  let log = `Seeding font "${id}" with:\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}`;
+  let log = `Seeding font "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}`;
 
   let refreshTimestamp;
   if (typeof refreshBefore === "string") {
@@ -1029,15 +1030,15 @@ async function seedFont(id, url, maxTry, timeout, refreshBefore) {
 
   /* Remove parent folders if empty */
   await removeEmptyFolders(
-    `${process.env.DATA_DIR}/caches/geojsons/${id}`,
-    /^.*\.geojson$/
+    `${process.env.DATA_DIR}/caches/fonts/${id}`,
+    /^.*\.pbf$/
   );
 
   const doneTime = Date.now();
 
   printLog(
     "info",
-    `Completed seeding geojson "${id}" after ${(doneTime - startTime) / 1000}s!`
+    `Completed seeding font "${id}" after ${(doneTime - startTime) / 1000}s!`
   );
 }
 

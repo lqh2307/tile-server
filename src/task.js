@@ -330,6 +330,111 @@ export async function runTasks(opts) {
       }
     }
 
+    /* Run seed sprites */
+    if (opts.seedSprites === true) {
+      try {
+        if (seedData.sprites === undefined) {
+          printLog("info", "No sprites in seed. Skipping...");
+        } else {
+          const ids = Object.keys(seedData.sprites);
+
+          printLog("info", `Starting seed ${ids.length} sprites...`);
+
+          const startTime = Date.now();
+
+          for (const id of ids) {
+            const seedSpriteItem = seedData.sprites[id];
+
+            if (seedSpriteItem.skip === true) {
+              printLog("info", `Skipping seed font "${id}"...`);
+
+              continue;
+            }
+
+            try {
+              await seedSprite(
+                id,
+                seedSpriteItem.url,
+                seedSpriteItem.maxTry || defaultMaxTry,
+                seedSpriteItem.timeout || defaultTimeout,
+                seedSpriteItem.refreshBefore?.time ||
+                  seedSpriteItem.refreshBefore?.day
+              );
+            } catch (error) {
+              printLog(
+                "error",
+                `Failed to seed font "${id}": ${error}. Skipping...`
+              );
+            }
+          }
+
+          const doneTime = Date.now();
+
+          printLog(
+            "info",
+            `Completed seed ${ids.length} sprites after: ${
+              (doneTime - startTime) / 1000
+            }s!`
+          );
+        }
+      } catch (error) {
+        printLog("error", `Failed to seed sprites: ${error}. Exited!`);
+      }
+    }
+
+    /* Run seed fonts */
+    if (opts.seedFonts === true) {
+      try {
+        if (seedData.fonts === undefined) {
+          printLog("info", "No fonts in seed. Skipping...");
+        } else {
+          const ids = Object.keys(seedData.fonts);
+
+          printLog("info", `Starting seed ${ids.length} fonts...`);
+
+          const startTime = Date.now();
+
+          for (const id of ids) {
+            const seedFontItem = seedData.fonts[id];
+
+            if (seedFontItem.skip === true) {
+              printLog("info", `Skipping seed font "${id}"...`);
+
+              continue;
+            }
+
+            try {
+              await seedFont(
+                id,
+                seedFontItem.url,
+                seedFontItem.concurrency || defaultConcurrency,
+                seedFontItem.maxTry || defaultMaxTry,
+                seedFontItem.timeout || defaultTimeout,
+                seedFontItem.refreshBefore?.time ||
+                  seedFontItem.refreshBefore?.day
+              );
+            } catch (error) {
+              printLog(
+                "error",
+                `Failed to seed font "${id}": ${error}. Skipping...`
+              );
+            }
+          }
+
+          const doneTime = Date.now();
+
+          printLog(
+            "info",
+            `Completed seed ${ids.length} fonts after: ${
+              (doneTime - startTime) / 1000
+            }s!`
+          );
+        }
+      } catch (error) {
+        printLog("error", `Failed to seed fonts: ${error}. Exited!`);
+      }
+    }
+
     /* Run seed styles */
     if (opts.seedStyles === true) {
       try {
