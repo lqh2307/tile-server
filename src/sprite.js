@@ -1,6 +1,9 @@
 "use strict";
 
+import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
+import { printLog } from "./logger.js";
+import path from "node:path";
 import sharp from "sharp";
 import {
   getDataFromURL,

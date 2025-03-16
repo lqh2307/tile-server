@@ -1,10 +1,12 @@
 "use strict";
 
 import { getDataFromURL, findFiles, delay, retry } from "./utils.js";
+import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import protobuf from "protocol-buffers";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
+import path from "node:path";
 import fs from "node:fs";
 
 const glyphsProto = protobuf(fs.readFileSync("public/protos/glyphs.proto"));
