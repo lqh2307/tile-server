@@ -1194,15 +1194,29 @@ function serveSummaryHandler() {
             }
           }),
           ...Object.keys(config.repo.sprites).map(async (id) => {
-            result.sprites.size += await getSpriteSize(
-              `${process.env.DATA_DIR}/sprites/${id}`
-            );
+            const item = config.repo.sprites[id];
+
+            try {
+              result.sprites.size += await getSpriteSize(item.path);
+            } catch (error) {
+              if (!(item.cache !== undefined && error.code === "ENOENT")) {
+                throw error;
+              }
+            }
+
             result.sprites.count += 1;
           }),
           ...Object.keys(config.repo.fonts).map(async (id) => {
-            result.fonts.size += await getFontSize(
-              `${process.env.DATA_DIR}/fonts/${id}`
-            );
+            const item = config.repo.fonts[id];
+
+            try {
+              result.fonts.size += await getFontSize(item.path);
+            } catch (error) {
+              if (!(item.cache !== undefined && error.code === "ENOENT")) {
+                throw error;
+              }
+            }
+
             result.fonts.count += 1;
           }),
         ]);
