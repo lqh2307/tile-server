@@ -164,8 +164,8 @@ async function seedMBTilesTiles(
   concurrency,
   maxTry,
   timeout,
-  storeMD5 = false,
-  storeTransparent = false,
+  storeMD5,
+  storeTransparent,
   refreshBefore
 ) {
   const startTime = Date.now();
@@ -373,8 +373,8 @@ async function seedPostgreSQLTiles(
   concurrency,
   maxTry,
   timeout,
-  storeMD5 = false,
-  storeTransparent = false,
+  storeMD5,
+  storeTransparent,
   refreshBefore
 ) {
   const startTime = Date.now();
@@ -580,8 +580,8 @@ async function seedXYZTiles(
   concurrency,
   maxTry,
   timeout,
-  storeMD5 = false,
-  storeTransparent = false,
+  storeMD5,
+  storeTransparent,
   refreshBefore
 ) {
   const startTime = Date.now();
@@ -1066,10 +1066,6 @@ async function seedStyle(id, url, maxTry, timeout, refreshBefore) {
     refreshTimestamp = now.setDate(now.getDate() - refreshBefore);
 
     log += `\n\tOld than: ${refreshBefore} days`;
-  } else if (typeof refreshBefore === "boolean") {
-    refreshTimestamp = true;
-
-    log += `\n\tRefresh before: check MD5`;
   }
 
   printLog("info", log);
@@ -1080,28 +1076,7 @@ async function seedStyle(id, url, maxTry, timeout, refreshBefore) {
   try {
     let needDownload = false;
 
-    if (refreshTimestamp === true) {
-      try {
-        const [response, styleJSONData] = await Promise.all([
-          getDataFromURL(
-            url.replace("/style.json", "/md5"),
-            timeout,
-            "arraybuffer"
-          ),
-          getStyle(filePath, false),
-        ]);
-
-        if (response.headers["etag"] !== calculateMD5(styleJSONData)) {
-          needDownload = true;
-        }
-      } catch (error) {
-        if (error.message === "Style does not exist") {
-          needDownload = true;
-        } else {
-          throw error;
-        }
-      }
-    } else if (refreshTimestamp !== undefined) {
+    if (refreshTimestamp !== undefined) {
       try {
         const created = await getStyleCreated(filePath);
 

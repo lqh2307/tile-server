@@ -46,16 +46,9 @@
               "day": {
                 "type": "integer",
                 "minimum": 0
-              },
-              "md5": {
-                "type": "boolean"
               }
             },
-            "anyOf": [
-              { "required": ["time"] },
-              { "required": ["day"] },
-              { "required": ["md5"] }
-            ]
+            "anyOf": [{ "required": ["time"] }, { "required": ["day"] }]
           },
           "timeout": {
             "type": "integer",
@@ -365,6 +358,10 @@
           "timeout": {
             "type": "integer",
             "minimum": 0
+          },
+          "concurrency": {
+            "type": "integer",
+            "minimum": 1
           },
           "maxTry": {
             "type": "integer",

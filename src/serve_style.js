@@ -10,7 +10,6 @@ import {
   isLocalTileURL,
   getRequestHost,
   getJSONSchema,
-  calculateMD5,
   validateJSON,
   isExistFile,
 } from "./utils.js";
@@ -163,121 +162,6 @@ function getStyleHandler() {
       return res.status(StatusCodes.OK).send(styleJSON);
     } catch (error) {
       printLog("error", `Failed to get style "${id}": ${error}`);
-
-      if (error.message === "Style does not exist") {
-        return res.status(StatusCodes.NO_CONTENT).send(error.message);
-      } else {
-        return res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
-          .send("Internal server error");
-      }
-    }
-  };
-}
-
-/**
- * Get styleJSON MD5 handler
- * @returns {(req: any, res: any, next: any) => Promise<any>}
- */
-function getStyleMD5Handler() {
-  return async (req, res, next) => {
-    const id = req.params.id;
-
-    try {
-      const item = config.repo.styles[id];
-
-      /* Check style is used? */
-      if (item === undefined) {
-        return res.status(StatusCodes.NOT_FOUND).send("Style does not exist");
-      }
-
-      /* Get styleJSON MD5 and Add to header */
-      let styleJSON = await getStyle(item.path, false);
-
-      if (req.query.raw !== "true") {
-        styleJSON = JSON.parse(styleJSON);
-
-        const requestHost = getRequestHost(req);
-
-        /* Fix sprite url */
-        if (styleJSON.sprite !== undefined) {
-          if (styleJSON.sprite.startsWith("sprites://") === true) {
-            styleJSON.sprite = styleJSON.sprite.replace(
-              "sprites://",
-              `${requestHost}/sprites/`
-            );
-          }
-        }
-
-        /* Fix fonts url */
-        if (styleJSON.glyphs !== undefined) {
-          if (styleJSON.glyphs.startsWith("fonts://") === true) {
-            styleJSON.glyphs = styleJSON.glyphs.replace(
-              "fonts://",
-              `${requestHost}/fonts/`
-            );
-          }
-        }
-
-        /* Fix source urls */
-        await Promise.all(
-          Object.keys(styleJSON.sources).map(async (id) => {
-            const source = styleJSON.sources[id];
-
-            // Fix tileJSON URL
-            if (source.url !== undefined) {
-              if (isLocalTileURL(source.url) === true) {
-                const sourceID = source.url.split("/")[2];
-
-                source.url = `${requestHost}/datas/${sourceID}.json`;
-              }
-            }
-
-            // Fix tileJSON URLs
-            if (source.urls !== undefined) {
-              const urls = new Set(
-                source.urls.map((url) => {
-                  if (isLocalTileURL(url) === true) {
-                    const sourceID = url.split("/")[2];
-
-                    url = `${requestHost}/datas/${sourceID}.json`;
-                  }
-
-                  return url;
-                })
-              );
-
-              source.urls = Array.from(urls);
-            }
-
-            // Fix tile URL
-            if (source.tiles !== undefined) {
-              const tiles = new Set(
-                source.tiles.map((tile) => {
-                  if (isLocalTileURL(tile) === true) {
-                    const sourceID = tile.split("/")[2];
-                    const sourceData = config.repo.datas[sourceID];
-
-                    tile = `${requestHost}/datas/${sourceID}/{z}/{x}/{y}.${sourceData.tileJSON.format}`;
-                  }
-
-                  return tile;
-                })
-              );
-
-              source.tiles = Array.from(tiles);
-            }
-          })
-        );
-      }
-
-      res.set({
-        etag: calculateMD5(styleJSON),
-      });
-
-      return res.status(StatusCodes.OK).send();
-    } catch (error) {
-      printLog("error", `Failed to get md5 style "${id}": ${error}`);
 
       if (error.message === "Style does not exist") {
         return res.status(StatusCodes.NO_CONTENT).send(error.message);
@@ -889,51 +773,6 @@ export const serve_style = {
      *         description: Internal server error
      */
     app.get("/:id/style.json", checkReadyMiddleware(), getStyleHandler());
-
-    /**
-     * @swagger
-     * tags:
-     *   - name: Style
-     *     description: Style related endpoints
-     * /styles/{id}/md5:
-     *   get:
-     *     tags:
-     *       - Style
-     *     summary: Get styleJSON MD5
-     *     parameters:
-     *       - in: path
-     *         name: id
-     *         schema:
-     *           type: string
-     *           example: id
-     *         required: true
-     *         description: ID of the style
-     *       - in: query
-     *         name: raw
-     *         schema:
-     *           type: boolean
-     *         required: false
-     *         description: Use raw
-     *     responses:
-     *       200:
-     *         description: StyleJSON MD5
-     *         content:
-     *           application/json:
-     *             schema:
-     *               type: object
-     *       404:
-     *         description: Not found
-     *       503:
-     *         description: Server is starting up
-     *         content:
-     *           text/plain:
-     *             schema:
-     *               type: string
-     *               example: Starting...
-     *       500:
-     *         description: Internal server error
-     */
-    app.get("/:id/md5", checkReadyMiddleware(), getStyleMD5Handler());
 
     if (process.env.ENABLE_EXPORT !== "false") {
       /**

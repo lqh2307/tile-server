@@ -1,8 +1,15 @@
 "use strict";
 
-import { delay, findFiles, getDataFromURL, retry } from "./utils.js";
 import fsPromise from "node:fs/promises";
 import sharp from "sharp";
+import {
+  getDataFromURL,
+  getJSONSchema,
+  validateJSON,
+  findFiles,
+  delay,
+  retry,
+} from "./utils.js";
 
 sharp.cache(false);
 
@@ -227,18 +234,7 @@ export async function validateSprite(spriteDirPath) {
         "utf8"
       );
 
-      Object.values(JSON.parse(fileData)).forEach((value) => {
-        if (
-          typeof value !== "object" ||
-          "height" in value === false ||
-          "pixelRatio" in value === false ||
-          "width" in value === false ||
-          "x" in value === false ||
-          "y" in value === false
-        ) {
-          throw new Error("Invalid JSON file");
-        }
-      });
+      validateJSON(await getJSONSchema("sprite"), fileData);
 
       /* Validate PNG sprite */
       const pngMetadata = await sharp(`${fileNameWoExt}.png`).metadata();
