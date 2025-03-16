@@ -126,12 +126,10 @@ export async function validateSprite(spriteDirPath) {
   await Promise.all(
     fileNameWoExts.map(async (fileNameWoExt) => {
       /* Validate JSON sprite */
-      const fileData = await fsPromise.readFile(
-        `${fileNameWoExt}.json`,
-        "utf8"
+      validateJSON(
+        await getJSONSchema("sprite"),
+        JSON.parse(await fsPromise.readFile(`${fileNameWoExt}.json`, "utf8"))
       );
-
-      validateJSON(await getJSONSchema("sprite"), fileData);
 
       /* Validate PNG sprite */
       const pngMetadata = await sharp(`${fileNameWoExt}.png`).metadata();
