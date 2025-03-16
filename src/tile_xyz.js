@@ -7,10 +7,11 @@ import protobuf from "protocol-buffers";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
 import sqlite3 from "sqlite3";
-import path from "node:path";
 import {
   isFullTransparentPNGImage,
   detectFormatAndHeaders,
+  removeFileWithLock,
+  createFileWithLock,
   getBBoxFromTiles,
   getDataFromURL,
   calculateMD5,
@@ -176,120 +177,13 @@ async function getXYZZoomLevelFromTiles(sourcePath, zoomType) {
 }
 
 /**
- * Create XYZ tile data file with lock
- * @param {string} filePath File path to store tile data file
- * @param {Buffer} data Tile data buffer
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-async function createXYZTileFile(filePath, data, timeout) {
-  const startTime = Date.now();
-
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      const tempFilePath = `${filePath}.tmp`;
-
-      try {
-        await fsPromise.mkdir(path.dirname(filePath), {
-          recursive: true,
-        });
-
-        await fsPromise.writeFile(tempFilePath, data);
-
-        await fsPromise.rename(tempFilePath, filePath);
-      } catch (error) {
-        await fsPromise.rm(tempFilePath, {
-          force: true,
-        });
-
-        throw error;
-      }
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        await fsPromise.mkdir(path.dirname(filePath), {
-          recursive: true,
-        });
-
-        continue;
-      } else if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access lock file`);
-}
-
-/**
  * Remove XYZ tile data file with lock
  * @param {string} filePath File path to remove tile data file
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
 async function removeXYZTileFile(filePath, timeout) {
-  const startTime = Date.now();
-
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      await fsPromise.rm(filePath, {
-        force: true,
-      });
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        return;
-      } else if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access lock file`);
+  await removeFileWithLock(filePath, timeout);
 }
 
 /**
@@ -639,85 +533,17 @@ export async function getXYZMetadata(sourcePath) {
  * @returns {Promise<void>}
  */
 export async function updateXYZMetadataFile(filePath, metadataAdds, timeout) {
-  const startTime = Date.now();
+  const data = await fsPromise.readFile(filePath, "utf8");
 
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      const tempFilePath = `${filePath}.tmp`;
-
-      try {
-        const data = await fsPromise.readFile(filePath, "utf8");
-
-        await fsPromise.writeFile(
-          tempFilePath,
-          JSON.stringify({
-            ...JSON.parse(data),
-            ...metadataAdds,
-            scheme: "xyz",
-          }),
-          "utf8"
-        );
-
-        await fsPromise.rename(tempFilePath, filePath);
-      } catch (error) {
-        if (error.code === "ENOENT") {
-          await fsPromise.mkdir(path.dirname(filePath), {
-            recursive: true,
-          });
-
-          await fsPromise.writeFile(
-            filePath,
-            JSON.stringify({
-              ...metadataAdds,
-              scheme: "xyz",
-            }),
-            "utf8"
-          );
-        } else {
-          await fsPromise.rm(tempFilePath, {
-            force: true,
-          });
-
-          throw error;
-        }
-      }
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        await fsPromise.mkdir(path.dirname(filePath), {
-          recursive: true,
-        });
-
-        continue;
-      } else if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access lock file`);
+  await createFileWithLock(
+    filePath,
+    JSON.stringify({
+      ...JSON.parse(data),
+      ...metadataAdds,
+      scheme: "xyz",
+    }),
+    timeout
+  );
 }
 
 /**
@@ -768,7 +594,7 @@ export async function downloadXYZTileFile(
     } catch (error) {
       printLog(
         "error",
-        `Failed to download tile data file "${z}/${x}/${y}" from "${url}": ${error}`
+        `Failed to download tile data file "${z}/${x}/${y}" - From "${url}": ${error}`
       );
 
       if (error.statusCode !== undefined) {
@@ -845,7 +671,7 @@ export async function cacheXYZTileFile(
   ) {
     return;
   } else {
-    await createXYZTileFile(
+    await createFileWithLock(
       `${sourcePath}/${z}/${x}/${y}.${format}`,
       data,
       300000 // 5 mins

@@ -771,7 +771,7 @@ export const serve_data = {
                 if ((await isExistFile(dataInfo.path)) === false) {
                   printLog(
                     "info",
-                    `Downloading MBTiles file "${dataInfo.path}" from "${item.mbtiles}"...`
+                    `Downloading MBTiles file "${dataInfo.path}" - From "${item.mbtiles}"...`
                   );
 
                   await downloadMBTilesFile(

@@ -23,6 +23,7 @@ import {
 } from "./tile_mbtiles.js";
 import {
   getTilesBoundsFromBBoxs,
+  createFileWithLock,
   removeEmptyFolders,
   getJSONSchema,
   validateJSON,
@@ -74,59 +75,11 @@ async function loadCleanUpFile() {
  * @returns {Promise<void>}
  */
 async function updateCleanUpFile(cleanUp, timeout) {
-  const startTime = Date.now();
-
-  const filePath = `${process.env.DATA_DIR}/cleanup.json`;
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      const tempFilePath = `${filePath}.tmp`;
-
-      try {
-        await fsPromise.writeFile(
-          tempFilePath,
-          JSON.stringify(cleanUp, null, 2),
-          "utf8"
-        );
-
-        await fsPromise.rename(tempFilePath, filePath);
-      } catch (error) {
-        await fsPromise.rm(tempFilePath, {
-          force: true,
-        });
-
-        throw error;
-      }
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access lock file`);
+  await createFileWithLock(
+    `${process.env.DATA_DIR}/cleanup.json`,
+    JSON.stringify(cleanUp, null, 2),
+    timeout
+  );
 }
 
 /**
@@ -703,10 +656,7 @@ async function cleanUpSprite(id, cleanUpBefore) {
       }
 
       if (needRemove === true) {
-        printLog(
-          "info",
-          `Removing sprite "${id}" - File "${fileName}"...`
-        );
+        printLog("info", `Removing sprite "${id}" - File "${fileName}"...`);
 
         await removeSpriteFile(
           filePath,

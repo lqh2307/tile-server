@@ -3,9 +3,10 @@
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
-import path from "node:path";
 import sharp from "sharp";
 import {
+  removeFileWithLock,
+  createFileWithLock,
   getDataFromURL,
   getJSONSchema,
   validateJSON,
@@ -17,120 +18,13 @@ import {
 sharp.cache(false);
 
 /**
- * Create sprite file with lock
- * @param {string} filePath File path to store sprite file
- * @param {Buffer} data Sprite buffer
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-async function createSpriteFile(filePath, data, timeout) {
-  const startTime = Date.now();
-
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      const tempFilePath = `${filePath}.tmp`;
-
-      try {
-        await fsPromise.mkdir(path.dirname(filePath), {
-          recursive: true,
-        });
-
-        await fsPromise.writeFile(tempFilePath, data);
-
-        await fsPromise.rename(tempFilePath, filePath);
-      } catch (error) {
-        await fsPromise.rm(tempFilePath, {
-          force: true,
-        });
-
-        throw error;
-      }
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        await fsPromise.mkdir(path.dirname(filePath), {
-          recursive: true,
-        });
-
-        continue;
-      } else if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access lock file`);
-}
-
-/**
  * Remove sprite file with lock
  * @param {string} filePath File path to remove sprite file
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
 export async function removeSpriteFile(filePath, timeout) {
-  const startTime = Date.now();
-
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      await fsPromise.rm(filePath, {
-        force: true,
-      });
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        return;
-      } else if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access lock file`);
+  await removeFileWithLock(filePath, timeout);
 }
 
 /**
@@ -141,7 +35,7 @@ export async function removeSpriteFile(filePath, timeout) {
  * @returns {Promise<void>}
  */
 export async function cacheSpriteFile(sourcePath, fileName, data) {
-  await createSpriteFile(
+  await createFileWithLock(
     `${sourcePath}/${fileName}`,
     data,
     300000 // 5 mins
@@ -172,7 +66,7 @@ export async function downloadSpriteFile(url, id, fileName, maxTry, timeout) {
     } catch (error) {
       printLog(
         "error",
-        `Failed to download sprite file "${fileName}" from "${url}": ${error}`
+        `Failed to download sprite file "${fileName}" - From "${url}": ${error}`
       );
 
       if (error.statusCode !== undefined) {

@@ -1,80 +1,17 @@
 "use strict";
 
-import { delay, getDataFromURL, isLocalTileURL, retry } from "./utils.js";
 import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
-import path from "node:path";
-
-/**
- * Create style data file with lock
- * @param {string} filePath File path to store style file
- * @param {Buffer} data Data buffer
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-async function createStyleFile(filePath, data, timeout) {
-  const startTime = Date.now();
-
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      const tempFilePath = `${filePath}.tmp`;
-
-      try {
-        await fsPromise.mkdir(path.dirname(filePath), {
-          recursive: true,
-        });
-
-        await fsPromise.writeFile(tempFilePath, data);
-
-        await fsPromise.rename(tempFilePath, filePath);
-      } catch (error) {
-        await fsPromise.rm(tempFilePath, {
-          force: true,
-        });
-
-        throw error;
-      }
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        await fsPromise.mkdir(path.dirname(filePath), {
-          recursive: true,
-        });
-
-        continue;
-      } else if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access lock file`);
-}
+import {
+  removeFileWithLock,
+  createFileWithLock,
+  getDataFromURL,
+  isLocalTileURL,
+  retry,
+} from "./utils.js";
 
 /**
  * Remove style data file with lock
@@ -83,46 +20,7 @@ async function createStyleFile(filePath, data, timeout) {
  * @returns {Promise<void>}
  */
 export async function removeStyleFile(filePath, timeout) {
-  const startTime = Date.now();
-
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      await fsPromise.rm(filePath, {
-        force: true,
-      });
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        return;
-      } else if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access lock file`);
+  await removeFileWithLock(filePath, timeout);
 }
 
 /**
@@ -145,7 +43,7 @@ export async function downloadStyleFile(url, filePath, maxTry, timeout) {
       if (error.statusCode !== undefined) {
         printLog(
           "error",
-          `Failed to download style file "${filePath}" from "${url}": ${error}`
+          `Failed to download style file "${filePath}" - From "${url}": ${error}`
         );
 
         if (
@@ -170,7 +68,7 @@ export async function downloadStyleFile(url, filePath, maxTry, timeout) {
  * @returns {Promise<void>}
  */
 export async function cacheStyleFile(filePath, data) {
-  await createStyleFile(
+  await createFileWithLock(
     filePath,
     data,
     300000 // 5 mins

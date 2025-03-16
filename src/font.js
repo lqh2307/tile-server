@@ -1,83 +1,20 @@
 "use strict";
 
-import { getDataFromURL, findFiles, delay, retry } from "./utils.js";
 import { StatusCodes } from "http-status-codes";
 import fsPromise from "node:fs/promises";
 import protobuf from "protocol-buffers";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
-import path from "node:path";
 import fs from "node:fs";
+import {
+  removeFileWithLock,
+  createFileWithLock,
+  getDataFromURL,
+  findFiles,
+  retry,
+} from "./utils.js";
 
 const glyphsProto = protobuf(fs.readFileSync("public/protos/glyphs.proto"));
-
-/**
- * Create font file with lock
- * @param {string} filePath File path to store font file
- * @param {Buffer} data Font buffer
- * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<void>}
- */
-async function createFontFile(filePath, data, timeout) {
-  const startTime = Date.now();
-
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      const tempFilePath = `${filePath}.tmp`;
-
-      try {
-        await fsPromise.mkdir(path.dirname(filePath), {
-          recursive: true,
-        });
-
-        await fsPromise.writeFile(tempFilePath, data);
-
-        await fsPromise.rename(tempFilePath, filePath);
-      } catch (error) {
-        await fsPromise.rm(tempFilePath, {
-          force: true,
-        });
-
-        throw error;
-      }
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        await fsPromise.mkdir(path.dirname(filePath), {
-          recursive: true,
-        });
-
-        continue;
-      } else if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access lock file`);
-}
 
 /**
  * Remove font file with lock
@@ -86,46 +23,7 @@ async function createFontFile(filePath, data, timeout) {
  * @returns {Promise<void>}
  */
 export async function removeFontFile(filePath, timeout) {
-  const startTime = Date.now();
-
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      await fsPromise.rm(filePath, {
-        force: true,
-      });
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        return;
-      } else if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access lock file`);
+  await removeFileWithLock(filePath, timeout);
 }
 
 /**
@@ -136,7 +34,7 @@ export async function removeFontFile(filePath, timeout) {
  * @returns {Promise<void>}
  */
 export async function cacheFontFile(sourcePath, range, data) {
-  await createFontFile(
+  await createFileWithLock(
     `${sourcePath}/${range}.pbf`,
     data,
     300000 // 5 mins
@@ -167,7 +65,7 @@ export async function downloadFontFile(url, id, range, maxTry, timeout) {
     } catch (error) {
       printLog(
         "error",
-        `Failed to download font range "${range}" from "${url}": ${error}`
+        `Failed to download font range "${range}" - From "${url}": ${error}`
       );
 
       if (error.statusCode !== undefined) {

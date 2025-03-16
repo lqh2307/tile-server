@@ -7,6 +7,7 @@ import { exec } from "child_process";
 import handlebars from "handlebars";
 import https from "node:https";
 import http from "node:http";
+import path from "node:path";
 import crypto from "crypto";
 import axios from "axios";
 import proj4 from "proj4";
@@ -867,4 +868,121 @@ export async function isFullTransparentPNGImage(buffer) {
   } catch (error) {
     return false;
   }
+}
+
+/**
+ * Create file with lock
+ * @param {string} filePath File path to store file
+ * @param {Buffer} data Data buffer
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<void>}
+ */
+export async function createFileWithLock(filePath, data, timeout) {
+  const startTime = Date.now();
+
+  const lockFilePath = `${filePath}.lock`;
+  let lockFileHandle;
+
+  while (Date.now() - startTime <= timeout) {
+    try {
+      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
+
+      const tempFilePath = `${filePath}.tmp`;
+
+      try {
+        await fsPromise.mkdir(path.dirname(filePath), {
+          recursive: true,
+        });
+
+        await fsPromise.writeFile(tempFilePath, data);
+
+        await fsPromise.rename(tempFilePath, filePath);
+      } catch (error) {
+        await fsPromise.rm(tempFilePath, {
+          force: true,
+        });
+
+        throw error;
+      }
+
+      await lockFileHandle.close();
+
+      await fsPromise.rm(lockFilePath, {
+        force: true,
+      });
+
+      return;
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        await fsPromise.mkdir(path.dirname(filePath), {
+          recursive: true,
+        });
+
+        continue;
+      } else if (error.code === "EEXIST") {
+        await delay(50);
+      } else {
+        if (lockFileHandle !== undefined) {
+          await lockFileHandle.close();
+
+          await fsPromise.rm(lockFilePath, {
+            force: true,
+          });
+        }
+
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(`Timeout to access lock file`);
+}
+
+/**
+ * Remove file with lock
+ * @param {string} filePath File path to remove file
+ * @param {number} timeout Timeout in milliseconds
+ * @returns {Promise<void>}
+ */
+export async function removeFileWithLock(filePath, timeout) {
+  const startTime = Date.now();
+
+  const lockFilePath = `${filePath}.lock`;
+  let lockFileHandle;
+
+  while (Date.now() - startTime <= timeout) {
+    try {
+      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
+
+      await fsPromise.rm(filePath, {
+        force: true,
+      });
+
+      await lockFileHandle.close();
+
+      await fsPromise.rm(lockFilePath, {
+        force: true,
+      });
+
+      return;
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        return;
+      } else if (error.code === "EEXIST") {
+        await delay(50);
+      } else {
+        if (lockFileHandle !== undefined) {
+          await lockFileHandle.close();
+
+          await fsPromise.rm(lockFilePath, {
+            force: true,
+          });
+        }
+
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(`Timeout to access lock file`);
 }

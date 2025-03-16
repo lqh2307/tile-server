@@ -661,7 +661,7 @@ export async function downloadPostgreSQLTile(
     } catch (error) {
       printLog(
         "error",
-        `Failed to download tile data "${z}/${x}/${y}" from "${url}": ${error}`
+        `Failed to download tile data "${z}/${x}/${y}" - From "${url}": ${error}`
       );
 
       if (error.statusCode !== undefined) {

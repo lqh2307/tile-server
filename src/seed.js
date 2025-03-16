@@ -1,6 +1,8 @@
 "use strict";
 
-import { downloadStyleFile, getStyleCreated, getStyle } from "./style.js";
+import { downloadSpriteFile, getSpriteCreated } from "./sprite.js";
+import { downloadStyleFile, getStyleCreated } from "./style.js";
+import { downloadFontFile, getFontCreated } from "./font.js";
 import fsPromise from "node:fs/promises";
 import { printLog } from "./logger.js";
 import { Mutex } from "async-mutex";
@@ -28,6 +30,7 @@ import {
 } from "./tile_mbtiles.js";
 import {
   getTilesBoundsFromBBoxs,
+  createFileWithLock,
   removeEmptyFolders,
   getDataFromURL,
   getJSONSchema,
@@ -83,59 +86,11 @@ async function loadSeedFile() {
  * @returns {Promise<void>}
  */
 async function updateSeedFile(seed, timeout) {
-  const startTime = Date.now();
-
-  const filePath = `${process.env.DATA_DIR}/seed.json`;
-  const lockFilePath = `${filePath}.lock`;
-  let lockFileHandle;
-
-  while (Date.now() - startTime <= timeout) {
-    try {
-      lockFileHandle = await fsPromise.open(lockFilePath, "wx");
-
-      const tempFilePath = `${filePath}.tmp`;
-
-      try {
-        await fsPromise.writeFile(
-          tempFilePath,
-          JSON.stringify(seed, null, 2),
-          "utf8"
-        );
-
-        await fsPromise.rename(tempFilePath, filePath);
-      } catch (error) {
-        await fsPromise.rm(tempFilePath, {
-          force: true,
-        });
-
-        throw error;
-      }
-
-      await lockFileHandle.close();
-
-      await fsPromise.rm(lockFilePath, {
-        force: true,
-      });
-
-      return;
-    } catch (error) {
-      if (error.code === "EEXIST") {
-        await delay(50);
-      } else {
-        if (lockFileHandle !== undefined) {
-          await lockFileHandle.close();
-
-          await fsPromise.rm(lockFilePath, {
-            force: true,
-          });
-        }
-
-        throw error;
-      }
-    }
-  }
-
-  throw new Error(`Timeout to access lock file`);
+  await createFileWithLock(
+    `${process.env.DATA_DIR}/seed.json`,
+    JSON.stringify(seed, null, 2),
+    timeout
+  );
 }
 
 /**
@@ -219,7 +174,7 @@ async function seedMBTilesTiles(
   const mutex = new Mutex();
 
   let activeTasks = 0;
-  let remainingTasks = total;
+  let completeTasks = 0;
 
   async function seedMBTilesTileData(z, x, y) {
     const tileName = `${z}/${x}/${y}`;
@@ -276,7 +231,7 @@ async function seedMBTilesTiles(
 
         printLog(
           "info",
-          `Downloading data "${id}" - Tile "${tileName}" from "${targetURL}"...`
+          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${completeTasks}/${total}...`
         );
 
         await downloadMBTilesTile(
@@ -313,7 +268,7 @@ async function seedMBTilesTiles(
           await mutex.runExclusive(() => {
             activeTasks++;
 
-            remainingTasks--;
+            completeTasks++;
           });
 
           /* Run a task */
@@ -426,7 +381,7 @@ async function seedPostgreSQLTiles(
   const mutex = new Mutex();
 
   let activeTasks = 0;
-  let remainingTasks = total;
+  let completeTasks = 0;
 
   async function seedPostgreSQLTileData(z, x, y) {
     const tileName = `${z}/${x}/${y}`;
@@ -483,7 +438,7 @@ async function seedPostgreSQLTiles(
 
         printLog(
           "info",
-          `Downloading data "${id}" - Tile "${tileName}" from "${targetURL}"...`
+          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${completeTasks}/${total}...`
         );
 
         await downloadPostgreSQLTile(
@@ -520,7 +475,7 @@ async function seedPostgreSQLTiles(
           await mutex.runExclusive(() => {
             activeTasks++;
 
-            remainingTasks--;
+            completeTasks++;
           });
 
           /* Run a task */
@@ -635,7 +590,7 @@ async function seedXYZTiles(
   const mutex = new Mutex();
 
   let activeTasks = 0;
-  let remainingTasks = total;
+  let completeTasks = 0;
 
   async function seedXYZTileData(z, x, y) {
     const tileName = `${z}/${x}/${y}`;
@@ -694,7 +649,7 @@ async function seedXYZTiles(
 
         printLog(
           "info",
-          `Downloading data "${id}" - Tile "${tileName}" from "${targetURL}"...`
+          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${completeTasks}/${total}...`
         );
 
         await downloadXYZTileFile(
@@ -733,7 +688,7 @@ async function seedXYZTiles(
           await mutex.runExclusive(() => {
             activeTasks++;
 
-            remainingTasks--;
+            completeTasks++;
           });
 
           /* Run a task */
@@ -856,7 +811,7 @@ async function seedGeoJSON(id, url, maxTry, timeout, refreshBefore) {
     if (needDownload === true) {
       printLog(
         "info",
-        `Downloading geojson "${id}" - File "${filePath}" from "${url}"...`
+        `Downloading geojson "${id}" - File "${filePath}" - From "${url}"...`
       );
 
       await downloadGeoJSONFile(url, filePath, maxTry, timeout);
@@ -908,43 +863,51 @@ async function seedSprite(id, url, maxTry, timeout, refreshBefore) {
 
   printLog("info", log);
 
-  /* Download GeoJSON file */
-  const filePath = `${process.env.DATA_DIR}/caches/geojsons/${id}/${id}.geojson`;
+  /* Download sprite files */
+  async function seedSpriteData(fileName) {
+    const filePath = `${process.env.DATA_DIR}/caches/sprites/${id}/${fileName}`;
 
-  try {
-    let needDownload = false;
+    try {
+      let needDownload = false;
 
-    if (refreshTimestamp !== undefined) {
-      try {
-        const created = await getGeoJSONCreated(filePath);
+      if (refreshTimestamp !== undefined) {
+        try {
+          const created = await getSpriteCreated(filePath);
 
-        if (!created || created < refreshTimestamp) {
-          needDownload = true;
+          if (!created || created < refreshTimestamp) {
+            needDownload = true;
+          }
+        } catch (error) {
+          if (error.message === "Sprite created does not exist") {
+            needDownload = true;
+          } else {
+            throw error;
+          }
         }
-      } catch (error) {
-        if (error.message === "GeoJSON created does not exist") {
-          needDownload = true;
-        } else {
-          throw error;
-        }
+      } else {
+        needDownload = true;
       }
-    } else {
-      needDownload = true;
-    }
 
-    printLog("info", "Downloading geojson...");
+      if (needRemove === true) {
+        printLog("info", `Downloading sprite "${id}" - File "${fileName}"...`);
 
-    if (needDownload === true) {
+        await downloadSpriteFile(url, id, fileName, maxTry, timeout);
+      }
+    } catch (error) {
       printLog(
-        "info",
-        `Downloading geojson "${id}" - File "${filePath}" from "${url}"...`
+        "error",
+        `Failed to seed sprite "${id}" - File "${fileName}": ${error}`
       );
-
-      await downloadGeoJSONFile(url, filePath, maxTry, timeout);
     }
-  } catch (error) {
-    printLog("error", `Failed to seed geojson "${id}": ${error}`);
   }
+
+  printLog("info", "Downloading sprites...");
+
+  await Promise.all(
+    ["sprite.json", "sprite.png", "sprite@2x.json", "sprite@2x.png"].map(
+      (fileName) => seedSpriteData(fileName)
+    )
+  );
 
   /* Remove parent folders if empty */
   await removeEmptyFolders(
@@ -990,42 +953,78 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
 
   printLog("info", log);
 
-  /* Download GeoJSON file */
-  const filePath = `${process.env.DATA_DIR}/caches/geojsons/${id}/${id}.geojson`;
+  /* Remove font files */
+  const mutex = new Mutex();
 
-  try {
-    let needDownload = false;
+  let activeTasks = 0;
+  let completeTasks = 0;
 
-    if (refreshTimestamp !== undefined) {
-      try {
-        const created = await getGeoJSONCreated(filePath);
+  async function seedFontData(start, end) {
+    const range = `${start}-${end}`;
+    const filePath = `${process.env.DATA_DIR}/caches/fonts/${id}/${range}.pbf`;
 
-        if (!created || created < refreshTimestamp) {
-          needDownload = true;
+    try {
+      let needDownload = false;
+
+      if (cleanUpTimestamp !== undefined) {
+        try {
+          const created = await getFontCreated(filePath);
+
+          if (!created || created < cleanUpTimestamp) {
+            needDownload = true;
+          }
+        } catch (error) {
+          if (error.message === "Font created does not exist") {
+            needDownload = true;
+          } else {
+            throw error;
+          }
         }
-      } catch (error) {
-        if (error.message === "GeoJSON created does not exist") {
-          needDownload = true;
-        } else {
-          throw error;
-        }
+      } else {
+        needDownload = true;
       }
-    } else {
-      needDownload = true;
-    }
 
-    printLog("info", "Downloading geojson...");
+      if (needDownload === true) {
+        printLog(
+          "info",
+          `Downloading font "${id}" - Range "${range}" - ${completeTasks}/${total}...`
+        );
 
-    if (needDownload === true) {
+        await downloadFontFile(url, id, range, maxTry, timeout);
+      }
+    } catch (error) {
       printLog(
-        "info",
-        `Downloading geojson "${id}" - File "${filePath}" from "${url}"...`
+        "error",
+        `Failed to seed font "${id}" -  Range "${range}": ${error}`
       );
-
-      await downloadGeoJSONFile(url, filePath, maxTry, timeout);
     }
-  } catch (error) {
-    printLog("error", `Failed to seed geojson "${id}": ${error}`);
+  }
+
+  printLog("info", "Downloading fonts...");
+
+  for (let i = 0; i <= 256; i++) {
+    /* Wait slot for a task */
+    while (activeTasks >= concurrency) {
+      await delay(50);
+    }
+
+    await mutex.runExclusive(() => {
+      activeTasks++;
+
+      completeTasks++;
+    });
+
+    /* Run a task */
+    seedFontData(i * 256, i * 256 + 255).finally(() =>
+      mutex.runExclusive(() => {
+        activeTasks--;
+      })
+    );
+  }
+
+  /* Wait all tasks done */
+  while (activeTasks > 0) {
+    await delay(50);
   }
 
   /* Remove parent folders if empty */
@@ -1100,7 +1099,7 @@ async function seedStyle(id, url, maxTry, timeout, refreshBefore) {
     if (needDownload === true) {
       printLog(
         "info",
-        `Downloading style "${id}" - File "${filePath}" from "${url}"...`
+        `Downloading style "${id}" - File "${filePath}" - From "${url}"...`
       );
 
       await downloadStyleFile(url, filePath, maxTry, timeout);

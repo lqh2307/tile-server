@@ -546,7 +546,7 @@ export const serve_geojson = {
                     if ((await isExistFile(info.path)) === false) {
                       printLog(
                         "info",
-                        `Downloading GeoJSON file "${info.path}" from "${item.geojson}"...`
+                        `Downloading GeoJSON file "${info.path}" - From "${item.geojson}"...`
                       );
 
                       await downloadGeoJSONFile(

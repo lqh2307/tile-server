@@ -654,18 +654,18 @@ export async function downloadMBTilesFile(url, filePath, maxTry, timeout) {
         ) {
           printLog(
             "error",
-            `Failed to download MBTiles file "${filePath}" from "${url}": ${error}`
+            `Failed to download MBTiles file "${filePath}" - From "${url}": ${error}`
           );
 
           return;
         } else {
           throw new Error(
-            `Failed to download MBTiles file "${filePath}" from "${url}": ${error}`
+            `Failed to download MBTiles file "${filePath}" - From "${url}": ${error}`
           );
         }
       } else {
         throw new Error(
-          `Failed to download MBTiles file "${filePath}" from "${url}": ${error}`
+          `Failed to download MBTiles file "${filePath}" - From "${url}": ${error}`
         );
       }
     }
@@ -792,7 +792,7 @@ export async function downloadMBTilesTile(
     } catch (error) {
       printLog(
         "error",
-        `Failed to download tile data "${z}/${x}/${y}" from "${url}": ${error}`
+        `Failed to download tile data "${z}/${x}/${y}" - From "${url}": ${error}`
       );
 
       if (error.statusCode !== undefined) {

@@ -1085,7 +1085,7 @@ export const serve_style = {
               if ((await isExistFile(styleInfo.path)) === false) {
                 printLog(
                   "info",
-                  `Downloading style file "${styleInfo.path}" from "${item.style}"...`
+                  `Downloading style file "${styleInfo.path}" - From "${item.style}"...`
                 );
 
                 await downloadStyleFile(
