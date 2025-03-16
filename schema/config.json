@@ -159,7 +159,7 @@
                 "type": "boolean"
               }
             },
-            "required": ["style"]
+            "required": ["sprite"]
           }
         }
       }
@@ -185,7 +185,7 @@
             }
           }
         },
-        "required": ["style"]
+        "required": ["font"]
       }
     }
   }
