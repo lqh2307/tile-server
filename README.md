@@ -33,7 +33,6 @@ apt-get -y install \
   pkg-config \
   build-essential \
   ca-certificates \
-  nginx \
   wget \
   xvfb \
   libglfw3-dev \
@@ -47,11 +46,26 @@ apt-get -y install \
   libcurl4-openssl-dev;
 ```
 
-If use export:
+If use export (Install gdal):
 
 ```bash
-apt-get -y install gdal-bin;
+export GDAL_VERSION=3.10.2
+
+apt-get -y install \
+  libproj-dev; \
+wget -q http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.xz; \
+tar -xJf ./gdal-${GDAL_VERSION}.tar.xz; \
+cd ./gdal-${GDAL_VERSION}; \
+mkdir -p build; \
+cd build; \
+cmake .. -DCMAKE_BUILD_TYPE=Release; \
+cmake --build .; \
+cmake --build . --target install; \
+cd ../..;
+rm -rf ./gdal-${GDAL_VERSION}*; \
 ```
+
+Clean:
 
 ```bash
 apt-get -y --purge autoremove; \
@@ -63,7 +77,8 @@ Install nodejs:
 
 ```bash
 wget -q https://nodejs.org/download/release/v22.11.0/node-v22.11.0-linux-x64.tar.xz; \
-mkdir -p /usr/local/lib/nodejs && tar -xJf node-v22.11.0-linux-x64.tar.xz --strip-components=1 -C /usr/local/lib/nodejs; \
+mkdir -p /usr/local/lib/nodejs; \
+tar -xJf node-v22.11.0-linux-x64.tar.xz --strip-components=1 -C /usr/local/lib/nodejs; \
 rm -rf node-v22.11.0-linux-x64.tar.xz; \
 echo 'export PATH=/usr/local/lib/nodejs/bin:$PATH' >> ~/.bashrc; \
 source ~/.bashrc;
@@ -76,16 +91,9 @@ npm install -g yarn; \
 NODE_ENV=production yarn install;
 ```
 
-Run (without nginx):
+Run:
 
 ```bash
-USE_NGINX=false ENABLE_EXPORT=true yarn run server -d path_to_data_folder
-```
-
-Run (with nginx):
-
-```bash
-cp nginx.conf /etc/nginx/nginx.conf; \
 yarn run server -d path_to_data_folder;
 ```
 
@@ -97,16 +105,10 @@ Build image:
 docker build --build-arg ENABLE_EXPORT=true -t tile-server:0.0.18 .
 ```
 
-Run container (without nginx):
+Run container:
 
 ```bash
-docker run --rm -it -p 8080:8080 --name tile-server -e USE_NGINX=false -v path_to_data_folder:/tile-server/data tile-server:0.0.18
-```
-
-Run container (with nginx):
-
-```bash
-docker run --rm -it -p 8080:80 --name tile-server -v path_to_data_folder:/tile-server/data tile-server:0.0.18
+docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile-server/data tile-server:0.0.18
 ```
 
 ## Example config.json

@@ -1,16 +1,5 @@
 #!/bin/sh
 
-# Run nginx
-USE_NGINX=${USE_NGINX:-false}
-
-if test "$USE_NGINX" = "true"; then
-  echo "Starting nginx..."
-
-  nginx &
-
-  NGINX_PID=$!
-fi
-
 # Run Xvfb
 if test -z "$DISPLAY"; then
   echo "Starting Xvfb..."
@@ -38,17 +27,6 @@ while true; do
     sleep 5
   fi
 done
-
-# Stop nginx
-if test -n "$NGINX_PID"; then
-  if ps -p "$NGINX_PID" > /dev/null; then
-    echo "Stopping nginx..."
-
-    kill "$NGINX_PID"
-
-    wait "$NGINX_PID" 2>/dev/null
-  fi
-fi
 
 # Stop Xvfb
 if test -n "$XVFB_PID"; then

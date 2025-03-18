@@ -71,7 +71,6 @@ RUN \
   apt-get -y upgrade; \
   apt-get -y install \
     xvfb \
-    nginx \
     libglfw3 \
     libuv1 \
     libjpeg-turbo8 \
@@ -97,15 +96,15 @@ WORKDIR /tile-server
 
 COPY --from=builder /tile-server .
 COPY --from=builder /usr/local /usr/local
-COPY --from=builder /tile-server/nginx.conf /etc/nginx/nginx.conf
 
 ENV PATH=/usr/local/lib/nodejs/bin:$PATH
 ENV ENABLE_EXPORT=${ENABLE_EXPORT}
-ENV USE_NGINX=true
+
+RUN \
+  ldconfig;
 
 VOLUME /tile-server/data
 
 EXPOSE 8080
-EXPOSE 80
 
 ENTRYPOINT ["./entrypoint.sh"]
