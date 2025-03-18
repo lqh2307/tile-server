@@ -985,17 +985,19 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
       }
 
       if (needDownload === true) {
+        const targetURL = url.replace("{range}", `${range}`);
+
         printLog(
           "info",
-          `Downloading font "${id}" - Range "${range}" - ${completeTasks}/${total}...`
+          `Downloading font "${id}" - Range "${range}" - From "${targetURL}" - ${completeTasks}/${total}...`
         );
 
-        await downloadFontFile(url, id, range, maxTry, timeout);
+        await downloadFontFile(targetURL, id, range, maxTry, timeout);
       }
     } catch (error) {
       printLog(
         "error",
-        `Failed to seed font "${id}" -  Range "${range}": ${error}`
+        `Failed to seed font "${id}" - Range "${range}": ${error}`
       );
     }
   }
