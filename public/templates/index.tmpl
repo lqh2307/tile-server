@@ -615,6 +615,26 @@
             <div class="item">
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
+                <h3 class="name">Clean sprites</h3>
+                <p>description: Start clean up sprites</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="actionManager(event, 'cleanUpSprites')">Clean sprites</a>
+              </div>
+            </div>
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Clean fonts</h3>
+                <p>description: Start clean up fonts</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="actionManager(event, 'cleanUpFonts')">Clean fonts</a>
+              </div>
+            </div>
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
                 <h3 class="name">Seed styles</h3>
                 <p>description: Start seed styles</p>
               </div>
@@ -640,6 +660,26 @@
               </div>
               <div class="viewers">
                 <a class="btn" href="#" onclick="actionManager(event, 'seedDatas')">Seed datas</a>
+              </div>
+            </div>
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Seed sprites</h3>
+                <p>description: Start seed sprites</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="actionManager(event, 'seedSprites')">Seed sprites</a>
+              </div>
+            </div>
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Seed fonts</h3>
+                <p>description: Start seed fonts</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="actionManager(event, 'seedFonts')">Seed fonts</a>
               </div>
             </div>
             <div class="item">
@@ -671,7 +711,7 @@
       event.preventDefault();
 
       if (action === "all") {
-        fetch(`${baseURL}/tasks/start?seedStyles=true&cleanUpStyles=true&cleanUpDatas=true&seedDatas=true&seedGeoJSONs=true&cleanUpGeoJSONs=true&restart=true`, {
+        fetch(`${baseURL}/tasks/start?seedStyles=true&cleanUpStyles=true&cleanUpDatas=true&seedDatas=true&seedGeoJSONs=true&cleanUpGeoJSONs=true&seedSprites=true&cleanUpSprites&seedFonts=true&cleanUpFonts=true=true&restart=true`, {
           method: "GET",
         })
           .then((response) => {
@@ -718,6 +758,30 @@
             }
           })
           .catch((error) => alert(`Failed to start clean up datas: ${error.message}`));
+      } else if (action === "cleanUpSprites") {
+        fetch(`${baseURL}/tasks/start?cleanUpSprites=true&restart=true`, {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Starting clean up sprites...");
+            } else {
+              alert(`Failed to start clean up sprites: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => alert(`Failed to start clean up sprites: ${error.message}`));
+      } else if (action === "cleanUpFonts") {
+        fetch(`${baseURL}/tasks/start?cleanUpFonts=true&restart=true`, {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Starting clean up fonts...");
+            } else {
+              alert(`Failed to start clean up fonts: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => alert(`Failed to start clean up fonts: ${error.message}`));
       } else if (action === "seedStyles") {
         fetch(`${baseURL}/tasks/start?seedStyles=true&restart=true`, {
           method: "GET",
@@ -754,6 +818,30 @@
             }
           })
           .catch((error) => alert(`Failed to start seed datas: ${error.message}`));
+      } else if (action === "seedSprites") {
+        fetch(`${baseURL}/tasks/start?seedSprites=true&restart=true`, {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Starting seed sprites...");
+            } else {
+              alert(`Failed to start seed sprites: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => alert(`Failed to start seed sprites: ${error.message}`));
+      } else if (action === "seedFonts") {
+        fetch(`${baseURL}/tasks/start?seedFonts=true&restart=true`, {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Starting seed fonts...");
+            } else {
+              alert(`Failed to start seed fonts: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => alert(`Failed to start seed fonts: ${error.message}`));
       } else if (action === "cancel") {
         fetch(`${baseURL}/tasks/cancel`, {
           method: "GET",

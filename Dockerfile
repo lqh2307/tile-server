@@ -5,6 +5,7 @@ FROM ${BUILDER_IMAGE} AS builder
 
 ARG ENABLE_EXPORT=true
 ARG GDAL_VERSION=3.10.2
+ARG NODEJS_VERSION=22.14.0
 
 RUN \
   apt-get -y update; \
@@ -47,10 +48,10 @@ RUN \
   rm -rf /var/lib/apt/lists/*;
 
 RUN \
-  wget -q https://nodejs.org/download/release/v22.11.0/node-v22.11.0-linux-x64.tar.xz; \
+  wget -q https://nodejs.org/download/release/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.xz; \
   mkdir -p /usr/local/lib/nodejs; \
-  tar -xJf node-v22.11.0-linux-x64.tar.xz --strip-components=1 -C /usr/local/lib/nodejs; \
-  rm -rf node-v22.11.0-linux-x64.tar.xz;
+  tar -xJf node-v${NODEJS_VERSION}-linux-x64.tar.xz --strip-components=1 -C /usr/local/lib/nodejs; \
+  rm -rf node-v${NODEJS_VERSION}-linux-x64.tar.xz;
 
 WORKDIR /tile-server
 

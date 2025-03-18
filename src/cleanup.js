@@ -87,18 +87,20 @@ async function updateCleanUpFile(cleanUp, timeout) {
  * @param {string} id Clean up MBTiles ID
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
- * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
+ * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be deleted/Comprare MD5
  * @returns {Promise<void>}
  */
 async function cleanUpMBTilesTiles(id, zooms, bboxs, cleanUpBefore) {
   const startTime = Date.now();
 
+  /* Calculate summary */
   const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
     bboxs,
     zooms,
     "xyz"
   );
 
+  /* Log */
   let log = `Cleaning up ${total} tiles of mbtiles "${id}" with:\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
@@ -218,6 +220,7 @@ async function cleanUpMBTilesTiles(id, zooms, bboxs, cleanUpBefore) {
     await closeMBTilesDB(source);
   }
 
+  /* Log */
   const doneTime = Date.now();
 
   printLog(
@@ -233,18 +236,20 @@ async function cleanUpMBTilesTiles(id, zooms, bboxs, cleanUpBefore) {
  * @param {string} id Clean up PostgreSQL ID
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
- * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
+ * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be deleted/Comprare MD5
  * @returns {Promise<void>}
  */
 async function cleanUpPostgreSQLTiles(id, zooms, bboxs, cleanUpBefore) {
   const startTime = Date.now();
 
+  /* Calculate summary */
   const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
     bboxs,
     zooms,
     "xyz"
   );
 
+  /* Log */
   let log = `Cleaning up ${total} tiles of postgresql "${id}" with:\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
@@ -360,6 +365,7 @@ async function cleanUpPostgreSQLTiles(id, zooms, bboxs, cleanUpBefore) {
     await closePostgreSQLDB(source);
   }
 
+  /* Log */
   const doneTime = Date.now();
 
   printLog(
@@ -376,18 +382,20 @@ async function cleanUpPostgreSQLTiles(id, zooms, bboxs, cleanUpBefore) {
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
- * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
+ * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be deleted/Comprare MD5
  * @returns {Promise<void>}
  */
 async function cleanUpXYZTiles(id, format, zooms, bboxs, cleanUpBefore) {
   const startTime = Date.now();
 
+  /* Calculate summary */
   const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
     bboxs,
     zooms,
     "xyz"
   );
 
+  /* Log */
   let log = `Cleaning up ${total} tiles of xyz "${id}" with:\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
@@ -514,6 +522,7 @@ async function cleanUpXYZTiles(id, format, zooms, bboxs, cleanUpBefore) {
     /^.*\.(sqlite|json|gif|png|jpg|jpeg|webp|pbf)$/
   );
 
+  /* Log */
   const doneTime = Date.now();
 
   printLog(
@@ -527,12 +536,13 @@ async function cleanUpXYZTiles(id, format, zooms, bboxs, cleanUpBefore) {
 /**
  * Clean up geojson
  * @param {string} id Clean up geojson ID
- * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
+ * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be deleted/Comprare MD5
  * @returns {Promise<void>}
  */
 async function cleanUpGeoJSON(id, cleanUpBefore) {
   const startTime = Date.now();
 
+  /* Log */
   let log = `Cleaning up geojson "${id}" with:`;
 
   let cleanUpTimestamp;
@@ -594,6 +604,7 @@ async function cleanUpGeoJSON(id, cleanUpBefore) {
     /^.*\.geojson$/
   );
 
+  /* Log */
   const doneTime = Date.now();
 
   printLog(
@@ -607,12 +618,13 @@ async function cleanUpGeoJSON(id, cleanUpBefore) {
 /**
  * Clean up sprite
  * @param {string} id Clean up sprite ID
- * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
+ * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be deleted/Comprare MD5
  * @returns {Promise<void>}
  */
 async function cleanUpSprite(id, cleanUpBefore) {
   const startTime = Date.now();
 
+  /* Log */
   let log = `Cleaning up sprite "${id}" with:`;
 
   let cleanUpTimestamp;
@@ -681,30 +693,32 @@ async function cleanUpSprite(id, cleanUpBefore) {
 
   /* Remove parent folders if empty */
   await removeEmptyFolders(
-    `${process.env.DATA_DIR}/caches/geojsons/${id}`,
+    `${process.env.DATA_DIR}/caches/sprites/${id}`,
     /^.*\.(json|png)$/
   );
 
+  /* Log */
   const doneTime = Date.now();
 
   printLog(
     "info",
-    `Completed clean up geojson "${id}" after ${
-      (doneTime - startTime) / 1000
-    }s!`
+    `Completed clean up sprite "${id}" after ${(doneTime - startTime) / 1000}s!`
   );
 }
 
 /**
  * Clean up font
  * @param {string} id Clean up font ID
- * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
+ * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be deleted/Comprare MD5
  * @returns {Promise<void>}
  */
 async function cleanUpFont(id, cleanUpBefore) {
   const startTime = Date.now();
 
-  let log = `Cleaning up font "${id}" with:`;
+  const total = 256;
+
+  /* Log */
+  let log = `Cleaning up ${total} fonts of font "${id}" with:`;
 
   let cleanUpTimestamp;
   if (typeof cleanUpBefore === "string") {
@@ -766,7 +780,7 @@ async function cleanUpFont(id, cleanUpBefore) {
   printLog("info", "Removing fonts...");
 
   await Promise.all(
-    Array.from({ length: 256 }, (_, i) =>
+    Array.from({ length: total }, (_, i) =>
       cleanUpFontData(i * 256, i * 256 + 255)
     )
   );
@@ -777,25 +791,25 @@ async function cleanUpFont(id, cleanUpBefore) {
     /^.*\.pbf$/
   );
 
+  /* Log */
   const doneTime = Date.now();
 
   printLog(
     "info",
-    `Completed clean up geojson "${id}" after ${
-      (doneTime - startTime) / 1000
-    }s!`
+    `Completed clean up ${total} fonts of font "${id}" after ${(doneTime - startTime) / 1000}s!`
   );
 }
 
 /**
  * Clean up style
  * @param {string} id Clean up style ID
- * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be deleted
+ * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be deleted/Comprare MD5
  * @returns {Promise<void>}
  */
 async function cleanUpStyle(id, cleanUpBefore) {
   const startTime = Date.now();
 
+  /* Log */
   let log = `Cleaning up style "${id}" with:`;
 
   let cleanUpTimestamp;
@@ -857,6 +871,7 @@ async function cleanUpStyle(id, cleanUpBefore) {
     /^.*\.json$/
   );
 
+  /* Log */
   const doneTime = Date.now();
 
   printLog(

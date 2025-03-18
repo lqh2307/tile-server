@@ -106,7 +106,7 @@ async function updateSeedFile(seed, timeout) {
  * @param {number} timeout Timeout in milliseconds
  * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {boolean} storeTransparent Is store transparent tile?
- * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
+ * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be refreshed/Compare MD5
  * @returns {Promise<void>}
  */
 async function seedMBTilesTiles(
@@ -125,12 +125,14 @@ async function seedMBTilesTiles(
 ) {
   const startTime = Date.now();
 
+  /* Calculate summary */
   const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
     bboxs,
     zooms,
     "xyz"
   );
 
+  /* Log */
   let log = `Seeding ${total} tiles of mbtiles "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
@@ -292,6 +294,7 @@ async function seedMBTilesTiles(
     await closeMBTilesDB(source);
   }
 
+  /* Log */
   const doneTime = Date.now();
 
   printLog(
@@ -315,7 +318,7 @@ async function seedMBTilesTiles(
  * @param {number} timeout Timeout in milliseconds
  * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {boolean} storeTransparent Is store transparent tile?
- * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
+ * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be refreshed/Compare MD5
  * @returns {Promise<void>}
  */
 async function seedPostgreSQLTiles(
@@ -334,11 +337,14 @@ async function seedPostgreSQLTiles(
 ) {
   const startTime = Date.now();
 
+  /* Calculate summary */
   const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
     bboxs,
     zooms,
     "xyz"
   );
+
+  /* Log */
   let log = `Seeding ${total} tiles of postgresql "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
@@ -499,6 +505,7 @@ async function seedPostgreSQLTiles(
     await closePostgreSQLDB(source);
   }
 
+  /* Log */
   const doneTime = Date.now();
 
   printLog(
@@ -522,7 +529,7 @@ async function seedPostgreSQLTiles(
  * @param {number} timeout Timeout in milliseconds
  * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {boolean} storeTransparent Is store transparent tile?
- * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
+ * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be refreshed/Compare MD5
  * @returns {Promise<void>}
  */
 async function seedXYZTiles(
@@ -541,12 +548,14 @@ async function seedXYZTiles(
 ) {
   const startTime = Date.now();
 
+  /* Calculate summary */
   const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
     bboxs,
     zooms,
     "xyz"
   );
 
+  /* Log */
   let log = `Seeding ${total} tiles of xyz "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
     ", "
   )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
@@ -718,6 +727,7 @@ async function seedXYZTiles(
     /^.*\.(sqlite|json|gif|png|jpg|jpeg|webp|pbf)$/
   );
 
+  /* Log */
   const doneTime = Date.now();
 
   printLog(
@@ -740,6 +750,7 @@ async function seedXYZTiles(
 async function seedGeoJSON(id, url, maxTry, timeout, refreshBefore) {
   const startTime = Date.now();
 
+  /* Log */
   let log = `Seeding geojson "${id}" with:\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}`;
 
   let refreshTimestamp;
@@ -826,6 +837,7 @@ async function seedGeoJSON(id, url, maxTry, timeout, refreshBefore) {
     /^.*\.geojson$/
   );
 
+  /* Log */
   const doneTime = Date.now();
 
   printLog(
@@ -846,6 +858,7 @@ async function seedGeoJSON(id, url, maxTry, timeout, refreshBefore) {
 async function seedSprite(id, url, maxTry, timeout, refreshBefore) {
   const startTime = Date.now();
 
+  /* Log */
   let log = `Seeding sprite "${id}" with:\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}`;
 
   let refreshTimestamp;
@@ -889,7 +902,12 @@ async function seedSprite(id, url, maxTry, timeout, refreshBefore) {
       }
 
       if (needDownload === true) {
-        printLog("info", `Downloading sprite "${id}" - File "${fileName}"...`);
+        const targetURL = url.replace("{id}", `${id}`);
+
+        printLog(
+          "info",
+          `Downloading sprite "${id}" - File "${fileName}" - From "${targetURL}"...`
+        );
 
         await downloadSpriteFile(url, id, fileName, maxTry, timeout);
       }
@@ -915,6 +933,7 @@ async function seedSprite(id, url, maxTry, timeout, refreshBefore) {
     /^.*\.(json|png)$/
   );
 
+  /* Log */
   const doneTime = Date.now();
 
   printLog(
@@ -936,7 +955,10 @@ async function seedSprite(id, url, maxTry, timeout, refreshBefore) {
 async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
   const startTime = Date.now();
 
-  let log = `Seeding font "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}`;
+  const total = 256;
+
+  /* Log */
+  let log = `Seeding ${total} fonts of font "${id}" with:\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}`;
 
   let refreshTimestamp;
   if (typeof refreshBefore === "string") {
@@ -989,7 +1011,7 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
 
         printLog(
           "info",
-          `Downloading font "${id}" - Range "${range}" - From "${targetURL}" - ${completeTasks}/${256}...`
+          `Downloading font "${id}" - Range "${range}" - From "${targetURL}" - ${completeTasks}/${total}...`
         );
 
         await downloadFontFile(targetURL, id, range, maxTry, timeout);
@@ -1004,7 +1026,7 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
 
   printLog("info", "Downloading fonts...");
 
-  for (let i = 0; i <= 256; i++) {
+  for (let i = 0; i < 256; i++) {
     /* Wait slot for a task */
     while (activeTasks >= concurrency) {
       await delay(50);
@@ -1035,11 +1057,14 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
     /^.*\.pbf$/
   );
 
+  /* Log */
   const doneTime = Date.now();
 
   printLog(
     "info",
-    `Completed seeding font "${id}" after ${(doneTime - startTime) / 1000}s!`
+    `Completed seeding ${total} fonts of font "${id}" after ${
+      (doneTime - startTime) / 1000
+    }s!`
   );
 }
 
@@ -1055,6 +1080,7 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
 async function seedStyle(id, url, maxTry, timeout, refreshBefore) {
   const startTime = Date.now();
 
+  /* Log */
   let log = `Seeding style "${id}" with:\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}`;
 
   let refreshTimestamp;
@@ -1116,6 +1142,7 @@ async function seedStyle(id, url, maxTry, timeout, refreshBefore) {
     /^.*\.json$/
   );
 
+  /* Log */
   const doneTime = Date.now();
 
   printLog(

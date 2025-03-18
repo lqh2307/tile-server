@@ -696,7 +696,7 @@ export async function renderImage(
  * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {boolean} storeTransparent Is store transparent tile?
  * @param {boolean} createOverview Is create overview?
- * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
+ * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be refreshed/Compare MD5
  * @returns {Promise<void>}
  */
 export async function renderMBTilesTiles(
@@ -937,7 +937,7 @@ export async function renderMBTilesTiles(
  * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {boolean} storeTransparent Is store transparent tile?
  * @param {boolean} createOverview Is create overview?
- * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
+ * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be refreshed/Compare MD5
  * @returns {Promise<void>}
  */
 export async function renderXYZTiles(
@@ -1181,7 +1181,7 @@ export async function renderXYZTiles(
  * @param {boolean} storeMD5 Is store MD5 hashed?
  * @param {boolean} storeTransparent Is store transparent tile?
  * @param {boolean} createOverview Is create overview?
- * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss" or number of days before which files should be refreshed
+ * @param {string|number|boolean} refreshBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be refreshed/Compare MD5
  * @returns {Promise<void>}
  */
 export async function renderPostgreSQLTiles(
