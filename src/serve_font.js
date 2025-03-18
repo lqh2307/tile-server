@@ -6,6 +6,7 @@ import { getFonts, validateFont } from "./font.js";
 import { StatusCodes } from "http-status-codes";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
+import { seed } from "./seed.js";
 import express from "express";
 
 /**
