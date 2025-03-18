@@ -31,14 +31,14 @@ RUN \
       libproj-dev; \
     wget -q http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.xz; \
     tar -xJf ./gdal-${GDAL_VERSION}.tar.xz; \
-	  cd ./gdal-${GDAL_VERSION}; \
-	  mkdir -p build; \
-	  cd build; \
-	  cmake .. -DCMAKE_BUILD_TYPE=Release; \
-	  cmake --build .; \
-	  cmake --build . --target install; \
+    cd ./gdal-${GDAL_VERSION}; \
+    mkdir -p build; \
+    cd build; \
+    cmake .. -DCMAKE_BUILD_TYPE=Release; \
+    cmake --build .; \
+    cmake --build . --target install; \
     cd ..;
-   	rm -rf ./gdal-${GDAL_VERSION}*; \
+    rm -rf ./gdal-${GDAL_VERSION}*; \
   fi;
 
 RUN \
@@ -84,7 +84,8 @@ RUN \
 
 RUN \
   if [ "${ENABLE_EXPORT}" = "true" ]; then \
-    apt-get -y install libproj22; \
+    apt-get -y install \
+      libproj22; \
   fi;
 
 RUN \
