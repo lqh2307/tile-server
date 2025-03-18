@@ -3,8 +3,10 @@ ARG TARGET_IMAGE=ubuntu:22.04
 
 FROM ${BUILDER_IMAGE} AS builder
 
+ARG ENABLE_EXPORT=true
+ARG GDAL_VERSION=3.10.2
+
 RUN \
-  export DEBIAN_FRONTEND=noninteractive; \
   apt-get -y update; \
   apt-get -y upgrade; \
   apt-get -y install \
@@ -21,17 +23,34 @@ RUN \
     libgif-dev \
     libpng-dev \
     libwebp-dev \
-    libcurl4-openssl-dev; \
+    libcurl4-openssl-dev;
+
+RUN \
+  if [ "${ENABLE_EXPORT}" = "true" ]; then \
+    apt-get -y install \
+      libproj-dev; \
+    wget -q http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.xz; \
+    tar -xJf ./gdal-${GDAL_VERSION}.tar.xz; \
+	  cd ./gdal-${GDAL_VERSION}; \
+	  mkdir -p build; \
+	  cd build; \
+	  cmake .. -DCMAKE_BUILD_TYPE=Release; \
+	  cmake --build .; \
+	  cmake --build . --target install; \
+    cd ..;
+   	rm -rf ./gdal-${GDAL_VERSION}*; \
+  fi;
+
+RUN \
   apt-get -y --purge autoremove; \
   apt-get clean; \
   rm -rf /var/lib/apt/lists/*;
 
 RUN \
   wget -q https://nodejs.org/download/release/v22.11.0/node-v22.11.0-linux-x64.tar.xz; \
-  mkdir -p /usr/local/lib/nodejs && tar -xJf node-v22.11.0-linux-x64.tar.xz --strip-components=1 -C /usr/local/lib/nodejs; \
+  mkdir -p /usr/local/lib/nodejs; \
+  tar -xJf node-v22.11.0-linux-x64.tar.xz --strip-components=1 -C /usr/local/lib/nodejs; \
   rm -rf node-v22.11.0-linux-x64.tar.xz;
-
-ENV PATH=/usr/local/lib/nodejs/bin:$PATH
 
 WORKDIR /tile-server
 
@@ -48,7 +67,6 @@ FROM ${TARGET_IMAGE} AS final
 ARG ENABLE_EXPORT=true
 
 RUN \
-  export DEBIAN_FRONTEND=noninteractive; \
   apt-get -y update; \
   apt-get -y upgrade; \
   apt-get -y install \
@@ -66,7 +84,7 @@ RUN \
 
 RUN \
   if [ "${ENABLE_EXPORT}" = "true" ]; then \
-    apt-get -y install gdal-bin; \
+    apt-get -y install libproj22; \
   fi;
 
 RUN \
@@ -77,7 +95,7 @@ RUN \
 WORKDIR /tile-server
 
 COPY --from=builder /tile-server .
-COPY --from=builder /usr/local/lib/nodejs /usr/local/lib/nodejs
+COPY --from=builder /usr/local /usr/local
 COPY --from=builder /tile-server/nginx.conf /etc/nginx/nginx.conf
 
 ENV PATH=/usr/local/lib/nodejs/bin:$PATH
