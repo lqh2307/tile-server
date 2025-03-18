@@ -76,12 +76,18 @@ rm -rf /var/lib/apt/lists/*;
 Install nodejs:
 
 ```bash
-wget -q https://nodejs.org/download/release/v22.11.0/node-v22.11.0-linux-x64.tar.xz; \
+export NODEJS_VERSION=22.14.0
+
+wget -q https://nodejs.org/download/release/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.xz; \
 mkdir -p /usr/local/lib/nodejs; \
-tar -xJf node-v22.11.0-linux-x64.tar.xz --strip-components=1 -C /usr/local/lib/nodejs; \
-rm -rf node-v22.11.0-linux-x64.tar.xz; \
-echo 'export PATH=/usr/local/lib/nodejs/bin:$PATH' >> ~/.bashrc; \
-source ~/.bashrc;
+tar -xJf node-v${NODEJS_VERSION}-linux-x64.tar.xz --strip-components=1 -C /usr/local/lib/nodejs; \
+rm -rf node-v${NODEJS_VERSION}-linux-x64.tar.xz;
+```
+
+Load dynamic lib:
+
+```bash
+ldconfig
 ```
 
 Install packages:
