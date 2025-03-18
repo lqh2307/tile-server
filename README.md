@@ -100,7 +100,7 @@ NODE_ENV=production yarn install;
 Run:
 
 ```bash
-yarn run server -d path_to_data_folder;
+yarn run server -d path_to_data_folder
 ```
 
 ### Run with docker
