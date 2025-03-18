@@ -888,7 +888,7 @@ async function seedSprite(id, url, maxTry, timeout, refreshBefore) {
         needDownload = true;
       }
 
-      if (needRemove === true) {
+      if (needDownload === true) {
         printLog("info", `Downloading sprite "${id}" - File "${fileName}"...`);
 
         await downloadSpriteFile(url, id, fileName, maxTry, timeout);
@@ -966,11 +966,11 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
     try {
       let needDownload = false;
 
-      if (cleanUpTimestamp !== undefined) {
+      if (refreshTimestamp !== undefined) {
         try {
           const created = await getFontCreated(filePath);
 
-          if (!created || created < cleanUpTimestamp) {
+          if (!created || created < refreshTimestamp) {
             needDownload = true;
           }
         } catch (error) {
@@ -989,7 +989,7 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
 
         printLog(
           "info",
-          `Downloading font "${id}" - Range "${range}" - From "${targetURL}" - ${completeTasks}/${total}...`
+          `Downloading font "${id}" - Range "${range}" - From "${targetURL}" - ${completeTasks}/${256}...`
         );
 
         await downloadFontFile(targetURL, id, range, maxTry, timeout);
