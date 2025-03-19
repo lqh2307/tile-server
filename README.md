@@ -76,14 +76,13 @@ rm -rf /var/lib/apt/lists/*;
 Install packages:
 
 ```bash
-npm install -g yarn; \
-yarn install;
+npm install --omit=dev
 ```
 
 Run:
 
 ```bash
-yarn run server -d path_to_data_folder
+npm run server -- -d path_to_data_folder
 ```
 
 ### Run with docker

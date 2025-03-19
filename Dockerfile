@@ -47,7 +47,7 @@ ADD . .
 
 RUN \
   npm install --omit=dev; \
-  rm -rf yarn.lock; \
+  rm -rf package-lock.json; \
   apt-get -y --purge autoremove; \
   apt-get clean; \
   rm -rf /var/lib/apt/lists/*;
