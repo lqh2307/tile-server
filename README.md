@@ -59,7 +59,8 @@ cmake .. -DCMAKE_BUILD_TYPE=Release; \
 cmake --build .; \
 cmake --build . --target install; \
 cd ../..; \
-rm -rf ./gdal-${GDAL_VERSION}*;
+rm -rf ./gdal-${GDAL_VERSION}*; \
+ldconfig;
 ```
 
 Install nodejs:
@@ -71,7 +72,8 @@ wget -q https://nodejs.org/download/release/v${NODEJS_VERSION}/node-v${NODEJS_VE
 mkdir -p /usr/local/lib/nodejs; \
 tar -xzf node-v${NODEJS_VERSION}-linux-x64.tar.gz --strip-components=1 -C /usr/local/lib/nodejs; \
 rm -rf node-v${NODEJS_VERSION}-linux-x64.tar.gz; \
-ldconfig;
+echo 'export PATH=/usr/local/lib/nodejs/bin:$PATH' >> ~/.bashrc; \
+source ~/.bashrc;
 ```
 
 Clean:
@@ -79,7 +81,7 @@ Clean:
 ```bash
 apt-get -y remove \
   ca-certificates \
-  wget; \
+  wget;
 apt-get -y --purge autoremove; \
 apt-get clean; \
 rm -rf /var/lib/apt/lists/*;

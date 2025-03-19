@@ -184,19 +184,12 @@ export function getLonLatFromXYZ(
 
 /**
  * Get tile bounds for specific zoom levels intersecting multiple bounding boxes
- * @param {Array<Array<number>>} bboxs Array of bounding boxes [[west, south, east, north]] in EPSG:4326
+ * @param {Array<Array<number>>} bboxs Array of bounding boxes [west, south, east, north] in EPSG:4326
  * @param {Array<number>} zooms Array of specific zoom levels
  * @param {"xyz"|"tms"} scheme Tile scheme
  * @returns {{ total: number, tilesSummaries: Array<Object<string,object>> }} Object containing total tiles and an array of tile summaries (one per bbox)
  */
-export function getTilesBoundsFromBBoxs(
-  bboxs = [[-180, -85.051129, 180, 85.051129]],
-  zooms = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22,
-  ],
-  scheme
-) {
+export function getTilesBoundsFromBBoxs(bboxs, zooms, scheme) {
   const tilesSummaries = [];
   let total = 0;
 
@@ -230,6 +223,31 @@ export function getTilesBoundsFromBBoxs(
   }
 
   return { total, tilesSummaries };
+}
+
+/**
+ * Get tile bounds for specific zoom levels intersecting multiple bounding boxes
+ * @param {Array<any>} coverages Array of array of bounding boxes [west, south, east, north] in EPSG:4326 and array of specific zoom levels
+ * @param {"xyz"|"tms"} scheme Tile scheme
+ * @returns {Object<grandTotal: number, summaries: Array<Object<total: number, tilesSummaries: Array<Object<string,object>>>>>} Object containing total tiles and an array of tile summaries (one per bbox)
+ */
+export function getTilesBoundsFromCoverages(coverages, scheme) {
+  const summaries = [];
+  let grandTotal = 0;
+
+  for (const coverage of coverages) {
+    const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
+      coverage.bboxs,
+      coverage.zooms,
+      scheme
+    );
+
+    summaries.push({ total, tilesSummaries });
+
+    grandTotal += total;
+  }
+
+  return { grandTotal, summaries };
 }
 
 /**

@@ -30,14 +30,16 @@ RUN \
     cmake --build . --target install; \
     cd ../..; \
     rm -rf ./gdal-${GDAL_VERSION}*; \
+    ldconfig; \
   fi;
 
 RUN \
   wget -q https://nodejs.org/download/release/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.gz; \
   mkdir -p /usr/local/lib/nodejs; \
   tar -xzf node-v${NODEJS_VERSION}-linux-x64.tar.gz --strip-components=1 -C /usr/local/lib/nodejs; \
-  rm -rf node-v${NODEJS_VERSION}-linux-x64.tar.gz; \
-  ldconfig;
+  rm -rf node-v${NODEJS_VERSION}-linux-x64.tar.gz;
+
+ENV PATH=/usr/local/lib/nodejs/bin:$PATH
 
 WORKDIR /tile-server
 
@@ -81,6 +83,8 @@ WORKDIR /tile-server
 
 COPY --from=builder /tile-server .
 COPY --from=builder /usr/local /usr/local
+
+ENV PATH=/usr/local/lib/nodejs/bin:$PATH
 
 RUN \
   apt-get -y --purge autoremove; \
