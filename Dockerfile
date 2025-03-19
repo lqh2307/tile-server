@@ -30,6 +30,7 @@ RUN \
   if [ "${ENABLE_EXPORT}" = "true" ]; then \
     apt-get -y install \
       libproj-dev; \
+      cmake; \
     wget -q http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.xz; \
     tar -xJf ./gdal-${GDAL_VERSION}.tar.xz; \
     cd ./gdal-${GDAL_VERSION}; \

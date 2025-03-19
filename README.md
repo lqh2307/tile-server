@@ -52,6 +52,7 @@ If use export (Install gdal):
 export GDAL_VERSION=3.10.2
 
 apt-get -y install \
+  cmake; \
   libproj-dev; \
 wget -q http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.xz; \
 tar -xJf ./gdal-${GDAL_VERSION}.tar.xz; \
@@ -62,7 +63,7 @@ cmake .. -DCMAKE_BUILD_TYPE=Release; \
 cmake --build .; \
 cmake --build . --target install; \
 cd ../..; \
-rm -rf ./gdal-${GDAL_VERSION}*; \
+rm -rf ./gdal-${GDAL_VERSION}*;
 ```
 
 Clean:
@@ -108,7 +109,7 @@ yarn run server -d path_to_data_folder
 Build image:
 
 ```bash
-docker build --build-arg ENABLE_EXPORT=true -t tile-server:0.0.18 .
+docker build -t tile-server:0.0.18 .
 ```
 
 Run container:
