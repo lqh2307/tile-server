@@ -53,6 +53,9 @@ RUN \
   tar -xJf node-v${NODEJS_VERSION}-linux-x64.tar.xz --strip-components=1 -C /usr/local/lib/nodejs; \
   rm -rf node-v${NODEJS_VERSION}-linux-x64.tar.xz;
 
+RUN \
+  ldconfig;
+
 WORKDIR /tile-server
 
 ADD . .
@@ -98,7 +101,6 @@ WORKDIR /tile-server
 COPY --from=builder /tile-server .
 COPY --from=builder /usr/local /usr/local
 
-ENV PATH=/usr/local/lib/nodejs/bin:$PATH
 ENV ENABLE_EXPORT=${ENABLE_EXPORT}
 
 RUN \
