@@ -11,11 +11,10 @@ RUN \
   apt-get -y update; \
   apt-get -y upgrade; \
   apt-get -y install \
-    pkg-config \
+    cmake \
     build-essential \
     ca-certificates \
     wget \
-    xvfb \
     libglfw3-dev \
     libuv1-dev \
     libjpeg-turbo8-dev \
@@ -24,13 +23,11 @@ RUN \
     libgif-dev \
     libpng-dev \
     libwebp-dev \
-    libcurl4-openssl-dev;
+    libcurl4-openssl-dev \
+    libproj-dev;
 
 RUN \
   if [ "${ENABLE_EXPORT}" = "true" ]; then \
-    apt-get -y install \
-      libproj-dev; \
-      cmake; \
     wget -q http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.xz; \
     tar -xJf ./gdal-${GDAL_VERSION}.tar.xz; \
     cd ./gdal-${GDAL_VERSION}; \

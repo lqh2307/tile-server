@@ -30,7 +30,7 @@ Install dependencies:
 apt-get -y update; \
 apt-get -y upgrade; \
 apt-get -y install \
-  pkg-config \
+  cmake \
   build-essential \
   ca-certificates \
   wget \
@@ -43,7 +43,8 @@ apt-get -y install \
   libgif-dev \
   libpng-dev \
   libwebp-dev \
-  libcurl4-openssl-dev;
+  libcurl4-openssl-dev \
+  libproj-dev;
 ```
 
 If use export (Install gdal):
@@ -51,9 +52,6 @@ If use export (Install gdal):
 ```bash
 export GDAL_VERSION=3.10.2
 
-apt-get -y install \
-  cmake; \
-  libproj-dev; \
 wget -q http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.xz; \
 tar -xJf ./gdal-${GDAL_VERSION}.tar.xz; \
 cd ./gdal-${GDAL_VERSION}; \
