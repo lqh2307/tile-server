@@ -46,8 +46,7 @@ WORKDIR /tile-server
 ADD . .
 
 RUN \
-  npm install -g yarn; \
-  NODE_ENV=production yarn install; \
+  npm install --omit=dev; \
   rm -rf yarn.lock; \
   apt-get -y --purge autoremove; \
   apt-get clean; \
