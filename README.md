@@ -31,7 +31,18 @@ apt-get -y update; \
 apt-get -y upgrade; \
 apt-get -y install \
   ca-certificates \
-  wget;
+  wget \
+  xvfb \
+  libglfw3 \
+  libuv1 \
+  libjpeg-turbo8 \
+  libicu70 \
+  libgif7 \
+  libopengl0 \
+  libpng16-16 \
+  libwebp7 \
+  libsqlite3-0 \
+  libcurl4;
 ```
 
 If use export (Install gdal):
@@ -68,6 +79,9 @@ source ~/.bashrc;
 Clean:
 
 ```bash
+apt-get -y remove \
+  ca-certificates \
+  wget; \
 apt-get -y --purge autoremove; \
 apt-get clean; \
 rm -rf /var/lib/apt/lists/*;
