@@ -184,10 +184,10 @@ export function getLonLatFromXYZ(
 
 /**
  * Get tile bounds for specific zoom levels intersecting multiple bounding boxes
- * @param {Array<Array<number>>} bboxs Array of bounding boxes [west, south, east, north] in EPSG:4326
- * @param {Array<number>} zooms Array of specific zoom levels
+ * @param {[number, number, number, number][]} bboxs Array of bounding boxes [west, south, east, north] in EPSG:4326
+ * @param {number[]} zooms Array of specific zoom levels
  * @param {"xyz"|"tms"} scheme Tile scheme
- * @returns {{ total: number, tilesSummaries: Array<Object<string,object>> }} Object containing total tiles and an array of tile summaries (one per bbox)
+ * @returns {{ total: number, tilesSummaries: {string, { x: [number, number], y: [number, number] } } }} Object containing total tiles and an array of tile summaries (one per bbox)
  */
 export function getTilesBoundsFromBBoxs(bboxs, zooms, scheme) {
   const tilesSummaries = [];
@@ -227,9 +227,9 @@ export function getTilesBoundsFromBBoxs(bboxs, zooms, scheme) {
 
 /**
  * Get tile bounds for specific zoom levels intersecting multiple bounding boxes
- * @param {Array<any>} coverages Array of array of bounding boxes [west, south, east, north] in EPSG:4326 and array of specific zoom levels
- * @param {"xyz"|"tms"} scheme Tile scheme
- * @returns {Object<grandTotal: number, summaries: Array<Object<total: number, tilesSummaries: Array<Object<string,object>>>>>} Object containing total tiles and an array of tile summaries (one per bbox)
+ * @param {{ bboxs: [number, number, number, number][], zooms: number[] }[]} coverages - Array of coverage objects, each containing bounding boxes [west, south, east, north] in EPSG:4326 and an array of specific zoom levels
+ * @param {"xyz"|"tms"} scheme - Tile scheme
+ * @returns {{ grandTotal: number, summaries: { total: number, tilesSummaries: {string, { x: [number, number], y: [number, number] } } }[] }} - Object containing total tile count and an array of tile summaries (one per coverage)
  */
 export function getTilesBoundsFromCoverages(coverages, scheme) {
   const summaries = [];
