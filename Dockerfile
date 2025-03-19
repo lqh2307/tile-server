@@ -85,7 +85,6 @@ COPY --from=builder /tile-server .
 COPY --from=builder /usr/local /usr/local
 
 ENV PATH=/usr/local/lib/nodejs/bin:$PATH
-ENV ENABLE_EXPORT=${ENABLE_EXPORT}
 
 RUN \
   apt-get -y --purge autoremove; \

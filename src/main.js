@@ -1,6 +1,6 @@
 "use strict";
 
-import { removeOldCacheLocks, getVersion } from "./utils.js";
+import { removeOldCacheLocks, getVersion, runCommand } from "./utils.js";
 import { readConfigFile } from "./config.js";
 import { printLog } from "./logger.js";
 import { program } from "commander";
@@ -51,7 +51,22 @@ async function startClusterServer(opts) {
     process.env.POSTGRESQL_BASE_URI = config.options?.postgreSQLBaseURI; // PostgreSQL base URI
     process.env.SERVE_FRONT_PAGE = config.options?.serveFrontPage; // Serve front page
     process.env.SERVE_SWAGGER = config.options?.serveSwagger; // Serve swagger
-    process.env.GDAL_NUM_THREADS = "ALL_CPUS"; // For gdal
+
+    // For gdal
+    try {
+      const gdalVersion = await runCommand("gdalinfo --version");
+
+      printLog(
+        "info",
+        `Found gdal version "${gdalVersion}". Enable export render`
+      );
+
+      process.env.ENABLE_EXPORT = "true";
+      process.env.GDAL_NUM_THREADS = "ALL_CPUS";
+    } catch (error) {
+      printLog("info", `Not found gdal. Disable export render`);
+    }
+    runCommand();
 
     /* Remove old cache locks */
     printLog(
