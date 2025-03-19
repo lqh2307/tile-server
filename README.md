@@ -16,13 +16,13 @@ Jump to folder:
 cd tile-server
 ```
 
-Switch to 0.0.18:
+Switch to 0.0.18 branch:
 
 ```bash
 git checkout 0.0.18
 ```
 
-### Run with nodejs (on ubuntu)
+### Run with nodejs (on ubuntu 22.04 x86_64 amd)
 
 Install dependencies:
 
@@ -87,7 +87,7 @@ apt-get clean; \
 rm -rf /var/lib/apt/lists/*;
 ```
 
-Install packages:
+Install nodejs packages:
 
 ```bash
 npm install --omit=dev
