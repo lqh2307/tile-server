@@ -11,25 +11,17 @@ RUN \
   apt-get -y update; \
   apt-get -y upgrade; \
   apt-get -y install \
-    cmake \
-    build-essential \
     ca-certificates \
-    wget \
-    libglfw3-dev \
-    libuv1-dev \
-    libjpeg-turbo8-dev \
-    libicu-dev \
-    libopengl-dev \
-    libgif-dev \
-    libpng-dev \
-    libwebp-dev \
-    libcurl4-openssl-dev \
-    libproj-dev;
+    wget;
 
 RUN \
   if [ "${ENABLE_EXPORT}" = "true" ]; then \
-    wget -q http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.xz; \
-    tar -xJf ./gdal-${GDAL_VERSION}.tar.xz; \
+    apt-get -y install \
+      cmake \
+      build-essential \
+      libproj-dev; \
+    wget -q http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.gz; \
+    tar -xzf ./gdal-${GDAL_VERSION}.tar.gz; \
     cd ./gdal-${GDAL_VERSION}; \
     mkdir -p build; \
     cd build; \
@@ -38,21 +30,16 @@ RUN \
     cmake --build . --target install; \
     cd ../..; \
     rm -rf ./gdal-${GDAL_VERSION}*; \
+    ldconfig; \
   fi;
 
 RUN \
-  apt-get -y --purge autoremove; \
-  apt-get clean; \
-  rm -rf /var/lib/apt/lists/*;
-
-RUN \
-  wget -q https://nodejs.org/download/release/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.xz; \
+  wget -q https://nodejs.org/download/release/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.gz; \
   mkdir -p /usr/local/lib/nodejs; \
-  tar -xJf node-v${NODEJS_VERSION}-linux-x64.tar.xz --strip-components=1 -C /usr/local/lib/nodejs; \
-  rm -rf node-v${NODEJS_VERSION}-linux-x64.tar.xz;
+  tar -xzf node-v${NODEJS_VERSION}-linux-x64.tar.gz --strip-components=1 -C /usr/local/lib/nodejs; \
+  rm -rf node-v${NODEJS_VERSION}-linux-x64.tar.gz;
 
-RUN \
-  ldconfig;
+ENV PATH=/usr/local/lib/nodejs/bin:$PATH
 
 WORKDIR /tile-server
 
@@ -61,7 +48,10 @@ ADD . .
 RUN \
   npm install -g yarn; \
   NODE_ENV=production yarn install; \
-  rm -rf yarn.lock;
+  rm -rf yarn.lock; \
+  apt-get -y --purge autoremove; \
+  apt-get clean; \
+  rm -rf /var/lib/apt/lists/*;
 
 
 FROM ${TARGET_IMAGE} AS final
@@ -81,6 +71,7 @@ RUN \
     libopengl0 \
     libpng16-16 \
     libwebp7 \
+    libsqlite3-0 \
     libcurl4;
 
 RUN \
@@ -89,19 +80,18 @@ RUN \
       libproj22; \
   fi;
 
-RUN \
-  apt-get -y --purge autoremove; \
-  apt-get clean; \
-  rm -rf /var/lib/apt/lists/*;
-
 WORKDIR /tile-server
 
 COPY --from=builder /tile-server .
 COPY --from=builder /usr/local /usr/local
 
+ENV PATH=/usr/local/lib/nodejs/bin:$PATH
 ENV ENABLE_EXPORT=${ENABLE_EXPORT}
 
 RUN \
+  apt-get -y --purge autoremove; \
+  apt-get clean; \
+  rm -rf /var/lib/apt/lists/*; \
   ldconfig;
 
 VOLUME /tile-server/data

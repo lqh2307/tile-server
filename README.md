@@ -30,21 +30,8 @@ Install dependencies:
 apt-get -y update; \
 apt-get -y upgrade; \
 apt-get -y install \
-  cmake \
-  build-essential \
   ca-certificates \
-  wget \
-  xvfb \
-  libglfw3-dev \
-  libuv1-dev \
-  libjpeg-turbo8-dev \
-  libicu-dev \
-  libopengl-dev \
-  libgif-dev \
-  libpng-dev \
-  libwebp-dev \
-  libcurl4-openssl-dev \
-  libproj-dev;
+  wget;
 ```
 
 If use export (Install gdal):
@@ -52,8 +39,8 @@ If use export (Install gdal):
 ```bash
 export GDAL_VERSION=3.10.2
 
-wget -q http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.xz; \
-tar -xJf ./gdal-${GDAL_VERSION}.tar.xz; \
+wget -q http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.gz; \
+tar -xzf ./gdal-${GDAL_VERSION}.tar.gz; \
 cd ./gdal-${GDAL_VERSION}; \
 mkdir -p build; \
 cd build; \
@@ -61,7 +48,21 @@ cmake .. -DCMAKE_BUILD_TYPE=Release; \
 cmake --build .; \
 cmake --build . --target install; \
 cd ../..; \
-rm -rf ./gdal-${GDAL_VERSION}*;
+rm -rf ./gdal-${GDAL_VERSION}*; \
+ldconfig;
+```
+
+Install nodejs:
+
+```bash
+export NODEJS_VERSION=22.14.0
+
+wget -q https://nodejs.org/download/release/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.gz; \
+mkdir -p /usr/local/lib/nodejs; \
+tar -xzf node-v${NODEJS_VERSION}-linux-x64.tar.gz --strip-components=1 -C /usr/local/lib/nodejs; \
+rm -rf node-v${NODEJS_VERSION}-linux-x64.tar.gz; \
+echo 'export PATH=/usr/local/lib/nodejs/bin:$PATH' >> ~/.bashrc; \
+source ~/.bashrc;
 ```
 
 Clean:
@@ -72,28 +73,11 @@ apt-get clean; \
 rm -rf /var/lib/apt/lists/*;
 ```
 
-Install nodejs:
-
-```bash
-export NODEJS_VERSION=22.14.0
-
-wget -q https://nodejs.org/download/release/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.xz; \
-mkdir -p /usr/local/lib/nodejs; \
-tar -xJf node-v${NODEJS_VERSION}-linux-x64.tar.xz --strip-components=1 -C /usr/local/lib/nodejs; \
-rm -rf node-v${NODEJS_VERSION}-linux-x64.tar.xz;
-```
-
-Load dynamic lib:
-
-```bash
-ldconfig
-```
-
 Install packages:
 
 ```bash
 npm install -g yarn; \
-NODE_ENV=production yarn install;
+yarn install;
 ```
 
 Run:
@@ -439,12 +423,14 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
   "fonts": {
     "Open Sans Regular": {
       "url": "http://localhost:9999/fonts/Open Sans Regular/{range}.pbf",
+      "concurrency": 100,
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
       }
     },
     "Times New Roman": {
       "url": "http://localhost:9999/fonts/Times New Roman/{range}.pbf",
+      "concurrency": 100,
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
       }
