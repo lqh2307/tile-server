@@ -58,7 +58,7 @@ async function startClusterServer(opts) {
 
       printLog(
         "info",
-        `Found gdal version "${gdalVersion}". Enable export render`
+        `Found gdal version "${gdalVersion.trim()}". Enable export render`
       );
 
       process.env.ENABLE_EXPORT = "true";
