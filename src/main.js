@@ -66,7 +66,6 @@ async function startClusterServer(opts) {
     } catch (error) {
       printLog("info", `Not found gdal. Disable export render`);
     }
-    runCommand();
 
     /* Remove old cache locks */
     printLog(
