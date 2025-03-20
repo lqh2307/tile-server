@@ -748,7 +748,7 @@ export const serve_style = {
        *       500:
        *         description: Internal server error
        */
-      app.get("/:id/$", checkReadyMiddleware(), serveStyleHandler());
+      app.get("/:id/$", serveStyleHandler());
     }
 
     /**
@@ -788,7 +788,7 @@ export const serve_style = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/:id/wmts.xml", checkReadyMiddleware(), serveWMTSHandler());
+    app.get("/:id/wmts.xml", serveWMTSHandler());
 
     /**
      * @swagger

@@ -392,7 +392,7 @@ export const serve_geojson = {
        *       500:
        *         description: Internal server error
        */
-      app.get("/:id/$", checkReadyMiddleware(), serveGeoJSONGroupHandler());
+      app.get("/:id/$", serveGeoJSONGroupHandler());
 
       /**
        * @swagger
@@ -438,7 +438,7 @@ export const serve_geojson = {
        *       500:
        *         description: Internal server error
        */
-      app.get("/:id/:layer/$", checkReadyMiddleware(), serveGeoJSONHandler());
+      app.get("/:id/:layer/$", serveGeoJSONHandler());
     }
 
     /**
