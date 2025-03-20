@@ -99,8 +99,8 @@ async function updateSeedFile(seed, timeout) {
  * @param {object} metadata Metadata object
  * @param {string} url Tile URL to download
  * @param {"tms"|"xyz"} scheme Tile scheme
- * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
- * @param {Array<number>} zooms Array of specific zoom levels
+ * @param {Array<Array<number>>} bboxs Array of bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {number[]} zooms Array of specific zoom levels
  * @param {number} concurrency Concurrency download
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
@@ -312,7 +312,7 @@ async function seedMBTilesTiles(
  * @param {string} url Tile URL to download
  * @param {"tms"|"xyz"} scheme Tile scheme
  * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
- * @param {Array<number>} zooms Array of specific zoom levels
+ * @param {number[]} zooms Array of specific zoom levels
  * @param {number} concurrency Concurrency download
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
@@ -523,7 +523,7 @@ async function seedPostgreSQLTiles(
  * @param {string} url Tile URL
  * @param {"tms"|"xyz"} scheme Tile scheme
  * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
- * @param {Array<number>} zooms Array of specific zoom levels
+ * @param {number[]} zooms Array of specific zoom levels
  * @param {number} concurrency Concurrency to download
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds

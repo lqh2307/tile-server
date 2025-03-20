@@ -70,7 +70,7 @@ async function loadCleanUpFile() {
 
 /**
  * Update cleanup.json file content with lock
- * @param {Object<any>} cleanUp Clean up object
+ * @param {object} cleanUp Clean up object
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
@@ -85,8 +85,8 @@ async function updateCleanUpFile(cleanUp, timeout) {
 /**
  * Clean up MBTiles tiles
  * @param {string} id Clean up MBTiles ID
- * @param {Array<number>} zooms Array of specific zoom levels
- * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
+ * @param {number[]} zooms Array of specific zoom levels
+ * @param {[number, number, number, number][]} bboxs Array of bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be deleted/Comprare MD5
  * @returns {Promise<void>}
  */
@@ -234,8 +234,8 @@ async function cleanUpMBTilesTiles(id, zooms, bboxs, cleanUpBefore) {
 /**
  * Clean up PostgreSQL tiles
  * @param {string} id Clean up PostgreSQL ID
- * @param {Array<number>} zooms Array of specific zoom levels
- * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
+ * @param {number[]} zooms Array of specific zoom levels
+ * @param {[number, number, number, number][]} bboxs Array of bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be deleted/Comprare MD5
  * @returns {Promise<void>}
  */
@@ -380,8 +380,8 @@ async function cleanUpPostgreSQLTiles(id, zooms, bboxs, cleanUpBefore) {
  * Clean up XYZ tiles
  * @param {string} id Clean up XYZ ID
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
- * @param {Array<number>} zooms Array of specific zoom levels
- * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
+ * @param {number[]} zooms Array of specific zoom levels
+ * @param {[number, number, number, number][]} bboxs Array of bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be deleted/Comprare MD5
  * @returns {Promise<void>}
  */
@@ -796,7 +796,9 @@ async function cleanUpFont(id, cleanUpBefore) {
 
   printLog(
     "info",
-    `Completed clean up ${total} fonts of font "${id}" after ${(doneTime - startTime) / 1000}s!`
+    `Completed clean up ${total} fonts of font "${id}" after ${
+      (doneTime - startTime) / 1000
+    }s!`
   );
 }
 

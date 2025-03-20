@@ -93,7 +93,7 @@ export async function fetchOne(source, sql, ...params) {
  * @param {sqlite3.Database} source SQLite database instance
  * @param {string} sql SQL query string
  * @param {...any} params Parameters for the SQL query
- * @returns {Promise<Array<object>>} An array of rows
+ * @returns {Promise<object[]>} An array of rows
  */
 export async function fetchAll(source, sql, ...params) {
   return await new Promise((resolve, reject) => {

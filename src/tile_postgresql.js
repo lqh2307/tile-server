@@ -18,7 +18,7 @@ import {
 /**
  * Get PostgreSQL layers from tiles
  * @param {pg.Client} source PostgreSQL database instance
- * @returns {Promise<Array<string>>}
+ * @returns {Promise<[string, string, string, string]>}
  */
 async function getPostgreSQLLayersFromTiles(source) {
   const layerNames = new Set();
@@ -64,7 +64,7 @@ async function getPostgreSQLLayersFromTiles(source) {
 /**
  * Get PostgreSQL bounding box from tiles
  * @param {pg.Client} source PostgreSQL database instance
- * @returns {Promise<Array<number>>} Bounding box in format [minLon, minLat, maxLon, maxLat]
+ * @returns {Promise<[number, number, number, number]>} Bounding box in format [minLon, minLat, maxLon, maxLat]
  */
 async function getPostgreSQLBBoxFromTiles(source) {
   const rows = await source.query(

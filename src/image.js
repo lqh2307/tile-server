@@ -690,7 +690,7 @@ export async function renderImage(
  * @param {object} metadata Metadata object
  * @param {number} tileScale Tile scale
  * @param {256|512} tileSize Tile size
- * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {[number, number, number, number]} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {number} maxzoom Max zoom level
  * @param {number} concurrency Concurrency download
  * @param {boolean} storeMD5 Is store MD5 hashed?
@@ -931,7 +931,7 @@ export async function renderMBTilesTiles(
  * @param {object} metadata Metadata object
  * @param {number} tileScale Tile scale
  * @param {256|512} tileSize Tile size
- * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {number[]} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {number} maxzoom Max zoom level
  * @param {number} concurrency Concurrency to download
  * @param {boolean} storeMD5 Is store MD5 hashed?
@@ -1175,7 +1175,7 @@ export async function renderXYZTiles(
  * @param {object} metadata Metadata object
  * @param {number} tileScale Tile scale
  * @param {256|512} tileSize Tile size
- * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {number[]} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {number} maxzoom Max zoom level
  * @param {number} concurrency Concurrency download
  * @param {boolean} storeMD5 Is store MD5 hashed?

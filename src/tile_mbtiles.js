@@ -28,7 +28,7 @@ import {
 /**
  * Get MBTiles layers from tiles
  * @param {sqlite3.Database} source SQLite database instance
- * @returns {Promise<Array<string>>}
+ * @returns {Promise<[string, string, string, string]>}
  */
 async function getMBTilesLayersFromTiles(source) {
   const layerNames = new Set();
@@ -76,7 +76,7 @@ async function getMBTilesLayersFromTiles(source) {
 /**
  * Get MBTiles bounding box from tiles
  * @param {sqlite3.Database} source SQLite database instance
- * @returns {Promise<Array<number>>} Bounding box in format [minLon, minLat, maxLon, maxLat]
+ * @returns {Promise<[number, number, number, number]>} Bounding box in format [minLon, minLat, maxLon, maxLat]
  */
 async function getMBTilesBBoxFromTiles(source) {
   const rows = await fetchAll(

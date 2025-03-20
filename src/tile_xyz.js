@@ -25,7 +25,7 @@ import {
 /**
  * Get XYZ layers from tiles
  * @param {string} sourcePath XYZ folder path
- * @returns {Promise<Array<string>>}
+ * @returns {Promise<[string, string, string, string]>}
  */
 async function getXYZLayersFromTiles(sourcePath) {
   const pbfFilePaths = await findFiles(sourcePath, /^\d+\.pbf$/, true, true);
@@ -112,7 +112,7 @@ async function getXYZFormatFromTiles(sourcePath) {
 /**
  * Get XYZ bounding box from tiles
  * @param {string} sourcePath XYZ folder path
- * @returns {Promise<Array<number>>} Bounding box in format [minLon, minLat, maxLon, maxLat]
+ * @returns {Promise<[number, number, number, number]>} Bounding box in format [minLon, minLat, maxLon, maxLat]
  */
 async function getXYZBBoxFromTiles(sourcePath) {
   const zFolders = await findFolders(sourcePath, /^\d+$/, false, false);

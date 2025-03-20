@@ -25,7 +25,7 @@ import os from "os";
 
 /**
  * Run clean up and seed tasks
- * @param {object} opts Options
+ * @param {{ cleanUpSprites: boolean, cleanUpFonts: boolean, cleanUpStyles: boolean, cleanUpGeoJSONs: boolean, cleanUpDatas: boolean, seedSprites: boolean, seedFonts: boolean, seedStyles: boolean, seedGeoJSONs: boolean, seedDatas: boolean }} opts Options
  * @returns {Promise<void>}
  */
 export async function runTasks(opts) {

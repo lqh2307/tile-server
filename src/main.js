@@ -29,7 +29,7 @@ const argOpts = program.opts();
 
 /**
  * Start cluster server
- * @param {object} opts
+ * @param {{ dataDir: string, restart: boolean }} opts
  * @returns {Promise<void>}
  */
 async function startClusterServer(opts) {
