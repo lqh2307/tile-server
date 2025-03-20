@@ -65,46 +65,78 @@
           }).addTo(map);
         }
 
-        if (jsonResponse.cacheBBoxs !== undefined) {
-          const cacheBBoxsLayer = L.geoJSON({
-            type: "MultiLineString",
-            coordinates: jsonResponse.cacheBBoxs.map((bbox) => {
-              return [
-                [bbox[0], bbox[1]],
-                [bbox[2], bbox[1]],
-                [bbox[2], bbox[3]],
-                [bbox[0], bbox[3]],
-                [bbox[0], bbox[1]]
-              ];
-            })
-          }, {
-            weight: 1,
-            color: "rgba(255, 0, 0, 0.6)"
-          });
+        if (jsonResponse.cacheCoverages !== undefined) {
+          const cacheCoverageLayers = {};
 
-          cacheBBoxsLayer.addTo(map);
+          for (const { bboxs, zooms } of jsonResponse.cacheCoverages) {
+            for (const zoom of zooms) {
+              if (cacheCoverageLayers[zoom] === undefined) {
+                cacheCoverageLayers[zoom] = L.layerGroup();
+              }
 
-          const cacheBBoxsButton = document.createElement("div");
-          cacheBBoxsButton.innerHTML = "Hide cache BBoxs";
-          cacheBBoxsButton.style.cssText = "position:absolute;bottom:10px;left:10px;padding:5px 10px;font-size:14px;cursor:pointer;background:rgba(0, 150, 255, 0.5);color:white;border:none;border-radius:5px;display:inline-block;z-index:1000;";
+              for (const bbox of bboxs) {
+                const cacheBBoxLayer = L.geoJSON({
+                  type: "LineString",
+                  coordinates: [
+                    [bbox[0], bbox[1]],
+                    [bbox[2], bbox[1]],
+                    [bbox[2], bbox[3]],
+                    [bbox[0], bbox[3]],
+                    [bbox[0], bbox[1]]
+                  ]
+                }, {
+                  weight: 1,
+                  color: "rgba(255, 0, 0, 0.6)"
+                });
 
-          let isVisible = true;
+                cacheBBoxLayer.addTo(cacheCoverageLayers[zoom]);
+              }
+            }
+          }
 
-          cacheBBoxsButton.onclick = () => {
-            if (isVisible === true) {
-              map.removeLayer(cacheBBoxsLayer);
-              cacheBBoxsButton.innerHTML = "Show cache BBoxs";
+          let isCoverageVisible = true;
 
-              isVisible = false;
+          function updateVisibleCoverages() {
+            if (isCoverageVisible === false) {
+              return;
+            };
+
+            const currentZoom = map.getZoom();
+
+            for (const zoom in cacheCoverageLayers) {
+              map.removeLayer(cacheCoverageLayers[zoom]);
+            }
+
+            if (cacheCoverageLayers[currentZoom] !== undefined) {
+              cacheCoverageLayers[currentZoom].addTo(map);
+            }
+          }
+
+          map.on("zoomend", updateVisibleCoverages);
+
+          const cacheCoveragesButton = document.createElement("div");
+          cacheCoveragesButton.innerHTML = "Hide cache Coverages";
+          cacheCoveragesButton.style.cssText = "position:absolute;bottom:50px;left:10px;padding:5px 10px;font-size:14px;cursor:pointer;background:rgba(0, 150, 255, 0.5);color:white;border:none;border-radius:5px;display:inline-block;z-index:1000;";
+
+          cacheCoveragesButton.onclick = () => {
+            if (isCoverageVisible === true) {
+              for (const zoom in cacheCoverageLayers) {
+                map.removeLayer(cacheCoverageLayers[zoom]);
+              }
+
+              cacheCoveragesButton.innerHTML = "Show cache Coverages";
+              isCoverageVisible = false;
             } else {
-              cacheBBoxsLayer.addTo(map);
-              cacheBBoxsButton.innerHTML = "Hide cache BBoxs";
+              updateVisibleCoverages();
 
-              isVisible = true;
+              cacheCoveragesButton.innerHTML = "Hide cache Coverages";
+              isCoverageVisible = true;
             }
           };
 
-          document.body.appendChild(cacheBBoxsButton);
+          document.body.appendChild(cacheCoveragesButton);
+
+          updateVisibleCoverages();
         }
 
         new L.Control.Zoom({

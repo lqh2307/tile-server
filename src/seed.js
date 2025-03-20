@@ -29,7 +29,7 @@ import {
   openMBTilesDB,
 } from "./tile_mbtiles.js";
 import {
-  getTilesBoundsFromBBoxs,
+  getTilesBoundsFromCoverages,
   createFileWithLock,
   removeEmptyFolders,
   getDataFromURL,
@@ -99,8 +99,7 @@ async function updateSeedFile(seed, timeout) {
  * @param {Object} metadata Metadata object
  * @param {string} url Tile URL to download
  * @param {"tms"|"xyz"} scheme Tile scheme
- * @param {[number, number, number, number][]} bboxs Array of bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
- * @param {number[]} zooms Array of specific zoom levels
+ * @param {{ bboxs: [number, number, number, number][], zooms: number[] }[]} coverages - Array of coverage objects, each containing bounding boxes [west, south, east, north] in EPSG:4326 and an array of specific zoom levels
  * @param {number} concurrency Concurrency download
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
@@ -114,8 +113,7 @@ async function seedMBTilesTiles(
   metadata,
   url,
   scheme,
-  bboxs,
-  zooms,
+  coverages,
   concurrency,
   maxTry,
   timeout,
@@ -126,16 +124,15 @@ async function seedMBTilesTiles(
   const startTime = Date.now();
 
   /* Calculate summary */
-  const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
-    bboxs,
-    zooms,
+  const { grandTotal, summaries } = getTilesBoundsFromCoverages(
+    coverages,
     "xyz"
   );
 
   /* Log */
-  let log = `Seeding ${total} tiles of mbtiles "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
-    ", "
-  )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
+  let log = `Seeding ${grandTotal} tiles of mbtiles "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tBBoxs: ${json.stringify(
+    coverages
+  )}`;
 
   let refreshTimestamp;
   if (typeof refreshBefore === "string") {
@@ -233,7 +230,7 @@ async function seedMBTilesTiles(
 
         printLog(
           "info",
-          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${completeTasks}/${total}...`
+          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${completeTasks}/${grandTotal}...`
         );
 
         await downloadMBTilesTile(
@@ -258,27 +255,29 @@ async function seedMBTilesTiles(
 
   printLog("info", "Downloading datas...");
 
-  for (const tilesSummary of tilesSummaries) {
-    for (const z in tilesSummary) {
-      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-          /* Wait slot for a task */
-          while (activeTasks >= concurrency) {
-            await delay(50);
+  for (const summary of summaries) {
+    for (const [_, tilesSummary] of summary) {
+      for (const z in tilesSummary) {
+        for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+          for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+            /* Wait slot for a task */
+            while (activeTasks >= concurrency) {
+              await delay(50);
+            }
+
+            await mutex.runExclusive(() => {
+              activeTasks++;
+
+              completeTasks++;
+            });
+
+            /* Run a task */
+            seedMBTilesTileData(z, x, y).finally(() =>
+              mutex.runExclusive(() => {
+                activeTasks--;
+              })
+            );
           }
-
-          await mutex.runExclusive(() => {
-            activeTasks++;
-
-            completeTasks++;
-          });
-
-          /* Run a task */
-          seedMBTilesTileData(z, x, y).finally(() =>
-            mutex.runExclusive(() => {
-              activeTasks--;
-            })
-          );
         }
       }
     }
@@ -299,7 +298,7 @@ async function seedMBTilesTiles(
 
   printLog(
     "info",
-    `Completed seed ${total} tiles of mbtiles "${id}" after ${
+    `Completed seed ${grandTotal} tiles of mbtiles "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );
@@ -311,8 +310,7 @@ async function seedMBTilesTiles(
  * @param {Object} metadata Metadata object
  * @param {string} url Tile URL to download
  * @param {"tms"|"xyz"} scheme Tile scheme
- * @param {[number, number, number, number][]} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
- * @param {number[]} zooms Array of specific zoom levels
+ * @param {{ bboxs: [number, number, number, number][], zooms: number[] }[]} coverages - Array of coverage objects, each containing bounding boxes [west, south, east, north] in EPSG:4326 and an array of specific zoom levels
  * @param {number} concurrency Concurrency download
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
@@ -326,8 +324,7 @@ async function seedPostgreSQLTiles(
   metadata,
   url,
   scheme,
-  bboxs,
-  zooms,
+  coverages,
   concurrency,
   maxTry,
   timeout,
@@ -338,16 +335,15 @@ async function seedPostgreSQLTiles(
   const startTime = Date.now();
 
   /* Calculate summary */
-  const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
-    bboxs,
-    zooms,
+  const { grandTotal, summaries } = getTilesBoundsFromCoverages(
+    coverages,
     "xyz"
   );
 
   /* Log */
-  let log = `Seeding ${total} tiles of postgresql "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
-    ", "
-  )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
+  let log = `Seeding ${grandTotal} tiles of postgresql "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tBBoxs: ${json.stringify(
+    coverages
+  )}`;
 
   let refreshTimestamp;
   if (typeof refreshBefore === "string") {
@@ -444,7 +440,7 @@ async function seedPostgreSQLTiles(
 
         printLog(
           "info",
-          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${completeTasks}/${total}...`
+          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${completeTasks}/${grandTotal}...`
         );
 
         await downloadPostgreSQLTile(
@@ -469,27 +465,29 @@ async function seedPostgreSQLTiles(
 
   printLog("info", "Downloading datas...");
 
-  for (const tilesSummary of tilesSummaries) {
-    for (const z in tilesSummary) {
-      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-          /* Wait slot for a task */
-          while (activeTasks >= concurrency) {
-            await delay(50);
+  for (const summary of summaries) {
+    for (const [_, tilesSummary] of summary) {
+      for (const z in tilesSummary) {
+        for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+          for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+            /* Wait slot for a task */
+            while (activeTasks >= concurrency) {
+              await delay(50);
+            }
+
+            await mutex.runExclusive(() => {
+              activeTasks++;
+
+              completeTasks++;
+            });
+
+            /* Run a task */
+            seedPostgreSQLTileData(z, x, y).finally(() =>
+              mutex.runExclusive(() => {
+                activeTasks--;
+              })
+            );
           }
-
-          await mutex.runExclusive(() => {
-            activeTasks++;
-
-            completeTasks++;
-          });
-
-          /* Run a task */
-          seedPostgreSQLTileData(z, x, y).finally(() =>
-            mutex.runExclusive(() => {
-              activeTasks--;
-            })
-          );
         }
       }
     }
@@ -510,7 +508,7 @@ async function seedPostgreSQLTiles(
 
   printLog(
     "info",
-    `Completed seed ${total} tiles of postgresql "${id}" after ${
+    `Completed seed ${grandTotal} tiles of postgresql "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );
@@ -522,8 +520,7 @@ async function seedPostgreSQLTiles(
  * @param {Object} metadata Metadata object
  * @param {string} url Tile URL
  * @param {"tms"|"xyz"} scheme Tile scheme
- * @param {[number, number, number, number][]} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
- * @param {number[]} zooms Array of specific zoom levels
+ * @param {{ bboxs: [number, number, number, number][], zooms: number[] }[]} coverages - Array of coverage objects, each containing bounding boxes [west, south, east, north] in EPSG:4326 and an array of specific zoom levels
  * @param {number} concurrency Concurrency to download
  * @param {number} maxTry Number of retry attempts on failure
  * @param {number} timeout Timeout in milliseconds
@@ -537,8 +534,7 @@ async function seedXYZTiles(
   metadata,
   url,
   scheme,
-  bboxs,
-  zooms,
+  coverages,
   concurrency,
   maxTry,
   timeout,
@@ -549,16 +545,15 @@ async function seedXYZTiles(
   const startTime = Date.now();
 
   /* Calculate summary */
-  const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
-    bboxs,
-    zooms,
+  const { grandTotal, summaries } = getTilesBoundsFromCoverages(
+    coverages,
     "xyz"
   );
 
   /* Log */
-  let log = `Seeding ${total} tiles of xyz "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tZoom levels: [${zooms.join(
-    ", "
-  )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
+  let log = `Seeding ${grandTotal} tiles of xyz "${id}" with:\n\tStore MD5: ${storeMD5}\n\tStore transparent: ${storeTransparent}\n\tConcurrency: ${concurrency}\n\tMax try: ${maxTry}\n\tTimeout: ${timeout}\n\tBBoxs: ${json.stringify(
+    coverages
+  )}`;
 
   let refreshTimestamp;
   if (typeof refreshBefore === "string") {
@@ -658,7 +653,7 @@ async function seedXYZTiles(
 
         printLog(
           "info",
-          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${completeTasks}/${total}...`
+          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${completeTasks}/${grandTotal}...`
         );
 
         await downloadXYZTileFile(
@@ -685,27 +680,29 @@ async function seedXYZTiles(
 
   printLog("info", "Downloading datas...");
 
-  for (const tilesSummary of tilesSummaries) {
-    for (const z in tilesSummary) {
-      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-          /* Wait slot for a task */
-          while (activeTasks >= concurrency) {
-            await delay(50);
+  for (const summary of summaries) {
+    for (const [_, tilesSummary] of summary) {
+      for (const z in tilesSummary) {
+        for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+          for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+            /* Wait slot for a task */
+            while (activeTasks >= concurrency) {
+              await delay(50);
+            }
+
+            await mutex.runExclusive(() => {
+              activeTasks++;
+
+              completeTasks++;
+            });
+
+            /* Run a task */
+            seedXYZTileData(z, x, y).finally(() =>
+              mutex.runExclusive(() => {
+                activeTasks--;
+              })
+            );
           }
-
-          await mutex.runExclusive(() => {
-            activeTasks++;
-
-            completeTasks++;
-          });
-
-          /* Run a task */
-          seedXYZTileData(z, x, y).finally(() =>
-            mutex.runExclusive(() => {
-              activeTasks--;
-            })
-          );
         }
       }
     }
@@ -732,7 +729,7 @@ async function seedXYZTiles(
 
   printLog(
     "info",
-    `Completed seed ${total} tiles of xyz "${id}" after ${
+    `Completed seed ${grandTotal} tiles of xyz "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );

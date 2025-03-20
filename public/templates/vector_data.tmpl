@@ -126,6 +126,53 @@
             layerList.appendChild(item);
           });
 
+          if (jsonResponse.cacheCoverages !== undefined) {
+            const cacheCoverageLayers = {};
+
+            for (const { bboxs, zooms } of jsonResponse.cacheCoverages) {
+              for (const zoom of zooms) {
+                if (cacheCoverageLayers[zoom] === undefined) {
+                  cacheCoverageLayers[zoom] = {
+                    type: "FeatureCollection",
+                    features: []
+                  };
+                }
+
+                for (const bbox of bboxs) {
+                  cacheCoverageLayers[zoom].features.push({
+                    type: "Feature",
+                    geometry: {
+                      type: "LineString",
+                      coordinates: [
+                        [bbox[0], bbox[1]],
+                        [bbox[2], bbox[1]],
+                        [bbox[2], bbox[3]],
+                        [bbox[0], bbox[3]],
+                        [bbox[0], bbox[1]]
+                      ]
+                    }
+                  });
+                }
+              }
+            }
+
+            for (const zoom in cacheCoverageLayers) {
+              const source_name = `cache_coverage_source_${zoom}`;
+
+              map.addSource(source_name, cacheCoverageLayers[zoom]);
+            }
+
+            let isCoverageVisible = true;
+
+            map.on("zoomend", () => {
+              const currentZoom = Math.round(map.getZoom());
+
+              for (const zoom in cacheCoverageLayers) {
+                map.setLayoutProperty(`cache_coverage_source_${zoom}`, "visibility", isCoverageVisible && parseInt(zoom) === currentZoom ? "visible" : "none");
+              }
+            });
+          }
+
           if (jsonResponse.cacheBBoxs !== undefined) {
             map.addSource("cache_bboxs_source", {
               type: "geojson",

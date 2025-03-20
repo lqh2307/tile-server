@@ -19,7 +19,7 @@ import { getFontSize } from "./font.js";
 import { printLog } from "./logger.js";
 import express from "express";
 import {
-  getTilesBoundsFromBBoxs,
+  getTilesBoundsFromCoverages,
   getXYZFromLonLatZ,
   getBBoxFromCircle,
   getBBoxFromPoint,
@@ -971,11 +971,10 @@ function serveSummaryHandler() {
                     actual: await countMBTilesTiles(
                       `${process.env.DATA_DIR}/caches/mbtiles/${id}/${id}.mbtiles`
                     ),
-                    expect: getTilesBoundsFromBBoxs(
-                      item.bboxs,
-                      item.zooms,
+                    expect: getTilesBoundsFromCoverages(
+                      item.coverages,
                       item.scheme
-                    ).total,
+                    ).grandTotal,
                   };
                 } catch (error) {
                   if (error.code !== "ENOENT") {
@@ -983,11 +982,10 @@ function serveSummaryHandler() {
                   } else {
                     result.datas[id] = {
                       actual: 0,
-                      expect: getTilesBoundsFromBBoxs(
-                        item.bboxs,
-                        item.zooms,
+                      expect: getTilesBoundsFromCoverages(
+                        item.coverages,
                         item.scheme
-                      ).total,
+                      ).grandTotal,
                     };
                   }
                 }
@@ -1001,11 +999,10 @@ function serveSummaryHandler() {
                     actual: await countXYZTiles(
                       `${process.env.DATA_DIR}/caches/xyzs/${id}`
                     ),
-                    expect: getTilesBoundsFromBBoxs(
-                      item.bboxs,
-                      item.zooms,
+                    expect: getTilesBoundsFromCoverages(
+                      item.coverages,
                       item.scheme
-                    ).total,
+                    ).grandTotal,
                   };
                 } catch (error) {
                   if (error.code !== "ENOENT") {
@@ -1013,11 +1010,10 @@ function serveSummaryHandler() {
                   } else {
                     result.datas[id] = {
                       actual: 0,
-                      expect: getTilesBoundsFromBBoxs(
-                        item.bboxs,
-                        item.zooms,
+                      expect: getTilesBoundsFromCoverages(
+                        item.coverages,
                         item.scheme
-                      ).total,
+                      ).grandTotal,
                     };
                   }
                 }
@@ -1030,11 +1026,10 @@ function serveSummaryHandler() {
                   actual: await countPostgreSQLTiles(
                     `${process.env.POSTGRESQL_BASE_URI}/${id}`
                   ),
-                  expect: getTilesBoundsFromBBoxs(
-                    item.bboxs,
-                    item.zooms,
+                  expect: getTilesBoundsFromCoverages(
+                    item.coverages,
                     item.scheme
-                  ).total,
+                  ).grandTotal,
                 };
 
                 break;

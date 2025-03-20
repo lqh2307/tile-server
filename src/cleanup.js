@@ -22,7 +22,7 @@ import {
   openMBTilesDB,
 } from "./tile_mbtiles.js";
 import {
-  getTilesBoundsFromBBoxs,
+  getTilesBoundsFromCoverages,
   createFileWithLock,
   removeEmptyFolders,
   getJSONSchema,
@@ -85,25 +85,23 @@ async function updateCleanUpFile(cleanUp, timeout) {
 /**
  * Clean up MBTiles tiles
  * @param {string} id Clean up MBTiles ID
- * @param {number[]} zooms Array of specific zoom levels
- * @param {[number, number, number, number][]} bboxs Array of bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {{ bboxs: [number, number, number, number][], zooms: number[] }[]} coverages - Array of coverage objects, each containing bounding boxes [west, south, east, north] in EPSG:4326 and an array of specific zoom levels
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be deleted/Comprare MD5
  * @returns {Promise<void>}
  */
-async function cleanUpMBTilesTiles(id, zooms, bboxs, cleanUpBefore) {
+async function cleanUpMBTilesTiles(id, coverages, cleanUpBefore) {
   const startTime = Date.now();
 
   /* Calculate summary */
-  const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
-    bboxs,
-    zooms,
+  const { grandTotal, tilesSummaries } = getTilesBoundsFromCoverages(
+    coverages,
     "xyz"
   );
 
   /* Log */
-  let log = `Cleaning up ${total} tiles of mbtiles "${id}" with:\n\tZoom levels: [${zooms.join(
-    ", "
-  )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
+  let log = `Cleaning up ${grandTotal} tiles of mbtiles "${id}" with:\n\tCoverages: ${json.stringify(
+    coverages
+  )}`;
 
   let cleanUpTimestamp;
   if (typeof cleanUpBefore === "string") {
@@ -160,7 +158,7 @@ async function cleanUpMBTilesTiles(id, zooms, bboxs, cleanUpBefore) {
       if (needRemove === true) {
         printLog(
           "info",
-          `Removing data "${id}" - Tile "${tileName}" - ${completeTasks}/${total}...`
+          `Removing data "${id}" - Tile "${tileName}" - ${completeTasks}/${grandTotal}...`
         );
 
         await removeMBTilesTile(
@@ -174,34 +172,36 @@ async function cleanUpMBTilesTiles(id, zooms, bboxs, cleanUpBefore) {
     } catch (error) {
       printLog(
         "error",
-        `Failed to clean up data "${id}" - Tile "${tileName}" - ${completeTasks}/${total}: ${error}`
+        `Failed to clean up data "${id}" - Tile "${tileName}" - ${completeTasks}/${grandTotal}: ${error}`
       );
     }
   }
 
   printLog("info", "Removing datas...");
 
-  for (const tilesSummary of tilesSummaries) {
-    for (const z in tilesSummary) {
-      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-          /* Wait slot for a task */
-          while (activeTasks >= 200) {
-            await delay(50);
+  for (const summary of summaries) {
+    for (const [_, tilesSummary] of summary) {
+      for (const z in tilesSummary) {
+        for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+          for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+            /* Wait slot for a task */
+            while (activeTasks >= 200) {
+              await delay(50);
+            }
+
+            await mutex.runExclusive(() => {
+              activeTasks++;
+
+              completeTasks++;
+            });
+
+            /* Run a task */
+            cleanUpMBTilesTileData(z, x, y).finally(() =>
+              mutex.runExclusive(() => {
+                activeTasks--;
+              })
+            );
           }
-
-          await mutex.runExclusive(() => {
-            activeTasks++;
-
-            completeTasks++;
-          });
-
-          /* Run a task */
-          cleanUpMBTilesTileData(z, x, y).finally(() =>
-            mutex.runExclusive(() => {
-              activeTasks--;
-            })
-          );
         }
       }
     }
@@ -225,7 +225,7 @@ async function cleanUpMBTilesTiles(id, zooms, bboxs, cleanUpBefore) {
 
   printLog(
     "info",
-    `Completed clean up ${total} tiles of mbtiles "${id}" after ${
+    `Completed clean up ${grandTotal} tiles of mbtiles "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );
@@ -234,25 +234,23 @@ async function cleanUpMBTilesTiles(id, zooms, bboxs, cleanUpBefore) {
 /**
  * Clean up PostgreSQL tiles
  * @param {string} id Clean up PostgreSQL ID
- * @param {number[]} zooms Array of specific zoom levels
- * @param {[number, number, number, number][]} bboxs Array of bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {{ bboxs: [number, number, number, number][], zooms: number[] }[]} coverages - Array of coverage objects, each containing bounding boxes [west, south, east, north] in EPSG:4326 and an array of specific zoom levels
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be deleted/Comprare MD5
  * @returns {Promise<void>}
  */
-async function cleanUpPostgreSQLTiles(id, zooms, bboxs, cleanUpBefore) {
+async function cleanUpPostgreSQLTiles(id, coverages, cleanUpBefore) {
   const startTime = Date.now();
 
   /* Calculate summary */
-  const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
-    bboxs,
-    zooms,
+  const { grandTotal, tilesSummaries } = getTilesBoundsFromCoverages(
+    coverages,
     "xyz"
   );
 
   /* Log */
-  let log = `Cleaning up ${total} tiles of postgresql "${id}" with:\n\tZoom levels: [${zooms.join(
-    ", "
-  )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
+  let log = `Cleaning up ${grandTotal} tiles of postgresql "${id}" with:\n\tCoverages: ${json.stringify(
+    coverages
+  )}`;
 
   let cleanUpTimestamp;
   if (typeof cleanUpBefore === "string") {
@@ -308,7 +306,7 @@ async function cleanUpPostgreSQLTiles(id, zooms, bboxs, cleanUpBefore) {
       if (needRemove === true) {
         printLog(
           "info",
-          `Removing data "${id}" - Tile "${tileName}" - ${completeTasks}/${total}...`
+          `Removing data "${id}" - Tile "${tileName}" - ${completeTasks}/${grandTotal}...`
         );
 
         await removePostgreSQLTile(
@@ -322,34 +320,36 @@ async function cleanUpPostgreSQLTiles(id, zooms, bboxs, cleanUpBefore) {
     } catch (error) {
       printLog(
         "error",
-        `Failed to clean up data "${id}" - Tile "${tileName}" - ${completeTasks}/${total}: ${error}`
+        `Failed to clean up data "${id}" - Tile "${tileName}" - ${completeTasks}/${grandTotal}: ${error}`
       );
     }
   }
 
   printLog("info", "Removing datas...");
 
-  for (const tilesSummary of tilesSummaries) {
-    for (const z in tilesSummary) {
-      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-          /* Wait slot for a task */
-          while (activeTasks >= 200) {
-            await delay(50);
+  for (const summary of summaries) {
+    for (const [_, tilesSummary] of summary) {
+      for (const z in tilesSummary) {
+        for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+          for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+            /* Wait slot for a task */
+            while (activeTasks >= 200) {
+              await delay(50);
+            }
+
+            await mutex.runExclusive(() => {
+              activeTasks++;
+
+              completeTasks++;
+            });
+
+            /* Run a task */
+            cleanUpPostgreSQLTileData(z, x, y).finally(() =>
+              mutex.runExclusive(() => {
+                activeTasks--;
+              })
+            );
           }
-
-          await mutex.runExclusive(() => {
-            activeTasks++;
-
-            completeTasks++;
-          });
-
-          /* Run a task */
-          cleanUpPostgreSQLTileData(z, x, y).finally(() =>
-            mutex.runExclusive(() => {
-              activeTasks--;
-            })
-          );
         }
       }
     }
@@ -370,7 +370,7 @@ async function cleanUpPostgreSQLTiles(id, zooms, bboxs, cleanUpBefore) {
 
   printLog(
     "info",
-    `Completed clean up ${total} tiles of postgresql "${id}" after ${
+    `Completed clean up ${grandTotal} tiles of postgresql "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );
@@ -380,25 +380,23 @@ async function cleanUpPostgreSQLTiles(id, zooms, bboxs, cleanUpBefore) {
  * Clean up XYZ tiles
  * @param {string} id Clean up XYZ ID
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
- * @param {number[]} zooms Array of specific zoom levels
- * @param {[number, number, number, number][]} bboxs Array of bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {{ bboxs: [number, number, number, number][], zooms: number[] }[]} coverages - Array of coverage objects, each containing bounding boxes [west, south, east, north] in EPSG:4326 and an array of specific zoom levels
  * @param {string|number} cleanUpBefore Date string in format "YYYY-MM-DDTHH:mm:ss"/Number of days before which files should be deleted/Comprare MD5
  * @returns {Promise<void>}
  */
-async function cleanUpXYZTiles(id, format, zooms, bboxs, cleanUpBefore) {
+async function cleanUpXYZTiles(id, format, coverages, cleanUpBefore) {
   const startTime = Date.now();
 
   /* Calculate summary */
-  const { total, tilesSummaries } = getTilesBoundsFromBBoxs(
-    bboxs,
-    zooms,
+  const { grandTotal, tilesSummaries } = getTilesBoundsFromCoverages(
+    coverages,
     "xyz"
   );
 
   /* Log */
-  let log = `Cleaning up ${total} tiles of xyz "${id}" with:\n\tZoom levels: [${zooms.join(
-    ", "
-  )}]\n\tBBoxs: [${bboxs.map((bbox) => `[${bbox.join(", ")}]`).join(", ")}]`;
+  let log = `Cleaning up ${grandTotal} tiles of xyz "${id}" with:\n\tCoverages: ${json.stringify(
+    coverages
+  )}`;
 
   let cleanUpTimestamp;
   if (typeof cleanUpBefore === "string") {
@@ -457,7 +455,7 @@ async function cleanUpXYZTiles(id, format, zooms, bboxs, cleanUpBefore) {
       if (needRemove === true) {
         printLog(
           "info",
-          `Removing data "${id}" - Tile "${tileName}" - ${completeTasks}/${total}...`
+          `Removing data "${id}" - Tile "${tileName}" - ${completeTasks}/${grandTotal}...`
         );
 
         await removeXYZTile(
@@ -473,34 +471,36 @@ async function cleanUpXYZTiles(id, format, zooms, bboxs, cleanUpBefore) {
     } catch (error) {
       printLog(
         "error",
-        `Failed to clean up data "${id}" - Tile "${tileName}" - ${completeTasks}/${total}: ${error}`
+        `Failed to clean up data "${id}" - Tile "${tileName}" - ${completeTasks}/${grandTotal}: ${error}`
       );
     }
   }
 
   printLog("info", "Removing datas...");
 
-  for (const tilesSummary of tilesSummaries) {
-    for (const z in tilesSummary) {
-      for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-        for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
-          /* Wait slot for a task */
-          while (activeTasks >= 200) {
-            await delay(50);
+  for (const summary of summaries) {
+    for (const [_, tilesSummary] of summary) {
+      for (const z in tilesSummary) {
+        for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
+          for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+            /* Wait slot for a task */
+            while (activeTasks >= 200) {
+              await delay(50);
+            }
+
+            await mutex.runExclusive(() => {
+              activeTasks++;
+
+              completeTasks++;
+            });
+
+            /* Run a task */
+            cleanUpXYZTileData(z, x, y).finally(() =>
+              mutex.runExclusive(() => {
+                activeTasks--;
+              })
+            );
           }
-
-          await mutex.runExclusive(() => {
-            activeTasks++;
-
-            completeTasks++;
-          });
-
-          /* Run a task */
-          cleanUpXYZTileData(z, x, y).finally(() =>
-            mutex.runExclusive(() => {
-              activeTasks--;
-            })
-          );
         }
       }
     }
@@ -527,7 +527,7 @@ async function cleanUpXYZTiles(id, format, zooms, bboxs, cleanUpBefore) {
 
   printLog(
     "info",
-    `Completed clean up ${total} tiles of xyz "${id}" after ${
+    `Completed clean up ${grandTotal} tiles of xyz "${id}" after ${
       (doneTime - startTime) / 1000
     }s!`
   );

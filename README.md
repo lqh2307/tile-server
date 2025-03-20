@@ -267,26 +267,30 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
         "maxzoom": 15
       },
       "url": "http://localhost:9999/datas/asia_vietnam/{z}/{x}/{y}.png",
-      "bboxs": [
-        [
-          96,
-          4,
-          120,
-          28
-        ]
-      ],
-      "zooms": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10
+      "coverages": [
+        {
+          "bboxs": [
+            [
+              96,
+              4,
+              120,
+              28
+            ]
+          ],
+          "zooms": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ]
+        }
       ],
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
@@ -326,26 +330,30 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
         ]
       },
       "url": "http://localhost:9999/datas/asia_cambodia/{z}/{x}/{y}.pbf",
-      "bboxs": [
-        [
-          96,
-          4,
-          120,
-          28
-        ]
-      ],
-      "zooms": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10
+      "coverages": [
+        {
+          "bboxs": [
+            [
+              96,
+              4,
+              120,
+              28
+            ]
+          ],
+          "zooms": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ]
+        }
       ],
       "refreshBefore": {
         "day": 2
@@ -386,26 +394,30 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
         ]
       },
       "url": "http://localhost:9999/datas/zurich_switzerland/{z}/{x}/{y}.pbf",
-      "bboxs": [
-        [
-          96,
-          4,
-          120,
-          28
-        ]
-      ],
-      "zooms": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10
+      "coverages": [
+        {
+          "bboxs": [
+            [
+              96,
+              4,
+              120,
+              28
+            ]
+          ],
+          "zooms": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ]
+        }
       ],
       "refreshBefore": {
         "md5": true
@@ -486,26 +498,30 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
       },
-      "zooms": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10
-      ],
-      "bboxs": [
-        [
-          96,
-          4,
-          120,
-          28
-        ]
+      "coverages": [
+        {
+          "bboxs": [
+            [
+              96,
+              4,
+              120,
+              28
+            ]
+          ],
+          "zooms": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ]
+        }
       ],
     },
     "asia_cambodia_cache": {
@@ -535,16 +551,30 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "cleanUpBefore": {
         "day": 3
       },
-      "zooms": [
-        10
-      ],
-      "bboxs": [
-        [
-          96,
-          4,
-          120,
-          28
-        ]
+      "coverages": [
+        {
+          "bboxs": [
+            [
+              96,
+              4,
+              120,
+              28
+            ]
+          ],
+          "zooms": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ]
+        }
       ],
     }
   },

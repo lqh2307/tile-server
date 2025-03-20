@@ -52,11 +52,6 @@ export async function runTasks(opts) {
       readSeedFile(true),
     ]);
 
-    const defaultZooms = [
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-      21, 22,
-    ];
-    const defaultBBoxs = [[-180, -85.051129, 180, 85.051129]];
     const defaultTimeout = 60000;
     const defaultMaxTry = 5;
     const defaultConcurrency = os.cpus().length;
@@ -286,24 +281,21 @@ export async function runTasks(opts) {
                 await cleanUpXYZTiles(
                   id,
                   seedDataItem.metadata.format,
-                  cleanUpDataItem.zooms || defaultZooms,
-                  cleanUpDataItem.bboxs || defaultBBoxs,
+                  cleanUpDataItem.coverages,
                   cleanUpDataItem.cleanUpBefore?.time ||
                     cleanUpDataItem.cleanUpBefore?.day
                 );
               } else if (seedDataItem.storeType === "mbtiles") {
                 await cleanUpMBTilesTiles(
                   id,
-                  cleanUpDataItem.zooms || defaultZooms,
-                  cleanUpDataItem.bboxs || defaultBBoxs,
+                  cleanUpDataItem.coverages,
                   cleanUpDataItem.cleanUpBefore?.time ||
                     cleanUpDataItem.cleanUpBefore?.day
                 );
               } else if (seedDataItem.storeType === "pg") {
                 await cleanUpPostgreSQLTiles(
                   id,
-                  cleanUpDataItem.zooms || defaultZooms,
-                  cleanUpDataItem.bboxs || defaultBBoxs,
+                  cleanUpDataItem.coverages,
                   cleanUpDataItem.cleanUpBefore?.time ||
                     cleanUpDataItem.cleanUpBefore?.day
                 );
@@ -568,8 +560,7 @@ export async function runTasks(opts) {
                   seedDataItem.metadata,
                   seedDataItem.url,
                   seedDataItem.scheme,
-                  seedDataItem.zooms || defaultZooms,
-                  seedDataItem.bboxs || defaultBBoxs,
+                  seedDataItem.coverages,
                   seedDataItem.concurrency || defaultConcurrency,
                   seedDataItem.maxTry || defaultMaxTry,
                   seedDataItem.timeout || defaultTimeout,
@@ -585,8 +576,7 @@ export async function runTasks(opts) {
                   seedDataItem.metadata,
                   seedDataItem.url,
                   seedDataItem.scheme,
-                  seedDataItem.zooms || defaultZooms,
-                  seedDataItem.bboxs || defaultBBoxs,
+                  seedDataItem.coverages,
                   seedDataItem.concurrency || defaultConcurrency,
                   seedDataItem.maxTry || defaultMaxTry,
                   seedDataItem.timeout || defaultTimeout,
@@ -602,8 +592,7 @@ export async function runTasks(opts) {
                   seedDataItem.metadata,
                   seedDataItem.url,
                   seedDataItem.scheme,
-                  seedDataItem.zooms || defaultZooms,
-                  seedDataItem.bboxs || defaultBBoxs,
+                  seedDataItem.coverages,
                   seedDataItem.concurrency || defaultConcurrency,
                   seedDataItem.maxTry || defaultMaxTry,
                   seedDataItem.timeout || defaultTimeout,

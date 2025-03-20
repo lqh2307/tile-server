@@ -581,10 +581,8 @@ export function createMBTilesMetadata(metadata) {
     }
   }
 
-  if (metadata.cacheBBoxs !== undefined) {
-    data.cacheBBoxs = deepClone(metadata.cacheBBoxs);
-  } else {
-    data.cacheBBoxs = [[-180, -85.051129, 180, 85.051129]];
+  if (metadata.cacheCoverages !== undefined) {
+    data.cacheCoverages = deepClone(metadata.cacheCoverages);
   }
 
   return data;
