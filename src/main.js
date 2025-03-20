@@ -19,8 +19,12 @@ program
   .description("========== tile-server startup options ==========")
   .usage("tile-server server [options]")
   .option("-d, --data_dir <dir>", "Data directory", "data")
-  .option("-r, --restart", "Auto restart server if config file has changed")
-  .option("-s, --service_name", "Service name (alias)")
+  .option(
+    "-r, --restart",
+    "Auto restart server if config file has changed",
+    true
+  )
+  .option("-s, --service_name", "Service name (alias)", "tile-server")
   .version(getVersion())
   .showHelpAfterError()
   .parse(process.argv);
