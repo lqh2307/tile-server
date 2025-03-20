@@ -4,7 +4,6 @@ import { countPostgreSQLTiles, getPostgreSQLSize } from "./tile_postgresql.js";
 import { countMBTilesTiles, getMBTilesSize } from "./tile_mbtiles.js";
 import { getTilesBoundsFromCoverages, isExistFolder } from "./utils.js";
 import { countXYZTiles, getXYZSize } from "./tile_xyz.js";
-import { checkReadyMiddleware } from "./middleware.js";
 import { getPMTilesSize } from "./tile_pmtiles.js";
 import { StatusCodes } from "http-status-codes";
 import { getGeoJSONSize } from "./geojson.js";
@@ -414,7 +413,7 @@ export const serve_summary = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/", checkReadyMiddleware(), serveSummaryHandler());
+    app.get("/", serveSummaryHandler());
 
     return app;
   },
