@@ -37,7 +37,7 @@ export function loggerMiddleware() {
     const protocol = req.protocol || "-";
     const path = req.originalUrl || "-";
     const statusCode = res.statusCode || "-";
-    const contentLength = req.headers["content-length"] || "-";
+    const contentLength = res.headers["content-length"] || "-";
     const origin = req.headers["origin"] || req.headers["referer"] || "-";
     const ip = req.ip || "-";
     const userAgent = req.headers["user-agent"] || "-";
