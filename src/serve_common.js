@@ -4,8 +4,6 @@ import { updateConfigFile, readConfigFile, config } from "./config.js";
 import { updateCleanUpFile, readCleanUpFile } from "./cleanup.js";
 import { readSeedFile, updateSeedFile } from "./seed.js";
 import { StatusCodes } from "http-status-codes";
-import swaggerUi from "swagger-ui-express";
-import swaggerJsdoc from "swagger-jsdoc";
 import { printLog } from "./logger.js";
 import express from "express";
 import {
@@ -14,7 +12,6 @@ import {
   getRequestHost,
   getJSONSchema,
   validateJSON,
-  getVersion,
 } from "./utils.js";
 
 /**
