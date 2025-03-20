@@ -1,9 +1,11 @@
 "use strict";
 
+import { serve_prometheus } from "./serve_prometheus.js";
 import { config, loadConfigFile } from "./config.js";
 import { loggerMiddleware } from "./middleware.js";
 import { serve_summary } from "./serve_summary.js";
 import { serve_geojson } from "./serve_geojson.js";
+import { serve_swagger } from "./serve_swagger.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
 import { serve_style } from "./serve_style.js";
@@ -147,7 +149,9 @@ export async function startServer() {
       .use(cors())
       .use(express.json())
       .use(loggerMiddleware())
-      .use("/", serve_common.init());
+      .use("/", express.static("public/resources"))
+      .use("/", serve_common.init())
+      .use("/swagger", serve_swagger.init());
 
     app
       .listen(listenPort, () => {
@@ -161,6 +165,7 @@ export async function startServer() {
     await loadData();
 
     app
+      .use("/prometheus", serve_prometheus.init())
       .use("/summary", serve_summary.init())
       .use("/datas", serve_data.init())
       .use("/geojsons", serve_geojson.init())

@@ -4,7 +4,6 @@ import { updateConfigFile, readConfigFile, config } from "./config.js";
 import { updateCleanUpFile, readCleanUpFile } from "./cleanup.js";
 import { readSeedFile, updateSeedFile } from "./seed.js";
 import { StatusCodes } from "http-status-codes";
-import { getMetrics } from "./prometheus.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 import { printLog } from "./logger.js";
@@ -17,28 +16,6 @@ import {
   validateJSON,
   getVersion,
 } from "./utils.js";
-
-/**
- * Get metrics handler
- * @returns {(req: any, res: any, next: any) => Promise<any>}
- */
-function serveMetricsHandler() {
-  return async (req, res, next) => {
-    try {
-      const data = await getMetrics();
-
-      res.header("content-type", data.contentType);
-
-      return res.status(StatusCodes.OK).send(data.metrics);
-    } catch (error) {
-      printLog("error", `Failed to get metrics: ${error}`);
-
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .send("Internal server error");
-    }
-  };
-}
 
 /**
  * Serve front page handler
@@ -164,34 +141,6 @@ function serveFrontPageHandler() {
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .send("Internal server error");
     }
-  };
-}
-
-/**
- * Serve swagger handler
- * @returns {(req: any, res: any, next: any) => Promise<any>}
- */
-function serveSwagger() {
-  return (req, res, next) => {
-    swaggerUi.setup(
-      swaggerJsdoc({
-        swaggerDefinition: {
-          openapi: "3.0.0",
-          info: {
-            title: "Tile Server API",
-            version: getVersion(),
-            description: "API for tile server",
-          },
-        },
-        servers: [
-          {
-            url: getRequestHost(req),
-            description: "Tile server",
-          },
-        ],
-        apis: ["src/*.js"],
-      })
-    )(req, res, next);
   };
 }
 
@@ -782,45 +731,7 @@ function serveRestartKillHandler() {
 
 export const serve_common = {
   init: () => {
-    const app = express()
-      .use("/", express.static("public/resources"))
-      .disable("x-powered-by");
-
-    if (process.env.SERVE_SWAGGER !== "false") {
-      app.use("/swagger/index.html", swaggerUi.serve, serveSwagger());
-    }
-
-    /**
-     * @swagger
-     * tags:
-     *   - name: Common
-     *     description: Common related endpoints
-     * /prometheus:
-     *   get:
-     *     tags:
-     *       - Common
-     *     summary: Get metrics
-     *     responses:
-     *       200:
-     *         description: Metrics
-     *         content:
-     *           text/plain:
-     *             schema:
-     *               type: string
-     *               example: OK
-     *       404:
-     *         description: Not found
-     *       503:
-     *         description: Server is starting up
-     *         content:
-     *           text/plain:
-     *             schema:
-     *               type: string
-     *               example: Starting...
-     *       500:
-     *         description: Internal server error
-     */
-    app.get("/prometheus", serveMetricsHandler());
+    const app = express().disable("x-powered-by");
 
     /**
      * @swagger
