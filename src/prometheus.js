@@ -15,13 +15,29 @@ setInterval(() => {
 const httpRequestError = new Counter({
   name: "http_request_error",
   help: "Total number of HTTP request errors",
-  labelNames: ["method", "protocol", "path", "status_code", "ip", "user_agent"],
+  labelNames: [
+    "method",
+    "protocol",
+    "path",
+    "status_code",
+    "origin",
+    "ip",
+    "user_agent",
+  ],
 });
 
 const httpRequestDuration = new Histogram({
   name: "http_request_duration",
   help: "Duration of HTTP requests in ms",
-  labelNames: ["method", "protocol", "path", "status_code", "ip", "user_agent"],
+  labelNames: [
+    "method",
+    "protocol",
+    "path",
+    "status_code",
+    "origin",
+    "ip",
+    "user_agent",
+  ],
   buckets: [100, 300, 500, 1000],
 });
 

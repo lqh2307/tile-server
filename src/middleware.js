@@ -48,7 +48,7 @@ export function loggerMiddleware() {
 
       printLog(
         "info",
-        `[PID = ${process.pid}] ${method} ${protocol} ${path} ${statusCode} ${contentLength} ${duration} ${origin} ${ip} ${userAgent}`
+        `${method} ${protocol} ${path} ${statusCode} ${contentLength} ${duration} ${origin} ${ip} ${userAgent}`
       );
 
       setMetrics(method, protocol, path, statusCode, origin, ip, userAgent);
