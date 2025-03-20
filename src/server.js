@@ -2,6 +2,7 @@
 
 import { config, loadConfigFile } from "./config.js";
 import { loggerMiddleware } from "./middleware.js";
+import { serve_summary } from "./serve_summary.js";
 import { serve_geojson } from "./serve_geojson.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
@@ -160,6 +161,7 @@ export async function startServer() {
     await loadData();
 
     app
+      .use("/summary", serve_summary.init())
       .use("/datas", serve_data.init())
       .use("/geojsons", serve_geojson.init())
       .use("/fonts", serve_font.init())
