@@ -19,6 +19,7 @@ export function initLogger(filePath) {
   logger = pino(
     {
       level: "info",
+      base: null,
       formatters: {
         level(label) {
           return {
