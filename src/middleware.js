@@ -37,7 +37,6 @@ export function loggerMiddleware() {
     const protocol = req.protocol || "-";
     const path = req.originalUrl || "-";
     const statusCode = res.statusCode || "-";
-    const contentLength = res.headers["content-length"] || "-";
     const origin = req.headers["origin"] || req.headers["referer"] || "-";
     const ip = req.ip || "-";
     const userAgent = req.headers["user-agent"] || "-";
@@ -48,7 +47,7 @@ export function loggerMiddleware() {
 
       printLog(
         "info",
-        `${method} ${protocol} ${path} ${statusCode} ${contentLength} ${duration} ${origin} ${ip} ${userAgent}`
+        `${method} ${protocol} ${path} ${statusCode} ${duration} ${origin} ${ip} ${userAgent}`
       );
 
       setMetrics(
