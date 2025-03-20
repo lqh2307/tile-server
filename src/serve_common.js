@@ -1,30 +1,18 @@
 "use strict";
 
-import { countPostgreSQLTiles, getPostgreSQLSize } from "./tile_postgresql.js";
 import { updateConfigFile, readConfigFile, config } from "./config.js";
-import { countMBTilesTiles, getMBTilesSize } from "./tile_mbtiles.js";
 import { updateCleanUpFile, readCleanUpFile } from "./cleanup.js";
-import { seed, readSeedFile, updateSeedFile } from "./seed.js";
-import { countXYZTiles, getXYZSize } from "./tile_xyz.js";
-import { getPMTilesSize } from "./tile_pmtiles.js";
+import { readSeedFile, updateSeedFile } from "./seed.js";
 import { StatusCodes } from "http-status-codes";
-import { getGeoJSONSize } from "./geojson.js";
 import { getMetrics } from "./prometheus.js";
-import { getSpriteSize } from "./sprite.js";
 import swaggerUi from "swagger-ui-express";
-import { getStyleSize } from "./style.js";
 import swaggerJsdoc from "swagger-jsdoc";
-import { getFontSize } from "./font.js";
 import { printLog } from "./logger.js";
 import express from "express";
 import {
-  getTilesBoundsFromCoverages,
   getXYZFromLonLatZ,
-  getBBoxFromCircle,
-  getBBoxFromPoint,
   compileTemplate,
   getRequestHost,
-  isExistFolder,
   getJSONSchema,
   validateJSON,
   getVersion,

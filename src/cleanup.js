@@ -99,7 +99,7 @@ async function cleanUpMBTilesTiles(id, coverages, cleanUpBefore) {
   );
 
   /* Log */
-  let log = `Cleaning up ${grandTotal} tiles of mbtiles "${id}" with:\n\tCoverages: ${json.stringify(
+  let log = `Cleaning up ${grandTotal} tiles of mbtiles "${id}" with:\n\tCoverages: ${JSON.stringify(
     coverages
   )}`;
 
@@ -248,7 +248,7 @@ async function cleanUpPostgreSQLTiles(id, coverages, cleanUpBefore) {
   );
 
   /* Log */
-  let log = `Cleaning up ${grandTotal} tiles of postgresql "${id}" with:\n\tCoverages: ${json.stringify(
+  let log = `Cleaning up ${grandTotal} tiles of postgresql "${id}" with:\n\tCoverages: ${JSON.stringify(
     coverages
   )}`;
 
@@ -394,7 +394,7 @@ async function cleanUpXYZTiles(id, format, coverages, cleanUpBefore) {
   );
 
   /* Log */
-  let log = `Cleaning up ${grandTotal} tiles of xyz "${id}" with:\n\tCoverages: ${json.stringify(
+  let log = `Cleaning up ${grandTotal} tiles of xyz "${id}" with:\n\tCoverages: ${JSON.stringify(
     coverages
   )}`;
 
