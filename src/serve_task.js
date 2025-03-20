@@ -1,6 +1,5 @@
 "use strict";
 
-import { checkReadyMiddleware } from "./middleware.js";
 import { StatusCodes } from "http-status-codes";
 import { printLog } from "./logger.js";
 import express from "express";
@@ -166,7 +165,7 @@ export const serve_task = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/start", checkReadyMiddleware(), startTaskHandler());
+    app.get("/start", startTaskHandler());
 
     /**
      * @swagger
@@ -195,7 +194,7 @@ export const serve_task = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/cancel", checkReadyMiddleware(), cancelTaskHandler());
+    app.get("/cancel", cancelTaskHandler());
 
     return app;
   },

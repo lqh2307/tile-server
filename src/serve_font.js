@@ -1,7 +1,6 @@
 "use strict";
 
 import { detectFormatAndHeaders, getRequestHost, gzipAsync } from "./utils.js";
-import { checkReadyMiddleware } from "./middleware.js";
 import { getFonts, validateFont } from "./font.js";
 import { StatusCodes } from "http-status-codes";
 import { printLog } from "./logger.js";
@@ -114,7 +113,7 @@ export const serve_font = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/fonts.json", checkReadyMiddleware(), getFontsListHandler());
+    app.get("/fonts.json", getFontsListHandler());
 
     /**
      * @swagger
@@ -162,11 +161,7 @@ export const serve_font = {
      *       500:
      *         description: Internal server error
      */
-    app.get(
-      "/:id/:range(\\d{1,5}-\\d{1,5}).pbf",
-      checkReadyMiddleware(),
-      getFontHandler()
-    );
+    app.get("/:id/:range(\\d{1,5}-\\d{1,5}).pbf", getFontHandler());
 
     return app;
   },

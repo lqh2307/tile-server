@@ -1,12 +1,12 @@
 "use strict";
 
-import { checkReadyMiddleware } from "./middleware.js";
 import { StatusCodes } from "http-status-codes";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
 import { seed } from "./seed.js";
 import express from "express";
 import {
+  compileTemplate,
   isLocalTileURL,
   getRequestHost,
   getJSONSchema,
@@ -27,6 +27,72 @@ import {
   renderXYZTiles,
   renderImage,
 } from "./image.js";
+
+/**
+ * Serve style handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
+function serveStyleHandler() {
+  return async (req, res, next) => {
+    const id = req.params.id;
+
+    try {
+      const item = config.repo.styles[id];
+
+      if (item === undefined) {
+        return res.status(StatusCodes.NOT_FOUND).send("Style does not exist");
+      }
+
+      const compiled = await compileTemplate("viewer", {
+        id: id,
+        name: item.name,
+        base_url: getRequestHost(req),
+      });
+
+      return res.status(StatusCodes.OK).send(compiled);
+    } catch (error) {
+      printLog("error", `Failed to serve style "${id}": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
+
+/**
+ * Serve WMTS handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
+function serveWMTSHandler() {
+  return async (req, res, next) => {
+    const id = req.params.id;
+
+    try {
+      const item = config.repo.styles[id].rendered;
+
+      if (item === undefined) {
+        return res.status(StatusCodes.NOT_FOUND).send("WMTS does not exist");
+      }
+
+      const compiled = await compileTemplate("wmts", {
+        id: id,
+        name: item.tileJSON.name,
+        base_url: getRequestHost(req),
+      });
+
+      res.header("content-type", "text/xml");
+
+      return res.status(StatusCodes.OK).send(compiled);
+    } catch (error) {
+      printLog("error", `Failed to serve WMTS "${id}": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
 
 /**
  * Get styleJSON handler
@@ -644,6 +710,86 @@ export const serve_style = {
   init: () => {
     const app = express().disable("x-powered-by");
 
+    if (process.env.SERVE_FRONT_PAGE !== "false") {
+      /**
+       * @swagger
+       * tags:
+       *   - name: Style
+       *     description: Style related endpoints
+       * /styles/{id}/:
+       *   get:
+       *     tags:
+       *       - Style
+       *     summary: Serve style page
+       *     parameters:
+       *       - in: path
+       *         name: id
+       *         schema:
+       *           type: string
+       *           example: id
+       *         required: true
+       *         description: ID of the style
+       *     responses:
+       *       200:
+       *         description: Style page
+       *         content:
+       *           text/html:
+       *             schema:
+       *               type: string
+       *       404:
+       *         description: Not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
+       *       500:
+       *         description: Internal server error
+       */
+      app.get("/:id/$", checkReadyMiddleware(), serveStyleHandler());
+    }
+
+    /**
+     * @swagger
+     * tags:
+     *   - name: Style
+     *     description: Style related endpoints
+     * /styles/{id}/wmts.xml:
+     *   get:
+     *     tags:
+     *       - Style
+     *     summary: Get WMTS XML for style
+     *     parameters:
+     *       - in: path
+     *         name: id
+     *         schema:
+     *           type: string
+     *           example: id
+     *         required: true
+     *         description: ID of the style
+     *     responses:
+     *       200:
+     *         description: WMTS XML for the style
+     *         content:
+     *           text/xml:
+     *             schema:
+     *               type: string
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/:id/wmts.xml", checkReadyMiddleware(), serveWMTSHandler());
+
     /**
      * @swagger
      * tags:
@@ -682,7 +828,7 @@ export const serve_style = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/styles.json", checkReadyMiddleware(), getStylesListHandler());
+    app.get("/styles.json", getStylesListHandler());
 
     /**
      * @swagger
@@ -720,11 +866,7 @@ export const serve_style = {
      *       500:
      *         description: Internal server error
      */
-    app.get(
-      "/stylejsons.json",
-      checkReadyMiddleware(),
-      getStyleJSONsListHandler()
-    );
+    app.get("/stylejsons.json", getStyleJSONsListHandler());
 
     /**
      * @swagger
@@ -769,7 +911,7 @@ export const serve_style = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/:id/style.json", checkReadyMiddleware(), getStyleHandler());
+    app.get("/:id/style.json", getStyleHandler());
 
     if (process.env.ENABLE_EXPORT !== "false") {
       /**
@@ -815,11 +957,7 @@ export const serve_style = {
        *       500:
        *         description: Internal server error
        */
-      app.get(
-        "/:id/export/style.json",
-        checkReadyMiddleware(),
-        renderStyleHandler()
-      );
+      app.get("/:id/export/style.json", renderStyleHandler());
     }
 
     /**
@@ -872,11 +1010,7 @@ export const serve_style = {
      *       500:
      *         description: Internal server error
      */
-    app.get(
-      "/rendereds.json",
-      checkReadyMiddleware(),
-      getRenderedsListHandler()
-    );
+    app.get("/rendereds.json", getRenderedsListHandler());
 
     /**
      * @swagger
@@ -907,11 +1041,7 @@ export const serve_style = {
      *       500:
      *         description: Internal server error
      */
-    app.get(
-      "/tilejsons.json",
-      checkReadyMiddleware(),
-      getRenderedTileJSONsListHandler()
-    );
+    app.get("/tilejsons.json", getRenderedTileJSONsListHandler());
 
     /**
      * @swagger
@@ -965,11 +1095,7 @@ export const serve_style = {
      *       500:
      *         description: Internal server error
      */
-    app.get(
-      "/(:tileSize(256|512)/)?:id.json",
-      checkReadyMiddleware(),
-      getRenderedHandler()
-    );
+    app.get("/(:tileSize(256|512)/)?:id.json", getRenderedHandler());
 
     /**
      * @swagger
@@ -1045,7 +1171,6 @@ export const serve_style = {
      */
     app.get(
       `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):tileScale(@\\d+x)?.png`,
-      checkReadyMiddleware(),
       getRenderedTileHandler()
     );
 

@@ -1,6 +1,5 @@
 "use strict";
 
-import { checkReadyMiddleware } from "./middleware.js";
 import { StatusCodes } from "http-status-codes";
 import { printLog } from "./logger.js";
 import { config } from "./config.js";
@@ -29,6 +28,7 @@ import {
   openMBTilesDB,
 } from "./tile_mbtiles.js";
 import {
+  compileTemplate,
   getRequestHost,
   calculateMD5,
   isExistFile,
@@ -50,6 +50,41 @@ import {
   getPostgreSQLTile,
   openPostgreSQLDB,
 } from "./tile_postgresql.js";
+
+/**
+ * Serve data handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
+function serveDataHandler() {
+  return async (req, res, next) => {
+    const id = req.params.id;
+
+    try {
+      const item = config.repo.datas[id];
+
+      if (item === undefined) {
+        return res.status(StatusCodes.NOT_FOUND).send("Data does not exist");
+      }
+
+      const compiled = await compileTemplate(
+        item.tileJSON.format === "pbf" ? "vector_data" : "raster_data",
+        {
+          id: id,
+          name: item.tileJSON.name,
+          base_url: getRequestHost(req),
+        }
+      );
+
+      return res.status(StatusCodes.OK).send(compiled);
+    } catch (error) {
+      printLog("error", `Failed to serve data "${id}": ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
 
 /**
  * Get data tile handler
@@ -472,6 +507,48 @@ export const serve_data = {
   init: () => {
     const app = express().disable("x-powered-by");
 
+    if (process.env.SERVE_FRONT_PAGE !== "false") {
+      /* Serve data */
+      /**
+       * @swagger
+       * tags:
+       *   - name: Data
+       *     description: Data related endpoints
+       * /datas/{id}/:
+       *   get:
+       *     tags:
+       *       - Data
+       *     summary: Serve data page
+       *     parameters:
+       *       - in: path
+       *         name: id
+       *         schema:
+       *           type: string
+       *           example: id
+       *         required: true
+       *         description: ID of the data
+       *     responses:
+       *       200:
+       *         description: Data page
+       *         content:
+       *           text/html:
+       *             schema:
+       *               type: string
+       *       404:
+       *         description: Not found
+       *       503:
+       *         description: Server is starting up
+       *         content:
+       *           text/plain:
+       *             schema:
+       *               type: string
+       *               example: Starting...
+       *       500:
+       *         description: Internal server error
+       */
+      app.use("/:id/$", serveDataHandler());
+    }
+
     /**
      * @swagger
      * tags:
@@ -510,7 +587,7 @@ export const serve_data = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/datas.json", checkReadyMiddleware(), getDatasListHandler());
+    app.get("/datas.json", getDatasListHandler());
 
     /**
      * @swagger
@@ -541,11 +618,7 @@ export const serve_data = {
      *       500:
      *         description: Internal server error
      */
-    app.get(
-      "/tilejsons.json",
-      checkReadyMiddleware(),
-      getDataTileJSONsListHandler()
-    );
+    app.get("/tilejsons.json", getDataTileJSONsListHandler());
 
     /**
      * @swagger
@@ -586,7 +659,7 @@ export const serve_data = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/:id.json", checkReadyMiddleware(), getDataHandler());
+    app.get("/:id.json", getDataHandler());
 
     /**
      * @swagger
@@ -659,7 +732,6 @@ export const serve_data = {
      */
     app.get(
       `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp|gif)`,
-      checkReadyMiddleware(),
       getDataTileHandler()
     );
 
@@ -736,7 +808,6 @@ export const serve_data = {
      */
     app.get(
       `/:id/md5/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp|gif)`,
-      checkReadyMiddleware(),
       getDataTileMD5Handler()
     );
 

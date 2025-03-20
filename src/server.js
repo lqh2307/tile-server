@@ -75,37 +75,78 @@ export function cancelTaskInWorker() {
 }
 
 /**
- * Start server
+ * Load data
  * @returns {Promise<void>}
  */
-export async function startServer() {
+async function loadData() {
+  /* Load datas */
+  printLog("info", "Loading data...");
+
+  await Promise.all([
+    serve_font.add(),
+    serve_sprite.add(),
+    serve_data.add(),
+    serve_geojson.add(),
+  ])
+    .then(() => serve_style.add())
+    .then(() => {
+      /* Update STARTING_UP ENV */
+      process.env.STARTING_UP = "false";
+
+      printLog("info", "Completed startup!");
+
+      /* Clean */
+      delete config.styles;
+      delete config.geojsons;
+      delete config.datas;
+      delete config.sprites;
+      delete config.fonts;
+    })
+    .catch((error) => {
+      throw new Error(`Failed to load data: ${error}`);
+    });
+}
+
+/**
+ * Load configs
+ * @returns {Promise<void>}
+ */
+async function loadConfigs() {
   try {
-    /* Load configs */
     printLog(
       "info",
       `Loading config.json and seed.json files at "${process.env.DATA_DIR}"...`
     );
 
     await Promise.all([loadConfigFile(), loadSeedFile()]);
+  } catch (error) {
+    throw new Error(
+      `Failed to load config.json and seed.json files at "${process.env.DATA_DIR}": ${error}`
+    );
+  }
+}
+
+/**
+ * Start server
+ * @returns {Promise<void>}
+ */
+export async function startServer() {
+  try {
+    /* Load configs */
+    await loadConfigs();
 
     /* Start HTTP server */
     printLog("info", "Starting HTTP server...");
 
     const listenPort = config.options?.listenPort || 8080;
 
-    express()
+    const app = express()
       .disable("x-powered-by")
       .enable("trust proxy")
       .use(cors())
       .use(express.json())
       .use(loggerMiddleware())
       .use("/", serve_common.init())
-      .use("/datas", serve_data.init())
-      .use("/geojsons", serve_geojson.init())
-      .use("/fonts", serve_font.init())
-      .use("/sprites", serve_sprite.init())
-      .use("/styles", serve_style.init())
-      .use("/tasks", serve_task.init())
       .listen(listenPort, () => {
         printLog("info", `HTTP server is listening on port "${listenPort}"...`);
       })
@@ -114,35 +155,15 @@ export async function startServer() {
       });
 
     /* Load datas */
-    printLog("info", "Loading data...");
+    await loadData();
 
-    Promise.all([
-      serve_font.add(),
-      serve_sprite.add(),
-      serve_data.add(),
-      serve_geojson.add(),
-    ])
-      .then(() => serve_style.add())
-      .then(() => {
-        /* Update STARTING_UP ENV */
-        process.env.STARTING_UP = "false";
-
-        printLog("info", "Completed startup!");
-
-        /* Clean */
-        delete config.styles;
-        delete config.geojsons;
-        delete config.datas;
-        delete config.sprites;
-        delete config.fonts;
-      })
-      .catch((error) => {
-        printLog("error", `Failed to load data: ${error}. Exited!`);
-
-        process.send({
-          action: "killServer",
-        });
-      });
+    app
+      .use("/datas", serve_data.init())
+      .use("/geojsons", serve_geojson.init())
+      .use("/fonts", serve_font.init())
+      .use("/sprites", serve_sprite.init())
+      .use("/styles", serve_style.init())
+      .use("/tasks", serve_task.init());
   } catch (error) {
     printLog("error", `Failed to start server: ${error}. Exited!`);
 
