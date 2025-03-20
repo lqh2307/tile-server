@@ -1,6 +1,7 @@
 "use strict";
 
 import { StatusCodes } from "http-status-codes";
+import { setMetrics } from "./prometheus.js";
 import { printLog } from "./logger.js";
 
 /**
@@ -32,19 +33,25 @@ export function checkReadyMiddleware() {
 export function loggerMiddleware() {
   return async (req, res, next) => {
     const start = process.hrtime();
+    const method = req.method || "-";
+    const protocol = req.protocol || "-";
+    const path = req.originalUrl || "-";
+    const statusCode = res.statusCode || "-";
+    const contentLength = req.headers["content-length"] || "-";
+    const origin = req.headers["origin"] || req.headers["referer"] || "-";
+    const ip = req.ip || "-";
+    const userAgent = req.headers["user-agent"] || "-";
 
     res.on("finish", () => {
       const diff = process.hrtime(start);
+      const duration = diff[0] * 1e3 + diff[1] / 1e6 || "-";
 
       printLog(
         "info",
-        `[PID = ${process.pid}] ${req.method} ${req.originalUrl} ${
-          res.statusCode
-        } ${res.get("Content-Length") || 0} ${(
-          diff[0] * 1e3 +
-          diff[1] / 1e6
-        ).toFixed(2)} ${req.ip} ${req.get("User-Agent")}`
+        `[PID = ${process.pid}] ${method} ${protocol} ${path} ${statusCode} ${contentLength} ${duration} ${origin} ${ip} ${userAgent}`
       );
+
+      setMetrics(method, protocol, path, statusCode, origin, ip, userAgent);
     });
 
     next();

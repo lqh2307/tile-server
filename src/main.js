@@ -20,6 +20,7 @@ program
   .usage("tile-server server [options]")
   .option("-d, --data_dir <dir>", "Data directory", "data")
   .option("-r, --restart", "Auto restart server if config file has changed")
+  .option("-r, --service_name", "Service name (alias)")
   .version(getVersion())
   .showHelpAfterError()
   .parse(process.argv);
@@ -29,7 +30,7 @@ const argOpts = program.opts();
 
 /**
  * Start cluster server
- * @param {{ dataDir: string, restart: boolean }} opts
+ * @param {{ dataDir: string, restart: boolean, serviceName: string }} opts
  * @returns {Promise<void>}
  */
 async function startClusterServer(opts) {
@@ -40,6 +41,7 @@ async function startClusterServer(opts) {
     // Store ENVs
     process.env.DATA_DIR = opts.dataDir; // Data dir
     process.env.MAIN_PID = process.pid; // Main PID
+    process.env.SERVICE_NAME = opts.serviceName; // Service name
 
     /* Read config.json file */
     printLog("info", `Reading config.json file at "${opts.dataDir}"...`);
@@ -218,4 +220,5 @@ async function startClusterServer(opts) {
 startClusterServer({
   dataDir: argOpts.data_dir,
   restart: argOpts.restart,
+  serviceName: argOpts.service_name,
 });

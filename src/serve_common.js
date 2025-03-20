@@ -10,6 +10,7 @@ import { checkReadyMiddleware } from "./middleware.js";
 import { getPMTilesSize } from "./tile_pmtiles.js";
 import { StatusCodes } from "http-status-codes";
 import { getGeoJSONSize } from "./geojson.js";
+import { getMetrics } from "./prometheus.js";
 import { getSpriteSize } from "./sprite.js";
 import swaggerUi from "swagger-ui-express";
 import { getStyleSize } from "./style.js";
@@ -29,6 +30,28 @@ import {
   validateJSON,
   getVersion,
 } from "./utils.js";
+
+/**
+ * Get metrics handler
+ * @returns {(req: any, res: any, next: any) => Promise<any>}
+ */
+function serveMetricsHandler() {
+  return async (req, res, next) => {
+    try {
+      const data = await getMetrics();
+
+      res.header("content-type", data.contentType);
+
+      return res.status(StatusCodes.OK).send(data.metrics);
+    } catch (error) {
+      printLog("error", `Failed to get metrics: ${error}`);
+
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .send("Internal server error");
+    }
+  };
+}
 
 /**
  * Serve front page handler
@@ -1353,6 +1376,38 @@ export const serve_common = {
      * tags:
      *   - name: Common
      *     description: Common related endpoints
+     * /prometheus:
+     *   get:
+     *     tags:
+     *       - Common
+     *     summary: Get metrics
+     *     responses:
+     *       200:
+     *         description: Metrics
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: OK
+     *       404:
+     *         description: Not found
+     *       503:
+     *         description: Server is starting up
+     *         content:
+     *           text/plain:
+     *             schema:
+     *               type: string
+     *               example: Starting...
+     *       500:
+     *         description: Internal server error
+     */
+    app.get("/prometheus", serveMetricsHandler());
+
+    /**
+     * @swagger
+     * tags:
+     *   - name: Common
+     *     description: Common related endpoints
      * /calculate-bbox:
      *   get:
      *     tags:
@@ -1465,7 +1520,7 @@ export const serve_common = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/health", serveHealthHandler());
+    app.get("/health", checkReadyMiddleware(), serveHealthHandler());
 
     /**
      * @swagger
