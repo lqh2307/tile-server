@@ -141,8 +141,6 @@ export async function startServer() {
     /* Start HTTP server */
     printLog("info", "Starting HTTP server...");
 
-    const listenPort = config.options?.listenPort || 8080;
-
     const app = express()
       .disable("x-powered-by")
       .enable("trust proxy")
@@ -153,9 +151,12 @@ export async function startServer() {
       .use("/", serve_common.init())
       .use("/swagger", serve_swagger.init());
 
-    app
-      .listen(listenPort, () => {
-        printLog("info", `HTTP server is listening on port "${listenPort}"...`);
+    const server = app
+      .listen(config.options?.listenPort || 8080, () => {
+        printLog(
+          "info",
+          `HTTP server is listening on port "${server.address().port}"...`
+        );
       })
       .on("error", (error) => {
         printLog("error", `HTTP server is stopped by: ${error}`);
