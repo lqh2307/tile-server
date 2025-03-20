@@ -58,6 +58,7 @@ register.registerMetric(httpRequestDuration);
  * @param {string} origin Origin
  * @param {string} ip IP
  * @param {string} userAgent User agent
+ * @param {number} duration Duration
  * @returns {void}
  */
 export function setMetrics(
@@ -67,7 +68,8 @@ export function setMetrics(
   statusCode,
   origin,
   ip,
-  userAgent
+  userAgent,
+  duration
 ) {
   if (statusCode >= 400) {
     httpRequestError
@@ -77,7 +79,7 @@ export function setMetrics(
 
   httpRequestDuration
     .labels(method, protocol, path, statusCode, origin, ip, userAgent)
-    .inc();
+    .observe(duration);
 }
 
 /**

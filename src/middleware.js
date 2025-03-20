@@ -44,14 +44,23 @@ export function loggerMiddleware() {
 
     res.on("finish", () => {
       const diff = process.hrtime(start);
-      const duration = diff[0] * 1e3 + diff[1] / 1e6 || "-";
+      const duration = diff[0] * 1e3 + diff[1] / 1e6;
 
       printLog(
         "info",
         `${method} ${protocol} ${path} ${statusCode} ${contentLength} ${duration} ${origin} ${ip} ${userAgent}`
       );
 
-      setMetrics(method, protocol, path, statusCode, origin, ip, userAgent);
+      setMetrics(
+        method,
+        protocol,
+        path,
+        statusCode,
+        origin,
+        ip,
+        userAgent,
+        duration
+      );
     });
 
     next();
