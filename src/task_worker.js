@@ -1,11 +1,13 @@
 "use strict";
 
 import { parentPort, workerData } from "node:worker_threads";
-import { printLog } from "./logger.js";
+import { initLogger, printLog } from "./logger.js";
 import { runTasks } from "./task.js";
 
 (async () => {
   try {
+    initLogger(`${process.env.DATA_DIR}/logs/log.log`);
+
     printLog("info", "Starting seed and clean up task...");
 
     /* Run task */

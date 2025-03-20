@@ -212,7 +212,7 @@
         let currentMarker;
 
         map.on("click", (event) => {
-          if (currentMarker) {
+          if (currentMarker !== undefined) {
             currentMarker.remove();
           }
 
@@ -232,7 +232,7 @@
         });
 
         map.on("contextmenu", (event) => {
-          if (currentMarker) {
+          if (currentMarker !== undefined) {
             currentMarker.remove();
 
             currentMarker = undefined;

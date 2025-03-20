@@ -120,8 +120,6 @@
           cacheCoveragesButton.style.cssText = "position:absolute;bottom:50px;left:10px;padding:5px 10px;font-size:14px;cursor:pointer;background:rgba(0, 150, 255, 0.5);color:white;border:none;border-radius:5px;display:inline-block;z-index:1000;";
 
           cacheCoveragesButton.onclick = () => {
-            isCoverageVisible = !isCoverageVisible;
-
             if (isCoverageVisible === true) {
               cacheCoveragesButton.innerHTML = "Show cache Coverages";
 
@@ -149,7 +147,7 @@
         let currentMarker;
 
         map.on("click", (event) => {
-          if (currentMarker) {
+          if (currentMarker !== undefined) {
             currentMarker.remove();
           }
 
@@ -167,7 +165,7 @@
         });
 
         map.on("contextmenu", () => {
-          if (currentMarker) {
+          if (currentMarker !== undefined) {
             currentMarker.remove();
 
             currentMarker = undefined;

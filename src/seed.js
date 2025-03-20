@@ -255,11 +255,19 @@ async function seedMBTilesTiles(
 
   printLog("info", "Downloading datas...");
 
-  for (const summary of summaries) {
-    for (const [_, tilesSummary] of summary) {
-      for (const z in tilesSummary) {
-        for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-          for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+  for (let idx1 = 0; idx1 < summaries.length; idx1++) {
+    for (let idx2 = 0; idx2 < summaries[idx1].length; idx2++) {
+      for (const z in summaries[idx1][idx2]) {
+        for (
+          let x = summaries[idx1][idx2][z].x[0];
+          x <= summaries[idx1][idx2][z].x[1];
+          x++
+        ) {
+          for (
+            let y = summaries[idx1][idx2][z].y[0];
+            y <= summaries[idx1][idx2][z].y[1];
+            y++
+          ) {
             /* Wait slot for a task */
             while (activeTasks >= concurrency) {
               await delay(50);
@@ -465,11 +473,19 @@ async function seedPostgreSQLTiles(
 
   printLog("info", "Downloading datas...");
 
-  for (const summary of summaries) {
-    for (const [_, tilesSummary] of summary) {
-      for (const z in tilesSummary) {
-        for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-          for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+  for (let idx1 = 0; idx1 < summaries.length; idx1++) {
+    for (let idx2 = 0; idx2 < summaries[idx1].length; idx2++) {
+      for (const z in summaries[idx1][idx2]) {
+        for (
+          let x = summaries[idx1][idx2][z].x[0];
+          x <= summaries[idx1][idx2][z].x[1];
+          x++
+        ) {
+          for (
+            let y = summaries[idx1][idx2][z].y[0];
+            y <= summaries[idx1][idx2][z].y[1];
+            y++
+          ) {
             /* Wait slot for a task */
             while (activeTasks >= concurrency) {
               await delay(50);
@@ -680,11 +696,19 @@ async function seedXYZTiles(
 
   printLog("info", "Downloading datas...");
 
-  for (const summary of summaries) {
-    for (const [_, tilesSummary] of summary) {
-      for (const z in tilesSummary) {
-        for (let x = tilesSummary[z].x[0]; x <= tilesSummary[z].x[1]; x++) {
-          for (let y = tilesSummary[z].y[0]; y <= tilesSummary[z].y[1]; y++) {
+  for (let idx1 = 0; idx1 < summaries.length; idx1++) {
+    for (let idx2 = 0; idx2 < summaries[idx1].length; idx2++) {
+      for (const z in summaries[idx1][idx2]) {
+        for (
+          let x = summaries[idx1][idx2][z].x[0];
+          x <= summaries[idx1][idx2][z].x[1];
+          x++
+        ) {
+          for (
+            let y = summaries[idx1][idx2][z].y[0];
+            y <= summaries[idx1][idx2][z].y[1];
+            y++
+          ) {
             /* Wait slot for a task */
             while (activeTasks >= concurrency) {
               await delay(50);
