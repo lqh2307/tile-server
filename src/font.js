@@ -142,7 +142,7 @@ export async function getFonts(ids, fileName) {
         );
       } catch (error) {
         printLog(
-          "warning",
+          "warn",
           `Failed to get font "${font}": ${error}. Using fallback font "Open Sans Regular"...`
         );
 

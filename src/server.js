@@ -1,6 +1,7 @@
 "use strict";
 
 import { config, loadConfigFile } from "./config.js";
+import { loggerMiddleware } from "./middleware.js";
 import { serve_geojson } from "./serve_geojson.js";
 import { serve_common } from "./serve_common.js";
 import { serve_sprite } from "./serve_sprite.js";
@@ -12,14 +13,13 @@ import { serve_task } from "./serve_task.js";
 import { loadSeedFile } from "./seed.js";
 import { printLog } from "./logger.js";
 import express from "express";
-import morgan from "morgan";
 import cors from "cors";
 
 let currentTaskWorker;
 
 /**
  * Start task in worker
- * @param {object} opts Options
+ * @param {Object} opts Options
  * @returns {void}
  */
 export function startTaskInWorker(opts) {
@@ -51,7 +51,7 @@ export function startTaskInWorker(opts) {
         currentTaskWorker = undefined;
       });
   } else {
-    printLog("warning", "A task is already running. Skipping start task...");
+    printLog("warn", "A task is already running. Skipping start task...");
   }
 }
 
@@ -70,10 +70,7 @@ export function cancelTaskInWorker() {
         currentTaskWorker = undefined;
       });
   } else {
-    printLog(
-      "warning",
-      "No task is currently running. Skipping cancel task..."
-    );
+    printLog("warn", "No task is currently running. Skipping cancel task...");
   }
 }
 
@@ -94,18 +91,14 @@ export async function startServer() {
     /* Start HTTP server */
     printLog("info", "Starting HTTP server...");
 
-    const loggerFormat = `[PID = ${process.pid}] ${
-      config.options?.loggerFormat ||
-      ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent"
-    }`;
     const listenPort = config.options?.listenPort || 8080;
 
     express()
       .disable("x-powered-by")
       .enable("trust proxy")
       .use(cors())
-      .use(morgan(loggerFormat))
       .use(express.json())
+      .use(loggerMiddleware())
       .use("/", serve_common.init())
       .use("/datas", serve_data.init())
       .use("/geojsons", serve_geojson.init())

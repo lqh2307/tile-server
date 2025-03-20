@@ -74,7 +74,7 @@ export async function runSQL(source, sql, ...params) {
  * @param {sqlite3.Database} source SQLite database instance
  * @param {string} sql SQL query string
  * @param {...any} params Parameters for the SQL query
- * @returns {Promise<object>} The first row of the query result
+ * @returns {Promise<Object>} The first row of the query result
  */
 export async function fetchOne(source, sql, ...params) {
   return await new Promise((resolve, reject) => {

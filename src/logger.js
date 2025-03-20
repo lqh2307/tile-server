@@ -1,23 +1,45 @@
 "use strict";
 
+import pino from "pino";
+import fs from "node:fs";
+
+let logger;
+
 /**
- * Print log to console
- * @param {"info"|"warning"|"error"} level Log level
+ * Init pino logger
+ * @param {string} filePath Log file path
+ * @returns {void}
+ */
+export function initLogger(filePath) {
+  fs.mkdirSync(path.dirname(filePath), {
+    recursive: true,
+  });
+
+  logger = pino(
+    {
+      level: "info",
+      formatters: {
+        level(label) {
+          return {
+            level: label.toUpperCase(),
+          };
+        },
+      },
+      timestamp: pino.stdTimeFunctions.isoTime,
+    },
+    pino.multistream([
+      { stream: process.stdout },
+      { stream: fs.createWriteStream(filePath, { flags: "a" }) },
+    ])
+  );
+}
+
+/**
+ * Print log using pino with custom format
+ * @param {"debug"|"info"|"warn"|"error"} level Log level
  * @param {string} msg Message
  * @returns {void}
  */
 export function printLog(level, msg) {
-  if (level === "warning") {
-    console.warn(
-      `[PID = ${process.pid}] ${new Date().toISOString()} [WARNING] ${msg}`
-    );
-  } else if (level === "error") {
-    console.error(
-      `[PID = ${process.pid}] ${new Date().toISOString()} [ERROR] ${msg}`
-    );
-  } else {
-    console.info(
-      `[PID = ${process.pid}] ${new Date().toISOString()} [INFO] ${msg}`
-    );
-  }
+  logger[level](`[PID = ${process.pid}] ${msg}`);
 }

@@ -1,8 +1,8 @@
 "use strict";
 
 import { removeOldCacheLocks, getVersion, runCommand } from "./utils.js";
+import { initLogger, printLog } from "./logger.js";
 import { readConfigFile } from "./config.js";
-import { printLog } from "./logger.js";
 import { program } from "commander";
 import chokidar from "chokidar";
 import cluster from "cluster";
@@ -33,6 +33,9 @@ const argOpts = program.opts();
  * @returns {Promise<void>}
  */
 async function startClusterServer(opts) {
+  // Init logger
+  initLogger(`${opts.dataDir}/logs/log.log`);
+
   if (cluster.isPrimary === true) {
     // Store ENVs
     process.env.DATA_DIR = opts.dataDir; // Data dir
@@ -198,7 +201,7 @@ async function startClusterServer(opts) {
 
           default: {
             printLog(
-              "warning",
+              "warn",
               `Received unknown message "${message.action}" from worker with PID = ${worker.process.pid}. Skipping...`
             );
 

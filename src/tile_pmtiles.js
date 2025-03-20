@@ -34,7 +34,7 @@ class PMTilesFileSource {
 /**
  * Open PMTiles
  * @param {string} filePath PMTiles filepath
- * @returns {object}
+ * @returns {Object}
  */
 export function openPMTiles(filePath) {
   let source;
@@ -53,8 +53,8 @@ export function openPMTiles(filePath) {
 
 /**
  * Get PMTiles metadata
- * @param {object} pmtilesSource
- * @returns {Promise<object>}
+ * @param {Object} pmtilesSource
+ * @returns {Promise<Object>}
  */
 export async function getPMTilesMetadata(pmtilesSource) {
   /* Default metadata */
@@ -163,8 +163,8 @@ export async function getPMTilesMetadata(pmtilesSource) {
 
 /**
  * Create PMTiles metadata
- * @param {object} metadata Metadata object
- * @returns {object}
+ * @param {Object} metadata Metadata object
+ * @returns {Object}
  */
 export function createPMTilesMetadata(metadata) {
   const data = {};
@@ -250,11 +250,11 @@ export function createPMTilesMetadata(metadata) {
 
 /**
  * Get PMTiles tile
- * @param {object} pmtilesSource
+ * @param {Object} pmtilesSource
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export async function getPMTilesTile(pmtilesSource, z, x, y) {
   const zxyTile = await pmtilesSource.getZxy(z, x, y);
@@ -283,7 +283,7 @@ export async function getPMTilesSize(filePath) {
 
 /**
  * Validate PMTiles metadata (no validate json field)
- * @param {object} metadata PMTiles metadata
+ * @param {Object} metadata PMTiles metadata
  * @returns {void}
  */
 export function validatePMTiles(metadata) {

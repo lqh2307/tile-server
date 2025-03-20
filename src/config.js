@@ -8,7 +8,7 @@ let config;
 /**
  * Read config.json file
  * @param {boolean} isValidate Is validate file content?
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 async function readConfigFile(isValidate) {
   /* Read config.json file */
@@ -45,7 +45,7 @@ async function loadConfigFile() {
 
 /**
  * Update config.json file content with lock
- * @param {object} config Config object
+ * @param {Object} config Config object
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */

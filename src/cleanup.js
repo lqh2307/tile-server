@@ -41,7 +41,7 @@ let cleanUp;
 /**
  * Read cleanup.json file
  * @param {boolean} isValidate Is validate file content?
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 async function readCleanUpFile(isValidate) {
   /* Read cleanup.json file */
@@ -70,7 +70,7 @@ async function loadCleanUpFile() {
 
 /**
  * Update cleanup.json file content with lock
- * @param {object} cleanUp Clean up object
+ * @param {Object} cleanUp Clean up object
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */

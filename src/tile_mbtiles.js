@@ -277,7 +277,7 @@ export async function removeMBTilesTile(source, z, x, y, timeout) {
  * @param {string} filePath MBTiles filepath
  * @param {number} mode SQLite mode (e.g: sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE | sqlite3.OPEN_READONLY)
  * @param {boolean} wal Use WAL
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export async function openMBTilesDB(filePath, mode, wal = false) {
   const source = await openSQLite(filePath, mode, wal);
@@ -322,7 +322,7 @@ export async function openMBTilesDB(filePath, mode, wal = false) {
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export async function getMBTilesTile(source, z, x, y) {
   let data = await fetchOne(
@@ -355,7 +355,7 @@ export async function getMBTilesTile(source, z, x, y) {
 /**
  * Get MBTiles metadata
  * @param {sqlite3.Database} source SQLite database instance
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export async function getMBTilesMetadata(source) {
   /* Default metadata */
@@ -505,8 +505,8 @@ export async function getMBTilesMetadata(source) {
 
 /**
  * Create MBTiles metadata
- * @param {object} metadata Metadata object
- * @returns {object}
+ * @param {Object} metadata Metadata object
+ * @returns {Object}
  */
 export function createMBTilesMetadata(metadata) {
   const data = {};
@@ -724,7 +724,7 @@ export async function updateMBTilesMetadata(source, metadataAdds, timeout) {
  * Get MBTiles tile from a URL
  * @param {string} url The URL to fetch data from
  * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export async function getMBTilesTileFromURL(url, timeout) {
   try {
@@ -939,7 +939,7 @@ export async function getMBTilesSize(filePath) {
 
 /**
  * Validate MBTiles metadata (no validate json field)
- * @param {object} metadata MBTiles metadata
+ * @param {Object} metadata MBTiles metadata
  * @returns {void}
  */
 export function validateMBTiles(metadata) {

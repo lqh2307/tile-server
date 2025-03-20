@@ -232,7 +232,7 @@ export async function removePostgreSQLTile(source, z, x, y, timeout) {
  * Open PostgreSQL database
  * @param {string} uri Database URI
  * @param {boolean} isCreate Is create database?
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export async function openPostgreSQLDB(uri, isCreate) {
   const source = await openPostgreSQL(uri, isCreate);
@@ -275,7 +275,7 @@ export async function openPostgreSQLDB(uri, isCreate) {
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export async function getPostgreSQLTile(source, z, x, y) {
   let data = await source.query(
@@ -305,7 +305,7 @@ export async function getPostgreSQLTile(source, z, x, y) {
 /**
  * Get PostgreSQL metadata
  * @param {pg.Client} source PostgreSQL database instance
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export async function getPostgreSQLMetadata(source) {
   /* Default metadata */
@@ -461,8 +461,8 @@ export async function getPostgreSQLMetadata(source) {
 
 /**
  * Create PostgreSQL metadata
- * @param {object} metadata Metadata object
- * @returns {object}
+ * @param {Object} metadata Metadata object
+ * @returns {Object}
  */
 export function createPostgreSQLMetadata(metadata) {
   const data = {};
@@ -593,7 +593,7 @@ export async function updatePostgreSQLMetadata(source, metadataAdds, timeout) {
  * Get PostgreSQL tile from a URL
  * @param {string} url The URL to fetch data from
  * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export async function getPostgreSQLTileFromURL(url, timeout) {
   try {
@@ -809,7 +809,7 @@ export async function countPostgreSQLTiles(uri) {
 
 /**
  * Validate PostgreSQL metadata (no validate json field)
- * @param {object} metadata PostgreSQL metadata
+ * @param {Object} metadata PostgreSQL metadata
  * @returns {void}
  */
 export function validatePostgreSQL(metadata) {

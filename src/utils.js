@@ -22,7 +22,7 @@ sharp.cache(false);
 /**
  * Compile template
  * @param {"index"|"viewer"|"vector_data"|"raster_data"|"geojson_group"|"geojson"|"wmts"} template
- * @param {object} data
+ * @param {Object} data
  * @returns {Promise<string>}
  */
 export async function compileTemplate(template, data) {
@@ -94,7 +94,7 @@ export function isLocalTileURL(url) {
  * @param {number} lat Latitude in EPSG:4326
  * @param {number} z Zoom level
  * @param {"xyz"|"tms"} scheme Tile scheme
- * @returns {Array<number>} Tile indices [x, y, z]
+ * @returns {[number, number, number]} Tile indices [x, y, z]
  */
 export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
   const size = 256 * (1 << z);
@@ -149,7 +149,7 @@ export function getXYZFromLonLatZ(lon, lat, z, scheme = "xyz") {
  * @param {number} z Zoom level
  * @param {"center"|"topLeft"|"bottomRight"} position Tile position: "center", "topLeft", or "bottomRight"
  * @param {"xyz"|"tms"} scheme Tile scheme
- * @returns {Array<number>} [longitude, latitude] in EPSG:4326
+ * @returns {[number, number]} [longitude, latitude] in EPSG:4326
  */
 export function getLonLatFromXYZ(
   x,
@@ -258,7 +258,7 @@ export function getTilesBoundsFromCoverages(coverages, scheme) {
  * @param {number} yMax Maximum y tile index
  * @param {number} z Zoom level
  * @param {"xyz"|"tms"} scheme Tile scheme
- * @returns {Array<number>} Bounding box [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @returns {[number, number, number, number]} Bounding box [lonMin, latMin, lonMax, latMax] in EPSG:4326
  */
 export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
   const [lonMin, latMax] = getLonLatFromXYZ(xMin, yMin, z, "topLeft", scheme);
@@ -276,9 +276,9 @@ export function getBBoxFromTiles(xMin, yMin, xMax, yMax, z, scheme = "xyz") {
 
 /**
  * Get bounding box from center and radius
- * @param {Array<number>} center [lon, lat] of center (EPSG:4326)
+ * @param {[number, number]} center [lon, lat] of center (EPSG:4326)
  * @param {number} radius Radius in metter (EPSG:3857)
- * @returns {Array<number>} [minLon, minLat, maxLon, maxLat]
+ * @returns {[number, number, number, number]} [minLon, minLat, maxLon, maxLat]
  */
 export function getBBoxFromCircle(center, radius) {
   const [xCenter, yCenter] = proj4("EPSG:4326", "EPSG:3857", center);
@@ -323,8 +323,8 @@ export function getBBoxFromCircle(center, radius) {
 
 /**
  * Get bounding box from an array of points
- * @param {Array<Array<number>>} points Array of points in the format [[lon, lat], [lon, lat], ...]
- * @returns {Array<number>} Bounding box in the format [minLon, minLat, maxLon, maxLat]
+ * @param {[number, number][]} points Array of points in the format [lon, lat]
+ * @returns {[number, number, number, number]} Bounding box in the format [minLon, minLat, maxLon, maxLat]
  */
 export function getBBoxFromPoint(points) {
   let minLon = -180;
@@ -388,9 +388,9 @@ export function getBBoxFromPoint(points) {
 
 /**
  * Get XYZ tile from bounding box for specific zoom levels intersecting a bounding box
- * @param {Array<number>} bbox [west, south, east, north] in EPSG:4326
- * @param {Array<number>} zooms Array of specific zoom levels
- * @returns {Array<string>} Array values as z/x/y
+ * @param {[number, number, number, number]} bbox [west, south, east, north] in EPSG:4326
+ * @param {number[]} zooms Array of specific zoom levels
+ * @returns {string[]} Array values as z/x/y
  */
 export function getXYZTileFromBBox(bbox, zooms) {
   const tiles = [];
@@ -444,7 +444,7 @@ export async function retry(fn, maxTry, after = 0) {
       const remainingAttempts = maxTry - attempt;
       if (remainingAttempts > 0) {
         printLog(
-          "warning",
+          "warn",
           `${error}. ${remainingAttempts} try remaining - After ${after} ms...`
         );
 
@@ -660,7 +660,7 @@ export async function findFolders(
 
 /**
  * Remove files or folders
- * @param {Array<string>} fileOrFolders File or folder paths
+ * @param {string[]} fileOrFolders File or folder paths
  * @returns {Promise<void>}
  */
 export async function removeFilesOrFolders(fileOrFolders) {
@@ -691,7 +691,7 @@ export function getRequestHost(req) {
  * Return either a format as an extension: png, pbf, jpg, webp, gif and
  * headers - Content-Type and Content-Encoding - for a response containing this kind of image
  * @param {Buffer} buffer Input data
- * @returns {object}
+ * @returns {Object}
  */
 export function detectFormatAndHeaders(buffer) {
   let format;
@@ -782,8 +782,8 @@ export const inflateAsync = util.promisify(zlib.inflate);
 
 /**
  * Validate tileJSON
- * @param {object} schema JSON schema
- * @param {object} jsonData JSON data
+ * @param {Object} schema JSON schema
+ * @param {Object} jsonData JSON data
  * @returns {void}
  */
 export function validateJSON(schema, jsonData) {
@@ -825,7 +825,7 @@ export function getVersion() {
 /**
  * Get JSON schema
  * @param {"delete"|"cleanup"|"config"|"seed"} schema
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export async function getJSONSchema(schema) {
   return JSON.parse(await fsPromise.readFile(`schema/${schema}.json`, "utf8"));

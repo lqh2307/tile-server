@@ -60,7 +60,7 @@ sharp.cache(false);
  * @param {number} tileScale Tile scale
  * @param {256|512} tileSize Tile size
  * @param {number} compressionLevel Compression level
- * @param {object} styleJSON StyleJSON
+ * @param {Object} styleJSON StyleJSON
  * @param {number} z Zoom level
  * @param {number} x X tile index
  * @param {number} y Y tile index
@@ -94,7 +94,7 @@ export async function renderImage(
             });
           } catch (error) {
             printLog(
-              "warning",
+              "warn",
               `Failed to get sprite "${parts[2]}" - File "${parts[3]}": ${error}. Serving empty sprite...`
             );
 
@@ -126,7 +126,7 @@ export async function renderImage(
             });
           } catch (error) {
             printLog(
-              "warning",
+              "warn",
               `Failed to get font "${parts[2]}" - File "${parts[3]}": ${error}. Serving empty font...`
             );
 
@@ -162,7 +162,7 @@ export async function renderImage(
             });
           } catch (error) {
             printLog(
-              "warning",
+              "warn",
               `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
             );
 
@@ -248,7 +248,7 @@ export async function renderImage(
             });
           } catch (error) {
             printLog(
-              "warning",
+              "warn",
               `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
             );
 
@@ -342,7 +342,7 @@ export async function renderImage(
             });
           } catch (error) {
             printLog(
-              "warning",
+              "warn",
               `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
             );
 
@@ -428,7 +428,7 @@ export async function renderImage(
             });
           } catch (error) {
             printLog(
-              "warning",
+              "warn",
               `Failed to get data "${parts[2]}" - Tile "${tileName}": ${error}. Serving empty tile...`
             );
 
@@ -464,7 +464,7 @@ export async function renderImage(
             });
           } catch (error) {
             printLog(
-              "warning",
+              "warn",
               `Failed to get data tile from "${url}": ${error}. Serving empty tile...`
             );
 
@@ -475,7 +475,7 @@ export async function renderImage(
         }
 
         default: {
-          printLog("warning", `Unknown scheme: "${parts[0]}". Skipping...`);
+          printLog("warn", `Unknown scheme: "${parts[0]}". Skipping...`);
 
           break;
         }
@@ -612,10 +612,7 @@ export async function renderImage(
         }
 
         default: {
-          printLog(
-            "warning",
-            `Unknown tile format: "${tileFormat}". Skipping...`
-          );
+          printLog("warn", `Unknown tile format: "${tileFormat}". Skipping...`);
 
           callback(null, {
             data: Buffer.from([]),
@@ -687,7 +684,7 @@ export async function renderImage(
 /**
  * Render MBTiles tiles
  * @param {string} id Style ID
- * @param {object} metadata Metadata object
+ * @param {Object} metadata Metadata object
  * @param {number} tileScale Tile scale
  * @param {256|512} tileSize Tile size
  * @param {[number, number, number, number]} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
@@ -928,7 +925,7 @@ export async function renderMBTilesTiles(
 /**
  * Render XYZ tiles
  * @param {string} id Style ID
- * @param {object} metadata Metadata object
+ * @param {Object} metadata Metadata object
  * @param {number} tileScale Tile scale
  * @param {256|512} tileSize Tile size
  * @param {number[]} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
@@ -1172,7 +1169,7 @@ export async function renderXYZTiles(
 /**
  * Render PostgreSQL tiles
  * @param {string} id Style ID
- * @param {object} metadata Metadata object
+ * @param {Object} metadata Metadata object
  * @param {number} tileScale Tile scale
  * @param {256|512} tileSize Tile size
  * @param {number[]} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
@@ -1402,8 +1399,8 @@ export async function renderPostgreSQLTiles(
 
 /**
  * Create Rendered metadata
- * @param {object} metadata Metadata object
- * @returns {object}
+ * @param {Object} metadata Metadata object
+ * @returns {Object}
  */
 export function createRenderedMetadata(metadata) {
   const data = {};

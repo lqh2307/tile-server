@@ -121,7 +121,6 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
     "listenPort": 8080,
     "serveFrontPage": true,
     "serveSwagger": true,
-    "loggerFormat": ":date[iso] [INFO] :method :url :status :res[content-length] :response-time :remote-addr :user-agent",
     "taskSchedule": "0 0 0 * * *",
     "postgreSQLBaseURI": "postgresql://localhost:5432",
     "process": 1,

@@ -109,7 +109,7 @@ export async function getStyleJSONFromURL(url, timeout, isParse) {
 
 /**
  * Validate style
- * @param {object} styleJSON StyleJSON
+ * @param {Object} styleJSON StyleJSON
  * @returns {Promise<void>}
  */
 export async function validateStyle(styleJSON) {

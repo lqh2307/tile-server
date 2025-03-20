@@ -52,7 +52,7 @@ let seed;
 /**
  * Read seed.json file
  * @param {boolean} isValidate Is validate file content?
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 async function readSeedFile(isValidate) {
   /* Read seed.json file */
@@ -81,7 +81,7 @@ async function loadSeedFile() {
 
 /**
  * Update seed.json file content with lock
- * @param {Object<any>} seed Seed object
+ * @param {Object} seed Seed object
  * @param {number} timeout Timeout in milliseconds
  * @returns {Promise<void>}
  */
@@ -96,10 +96,10 @@ async function updateSeedFile(seed, timeout) {
 /**
  * Seed MBTiles tiles
  * @param {string} id Cache MBTiles ID
- * @param {object} metadata Metadata object
+ * @param {Object} metadata Metadata object
  * @param {string} url Tile URL to download
  * @param {"tms"|"xyz"} scheme Tile scheme
- * @param {Array<Array<number>>} bboxs Array of bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {[number, number, number, number][]} bboxs Array of bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
  * @param {number[]} zooms Array of specific zoom levels
  * @param {number} concurrency Concurrency download
  * @param {number} maxTry Number of retry attempts on failure
@@ -308,10 +308,10 @@ async function seedMBTilesTiles(
 /**
  * Seed PostgreSQL tiles
  * @param {string} id Cache PostgreSQL ID
- * @param {object} metadata Metadata object
+ * @param {Object} metadata Metadata object
  * @param {string} url Tile URL to download
  * @param {"tms"|"xyz"} scheme Tile scheme
- * @param {Array<Array<number>>} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
+ * @param {[number, number, number, number][]} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
  * @param {number[]} zooms Array of specific zoom levels
  * @param {number} concurrency Concurrency download
  * @param {number} maxTry Number of retry attempts on failure
@@ -519,10 +519,10 @@ async function seedPostgreSQLTiles(
 /**
  * Seed XYZ tiles
  * @param {string} id Cache XYZ ID
- * @param {object} metadata Metadata object
+ * @param {Object} metadata Metadata object
  * @param {string} url Tile URL
  * @param {"tms"|"xyz"} scheme Tile scheme
- * @param {Array<number>} bbox Bounding box in format [lonMin, latMin, lonMax, latMax] in EPSG:4326
+ * @param {[number, number, number, number][]} bboxs Array of bounding box in format [[lonMin, latMin, lonMax, latMax]] in EPSG:4326
  * @param {number[]} zooms Array of specific zoom levels
  * @param {number} concurrency Concurrency to download
  * @param {number} maxTry Number of retry attempts on failure

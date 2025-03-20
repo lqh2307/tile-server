@@ -294,7 +294,7 @@ async function removeXYZTileMD5(source, z, x, y, timeout) {
  * @param {number} x X tile index
  * @param {number} y Y tile index
  * @param {"jpeg"|"jpg"|"pbf"|"png"|"webp"|"gif"} format Tile format
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export async function getXYZTile(sourcePath, z, x, y, format) {
   try {
@@ -324,7 +324,7 @@ export async function getXYZTile(sourcePath, z, x, y, format) {
  * Get XYZ tile from a URL
  * @param {string} url The URL to fetch data from
  * @param {number} timeout Timeout in milliseconds
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export async function getXYZTileFromURL(url, timeout) {
   try {
@@ -352,8 +352,8 @@ export async function getXYZTileFromURL(url, timeout) {
 
 /**
  * Create XYZ metadata
- * @param {object} metadata Metadata object
- * @returns {object}
+ * @param {Object} metadata Metadata object
+ * @returns {Object}
  */
 export function createXYZMetadata(metadata) {
   const data = {};
@@ -440,7 +440,7 @@ export function createXYZMetadata(metadata) {
 /**
  * Get XYZ metadata
  * @param {string} sourcePath XYZ folder path
- * @returns {Promise<object>}
+ * @returns {Promise<Object>}
  */
 export async function getXYZMetadata(sourcePath) {
   /* Default metadata */
@@ -820,7 +820,7 @@ export async function getXYZSize(sourcePath) {
 
 /**
  * Validate XYZ metadata (no validate json field)
- * @param {object} metadata XYZ metadata
+ * @param {Object} metadata XYZ metadata
  * @returns {void}
  */
 export function validateXYZ(metadata) {

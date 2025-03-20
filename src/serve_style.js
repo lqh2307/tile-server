@@ -196,7 +196,7 @@ function renderStyleHandler() {
         /* Check export is not running? */
         if (item.rendered.export !== true) {
           printLog(
-            "warning",
+            "warn",
             "No render is currently running. Skipping cancel render..."
           );
 
@@ -207,10 +207,7 @@ function renderStyleHandler() {
       } else {
         /* Check export is running? */
         if (item.rendered.export === true) {
-          printLog(
-            "warning",
-            "A render is already running. Skipping render..."
-          );
+          printLog("warn", "A render is already running. Skipping render...");
 
           return res.status(StatusCodes.OK).send("OK");
         }
