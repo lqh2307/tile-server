@@ -146,7 +146,9 @@ export async function startServer() {
       .use(cors())
       .use(express.json())
       .use(loggerMiddleware())
-      .use("/", serve_common.init())
+      .use("/", serve_common.init());
+
+    app
       .listen(listenPort, () => {
         printLog("info", `HTTP server is listening on port "${listenPort}"...`);
       })
