@@ -1,7 +1,8 @@
 "use strict";
 
-import pino from "pino";
+import path from "node:path";
 import fs from "node:fs";
+import pino from "pino";
 
 let logger;
 

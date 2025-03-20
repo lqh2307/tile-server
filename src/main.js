@@ -20,7 +20,7 @@ program
   .usage("tile-server server [options]")
   .option("-d, --data_dir <dir>", "Data directory", "data")
   .option("-r, --restart", "Auto restart server if config file has changed")
-  .option("-r, --service_name", "Service name (alias)")
+  .option("-s, --service_name", "Service name (alias)")
   .version(getVersion())
   .showHelpAfterError()
   .parse(process.argv);
