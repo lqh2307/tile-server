@@ -172,13 +172,12 @@ async function seedMBTilesTiles(
   /* Download tiles */
   const mutex = new Mutex();
 
-  let activeTasks = 0;
-  let completeTasks = 0;
-
+  const tasks = {
+    activeTasks: 0,
+    completeTasks: 0,
+  };
   async function seedMBTilesTileData(z, x, y) {
     const tileName = `${z}/${x}/${y}`;
-
-    const completeTasks = () => completeTasks;
 
     try {
       let needDownload = false;
@@ -232,7 +231,7 @@ async function seedMBTilesTiles(
 
         printLog(
           "info",
-          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${completeTasks}/${grandTotal}...`
+          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${tasks.completeTasks}/${grandTotal}...`
         );
 
         await downloadMBTilesTile(
@@ -269,20 +268,20 @@ async function seedMBTilesTiles(
         for (let x = tilesSummaryZ.x[0]; x <= tilesSummaryZ.x[1]; x++) {
           for (let y = tilesSummaryZ.y[0]; y <= tilesSummaryZ.y[1]; y++) {
             /* Wait slot for a task */
-            while (activeTasks >= concurrency) {
+            while (tasks.activeTasks >= concurrency) {
               await delay(50);
             }
 
             await mutex.runExclusive(() => {
-              activeTasks++;
+              tasks.activeTasks++;
 
-              completeTasks++;
+              tasks.completeTasks++;
             });
 
             /* Run a task */
             seedMBTilesTileData(z, x, y).finally(() =>
               mutex.runExclusive(() => {
-                activeTasks--;
+                tasks.activeTasks--;
               })
             );
           }
@@ -292,7 +291,7 @@ async function seedMBTilesTiles(
   }
 
   /* Wait all tasks done */
-  while (activeTasks > 0) {
+  while (tasks.activeTasks > 0) {
     await delay(50);
   }
 
@@ -390,13 +389,13 @@ async function seedPostgreSQLTiles(
   /* Download tiles */
   const mutex = new Mutex();
 
-  let activeTasks = 0;
-  let completeTasks = 0;
+  const tasks = {
+    activeTasks: 0,
+    completeTasks: 0,
+  };
 
   async function seedPostgreSQLTileData(z, x, y) {
     const tileName = `${z}/${x}/${y}`;
-
-    const completeTasks = () => completeTasks;
 
     try {
       let needDownload = false;
@@ -450,7 +449,7 @@ async function seedPostgreSQLTiles(
 
         printLog(
           "info",
-          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${completeTasks}/${grandTotal}...`
+          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${tasks.completeTasks}/${grandTotal}...`
         );
 
         await downloadPostgreSQLTile(
@@ -487,20 +486,20 @@ async function seedPostgreSQLTiles(
         for (let x = tilesSummaryZ.x[0]; x <= tilesSummaryZ.x[1]; x++) {
           for (let y = tilesSummaryZ.y[0]; y <= tilesSummaryZ.y[1]; y++) {
             /* Wait slot for a task */
-            while (activeTasks >= concurrency) {
+            while (tasks.activeTasks >= concurrency) {
               await delay(50);
             }
 
             await mutex.runExclusive(() => {
-              activeTasks++;
+              tasks.activeTasks++;
 
-              completeTasks++;
+              tasks.completeTasks++;
             });
 
             /* Run a task */
             seedPostgreSQLTileData(z, x, y).finally(() =>
               mutex.runExclusive(() => {
-                activeTasks--;
+                tasks.activeTasks--;
               })
             );
           }
@@ -510,7 +509,7 @@ async function seedPostgreSQLTiles(
   }
 
   /* Wait all tasks done */
-  while (activeTasks > 0) {
+  while (tasks.activeTasks > 0) {
     await delay(50);
   }
 
@@ -609,13 +608,13 @@ async function seedXYZTiles(
   /* Download tile files */
   const mutex = new Mutex();
 
-  let activeTasks = 0;
-  let completeTasks = 0;
+  const tasks = {
+    activeTasks: 0,
+    completeTasks: 0,
+  };
 
   async function seedXYZTileData(z, x, y) {
     const tileName = `${z}/${x}/${y}`;
-
-    const completeTasks = () => completeTasks;
 
     try {
       let needDownload = false;
@@ -671,7 +670,7 @@ async function seedXYZTiles(
 
         printLog(
           "info",
-          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${completeTasks}/${grandTotal}...`
+          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${tasks.completeTasks}/${grandTotal}...`
         );
 
         await downloadXYZTileFile(
@@ -710,20 +709,20 @@ async function seedXYZTiles(
         for (let x = tilesSummaryZ.x[0]; x <= tilesSummaryZ.x[1]; x++) {
           for (let y = tilesSummaryZ.y[0]; y <= tilesSummaryZ.y[1]; y++) {
             /* Wait slot for a task */
-            while (activeTasks >= concurrency) {
+            while (tasks.activeTasks >= concurrency) {
               await delay(50);
             }
 
             await mutex.runExclusive(() => {
-              activeTasks++;
+              tasks.activeTasks++;
 
-              completeTasks++;
+              tasks.completeTasks++;
             });
 
             /* Run a task */
             seedXYZTileData(z, x, y).finally(() =>
               mutex.runExclusive(() => {
-                activeTasks--;
+                tasks.activeTasks--;
               })
             );
           }
@@ -733,7 +732,7 @@ async function seedXYZTiles(
   }
 
   /* Wait all tasks done */
-  while (activeTasks > 0) {
+  while (tasks.activeTasks > 0) {
     await delay(50);
   }
 
@@ -999,14 +998,14 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
   /* Remove font files */
   const mutex = new Mutex();
 
-  let activeTasks = 0;
-  let completeTasks = 0;
+  const tasks = {
+    activeTasks: 0,
+    completeTasks: 0,
+  };
 
   async function seedFontData(start, end) {
     const range = `${start}-${end}`;
     const filePath = `${process.env.DATA_DIR}/caches/fonts/${id}/${range}.pbf`;
-
-    const completeTasks = () => completeTasks;
 
     try {
       let needDownload = false;
@@ -1034,7 +1033,7 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
 
         printLog(
           "info",
-          `Downloading font "${id}" - Range "${range}" - From "${targetURL}" - ${completeTasks}/${total}...`
+          `Downloading font "${id}" - Range "${range}" - From "${targetURL}" - ${tasks.completeTasks}/${total}...`
         );
 
         await downloadFontFile(targetURL, id, range, maxTry, timeout);
@@ -1051,26 +1050,26 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
 
   for (let i = 0; i < 256; i++) {
     /* Wait slot for a task */
-    while (activeTasks >= concurrency) {
+    while (tasks.activeTasks >= concurrency) {
       await delay(50);
     }
 
     await mutex.runExclusive(() => {
-      activeTasks++;
+      tasks.activeTasks++;
 
-      completeTasks++;
+      tasks.completeTasks++;
     });
 
     /* Run a task */
     seedFontData(i * 256, i * 256 + 255).finally(() =>
       mutex.runExclusive(() => {
-        activeTasks--;
+        tasks.activeTasks--;
       })
     );
   }
 
   /* Wait all tasks done */
-  while (activeTasks > 0) {
+  while (tasks.activeTasks > 0) {
     await delay(50);
   }
 
