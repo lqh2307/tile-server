@@ -175,7 +175,7 @@ async function seedMBTilesTiles(
   let activeTasks = 0;
   let completeTasks = 0;
 
-  async function seedMBTilesTileData(z, x, y) {
+  async function seedMBTilesTileData(z, x, y, completeTasks) {
     const tileName = `${z}/${x}/${y}`;
 
     try {
@@ -278,7 +278,7 @@ async function seedMBTilesTiles(
             });
 
             /* Run a task */
-            seedMBTilesTileData(z, x, y).finally(() =>
+            seedMBTilesTileData(z, x, y, completeTasks).finally(() =>
               mutex.runExclusive(() => {
                 activeTasks--;
               })
@@ -391,7 +391,7 @@ async function seedPostgreSQLTiles(
   let activeTasks = 0;
   let completeTasks = 0;
 
-  async function seedPostgreSQLTileData(z, x, y) {
+  async function seedPostgreSQLTileData(z, x, y, completeTasks) {
     const tileName = `${z}/${x}/${y}`;
 
     try {
@@ -494,7 +494,7 @@ async function seedPostgreSQLTiles(
             });
 
             /* Run a task */
-            seedPostgreSQLTileData(z, x, y).finally(() =>
+            seedPostgreSQLTileData(z, x, y, completeTasks).finally(() =>
               mutex.runExclusive(() => {
                 activeTasks--;
               })
@@ -608,7 +608,7 @@ async function seedXYZTiles(
   let activeTasks = 0;
   let completeTasks = 0;
 
-  async function seedXYZTileData(z, x, y) {
+  async function seedXYZTileData(z, x, y, completeTasks) {
     const tileName = `${z}/${x}/${y}`;
 
     try {
@@ -715,7 +715,7 @@ async function seedXYZTiles(
             });
 
             /* Run a task */
-            seedXYZTileData(z, x, y).finally(() =>
+            seedXYZTileData(z, x, y, completeTasks).finally(() =>
               mutex.runExclusive(() => {
                 activeTasks--;
               })
@@ -996,7 +996,7 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
   let activeTasks = 0;
   let completeTasks = 0;
 
-  async function seedFontData(start, end) {
+  async function seedFontData(start, end, completeTasks) {
     const range = `${start}-${end}`;
     const filePath = `${process.env.DATA_DIR}/caches/fonts/${id}/${range}.pbf`;
 
@@ -1054,7 +1054,7 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
     });
 
     /* Run a task */
-    seedFontData(i * 256, i * 256 + 255).finally(() =>
+    seedFontData(i * 256, i * 256 + 255, completeTasks).finally(() =>
       mutex.runExclusive(() => {
         activeTasks--;
       })
