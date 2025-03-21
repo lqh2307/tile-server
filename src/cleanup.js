@@ -183,17 +183,11 @@ async function cleanUpMBTilesTiles(id, coverages, cleanUpBefore) {
     const tilesSummaries = summaries[idx1].tilesSummaries;
 
     for (let idx2 in tilesSummaries) {
+      const zs = tilesSummaries[idx2][z];
+
       for (const z in tilesSummaries[idx2]) {
-        for (
-          let x = tilesSummaries[idx2][z].x[0];
-          x <= tilesSummaries[idx2][z].x[1];
-          x++
-        ) {
-          for (
-            let y = tilesSummaries[idx2][z].y[0];
-            y <= tilesSummaries[idx2][z].y[1];
-            y++
-          ) {
+        for (let x = zs.x[0]; x <= zs.x[1]; x++) {
+          for (let y = zs.y[0]; y <= zs.y[1]; y++) {
             /* Wait slot for a task */
             while (activeTasks >= 200) {
               await delay(50);
@@ -341,17 +335,11 @@ async function cleanUpPostgreSQLTiles(id, coverages, cleanUpBefore) {
     const tilesSummaries = summaries[idx1].tilesSummaries;
 
     for (let idx2 in tilesSummaries) {
+      const zs = tilesSummaries[idx2][z];
+
       for (const z in tilesSummaries[idx2]) {
-        for (
-          let x = tilesSummaries[idx2][z].x[0];
-          x <= tilesSummaries[idx2][z].x[1];
-          x++
-        ) {
-          for (
-            let y = tilesSummaries[idx2][z].y[0];
-            y <= tilesSummaries[idx2][z].y[1];
-            y++
-          ) {
+        for (let x = zs.x[0]; x <= zs.x[1]; x++) {
+          for (let y = zs.y[0]; y <= zs.y[1]; y++) {
             /* Wait slot for a task */
             while (activeTasks >= 200) {
               await delay(50);
@@ -502,17 +490,11 @@ async function cleanUpXYZTiles(id, format, coverages, cleanUpBefore) {
     const tilesSummaries = summaries[idx1].tilesSummaries;
 
     for (let idx2 in tilesSummaries) {
+      const zs = tilesSummaries[idx2][z];
+
       for (const z in tilesSummaries[idx2]) {
-        for (
-          let x = tilesSummaries[idx2][z].x[0];
-          x <= tilesSummaries[idx2][z].x[1];
-          x++
-        ) {
-          for (
-            let y = tilesSummaries[idx2][z].y[0];
-            y <= tilesSummaries[idx2][z].y[1];
-            y++
-          ) {
+        for (let x = zs.x[0]; x <= zs.x[1]; x++) {
+          for (let y = zs.y[0]; y <= zs.y[1]; y++) {
             /* Wait slot for a task */
             while (activeTasks >= 200) {
               await delay(50);
