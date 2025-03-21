@@ -274,14 +274,14 @@ async function seedMBTilesTiles(
               await delay(50);
             }
 
-            await mutex.runExclusive(() => {
+            await tasks.mutex.runExclusive(() => {
               tasks.activeTasks++;
               tasks.completeTasks++;
             });
 
             /* Run a task */
             seedMBTilesTileData(z, x, y, tasks).finally(() =>
-              mutex.runExclusive(() => {
+              tasks.mutex.runExclusive(() => {
                 tasks.activeTasks--;
               })
             );
@@ -492,14 +492,14 @@ async function seedPostgreSQLTiles(
               await delay(50);
             }
 
-            await mutex.runExclusive(() => {
+            await tasks.mutex.runExclusive(() => {
               tasks.activeTasks++;
               tasks.completeTasks++;
             });
 
             /* Run a task */
             seedPostgreSQLTileData(z, x, y, tasks).finally(() =>
-              mutex.runExclusive(() => {
+              tasks.mutex.runExclusive(() => {
                 tasks.activeTasks--;
               })
             );
@@ -715,14 +715,14 @@ async function seedXYZTiles(
               await delay(50);
             }
 
-            await mutex.runExclusive(() => {
+            await tasks.mutex.runExclusive(() => {
               tasks.activeTasks++;
               tasks.completeTasks++;
             });
 
             /* Run a task */
             seedXYZTileData(z, x, y, tasks).finally(() =>
-              mutex.runExclusive(() => {
+              tasks.mutex.runExclusive(() => {
                 tasks.activeTasks--;
               })
             );
@@ -1056,14 +1056,14 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
       await delay(50);
     }
 
-    await mutex.runExclusive(() => {
+    await tasks.mutex.runExclusive(() => {
       tasks.activeTasks++;
       tasks.completeTasks++;
     });
 
     /* Run a task */
     seedFontData(i * 256, i * 256 + 255, tasks).finally(() =>
-      mutex.runExclusive(() => {
+      tasks.mutex.runExclusive(() => {
         tasks.activeTasks--;
       })
     );
