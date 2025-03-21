@@ -72,7 +72,7 @@ async function startClusterServer() {
     );
 
     /* Setup watch config file change */
-    if (process.env.RESTART_AFTER_CHANGE === "true") {
+    if (process.env.RESTART_AFTER_CHANGE !== "false") {
       printLog("info", "Auto restart server if config file has changed");
 
       chokidar

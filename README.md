@@ -96,7 +96,15 @@ npm install --omit=dev
 Run:
 
 ```bash
-npm run server -- -d path_to_data_folder
+npm run server --
+```
+
+ENVs:
+
+```bash
+DATA_DIR=path_to_data_folder (default: data)
+SERVICE_NAME=service_name (default: tile-server)
+RESTART_AFTER_CHANGE=true/false (default: true)
 ```
 
 ### Run with docker
