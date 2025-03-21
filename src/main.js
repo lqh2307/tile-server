@@ -22,8 +22,7 @@ async function startClusterServer() {
   process.env.DATA_DIR = process.env.DATA_DIR || "data"; // Data dir
   process.env.LOG_DIR = process.env.LOG_DIR || `${process.env.DATA_DIR}/logs`; // Log dir
   process.env.SERVICE_NAME = process.env.SERVICE_NAME || "tile-server"; // Service name
-  process.env.RESTART_AFTER_CHANGE !== process.env.RESTART_AFTER_CHANGE ||
-    "true"; // Restart server after change
+  process.env.RESTART_AFTER_CHANGE = process.env.RESTART_AFTER_CHANGE || "true"; // Restart server after change
 
   // Init logger
   initLogger();
