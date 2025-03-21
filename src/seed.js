@@ -259,11 +259,13 @@ async function seedMBTilesTiles(
     const tilesSummaries = summaries[idx1].tilesSummaries;
 
     for (let idx2 in tilesSummaries) {
-      const zs = tilesSummaries[idx2][z];
+      const tilesSummary = tilesSummaries[idx2];
 
-      for (const z in tilesSummaries[idx2]) {
-        for (let x = zs.x[0]; x <= zs.x[1]; x++) {
-          for (let y = zs.y[0]; y <= zs.y[1]; y++) {
+      for (const z in tilesSummary) {
+        const tilesSummaryZ = tilesSummary[z];
+
+        for (let x = tilesSummaryZ.x[0]; x <= tilesSummaryZ.x[1]; x++) {
+          for (let y = tilesSummaryZ.y[0]; y <= tilesSummaryZ.y[1]; y++) {
             /* Wait slot for a task */
             while (activeTasks >= concurrency) {
               await delay(50);
@@ -473,11 +475,13 @@ async function seedPostgreSQLTiles(
     const tilesSummaries = summaries[idx1].tilesSummaries;
 
     for (let idx2 in tilesSummaries) {
-      const zs = tilesSummaries[idx2][z];
+      const tilesSummary = tilesSummaries[idx2];
 
-      for (const z in tilesSummaries[idx2]) {
-        for (let x = zs.x[0]; x <= zs.x[1]; x++) {
-          for (let y = zs.y[0]; y <= zs.y[1]; y++) {
+      for (const z in tilesSummary) {
+        const tilesSummaryZ = tilesSummary[z];
+
+        for (let x = tilesSummaryZ.x[0]; x <= tilesSummaryZ.x[1]; x++) {
+          for (let y = tilesSummaryZ.y[0]; y <= tilesSummaryZ.y[1]; y++) {
             /* Wait slot for a task */
             while (activeTasks >= concurrency) {
               await delay(50);
@@ -692,11 +696,13 @@ async function seedXYZTiles(
     const tilesSummaries = summaries[idx1].tilesSummaries;
 
     for (let idx2 in tilesSummaries) {
-      const zs = tilesSummaries[idx2][z];
+      const tilesSummary = tilesSummaries[idx2];
 
-      for (const z in tilesSummaries[idx2]) {
-        for (let x = zs.x[0]; x <= zs.x[1]; x++) {
-          for (let y = zs.y[0]; y <= zs.y[1]; y++) {
+      for (const z in tilesSummary) {
+        const tilesSummaryZ = tilesSummary[z];
+
+        for (let x = tilesSummaryZ.x[0]; x <= tilesSummaryZ.x[1]; x++) {
+          for (let y = tilesSummaryZ.y[0]; y <= tilesSummaryZ.y[1]; y++) {
             /* Wait slot for a task */
             while (activeTasks >= concurrency) {
               await delay(50);
