@@ -1,22 +1,9 @@
 "use strict";
 
-import { updateConfigFile, readConfigFile, config } from "./config.js";
-import { updateCleanUpFile, readCleanUpFile } from "./cleanup.js";
-import { readSeedFile, updateSeedFile } from "./seed.js";
 import { StatusCodes } from "http-status-codes";
 import { getMetrics } from "./prometheus.js";
-import swaggerUi from "swagger-ui-express";
-import swaggerJsdoc from "swagger-jsdoc";
 import { printLog } from "./logger.js";
 import express from "express";
-import {
-  getXYZFromLonLatZ,
-  compileTemplate,
-  getRequestHost,
-  getJSONSchema,
-  validateJSON,
-  getVersion,
-} from "./utils.js";
 
 /**
  * Get metrics handler
@@ -25,7 +12,7 @@ import {
 function serveMetricsHandler() {
   return async (req, res, next) => {
     try {
-      const data = await getMetrics();
+      const data = getMetrics();
 
       res.header("content-type", data.contentType);
 

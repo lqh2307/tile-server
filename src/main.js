@@ -1,9 +1,8 @@
 "use strict";
 
-import { removeOldCacheLocks, getVersion, runCommand } from "./utils.js";
+import { removeOldCacheLocks, runCommand } from "./utils.js";
 import { initLogger, printLog } from "./logger.js";
 import { readConfigFile } from "./config.js";
-import { program } from "commander";
 import chokidar from "chokidar";
 import cluster from "cluster";
 import cron from "node-cron";
@@ -14,41 +13,24 @@ import {
 } from "./server.js";
 import os from "os";
 
-/* Setup commands */
-program
-  .description("========== tile-server startup options ==========")
-  .usage("tile-server server [options]")
-  .option("-d, --data_dir <dir>", "Data directory", "data")
-  .option(
-    "-r, --restart",
-    "Auto restart server if config file has changed",
-    true
-  )
-  .option("-s, --service_name", "Service name (alias)", "tile-server")
-  .version(getVersion())
-  .showHelpAfterError()
-  .parse(process.argv);
-
-/* Load args */
-const argOpts = program.opts();
-
 /**
  * Start cluster server
- * @param {{ dataDir: string, restart: boolean, serviceName: string }} opts
  * @returns {Promise<void>}
  */
-async function startClusterServer(opts) {
+async function startClusterServer() {
+  // Store ENVs
+  process.env.DATA_DIR = process.env.DATA_DIR || "data"; // Data dir
+  process.env.SERVICE_NAME = process.env.SERVICE_NAME || "tile-server"; // Service name
+
   // Init logger
-  initLogger(`${opts.dataDir}/logs/log.log`);
+  initLogger(`${process.env.DATA_DIR}/logs/log.log`);
 
   if (cluster.isPrimary === true) {
-    // Store ENVs
-    process.env.DATA_DIR = opts.dataDir; // Data dir
-    process.env.MAIN_PID = process.pid; // Main PID
-    process.env.SERVICE_NAME = opts.serviceName; // Service name
-
     /* Read config.json file */
-    printLog("info", `Reading config.json file at "${opts.dataDir}"...`);
+    printLog(
+      "info",
+      `Reading config.json file at "${process.env.DATA_DIR}"...`
+    );
 
     const config = await readConfigFile(true);
 
@@ -79,7 +61,7 @@ async function startClusterServer(opts) {
     /* Remove old cache locks */
     printLog(
       "info",
-      `Removing old cache locks at "${opts.dataDir}" before start server...`
+      `Removing old cache locks at "${process.env.DATA_DIR}" before start server...`
     );
 
     await removeOldCacheLocks();
@@ -90,11 +72,11 @@ async function startClusterServer(opts) {
     );
 
     /* Setup watch config file change */
-    if (opts.restart) {
+    if (process.env.RESTART_AFTER_CHANGE === "true") {
       printLog("info", "Auto restart server if config file has changed");
 
       chokidar
-        .watch(`${opts.dataDir}/config.json`, {
+        .watch(`${process.env.DATA_DIR}/config.json`, {
           usePolling: true,
           awaitWriteFinish: true,
           interval: 500,
@@ -221,8 +203,4 @@ async function startClusterServer(opts) {
 }
 
 /* Run start cluster server */
-startClusterServer({
-  dataDir: argOpts.data_dir,
-  restart: argOpts.restart,
-  serviceName: argOpts.service_name,
-});
+startClusterServer();
