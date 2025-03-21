@@ -20,7 +20,14 @@
                 "minimum": 0
               }
             },
-            "anyOf": [{ "required": ["time"] }, { "required": ["day"] }]
+            "anyOf": [
+              {
+                "required": ["time"]
+              },
+              {
+                "required": ["day"]
+              }
+            ]
           }
         }
       }
@@ -44,7 +51,14 @@
                 "minimum": 0
               }
             },
-            "anyOf": [{ "required": ["time"] }, { "required": ["day"] }]
+            "anyOf": [
+              {
+                "required": ["time"]
+              },
+              {
+                "required": ["day"]
+              }
+            ]
           }
         }
       }
@@ -103,9 +117,17 @@
                 "minimum": 0
               }
             },
-            "anyOf": [{ "required": ["time"] }, { "required": ["day"] }]
+            "anyOf": [
+              {
+                "required": ["time"]
+              },
+              {
+                "required": ["day"]
+              }
+            ]
           }
-        }
+        },
+        "required": ["coverages"]
       }
     },
     "sprites": {
@@ -128,7 +150,14 @@
                 "minimum": 0
               }
             },
-            "anyOf": [{ "required": ["time"] }, { "required": ["day"] }]
+            "anyOf": [
+              {
+                "required": ["time"]
+              },
+              {
+                "required": ["day"]
+              }
+            ]
           }
         }
       }
@@ -153,7 +182,14 @@
                 "minimum": 0
               }
             },
-            "anyOf": [{ "required": ["time"] }, { "required": ["day"] }]
+            "anyOf": [
+              {
+                "required": ["time"]
+              },
+              {
+                "required": ["day"]
+              }
+            ]
           }
         }
       }
