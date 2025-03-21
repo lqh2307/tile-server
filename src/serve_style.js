@@ -27,6 +27,7 @@ import {
   renderXYZTiles,
   renderImage,
 } from "./image.js";
+import os from "os";
 
 /**
  * Serve style handler
@@ -289,6 +290,13 @@ function renderStyleHandler() {
             .send(`Options is invalid: ${error}`);
         }
 
+        const defaultTileScale = 1;
+        const defaultTileSize = 256;
+        const defaultConcurrency = os.cpus().length;
+        const defaultStoreMD5 = false;
+        const defaultStoreTransparent = false;
+        const defaultCreateOverview = true;
+
         setTimeout(() => {
           item.rendered.export = true;
 
@@ -296,14 +304,14 @@ function renderStyleHandler() {
             renderXYZTiles(
               id,
               parsedOptions.metadata,
-              parsedOptions.tileScale,
-              parsedOptions.tileSize,
+              parsedOptions.tileScale || defaultTileScale,
+              parsedOptions.tileSize || defaultTileSize,
               parsedOptions.bbox,
               parsedOptions.maxzoom,
-              parsedOptions.concurrency,
-              parsedOptions.storeMD5,
-              parsedOptions.storeTransparent,
-              parsedOptions.createOverview,
+              parsedOptions.concurrency || defaultConcurrency,
+              parsedOptions.storeMD5 || defaultStoreMD5,
+              parsedOptions.storeTransparent || defaultStoreTransparent,
+              parsedOptions.createOverview || defaultCreateOverview,
               parsedOptions.refreshBefore?.time ||
                 parsedOptions.refreshBefore?.day ||
                 parsedOptions.refreshBefore?.md5
@@ -314,14 +322,14 @@ function renderStyleHandler() {
             renderMBTilesTiles(
               id,
               parsedOptions.metadata,
-              parsedOptions.tileScale,
-              parsedOptions.tileSize,
+              parsedOptions.tileScale || defaultTileScale,
+              parsedOptions.tileSize || defaultTileSize,
               parsedOptions.bbox,
               parsedOptions.maxzoom,
-              parsedOptions.concurrency,
-              parsedOptions.storeMD5,
-              parsedOptions.storeTransparent,
-              parsedOptions.createOverview,
+              parsedOptions.concurrency || defaultConcurrency,
+              parsedOptions.storeMD5 || defaultStoreMD5,
+              parsedOptions.storeTransparent || defaultStoreTransparent,
+              parsedOptions.createOverview || defaultCreateOverview,
               parsedOptions.refreshBefore?.time ||
                 parsedOptions.refreshBefore?.day ||
                 parsedOptions.refreshBefore?.md5
@@ -332,14 +340,14 @@ function renderStyleHandler() {
             renderPostgreSQLTiles(
               id,
               parsedOptions.metadata,
-              parsedOptions.tileScale,
-              parsedOptions.tileSize,
+              parsedOptions.tileScale || defaultTileScale,
+              parsedOptions.tileSize || defaultTileSize,
               parsedOptions.bbox,
               parsedOptions.maxzoom,
-              parsedOptions.concurrency,
-              parsedOptions.storeMD5,
-              parsedOptions.storeTransparent,
-              parsedOptions.createOverview,
+              parsedOptions.concurrency || defaultConcurrency,
+              parsedOptions.storeMD5 || defaultStoreMD5,
+              parsedOptions.storeTransparent || defaultStoreTransparent,
+              parsedOptions.createOverview || defaultCreateOverview,
               parsedOptions.refreshBefore?.time ||
                 parsedOptions.refreshBefore?.day ||
                 parsedOptions.refreshBefore?.md5

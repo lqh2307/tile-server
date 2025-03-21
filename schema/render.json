@@ -163,5 +163,5 @@
       "enum": ["xyz", "mbtiles", "pg"]
     }
   },
-  "required": ["metadata", "storeType"]
+  "required": ["metadata", "storeType", "maxzoom", "bbox"]
 }

@@ -170,14 +170,16 @@ async function seedMBTilesTiles(
   );
 
   /* Download tiles */
-  const mutex = new Mutex();
-
   const tasks = {
+    mutex: new Mutex(),
     activeTasks: 0,
     completeTasks: 0,
   };
-  async function seedMBTilesTileData(z, x, y) {
+
+  async function seedMBTilesTileData(z, x, y, tasks) {
     const tileName = `${z}/${x}/${y}`;
+
+    const completeTasks = tasks.completeTasks;
 
     try {
       let needDownload = false;
@@ -231,7 +233,7 @@ async function seedMBTilesTiles(
 
         printLog(
           "info",
-          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${tasks.completeTasks}/${grandTotal}...`
+          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${completeTasks}/${grandTotal}...`
         );
 
         await downloadMBTilesTile(
@@ -249,17 +251,17 @@ async function seedMBTilesTiles(
     } catch (error) {
       printLog(
         "error",
-        `Failed to seed data "${id}" - Tile "${tileName}": ${error}`
+        `Failed to seed data "${id}" - Tile "${tileName}" - ${completeTasks}/${grandTotal}: ${error}`
       );
     }
   }
 
   printLog("info", "Downloading datas...");
 
-  for (let idx1 in summaries) {
+  for (const idx1 in summaries) {
     const tilesSummaries = summaries[idx1].tilesSummaries;
 
-    for (let idx2 in tilesSummaries) {
+    for (const idx2 in tilesSummaries) {
       const tilesSummary = tilesSummaries[idx2];
 
       for (const z in tilesSummary) {
@@ -274,12 +276,11 @@ async function seedMBTilesTiles(
 
             await mutex.runExclusive(() => {
               tasks.activeTasks++;
-
               tasks.completeTasks++;
             });
 
             /* Run a task */
-            seedMBTilesTileData(z, x, y).finally(() =>
+            seedMBTilesTileData(z, x, y, tasks).finally(() =>
               mutex.runExclusive(() => {
                 tasks.activeTasks--;
               })
@@ -387,15 +388,16 @@ async function seedPostgreSQLTiles(
   );
 
   /* Download tiles */
-  const mutex = new Mutex();
-
   const tasks = {
+    mutex: new Mutex(),
     activeTasks: 0,
     completeTasks: 0,
   };
 
-  async function seedPostgreSQLTileData(z, x, y) {
+  async function seedPostgreSQLTileData(z, x, y, tasks) {
     const tileName = `${z}/${x}/${y}`;
+
+    const completeTasks = tasks.completeTasks;
 
     try {
       let needDownload = false;
@@ -449,7 +451,7 @@ async function seedPostgreSQLTiles(
 
         printLog(
           "info",
-          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${tasks.completeTasks}/${grandTotal}...`
+          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${completeTasks}/${grandTotal}...`
         );
 
         await downloadPostgreSQLTile(
@@ -467,17 +469,17 @@ async function seedPostgreSQLTiles(
     } catch (error) {
       printLog(
         "error",
-        `Failed to seed data "${id}" - Tile "${tileName}": ${error}`
+        `Failed to seed data "${id}" - Tile "${tileName}" - ${completeTasks}/${grandTotal}: ${error}`
       );
     }
   }
 
   printLog("info", "Downloading datas...");
 
-  for (let idx1 in summaries) {
+  for (const idx1 in summaries) {
     const tilesSummaries = summaries[idx1].tilesSummaries;
 
-    for (let idx2 in tilesSummaries) {
+    for (const idx2 in tilesSummaries) {
       const tilesSummary = tilesSummaries[idx2];
 
       for (const z in tilesSummary) {
@@ -492,12 +494,11 @@ async function seedPostgreSQLTiles(
 
             await mutex.runExclusive(() => {
               tasks.activeTasks++;
-
               tasks.completeTasks++;
             });
 
             /* Run a task */
-            seedPostgreSQLTileData(z, x, y).finally(() =>
+            seedPostgreSQLTileData(z, x, y, tasks).finally(() =>
               mutex.runExclusive(() => {
                 tasks.activeTasks--;
               })
@@ -606,15 +607,16 @@ async function seedXYZTiles(
   );
 
   /* Download tile files */
-  const mutex = new Mutex();
-
   const tasks = {
+    mutex: new Mutex(),
     activeTasks: 0,
     completeTasks: 0,
   };
 
-  async function seedXYZTileData(z, x, y) {
+  async function seedXYZTileData(z, x, y, tasks) {
     const tileName = `${z}/${x}/${y}`;
+
+    const completeTasks = tasks.completeTasks;
 
     try {
       let needDownload = false;
@@ -670,7 +672,7 @@ async function seedXYZTiles(
 
         printLog(
           "info",
-          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${tasks.completeTasks}/${grandTotal}...`
+          `Downloading data "${id}" - Tile "${tileName}" - From "${targetURL}" - ${completeTasks}/${grandTotal}...`
         );
 
         await downloadXYZTileFile(
@@ -690,17 +692,17 @@ async function seedXYZTiles(
     } catch (error) {
       printLog(
         "error",
-        `Failed to seed data "${id}" - Tile "${tileName}": ${error}`
+        `Failed to seed data "${id}" - Tile "${tileName}" - ${completeTasks}/${grandTotal}: ${error}`
       );
     }
   }
 
   printLog("info", "Downloading datas...");
 
-  for (let idx1 in summaries) {
+  for (const idx1 in summaries) {
     const tilesSummaries = summaries[idx1].tilesSummaries;
 
-    for (let idx2 in tilesSummaries) {
+    for (const idx2 in tilesSummaries) {
       const tilesSummary = tilesSummaries[idx2];
 
       for (const z in tilesSummary) {
@@ -715,12 +717,11 @@ async function seedXYZTiles(
 
             await mutex.runExclusive(() => {
               tasks.activeTasks++;
-
               tasks.completeTasks++;
             });
 
             /* Run a task */
-            seedXYZTileData(z, x, y).finally(() =>
+            seedXYZTileData(z, x, y, tasks).finally(() =>
               mutex.runExclusive(() => {
                 tasks.activeTasks--;
               })
@@ -996,16 +997,17 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
   printLog("info", log);
 
   /* Remove font files */
-  const mutex = new Mutex();
-
   const tasks = {
+    mutex: new Mutex(),
     activeTasks: 0,
     completeTasks: 0,
   };
 
-  async function seedFontData(start, end) {
+  async function seedFontData(start, end, tasks) {
     const range = `${start}-${end}`;
     const filePath = `${process.env.DATA_DIR}/caches/fonts/${id}/${range}.pbf`;
+
+    const completeTasks = tasks.completeTasks;
 
     try {
       let needDownload = false;
@@ -1033,7 +1035,7 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
 
         printLog(
           "info",
-          `Downloading font "${id}" - Range "${range}" - From "${targetURL}" - ${tasks.completeTasks}/${total}...`
+          `Downloading font "${id}" - Range "${range}" - From "${targetURL}" - ${completeTasks}/${total}...`
         );
 
         await downloadFontFile(targetURL, id, range, maxTry, timeout);
@@ -1041,7 +1043,7 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
     } catch (error) {
       printLog(
         "error",
-        `Failed to seed font "${id}" - Range "${range}": ${error}`
+        `Failed to seed font "${id}" - Range "${range}" - ${completeTasks}/${total}: ${error}`
       );
     }
   }
@@ -1056,12 +1058,11 @@ async function seedFont(id, url, concurrency, maxTry, timeout, refreshBefore) {
 
     await mutex.runExclusive(() => {
       tasks.activeTasks++;
-
       tasks.completeTasks++;
     });
 
     /* Run a task */
-    seedFontData(i * 256, i * 256 + 255).finally(() =>
+    seedFontData(i * 256, i * 256 + 255, tasks).finally(() =>
       mutex.runExclusive(() => {
         tasks.activeTasks--;
       })

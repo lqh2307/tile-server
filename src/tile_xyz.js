@@ -29,26 +29,25 @@ import {
  */
 async function getXYZLayersFromTiles(sourcePath) {
   const pbfFilePaths = await findFiles(sourcePath, /^\d+\.pbf$/, true, true);
-  let totalTasks = pbfFilePaths.length;
   const layerNames = new Set();
-  let activeTasks = 0;
 
   const vectorTileProto = protobuf(
     await fsPromise.readFile("public/protos/vector_tile.proto")
   );
 
-  const mutex = new Mutex();
+  const tasks = {
+    mutex: new Mutex(),
+    activeTasks: 0,
+  };
 
   for (const pbfFilePath of pbfFilePaths) {
     /* Wait slot for a task */
-    while (activeTasks >= 200) {
+    while (tasks.activeTasks >= 200) {
       await delay(50);
     }
 
-    await mutex.runExclusive(() => {
-      activeTasks++;
-
-      totalTasks--;
+    await tasks.mutex.runExclusive(() => {
+      tasks.activeTasks++;
     });
 
     /* Run a task */
@@ -61,17 +60,15 @@ async function getXYZLayersFromTiles(sourcePath) {
       } catch (error) {
         throw error;
       } finally {
-        await mutex.runExclusive(() => {
-          activeTasks--;
-
-          totalTasks--;
+        await tasks.mutex.runExclusive(() => {
+          tasks.activeTasks--;
         });
       }
     })();
   }
 
   /* Wait all tasks done */
-  while (activeTasks > 0) {
+  while (tasks.activeTasks > 0) {
     await delay(50);
   }
 
