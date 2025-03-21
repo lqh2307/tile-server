@@ -7,7 +7,7 @@ import { runTasks } from "./task.js";
 (async () => {
   try {
     /* Init logger */
-    initLogger(`${process.env.DATA_DIR}/logs/log.log`);
+    initLogger();
 
     printLog("info", "Starting seed and clean up task...");
 

@@ -102,9 +102,10 @@ npm run server --
 ENVs:
 
 ```bash
-DATA_DIR=path_to_data_folder (default: data)
-SERVICE_NAME=service_name (default: tile-server)
-RESTART_AFTER_CHANGE=true/false (default: true)
+DATA_DIR: path_to_data_folder (default: data)
+LOG_DIR: path_to_log_folder (default: ${DATA_DIR}/logs)
+SERVICE_NAME: service_name (default: tile-server)
+RESTART_AFTER_CHANGE: true/false (default: true)
 ```
 
 ### Run with docker

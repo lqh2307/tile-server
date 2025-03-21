@@ -1,6 +1,5 @@
 "use strict";
 
-import path from "node:path";
 import fs from "node:fs";
 import pino from "pino";
 
@@ -8,11 +7,10 @@ let logger;
 
 /**
  * Init pino logger
- * @param {string} filePath Log file path
  * @returns {void}
  */
-export function initLogger(filePath) {
-  fs.mkdirSync(path.dirname(filePath), {
+export function initLogger() {
+  fs.mkdirSync(process.env.LOG_DIR, {
     recursive: true,
   });
 
@@ -31,7 +29,11 @@ export function initLogger(filePath) {
     },
     pino.multistream([
       { stream: process.stdout },
-      { stream: fs.createWriteStream(filePath, { flags: "a" }) },
+      {
+        stream: fs.createWriteStream(`${process.env.LOG_DIR}/logs.log`, {
+          flags: "a",
+        }),
+      },
     ])
   );
 }

@@ -20,17 +20,22 @@ import os from "os";
 async function startClusterServer() {
   // Store ENVs
   process.env.DATA_DIR = process.env.DATA_DIR || "data"; // Data dir
+  process.env.LOG_DIR = process.env.LOG_DIR || `${process.env.DATA_DIR}/logs`; // Log dir
   process.env.SERVICE_NAME = process.env.SERVICE_NAME || "tile-server"; // Service name
+  process.env.RESTART_AFTER_CHANGE !== process.env.RESTART_AFTER_CHANGE ||
+    "true"; // Restart server after change
 
   // Init logger
-  initLogger(`${process.env.DATA_DIR}/logs/log.log`);
+  initLogger();
 
   if (cluster.isPrimary === true) {
-    /* Read config.json file */
     printLog(
       "info",
-      `Reading config.json file at "${process.env.DATA_DIR}"...`
+      `Starting server with:\n\tData dir: ${process.env.DATA_DIR}\n\tLog dir: ${process.env.LOG_DIR}\n\t:Service name: ${process.env.SERVICE_NAME}\n\tRestart server after change: ${process.env.RESTART_AFTER_CHANGE}`
     );
+
+    /* Read config.json file */
+    printLog("info", `Reading config.json file...`);
 
     const config = await readConfigFile(true);
 
@@ -59,10 +64,7 @@ async function startClusterServer() {
     }
 
     /* Remove old cache locks */
-    printLog(
-      "info",
-      `Removing old cache locks at "${process.env.DATA_DIR}" before start server...`
-    );
+    printLog("info", `Removing old cache locks before start server...`);
 
     await removeOldCacheLocks();
 
@@ -72,7 +74,7 @@ async function startClusterServer() {
     );
 
     /* Setup watch config file change */
-    if (process.env.RESTART_AFTER_CHANGE !== "false") {
+    if (process.env.RESTART_AFTER_CHANGE !== "true") {
       printLog("info", "Auto restart server if config file has changed");
 
       chokidar
