@@ -131,8 +131,10 @@ async function cleanUpMBTilesTiles(id, coverages, cleanUpBefore) {
   let activeTasks = 0;
   let completeTasks = 0;
 
-  async function cleanUpMBTilesTileData(z, x, y, completeTasks) {
+  async function cleanUpMBTilesTileData(z, x, y) {
     const tileName = `${z}/${x}/${y}`;
+
+    const completeTasks = () => completeTasks;
 
     try {
       let needRemove = false;
@@ -202,7 +204,7 @@ async function cleanUpMBTilesTiles(id, coverages, cleanUpBefore) {
             });
 
             /* Run a task */
-            cleanUpMBTilesTileData(z, x, y, completeTasks).finally(() =>
+            cleanUpMBTilesTileData(z, x, y).finally(() =>
               mutex.runExclusive(() => {
                 activeTasks--;
               })
@@ -285,8 +287,10 @@ async function cleanUpPostgreSQLTiles(id, coverages, cleanUpBefore) {
   let activeTasks = 0;
   let completeTasks = 0;
 
-  async function cleanUpPostgreSQLTileData(z, x, y, completeTasks) {
+  async function cleanUpPostgreSQLTileData(z, x, y) {
     const tileName = `${z}/${x}/${y}`;
+
+    const completeTasks = () => completeTasks;
 
     try {
       let needRemove = false;
@@ -356,7 +360,7 @@ async function cleanUpPostgreSQLTiles(id, coverages, cleanUpBefore) {
             });
 
             /* Run a task */
-            cleanUpPostgreSQLTileData(z, x, y, completeTasks).finally(() =>
+            cleanUpPostgreSQLTileData(z, x, y).finally(() =>
               mutex.runExclusive(() => {
                 activeTasks--;
               })
@@ -438,8 +442,10 @@ async function cleanUpXYZTiles(id, format, coverages, cleanUpBefore) {
   let activeTasks = 0;
   let completeTasks = 0;
 
-  async function cleanUpXYZTileData(z, x, y, completeTasks) {
+  async function cleanUpXYZTileData(z, x, y) {
     const tileName = `${z}/${x}/${y}`;
+
+    const completeTasks = () => completeTasks;
 
     try {
       let needRemove = false;
@@ -513,7 +519,7 @@ async function cleanUpXYZTiles(id, format, coverages, cleanUpBefore) {
             });
 
             /* Run a task */
-            cleanUpXYZTileData(z, x, y, completeTasks).finally(() =>
+            cleanUpXYZTileData(z, x, y).finally(() =>
               mutex.runExclusive(() => {
                 activeTasks--;
               })
