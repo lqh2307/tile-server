@@ -892,7 +892,7 @@ export async function renderMBTilesTiles(
           });
 
           /* Run a task */
-          renderMBTilesTileData(z, x, y).finally(() =>
+          renderMBTilesTileData(z, x, y, tasks).finally(() =>
             tasks.mutex.runExclusive(() => {
               tasks.activeTasks--;
             })
@@ -1152,7 +1152,7 @@ export async function renderXYZTiles(
           });
 
           /* Run a task */
-          renderXYZTileData(z, x, y).finally(() =>
+          renderXYZTileData(z, x, y, tasks).finally(() =>
             tasks.mutex.runExclusive(() => {
               tasks.activeTasks--;
             })
