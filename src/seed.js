@@ -255,17 +255,19 @@ async function seedMBTilesTiles(
 
   printLog("info", "Downloading datas...");
 
-  for (let idx1 = 0; idx1 < summaries.length; idx1++) {
-    for (let idx2 = 0; idx2 < summaries[idx1].length; idx2++) {
-      for (const z in summaries[idx1][idx2]) {
+  for (let idx1 in summaries) {
+    const tilesSummaries = summaries[idx1].tilesSummaries;
+
+    for (let idx2 in tilesSummaries) {
+      for (const z in tilesSummaries[idx2]) {
         for (
-          let x = summaries[idx1][idx2][z].x[0];
-          x <= summaries[idx1][idx2][z].x[1];
+          let x = tilesSummaries[idx2][z].x[0];
+          x <= tilesSummaries[idx2][z].x[1];
           x++
         ) {
           for (
-            let y = summaries[idx1][idx2][z].y[0];
-            y <= summaries[idx1][idx2][z].y[1];
+            let y = tilesSummaries[idx2][z].y[0];
+            y <= tilesSummaries[idx2][z].y[1];
             y++
           ) {
             /* Wait slot for a task */
@@ -473,17 +475,19 @@ async function seedPostgreSQLTiles(
 
   printLog("info", "Downloading datas...");
 
-  for (let idx1 = 0; idx1 < summaries.length; idx1++) {
-    for (let idx2 = 0; idx2 < summaries[idx1].length; idx2++) {
-      for (const z in summaries[idx1][idx2]) {
+  for (let idx1 in summaries) {
+    const tilesSummaries = summaries[idx1].tilesSummaries;
+
+    for (let idx2 in tilesSummaries) {
+      for (const z in tilesSummaries[idx2]) {
         for (
-          let x = summaries[idx1][idx2][z].x[0];
-          x <= summaries[idx1][idx2][z].x[1];
+          let x = tilesSummaries[idx2][z].x[0];
+          x <= tilesSummaries[idx2][z].x[1];
           x++
         ) {
           for (
-            let y = summaries[idx1][idx2][z].y[0];
-            y <= summaries[idx1][idx2][z].y[1];
+            let y = tilesSummaries[idx2][z].y[0];
+            y <= tilesSummaries[idx2][z].y[1];
             y++
           ) {
             /* Wait slot for a task */
@@ -696,17 +700,19 @@ async function seedXYZTiles(
 
   printLog("info", "Downloading datas...");
 
-  for (let idx1 = 0; idx1 < summaries.length; idx1++) {
-    for (let idx2 = 0; idx2 < summaries[idx1].length; idx2++) {
-      for (const z in summaries[idx1][idx2]) {
+  for (let idx1 in summaries) {
+    const tilesSummaries = summaries[idx1].tilesSummaries;
+
+    for (let idx2 in tilesSummaries) {
+      for (const z in tilesSummaries[idx2]) {
         for (
-          let x = summaries[idx1][idx2][z].x[0];
-          x <= summaries[idx1][idx2][z].x[1];
+          let x = tilesSummaries[idx2][z].x[0];
+          x <= tilesSummaries[idx2][z].x[1];
           x++
         ) {
           for (
-            let y = summaries[idx1][idx2][z].y[0];
-            y <= summaries[idx1][idx2][z].y[1];
+            let y = tilesSummaries[idx2][z].y[0];
+            y <= tilesSummaries[idx2][z].y[1];
             y++
           ) {
             /* Wait slot for a task */
