@@ -3,7 +3,6 @@ ARG TARGET_IMAGE=ubuntu:22.04
 
 FROM ${BUILDER_IMAGE} AS builder
 
-ARG ENABLE_EXPORT=true
 ARG GDAL_VERSION=3.10.2
 ARG NODEJS_VERSION=22.14.0
 
@@ -12,26 +11,22 @@ RUN \
   apt-get -y upgrade; \
   apt-get -y install \
     ca-certificates \
-    wget;
+    wget \
+    cmake \
+    build-essential \
+    libproj-dev;
 
 RUN \
-  if [ "${ENABLE_EXPORT}" = "true" ]; then \
-    apt-get -y install \
-      cmake \
-      build-essential \
-      libproj-dev; \
-    wget -q http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.gz; \
-    tar -xzf ./gdal-${GDAL_VERSION}.tar.gz; \
-    cd ./gdal-${GDAL_VERSION}; \
-    mkdir -p build; \
-    cd build; \
-    cmake .. -DCMAKE_BUILD_TYPE=Release; \
-    cmake --build .; \
-    cmake --build . --target install; \
-    cd ../..; \
-    rm -rf ./gdal-${GDAL_VERSION}*; \
-    ldconfig; \
-  fi;
+  wget -q http://download.osgeo.org/gdal/${GDAL_VERSION}/gdal-${GDAL_VERSION}.tar.gz; \
+  tar -xzf ./gdal-${GDAL_VERSION}.tar.gz; \
+  cd ./gdal-${GDAL_VERSION}; \
+  mkdir -p build; \
+  cd build; \
+  cmake .. -DCMAKE_BUILD_TYPE=Release; \
+  cmake --build .; \
+  cmake --build . --target install; \
+  cd ../..; \
+  rm -rf ./gdal-${GDAL_VERSION}*;
 
 RUN \
   wget -q https://nodejs.org/download/release/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.gz; \
@@ -50,12 +45,11 @@ RUN \
   rm -rf package-lock.json; \
   apt-get -y --purge autoremove; \
   apt-get clean; \
-  rm -rf /var/lib/apt/lists/*;
+  rm -rf /var/lib/apt/lists/*; \
+  ldconfig;
 
 
 FROM ${TARGET_IMAGE} AS final
-
-ARG ENABLE_EXPORT=true
 
 RUN \
   apt-get -y update; \
@@ -71,13 +65,8 @@ RUN \
     libpng16-16 \
     libwebp7 \
     libsqlite3-0 \
-    libcurl4;
-
-RUN \
-  if [ "${ENABLE_EXPORT}" = "true" ]; then \
-    apt-get -y install \
-      libproj22; \
-  fi;
+    libcurl4 \
+    libproj22;
 
 WORKDIR /tile-server
 
