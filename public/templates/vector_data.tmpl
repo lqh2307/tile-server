@@ -72,19 +72,50 @@
         }
       })
       .then((jsonResponse) => {
+        const style = {
+          "version": 8,
+          "sources": {
+            "source": {
+              "type": "vector",
+              "url": `${baseURL}/datas/${id}.json`
+            }
+          },
+          "layers": []
+        };
+
+        if (jsonResponse.cacheCoverages !== undefined) {
+          for (const { bboxs, zooms } of jsonResponse.cacheCoverages) {
+            for (const zoom of zooms) {
+              if (style["sources"][zoom] === undefined) {
+                style["sources"][zoom] = {
+                  type: "FeatureCollection",
+                  features: []
+                };
+              }
+
+              for (const bbox of bboxs) {
+                style["sources"][zoom]["features"].push({
+                  type: "Feature",
+                  geometry: {
+                    type: "LineString",
+                    coordinates: [
+                      [bbox[0], bbox[1]],
+                      [bbox[2], bbox[1]],
+                      [bbox[2], bbox[3]],
+                      [bbox[0], bbox[3]],
+                      [bbox[0], bbox[1]]
+                    ]
+                  }
+                });
+              }
+            }
+          }
+        }
+
         const map = new maplibregl.Map({
           container: "map",
           hash: true,
-          style: {
-            "version": 8,
-            "sources": {
-              "source": {
-                "type": "vector",
-                "url": `${baseURL}/datas/${id}.json`
-              }
-            },
-            "layers": []
-          }
+          style: style
         });
 
         map.addControl(new maplibregl.NavigationControl({
@@ -101,23 +132,23 @@
         map.on("load", () => {
           const layerList = document.getElementById("layerList");
 
-          inspect.sources["source"].forEach((layerId) => {
+          inspect.sources["source"].forEach((layerID) => {
             const item = document.createElement("div");
 
-            const layerColor = inspect.assignLayerColor(layerId);
+            const layerColor = inspect.assignLayerColor(layerID);
 
             item.innerHTML = `
               <div style="display:flex;align-items:center;cursor:pointer;">
                 <div style="width:15px;height:15px;display:inline-block;background:${layerColor};"></div>
-                <span style="margin-left:5px;color:${layerColor};display:inline-block;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${layerId}</span>
+                <span style="margin-left:5px;color:${layerColor};display:inline-block;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${layerID}</span>
               </div>
             `;
 
             item.onclick = () => {
-              const newVisibility = map.getLayoutProperty(`source_${layerId}_polygon`, "visibility") === "none" ? "visible" : "none";
+              const newVisibility = map.getLayoutProperty(`source_${layerID}_polygon`, "visibility") === "none" ? "visible" : "none";
 
               ["polygon", "line", "circle"].forEach((geometryType) => {
-                map.setLayoutProperty(`source_${layerId}_${geometryType}`, "visibility", newVisibility);
+                map.setLayoutProperty(`source_${layerID}_${geometryType}`, "visibility", newVisibility);
               });
 
               item.style.textDecoration = newVisibility === "visible" ? "none" : "line-through";
@@ -127,85 +158,50 @@
           });
 
           if (jsonResponse.cacheCoverages !== undefined) {
-            const cacheCoverageLayers = {};
-
-            for (const { bboxs, zooms } of jsonResponse.cacheCoverages) {
-              for (const zoom of zooms) {
-                if (cacheCoverageLayers[zoom] === undefined) {
-                  cacheCoverageLayers[zoom] = {
-                    type: "FeatureCollection",
-                    features: []
-                  };
-                }
-
-                for (const bbox of bboxs) {
-                  cacheCoverageLayers[zoom].features.push({
-                    type: "Feature",
-                    geometry: {
-                      type: "LineString",
-                      coordinates: [
-                        [bbox[0], bbox[1]],
-                        [bbox[2], bbox[1]],
-                        [bbox[2], bbox[3]],
-                        [bbox[0], bbox[3]],
-                        [bbox[0], bbox[1]]
-                      ]
-                    }
-                  });
-                }
-              }
-            }
-
-            for (const zoom in cacheCoverageLayers) {
-              const source_name = `cache_coverage_source_${zoom}`;
-
-              map.addSource(source_name, cacheCoverageLayers[zoom]);
-            }
-
             let isCoverageVisible = true;
 
-            map.on("zoomend", () => {
-              const currentZoom = Math.round(map.getZoom());
+            function updateVisibleCoverages() {
+              for (const zoom in style["sources"]) {
+                // const newVisibility = map.getLayoutProperty(`${zoom}_polygon`, "visibility") === "none" ? "visible" : "none";
 
-              for (const zoom in cacheCoverageLayers) {
-                map.setLayoutProperty(`cache_coverage_source_${zoom}`, "visibility", isCoverageVisible && parseInt(zoom) === currentZoom ? "visible" : "none");
+                ["polygon", "line", "circle"].forEach((geometryType) => {
+                  map.setLayoutProperty(`${zoom}_${geometryType}`, "visibility", "none");
+                });
               }
-            });
+
+              if (isCoverageVisible === true) {
+                const currentZoom = Math.round(map.getZoom());
+
+                ["polygon", "line", "circle"].forEach((geometryType) => {
+                  map.setLayoutProperty(`${zoom}_${geometryType}`, "visibility", "visible");
+                });
+              }
+            }
+
+            map.on("zoomend", updateVisibleCoverages);
           }
 
-          if (jsonResponse.cacheBBoxs !== undefined) {
-            map.addSource("cache_bboxs_source", {
-              type: "geojson",
-              data: {
-                type: "MultiLineString",
-                coordinates: jsonResponse.cacheBBoxs.map((bbox) => {
-                  return [
-                    [bbox[0], bbox[1]],
-                    [bbox[2], bbox[1]],
-                    [bbox[2], bbox[3]],
-                    [bbox[0], bbox[3]],
-                    [bbox[0], bbox[1]]
-                  ];
-                })
-              }
-            });
+          const cacheCoveragesButton = document.createElement("div");
+          cacheCoveragesButton.innerHTML = "Hide cache Coverages";
+          cacheCoveragesButton.style.cssText = "position:absolute;bottom:50px;left:10px;padding:5px 10px;font-size:14px;cursor:pointer;background:rgba(0, 150, 255, 0.5);color:white;border:none;border-radius:5px;display:inline-block;z-index:1000;";
 
-            const cacheBBoxsButton = document.createElement("div");
-            cacheBBoxsButton.innerHTML = "Hide cache BBoxs";
-            cacheBBoxsButton.style.cssText = "position:absolute;bottom:10px;left:10px;padding:5px 10px;font-size:14px;cursor:pointer;background:rgba(0, 150, 255, 0.5);color:white;border:none;border-radius:5px;display:inline-block;z-index:1000;";
+          cacheBBoxsButton.onclick = () => {
+            if (isCoverageVisible === true) {
+              cacheCoveragesButton.innerHTML = "Show cache Coverages";
 
-            cacheBBoxsButton.onclick = () => {
-              const newVisibility = map.getLayoutProperty("cache_bboxs_source_polygon", "visibility") === "none" ? "visible" : "none";
+              isCoverageVisible = false;
+            } else {
+              cacheCoveragesButton.innerHTML = "Hide cache Coverages";
 
-              map.setLayoutProperty("cache_bboxs_source_polygon", "visibility", newVisibility);
-              map.setLayoutProperty("cache_bboxs_source_line", "visibility", newVisibility);
-              map.setLayoutProperty("cache_bboxs_source_circle", "visibility", newVisibility);
+              isCoverageVisible = true;
+            }
 
-              cacheBBoxsButton.innerHTML = newVisibility === "visible" ? "Hide cache BBoxs" : "Show cache BBoxs";
-            };
+            updateVisibleCoverages();
+          };
 
-            document.body.appendChild(cacheBBoxsButton);
-          }
+          document.body.appendChild(cacheCoveragesButton);
+
+          updateVisibleCoverages();
         });
 
         let currentMarker;

@@ -167,33 +167,27 @@ export async function getGeoJSONSize(filePath) {
  * @returns {string[]} List of geometry types
  */
 export function validateAndGetGeometryTypes(geoJSON) {
-  const geometryTypes = [];
+  const geometryTypes = new Set();
 
   function addGeometryType(geometryType) {
     switch (geometryType) {
       case "Polygon":
       case "MultiPolygon": {
-        if (geometryTypes.includes("polygon") === false) {
-          geometryTypes.push("polygon");
-        }
+        geometryTypes.add("polygon");
 
         break;
       }
 
       case "LineString":
       case "MultiLineString": {
-        if (geometryTypes.includes("line") === false) {
-          geometryTypes.push("line");
-        }
+        geometryTypes.add("line");
 
         break;
       }
 
       case "Point":
       case "MultiPoint": {
-        if (geometryTypes.includes("circle") === false) {
-          geometryTypes.push("circle");
-        }
+        geometryTypes.add("circle");
 
         break;
       }
@@ -382,5 +376,5 @@ export function validateAndGetGeometryTypes(geoJSON) {
     }
   }
 
-  return geometryTypes;
+  return Array.from(geometryTypes);
 }
