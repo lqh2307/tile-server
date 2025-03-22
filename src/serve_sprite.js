@@ -14,6 +14,12 @@ import express from "express";
  */
 function getSpriteHandler() {
   return async (req, res, next) => {
+    if (["png", "json"].includes(req.params.format) === false) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .send("Sprite format is not support");
+    }
+
     const id = req.params.id;
 
     try {
@@ -177,7 +183,7 @@ export const serve_sprite = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/:id/sprite:scale(@\\d+x)?.:format(json|png)", getSpriteHandler());
+    app.get("/:id/sprite:scale(@\\d+x)?.:format", getSpriteHandler());
 
     return app;
   },

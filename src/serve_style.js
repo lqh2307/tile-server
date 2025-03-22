@@ -411,6 +411,15 @@ function getStylesListHandler() {
  */
 function getRenderedTileHandler() {
   return async (req, res, next) => {
+    if (
+      req.params.tileSize !== undefined &&
+      ["256", "512"].includes(req.params.tileSize) === false
+    ) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .send("Tile size is not support");
+    }
+
     const id = req.params.id;
     const item = config.repo.styles[id];
 
@@ -462,6 +471,15 @@ function getRenderedTileHandler() {
  */
 function getRenderedHandler() {
   return async (req, res, next) => {
+    if (
+      req.params.tileSize !== undefined &&
+      ["256", "512"].includes(req.params.tileSize) === false
+    ) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .send("Tile size is not support");
+    }
+
     const id = req.params.id;
 
     try {
@@ -1103,7 +1121,7 @@ export const serve_style = {
      *       500:
      *         description: Internal server error
      */
-    app.get("/(:tileSize(256|512)/)?:id.json", getRenderedHandler());
+    app.get("/(:tileSize/)?:id.json", getRenderedHandler());
 
     /**
      * @swagger
@@ -1178,7 +1196,7 @@ export const serve_style = {
      *         description: Internal server error
      */
     app.get(
-      `/:id/(:tileSize(256|512)/)?:z(\\d+)/:x(\\d+)/:y(\\d+):tileScale(@\\d+x)?.png`,
+      `/:id/(:tileSize/)?:z(\\d+)/:x(\\d+)/:y(\\d+):tileScale(@\\d+x)?.png`,
       getRenderedTileHandler()
     );
 

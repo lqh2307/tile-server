@@ -101,10 +101,15 @@ function getDataTileHandler() {
     }
 
     /* Check data tile format */
-    if (req.params.format !== item.tileJSON.format) {
+    if (
+      req.params.format !== item.tileJSON.format ||
+      ["jpeg", "jpg", "pbf", "png", "webp", "gif"].includes(
+        req.params.format
+      ) === false
+    ) {
       return res
         .status(StatusCodes.BAD_REQUEST)
-        .send("Data tile format is invalid");
+        .send("Data tile format is not support");
     }
 
     /* Get tile name */
@@ -359,10 +364,15 @@ function getDataTileMD5Handler() {
     }
 
     /* Check data tile format */
-    if (req.params.format !== item.tileJSON.format) {
+    if (
+      req.params.format !== item.tileJSON.format ||
+      ["jpeg", "jpg", "pbf", "png", "webp", "gif"].includes(
+        req.params.format
+      ) === false
+    ) {
       return res
         .status(StatusCodes.BAD_REQUEST)
-        .send("Data tile format is invalid");
+        .send("Data tile format is not support");
     }
 
     /* Get tile name */
@@ -730,10 +740,7 @@ export const serve_data = {
      *       500:
      *         description: Internal server error
      */
-    app.get(
-      `/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp|gif)`,
-      getDataTileHandler()
-    );
+    app.get(`/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format`, getDataTileHandler());
 
     /**
      * @swagger
@@ -807,7 +814,7 @@ export const serve_data = {
      *         description: Internal server error
      */
     app.get(
-      `/:id/md5/:z(\\d+)/:x(\\d+)/:y(\\d+).:format(jpeg|jpg|pbf|png|webp|gif)`,
+      `/:id/md5/:z(\\d+)/:x(\\d+)/:y(\\d+).:format`,
       getDataTileMD5Handler()
     );
 
