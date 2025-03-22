@@ -740,7 +740,10 @@ export const serve_data = {
      *       500:
      *         description: Internal server error
      */
-    app.get(`/:id/:z(\\d+)/:x(\\d+)/:y(\\d+).:format`, getDataTileHandler());
+    app.get(
+      `/:id/:z(\\d{1,2})/:x(\\{1,7})/:y(\\{1,7}).:format`,
+      getDataTileHandler()
+    );
 
     /**
      * @swagger
@@ -814,7 +817,7 @@ export const serve_data = {
      *         description: Internal server error
      */
     app.get(
-      `/:id/md5/:z(\\d+)/:x(\\d+)/:y(\\d+).:format`,
+      `/:id/md5/:z(\\d{1,2})/:x(\\d{1,7})/:y(\\d{1,7}).:format`,
       getDataTileMD5Handler()
     );
 
