@@ -966,7 +966,7 @@ export const serve_style = {
        *               example: {}
        *       description: Style render options
        *     responses:
-       *       200:
+       *       201:
        *         description: Style render is started
        *         content:
        *           text/plain:

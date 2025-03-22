@@ -187,7 +187,7 @@
       resize: vertical;
     }
 
-    .dialog-actions {
+    .dialog {
       display: flex;
       justify-content: flex-end;
       gap: 10px;
@@ -295,7 +295,7 @@
     <form id="updateConfigForm" method="dialog">
       <label for="updateConfigInput">Enter JSON:</label>
       <textarea id="updateConfigInput" name="options" rows="10" cols="50" placeholder='{"key":"value"}'></textarea>
-      <div class="dialog-actions">
+      <div class="dialog">
         <button type="submit" class="btn-primary">OK</button>
         <button type="button" class="btn-secondary" onclick="closeDialog('updateConfigDialog')">Cancel</button>
       </div>
@@ -306,7 +306,7 @@
     <form id="updateSeedForm" method="dialog">
       <label for="updateSeedInput">Enter JSON:</label>
       <textarea id="updateSeedInput" name="options" rows="10" cols="50" placeholder='{"key":"value"}'></textarea>
-      <div class="dialog-actions">
+      <div class="dialog">
         <button type="submit" class="btn-primary">OK</button>
         <button type="button" class="btn-secondary" onclick="closeDialog('updateSeedDialog')">Cancel</button>
       </div>
@@ -317,7 +317,7 @@
     <form id="updateCleanUpForm" method="dialog">
       <label for="updateCleanUpInput">Enter JSON:</label>
       <textarea id="updateCleanUpInput" name="options" rows="10" cols="50" placeholder='{"key":"value"}'></textarea>
-      <div class="dialog-actions">
+      <div class="dialog">
         <button type="submit" class="btn-primary">OK</button>
         <button type="button" class="btn-secondary" onclick="closeDialog('updateCleanUpDialog')">Cancel</button>
       </div>
@@ -328,7 +328,7 @@
     <form id="deleteConfigForm" method="dialog">
       <label for="deleteConfigInput">Enter JSON:</label>
       <textarea id="deleteConfigInput" name="options" rows="10" cols="50" placeholder='{"key":"value"}'></textarea>
-      <div class="dialog-actions">
+      <div class="dialog">
         <button type="submit" class="btn-primary">OK</button>
         <button type="button" class="btn-secondary" onclick="closeDialog('deleteConfigDialog')">Cancel</button>
       </div>
@@ -339,7 +339,7 @@
     <form id="deleteSeedForm" method="dialog">
       <label for="deleteSeedInput">Enter JSON:</label>
       <textarea id="deleteSeedInput" name="options" rows="10" cols="50" placeholder='{"key":"value"}'></textarea>
-      <div class="dialog-actions">
+      <div class="dialog">
         <button type="submit" class="btn-primary">OK</button>
         <button type="button" class="btn-secondary" onclick="closeDialog('deleteSeedDialog')">Cancel</button>
       </div>
@@ -350,7 +350,7 @@
     <form id="deleteCleanUpForm" method="dialog">
       <label for="deleteCleanUpInput">Enter JSON:</label>
       <textarea id="deleteCleanUpInput" name="options" rows="10" cols="50" placeholder='{"key":"value"}'></textarea>
-      <div class="dialog-actions">
+      <div class="dialog">
         <button type="submit" class="btn-primary">OK</button>
         <button type="button" class="btn-secondary" onclick="closeDialog('deleteCleanUpDialog')">Cancel</button>
       </div>
@@ -361,7 +361,7 @@
     <form id="exportRenderForm" method="dialog">
       <label for="exportRenderInput">Enter JSON:</label>
       <textarea id="exportRenderInput" name="options" rows="10" cols="50" placeholder='{"key":"value"}'></textarea>
-      <div class="dialog-actions">
+      <div class="dialog">
         <button type="submit" class="btn-primary">Export</button>
         <button type="button" class="btn-secondary" onclick="closeDialog('exportRenderDialog');">Cancel</button>
       </div>
@@ -725,7 +725,7 @@
           </div>
         `;
       } else if (tabId === "configs-tab") {
-        document.querySelector("#actions-tab").innerHTML = `
+        document.querySelector("#configs-tab").innerHTML = `
           <div class="box">
             <div class="item">
               <img src="${emptyImageURL}" alt="Empty image" />
