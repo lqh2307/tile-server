@@ -799,7 +799,7 @@ export const serve_common = {
      *               example: Starting...
      *       500:
      *         description: Internal server error
-     *   post:
+     *   put:
      *     tags:
      *       - Common
      *     summary: Update config
@@ -818,6 +818,14 @@ export const serve_common = {
      *           type: boolean
      *         required: false
      *         description: Restart server after change
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *             schema:
+     *               type: object
+     *               example: {}
+     *       description: Update config object
      *     responses:
      *       200:
      *         description: Config is updated
@@ -857,6 +865,14 @@ export const serve_common = {
      *           type: boolean
      *         required: false
      *         description: Restart server after change
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *             schema:
+     *               type: object
+     *               example: {}
+     *       description: Delete config object
      *     responses:
      *       200:
      *         description: Config is updated
@@ -879,7 +895,7 @@ export const serve_common = {
      *         description: Internal server error
      */
     app.get("/config", serveConfigHandler());
-    app.post("/config", serveConfigUpdateHandler());
+    app.put("/config", serveConfigUpdateHandler());
     app.delete("/config", serveConfigDeleteHandler());
 
     /**
