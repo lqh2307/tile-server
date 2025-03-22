@@ -84,17 +84,19 @@
         };
 
         if (jsonResponse.cacheCoverages !== undefined) {
+          const cacheCoverageLayers = {};
+
           for (const { bboxs, zooms } of jsonResponse.cacheCoverages) {
             for (const zoom of zooms) {
-              if (style["sources"][zoom] === undefined) {
-                style["sources"][zoom] = {
+              if (cacheCoverageLayers[zoom] === undefined) {
+                cacheCoverageLayers[zoom] = {
                   type: "FeatureCollection",
                   features: []
                 };
               }
 
               for (const bbox of bboxs) {
-                style["sources"][zoom]["features"].push({
+                cacheCoverageLayers["features"].push({
                   type: "Feature",
                   geometry: {
                     type: "LineString",
@@ -107,6 +109,13 @@
                     ]
                   }
                 });
+              }
+            }
+
+            for (const zoom in cacheCoverageLayers) {
+              style["sources"][zoom] = {
+                "type": "geojson",
+                "data": cacheCoverageLayers[zoom]
               }
             }
           }
