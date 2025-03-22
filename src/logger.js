@@ -1,5 +1,6 @@
 "use strict";
 
+import FileStreamRotator from "file-stream-rotator";
 import fs from "node:fs";
 import pino from "pino";
 
@@ -10,28 +11,30 @@ let logger;
  * @returns {void}
  */
 export function initLogger() {
-  fs.mkdirSync(process.env.LOG_DIR, {
+  fs.mkdirSync(`${process.env.DATA_DIR}/logs`, {
     recursive: true,
   });
 
   logger = pino(
     {
       level: "info",
-      base: null,
+      base: { pid: process.pid },
       formatters: {
         level(label) {
-          return {
-            level: label,
-          };
+          return { level: label };
         },
       },
       timestamp: pino.stdTimeFunctions.isoTime,
     },
     pino.multistream([
-      { stream: process.stdout },
       {
-        stream: fs.createWriteStream(`${process.env.LOG_DIR}/logs.log`, {
-          flags: "a",
+        stream: process.stdout,
+      },
+      {
+        stream: FileStreamRotator.getStream({
+          filename: `${process.env.DATA_DIR}/logs/%DATE%.log`,
+          frequency: "daily",
+          date_format: "YYYY-MM-DD",
         }),
       },
     ])

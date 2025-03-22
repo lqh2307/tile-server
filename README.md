@@ -103,7 +103,6 @@ ENVs:
 
 ```bash
 DATA_DIR: path_to_data_folder (default: data)
-LOG_DIR: path_to_log_folder (default: ${DATA_DIR}/logs)
 SERVICE_NAME: service_name (default: tile-server)
 RESTART_AFTER_CHANGE: true/false (default: true)
 ```
@@ -232,11 +231,7 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "metadata": {
         "name": "asia_cambodia",
         "zoom": 10,
-        "center": [
-          120,
-          20,
-          3
-        ]
+        "center": [120, 20, 3]
       },
       "url": "http://localhost:9999/styles/asia_cambodia/style.json",
       "refreshBefore": {
@@ -261,44 +256,16 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
         "name": "asia_vietnam",
         "description": "asia_vietnam",
         "format": "png",
-        "bounds": [
-          96,
-          4,
-          120,
-          28
-        ],
-        "center": [
-          108,
-          16,
-          10,
-        ],
+        "bounds": [96, 4, 120, 28],
+        "center": [108, 16, 10],
         "minzoom": 0,
         "maxzoom": 15
       },
       "url": "http://localhost:9999/datas/asia_vietnam/{z}/{x}/{y}.png",
       "coverages": [
         {
-          "bboxs": [
-            [
-              96,
-              4,
-              120,
-              28
-            ]
-          ],
-          "zooms": [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9,
-            10
-          ]
+          "bboxs": [[96, 4, 120, 28]],
+          "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         }
       ],
       "refreshBefore": {
@@ -316,17 +283,8 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
         "name": "asia_cambodia",
         "description": "asia_cambodia",
         "format": "pbf",
-        "bounds": [
-          96,
-          4,
-          120,
-          28
-        ],
-        "center": [
-          108,
-          16,
-          10,
-        ],
+        "bounds": [96, 4, 120, 28],
+        "center": [108, 16, 10],
         "minzoom": 0,
         "maxzoom": 15,
         "vector_layers": [
@@ -341,27 +299,8 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "url": "http://localhost:9999/datas/asia_cambodia/{z}/{x}/{y}.pbf",
       "coverages": [
         {
-          "bboxs": [
-            [
-              96,
-              4,
-              120,
-              28
-            ]
-          ],
-          "zooms": [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9,
-            10
-          ]
+          "bboxs": [[96, 4, 120, 28]],
+          "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         }
       ],
       "refreshBefore": {
@@ -380,17 +319,8 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
         "name": "zurich_switzerland",
         "description": "zurich_switzerland",
         "format": "pbf",
-        "bounds": [
-          96,
-          4,
-          120,
-          28
-        ],
-        "center": [
-          108,
-          16,
-          10,
-        ],
+        "bounds": [96, 4, 120, 28],
+        "center": [108, 16, 10],
         "minzoom": 0,
         "maxzoom": 15,
         "vector_layers": [
@@ -405,27 +335,8 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       "url": "http://localhost:9999/datas/zurich_switzerland/{z}/{x}/{y}.pbf",
       "coverages": [
         {
-          "bboxs": [
-            [
-              96,
-              4,
-              120,
-              28
-            ]
-          ],
-          "zooms": [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9,
-            10
-          ]
+          "bboxs": [[96, 4, 120, 28]],
+          "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         }
       ],
       "refreshBefore": {
@@ -509,52 +420,17 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       },
       "coverages": [
         {
-          "bboxs": [
-            [
-              96,
-              4,
-              120,
-              28
-            ]
-          ],
-          "zooms": [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9,
-            10
-          ]
+          "bboxs": [[96, 4, 120, 28]],
+          "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         }
-      ],
+      ]
     },
     "asia_cambodia_cache": {
       "cleanUpBefore": {
         "day": 2
       },
-      "zooms": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        9,
-        10
-      ],
-      "bboxs": [
-        [
-          96,
-          4,
-          120,
-          28
-        ]
-      ],
+      "zooms": [0, 1, 2, 3, 4, 5, 9, 10],
+      "bboxs": [[96, 4, 120, 28]]
     },
     "zurich_switzerland_cache": {
       "cleanUpBefore": {
@@ -562,29 +438,10 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
       },
       "coverages": [
         {
-          "bboxs": [
-            [
-              96,
-              4,
-              120,
-              28
-            ]
-          ],
-          "zooms": [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9,
-            10
-          ]
+          "bboxs": [[96, 4, 120, 28]],
+          "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         }
-      ],
+      ]
     }
   },
   "sprites": {

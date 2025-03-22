@@ -20,7 +20,6 @@ import os from "os";
 async function startClusterServer() {
   // Store ENVs
   process.env.DATA_DIR = process.env.DATA_DIR || "data"; // Data dir
-  process.env.LOG_DIR = process.env.LOG_DIR || `${process.env.DATA_DIR}/logs`; // Log dir
   process.env.SERVICE_NAME = process.env.SERVICE_NAME || "tile-server"; // Service name
   process.env.RESTART_AFTER_CHANGE = process.env.RESTART_AFTER_CHANGE || "true"; // Restart server after change
 
@@ -30,7 +29,7 @@ async function startClusterServer() {
   if (cluster.isPrimary === true) {
     printLog(
       "info",
-      `Starting server with:\n\tData dir: ${process.env.DATA_DIR}\n\tLog dir: ${process.env.LOG_DIR}\n\t:Service name: ${process.env.SERVICE_NAME}\n\tRestart server after change: ${process.env.RESTART_AFTER_CHANGE}`
+      `Starting server with:\n\tData dir: ${process.env.DATA_DIR}\n\tService name: ${process.env.SERVICE_NAME}\n\tRestart server after change: ${process.env.RESTART_AFTER_CHANGE}`
     );
 
     /* Read config.json file */
