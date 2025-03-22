@@ -279,6 +279,7 @@
       <div class="tab" onclick="switchTab(event, 'fonts-tab')">FONTS ({{font_count}})</div>
       <div class="tab" onclick="switchTab(event, 'sprites-tab')">SPRITES ({{sprite_count}})</div>
       <div class="tab" onclick="switchTab(event, 'actions-tab')">ACTIONS</div>
+      <div class="tab" onclick="switchTab(event, 'actions-tab')">CONFIGS</div>
     </div>
     <div id="styles-tab" class="tab-content active"></div>
     <div id="geojsons-tab" class="tab-content"></div>
@@ -287,15 +288,82 @@
     <div id="fonts-tab" class="tab-content"></div>
     <div id="sprites-tab" class="tab-content"></div>
     <div id="actions-tab" class="tab-content"></div>
+    <div id="configs-tab" class="tab-content"></div>
   </section>
+
+  <dialog id="updateConfigDialog">
+    <form id="updateConfigForm" method="dialog">
+      <label for="updateConfigInput">Enter JSON:</label>
+      <textarea id="updateConfigInput" name="options" rows="10" cols="50" placeholder='{"key":"value"}'></textarea>
+      <div class="dialog-actions">
+        <button type="submit" class="btn-primary">OK</button>
+        <button type="button" class="btn-secondary" onclick="closeDialog('updateConfigDialog')">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="updateSeedDialog">
+    <form id="updateSeedForm" method="dialog">
+      <label for="updateSeedInput">Enter JSON:</label>
+      <textarea id="updateSeedInput" name="options" rows="10" cols="50" placeholder='{"key":"value"}'></textarea>
+      <div class="dialog-actions">
+        <button type="submit" class="btn-primary">OK</button>
+        <button type="button" class="btn-secondary" onclick="closeDialog('updateSeedDialog')">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="updateCleanUpDialog">
+    <form id="updateCleanUpForm" method="dialog">
+      <label for="updateCleanUpInput">Enter JSON:</label>
+      <textarea id="updateCleanUpInput" name="options" rows="10" cols="50" placeholder='{"key":"value"}'></textarea>
+      <div class="dialog-actions">
+        <button type="submit" class="btn-primary">OK</button>
+        <button type="button" class="btn-secondary" onclick="closeDialog('updateCleanUpDialog')">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="deleteConfigDialog">
+    <form id="deleteConfigForm" method="dialog">
+      <label for="deleteConfigInput">Enter JSON:</label>
+      <textarea id="deleteConfigInput" name="options" rows="10" cols="50" placeholder='{"key":"value"}'></textarea>
+      <div class="dialog-actions">
+        <button type="submit" class="btn-primary">OK</button>
+        <button type="button" class="btn-secondary" onclick="closeDialog('deleteConfigDialog')">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="deleteSeedDialog">
+    <form id="deleteSeedForm" method="dialog">
+      <label for="deleteSeedInput">Enter JSON:</label>
+      <textarea id="deleteSeedInput" name="options" rows="10" cols="50" placeholder='{"key":"value"}'></textarea>
+      <div class="dialog-actions">
+        <button type="submit" class="btn-primary">OK</button>
+        <button type="button" class="btn-secondary" onclick="closeDialog('deleteSeedDialog')">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="deleteCleanUpDialog">
+    <form id="deleteCleanUpForm" method="dialog">
+      <label for="deleteCleanUpInput">Enter JSON:</label>
+      <textarea id="deleteCleanUpInput" name="options" rows="10" cols="50" placeholder='{"key":"value"}'></textarea>
+      <div class="dialog-actions">
+        <button type="submit" class="btn-primary">OK</button>
+        <button type="button" class="btn-secondary" onclick="closeDialog('deleteCleanUpDialog')">Cancel</button>
+      </div>
+    </form>
+  </dialog>
 
   <dialog id="exportRenderDialog">
     <form id="exportRenderForm" method="dialog">
-      <label for="jsonOptionsInput">Enter JSON Options:</label>
-      <textarea id="jsonOptionsInput" name="options" rows="10" cols="50" placeholder='{"key":"value"}'></textarea>
+      <label for="exportRenderInput">Enter JSON:</label>
+      <textarea id="exportRenderInput" name="options" rows="10" cols="50" placeholder='{"key":"value"}'></textarea>
       <div class="dialog-actions">
-        <button type="submit" class="btn-primary">Start</button>
-        <button type="button" class="btn-secondary" onclick="closeExportRenderDialog()">Cancel</button>
+        <button type="submit" class="btn-primary">Export</button>
+        <button type="button" class="btn-secondary" onclick="closeDialog('exportRenderDialog');">Cancel</button>
       </div>
     </form>
   </dialog>
@@ -351,23 +419,25 @@
       document.getElementById(tabId).classList.add("active");
 
       if (tabId === "styles-tab" && !document.querySelector("#styles-tab").innerHTML.trim()) {
-        renderDatas("styles-tab");
+        renderContents("styles-tab");
       } else if (tabId === "geojsons-tab" && !document.querySelector("#geojsons-tab").innerHTML.trim()) {
-        renderDatas("geojsons-tab");
+        renderContents("geojsons-tab");
       } else if (tabId === "geojson_groups-tab" && !document.querySelector("#geojson_groups-tab").innerHTML.trim()) {
-        renderDatas("geojson_groups-tab");
+        renderContents("geojson_groups-tab");
       } else if (tabId === "datas-tab" && !document.querySelector("#datas-tab").innerHTML.trim()) {
-        renderDatas("datas-tab");
+        renderContents("datas-tab");
       } else if (tabId === "fonts-tab" && !document.querySelector("#fonts-tab").innerHTML.trim()) {
-        renderDatas("fonts-tab");
+        renderContents("fonts-tab");
       } else if (tabId === "sprites-tab" && !document.querySelector("#sprites-tab").innerHTML.trim()) {
-        renderDatas("sprites-tab");
+        renderContents("sprites-tab");
       } else if (tabId === "actions-tab" && !document.querySelector("#actions-tab").innerHTML.trim()) {
-        renderDatas("actions-tab");
+        renderContents("actions-tab");
+      } else if (tabId === "configs-tab" && !document.querySelector("#configs-tab").innerHTML.trim()) {
+        renderContents("configs-tab");
       }
     }
 
-    function renderDatas(tabId) {
+    function renderContents(tabId) {
       if (tabId === "styles-tab") {
         document.querySelector("#styles-tab").innerHTML = `
           <div class="box">
@@ -515,56 +585,6 @@
             <div class="item">
               <img src="${emptyImageURL}" alt="Empty image" />
               <div class="details">
-                <h3 class="name">Config JSON</h3>
-                <p>description: View config.json content</p>
-              </div>
-              <div class="viewers">
-                <a class="btn" href="${baseURL}/config?type=config">View</a>
-              </div>
-            </div>
-            <div class="item">
-              <img src="${emptyImageURL}" alt="Empty image" />
-              <div class="details">
-                <h3 class="name">Seed JSON</h3>
-                <p>description: View seed.json content</p>
-              </div>
-              <div class="viewers">
-                <a class="btn" href="${baseURL}/config?type=seed">View</a>
-              </div>
-            </div>
-            <div class="item">
-              <img src="${emptyImageURL}" alt="Empty image" />
-              <div class="details">
-                <h3 class="name">Clean up JSON</h3>
-                <p>description: View cleanup.json content</p>
-              </div>
-              <div class="viewers">
-                <a class="btn" href="${baseURL}/config?type=cleanUp">View</a>
-              </div>
-            </div>
-            <div class="item">
-              <img src="${emptyImageURL}" alt="Empty image" />
-              <div class="details">
-                <h3 class="name">Kill</h3>
-                <p>description: Kill server</p>
-              </div>
-              <div class="viewers">
-                <a class="btn" href="#" onclick="actionManager(event, 'kill')">Kill server</a>
-              </div>
-            </div>
-            <div class="item">
-              <img src="${emptyImageURL}" alt="Empty image" />
-              <div class="details">
-                <h3 class="name">Restart</h3>
-                <p>description: Restart server</p>
-              </div>
-              <div class="viewers">
-                <a class="btn" href="#" onclick="actionManager(event, 'restart')">Restart server</a>
-              </div>
-            </div>
-            <div class="item">
-              <img src="${emptyImageURL}" alt="Empty image" />
-              <div class="details">
                 <h3 class="name">Cancel sync</h3>
                 <p>description: Cancel clean up/seed tasks</p>
               </div>
@@ -700,6 +720,121 @@
               </div>
               <div class="viewers">
                 <a class="btn" href="${baseURL}/summary?type=seed">View</a>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (tabId === "configs-tab") {
+        document.querySelector("#actions-tab").innerHTML = `
+          <div class="box">
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">View config JSON</h3>
+                <p>description: View config.json content</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="${baseURL}/config?type=config">View</a>
+              </div>
+            </div>
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">View seed JSON</h3>
+                <p>description: View seed.json content</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="${baseURL}/config?type=seed">View</a>
+              </div>
+            </div>
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">View clean up JSON</h3>
+                <p>description: View cleanup.json content</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="${baseURL}/config?type=cleanUp">View</a>
+              </div>
+            </div>
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Update config JSON</h3>
+                <p>description: Update config.json content</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="showUpdateConfigDialog(event)">Update</a>
+              </div>
+            </div>
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Update seed JSON</h3>
+                <p>description: Update seed.json content</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="showUpdateSeedDialog(event)">Update</a>
+              </div>
+            </div>
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Update clean up JSON</h3>
+                <p>description: Update cleanup.json content</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="showUpdateCleanUpDialog(event)">Update</a>
+              </div>
+            </div>
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Delete config JSON</h3>
+                <p>description: Delete config.json content</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="showDeleteConfigDialog(event)">Delete</a>
+              </div>
+            </div>
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Delete seed JSON</h3>
+                <p>description: Delete seed.json content</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="showDeleteSeedDialog(event)">Delete</a>
+              </div>
+            </div>
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Delete clean up JSON</h3>
+                <p>description: Delete cleanup.json content</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="showDeleteCleanUpDialog(event)">Delete</a>
+              </div>
+            </div>
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Kill</h3>
+                <p>description: Kill server</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="configManager(event, 'kill')">Kill server</a>
+              </div>
+            </div>
+            <div class="item">
+              <img src="${emptyImageURL}" alt="Empty image" />
+              <div class="details">
+                <h3 class="name">Restart</h3>
+                <p>description: Restart server</p>
+              </div>
+              <div class="viewers">
+                <a class="btn" href="#" onclick="configManager(event, 'restart')">Restart server</a>
               </div>
             </div>
           </div>
@@ -881,6 +1016,240 @@
       }
     }
 
+    function configactionManager(event, action) {
+      event.preventDefault();
+
+      if (action === "restart") {
+        fetch(`${baseURL}/restart`, {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Server restarted successfully!");
+            } else {
+              alert(`Failed to restart server: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => alert(`Failed to restart server: ${error.message}`));
+      } else if (action === "kill") {
+        fetch(`${baseURL}/restart?type=kill`, {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Server killed successfully!");
+            } else {
+              alert(`Failed to kill server: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => alert(`Failed to kill server: ${error.message}`));
+      }
+    }
+
+    function showUpdateConfigDialog(event) {
+      event.preventDefault();
+
+      document.getElementById("updateConfigDialog").showModal();
+
+      document.getElementById("updateConfigForm").onsubmit = (event) => {
+        event.preventDefault();
+
+        try {
+          fetch(`${baseURL}/config?type=config`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.parse(document.getElementById("updateConfigInput").value)
+          })
+            .then((response) => {
+              if (response.status === 200) {
+                alert("Updating config...");
+
+                closeDialog("updateConfigDialog");
+              } else {
+                alert(`Failed to update config: Status code: ${response.status} - ${response.statusText}`);
+              }
+            })
+            .catch((error) => {
+              alert(`Failed to update config: ${error.message}`);
+            });
+        } catch (error) {
+          alert("Invalid JSON format. Please correct it and try again!");
+        }
+      };
+    }
+
+    function showUpdateSeedDialog(event) {
+      event.preventDefault();
+
+      document.getElementById("updateSeedDialog").showModal();
+
+      document.getElementById("updateSeedForm").onsubmit = (event) => {
+        event.preventDefault();
+
+        try {
+          fetch(`${baseURL}/config?type=seed`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.parse(document.getElementById("updateSeedInput").value)
+          })
+            .then((response) => {
+              if (response.status === 200) {
+                alert("Updating seed...");
+
+                closeDialog("updateSeedDialog");
+              } else {
+                alert(`Failed to update seed: Status code: ${response.status} - ${response.statusText}`);
+              }
+            })
+            .catch((error) => {
+              alert(`Failed to update seed: ${error.message}`);
+            });
+        } catch (error) {
+          alert("Invalid JSON format. Please correct it and try again!");
+        }
+      };
+    }
+
+    function showUpdateCleanUpDialog(event) {
+      event.preventDefault();
+
+      document.getElementById("updateCleanUpDialog").showModal();
+
+      document.getElementById("updateCleanUpForm").onsubmit = (event) => {
+        event.preventDefault();
+
+        try {
+          fetch(`${baseURL}/config?type=cleanUp`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.parse(document.getElementById("updateCleanUpInput").value)
+          })
+            .then((response) => {
+              if (response.status === 200) {
+                alert("Updating clean up...");
+
+                closeDialog("updateCleanUpDialog");
+              } else {
+                alert(`Failed to update clean up: Status code: ${response.status} - ${response.statusText}`);
+              }
+            })
+            .catch((error) => {
+              alert(`Failed to update clean up: ${error.message}`);
+            });
+        } catch (error) {
+          alert("Invalid JSON format. Please correct it and try again!");
+        }
+      };
+    }
+
+    function showDeleteConfigDialog(event) {
+      event.preventDefault();
+
+      document.getElementById("deleteConfigDialog").showModal();
+
+      document.getElementById("deleteConfigForm").onsubmit = (event) => {
+        event.preventDefault();
+
+        try {
+          fetch(`${baseURL}/config?type=config`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.parse(document.getElementById("deleteConfigInput").value)
+          })
+            .then((response) => {
+              if (response.status === 200) {
+                alert("Deleting config...");
+
+                closeDialog("deleteConfigDialog");
+              } else {
+                alert(`Failed to delete config: Status code: ${response.status} - ${response.statusText}`);
+              }
+            })
+            .catch((error) => {
+              alert(`Failed to delete config: ${error.message}`);
+            });
+        } catch (error) {
+          alert("Invalid JSON format. Please correct it and try again!");
+        }
+      };
+    }
+
+    function showDeleteSeedDialog(event) {
+      event.preventDefault();
+
+      document.getElementById("deleteSeedDialog").showModal();
+
+      document.getElementById("deleteSeedForm").onsubmit = (event) => {
+        event.preventDefault();
+
+        try {
+          fetch(`${baseURL}/config?type=seed`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.parse(document.getElementById("deleteSeedInput").value)
+          })
+            .then((response) => {
+              if (response.status === 200) {
+                alert("Deleting seed...");
+
+                closeDialog("deleteSeedDialog");
+              } else {
+                alert(`Failed to delete seed: Status code: ${response.status} - ${response.statusText}`);
+              }
+            })
+            .catch((error) => {
+              alert(`Failed to delete seed: ${error.message}`);
+            });
+        } catch (error) {
+          alert("Invalid JSON format. Please correct it and try again!");
+        }
+      };
+    }
+
+    function showDeleteCleanUpDialog(event) {
+      event.preventDefault();
+
+      document.getElementById("deleteCleanUpDialog").showModal();
+
+      document.getElementById("deleteCleanUpForm").onsubmit = (event) => {
+        event.preventDefault();
+
+        try {
+          fetch(`${baseURL}/config?type=cleanUp`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.parse(document.getElementById("deleteCleanUpInput").value)
+          })
+            .then((response) => {
+              if (response.status === 200) {
+                alert("Deleting clean up...");
+
+                closeDialog("deleteCleanUpDialog");
+              } else {
+                alert(`Failed to delete clean up: Status code: ${response.status} - ${response.statusText}`);
+              }
+            })
+            .catch((error) => {
+              alert(`Failed to delete clean up: ${error.message}`);
+            });
+        } catch (error) {
+          alert("Invalid JSON format. Please correct it and try again!");
+        }
+      };
+    }
+
     function showExportRenderDialog(event, styleID) {
       event.preventDefault();
 
@@ -890,20 +1259,24 @@
         event.preventDefault();
 
         try {
-          fetch(`${baseURL}/styles/${styleID}/export/style.json?options=${document.getElementById("jsonOptionsInput").value}`, {
-            method: "GET",
+          fetch(`${baseURL}/styles/${styleID}/export/style.json`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.parse(document.getElementById("exportRenderInput").value)
           })
             .then((response) => {
-              if (response.status === 200) {
-                alert("Starting render style...");
+              if (response.status === 201) {
+                alert("Exporting render style...");
 
-                closeExportRenderDialog();
+                closeDialog("exportRenderDialog");
               } else {
-                alert(`Failed to start render style: Status code: ${response.status} - ${response.statusText}`);
+                alert(`Failed to export render style: Status code: ${response.status} - ${response.statusText}`);
               }
             })
             .catch((error) => {
-              alert(`Failed to start render style: ${error.message}`);
+              alert(`Failed to export render style: ${error.message}`);
             });
         } catch (error) {
           alert("Invalid JSON format. Please correct it and try again!");
@@ -911,12 +1284,12 @@
       };
     }
 
-    function closeExportRenderDialog() {
-      document.getElementById("exportRenderDialog").close();
+    function closeDialog(dialog) {
+      document.getElementById(dialog).close();
     }
 
     window.onload = function () {
-      renderDatas("styles-tab");
+      renderContents("styles-tab");
     };
 
     window.addEventListener("scroll", () => {

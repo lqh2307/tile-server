@@ -280,7 +280,7 @@ function renderStyleHandler() {
         }
 
         /* Render style */
-        const parsedOptions = JSON.parse(req.query.options);
+        const parsedOptions = JSON.parse(req.query.body);
 
         try {
           validateJSON(await getJSONSchema("render"), parsedOptions);
@@ -946,23 +946,25 @@ export const serve_style = {
        *   - name: Style
        *     description: Style related endpoints
        * /styles/{id}/export/style.json:
-       *   get:
+       *   post:
        *     tags:
        *       - Style
        *     summary: Render style
        *     parameters:
-       *       - in: query
-       *         name: options
-       *         schema:
-       *           type: object
-       *         required: false
-       *         description: Style render options
        *       - in: query
        *         name: cancel
        *         schema:
        *           type: boolean
        *         required: false
        *         description: Cancel render
+       *     requestBody:
+       *       required: true
+       *       content:
+       *         application/json:
+       *             schema:
+       *               type: object
+       *               example: {}
+       *       description: Style render options
        *     responses:
        *       200:
        *         description: Style render is started
@@ -983,7 +985,7 @@ export const serve_style = {
        *       500:
        *         description: Internal server error
        */
-      app.get("/:id/export/style.json", renderStyleHandler());
+      app.post("/:id/export/style.json", renderStyleHandler());
     }
 
     /**
