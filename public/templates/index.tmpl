@@ -989,34 +989,10 @@
             }
           })
           .catch((error) => alert(`Failed to cancel clean up/seed tasks: ${error.message}`));
-      } else if (action === "restart") {
-        fetch(`${baseURL}/restart`, {
-          method: "GET",
-        })
-          .then((response) => {
-            if (response.status === 200) {
-              alert("Server restarted successfully!");
-            } else {
-              alert(`Failed to restart server: Status code: ${response.status} - ${response.statusText}`);
-            }
-          })
-          .catch((error) => alert(`Failed to restart server: ${error.message}`));
-      } else if (action === "kill") {
-        fetch(`${baseURL}/restart?type=kill`, {
-          method: "GET",
-        })
-          .then((response) => {
-            if (response.status === 200) {
-              alert("Server killed successfully!");
-            } else {
-              alert(`Failed to kill server: Status code: ${response.status} - ${response.statusText}`);
-            }
-          })
-          .catch((error) => alert(`Failed to kill server: ${error.message}`));
       }
     }
 
-    function configactionManager(event, action) {
+    function configManager(event, action) {
       event.preventDefault();
 
       if (action === "restart") {
@@ -1060,7 +1036,7 @@
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.parse(document.getElementById("updateConfigInput").value)
+            body: document.getElementById("updateConfigInput").value
           })
             .then((response) => {
               if (response.status === 200) {
@@ -1074,8 +1050,6 @@
             .catch((error) => {
               alert(`Failed to update config: ${error.message}`);
             });
-        } catch (error) {
-          alert("Invalid JSON format. Please correct it and try again!");
         }
       };
     }
@@ -1094,7 +1068,7 @@
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.parse(document.getElementById("updateSeedInput").value)
+            body: document.getElementById("updateSeedInput").value
           })
             .then((response) => {
               if (response.status === 200) {
@@ -1108,8 +1082,6 @@
             .catch((error) => {
               alert(`Failed to update seed: ${error.message}`);
             });
-        } catch (error) {
-          alert("Invalid JSON format. Please correct it and try again!");
         }
       };
     }
@@ -1128,7 +1100,7 @@
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.parse(document.getElementById("updateCleanUpInput").value)
+            body: document.getElementById("updateCleanUpInput").value
           })
             .then((response) => {
               if (response.status === 200) {
@@ -1142,8 +1114,6 @@
             .catch((error) => {
               alert(`Failed to update clean up: ${error.message}`);
             });
-        } catch (error) {
-          alert("Invalid JSON format. Please correct it and try again!");
         }
       };
     }
@@ -1162,7 +1132,7 @@
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.parse(document.getElementById("deleteConfigInput").value)
+            body: document.getElementById("deleteConfigInput").value
           })
             .then((response) => {
               if (response.status === 200) {
@@ -1176,8 +1146,6 @@
             .catch((error) => {
               alert(`Failed to delete config: ${error.message}`);
             });
-        } catch (error) {
-          alert("Invalid JSON format. Please correct it and try again!");
         }
       };
     }
@@ -1196,7 +1164,7 @@
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.parse(document.getElementById("deleteSeedInput").value)
+            body: document.getElementById("deleteSeedInput").value
           })
             .then((response) => {
               if (response.status === 200) {
@@ -1210,8 +1178,6 @@
             .catch((error) => {
               alert(`Failed to delete seed: ${error.message}`);
             });
-        } catch (error) {
-          alert("Invalid JSON format. Please correct it and try again!");
         }
       };
     }
@@ -1230,7 +1196,7 @@
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.parse(document.getElementById("deleteCleanUpInput").value)
+            body: document.getElementById("deleteCleanUpInput").value
           })
             .then((response) => {
               if (response.status === 200) {
@@ -1244,8 +1210,6 @@
             .catch((error) => {
               alert(`Failed to delete clean up: ${error.message}`);
             });
-        } catch (error) {
-          alert("Invalid JSON format. Please correct it and try again!");
         }
       };
     }
@@ -1264,7 +1228,7 @@
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.parse(document.getElementById("exportRenderInput").value)
+            body: document.getElementById("exportRenderInput").value
           })
             .then((response) => {
               if (response.status === 201) {
@@ -1278,8 +1242,6 @@
             .catch((error) => {
               alert(`Failed to export render style: ${error.message}`);
             });
-        } catch (error) {
-          alert("Invalid JSON format. Please correct it and try again!");
         }
       };
     }

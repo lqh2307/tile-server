@@ -280,7 +280,7 @@ function renderStyleHandler() {
         }
 
         /* Render style */
-        const parsedOptions = JSON.parse(req.query.body);
+        const parsedOptions = JSON.parse(req.body);
 
         try {
           validateJSON(await getJSONSchema("render"), parsedOptions);
