@@ -1,7 +1,6 @@
 "use strict";
 
 import FileStreamRotator from "file-stream-rotator";
-import fs from "node:fs";
 import pino from "pino";
 
 let logger;
@@ -11,10 +10,6 @@ let logger;
  * @returns {void}
  */
 export function initLogger() {
-  fs.mkdirSync(`${process.env.DATA_DIR}/logs`, {
-    recursive: true,
-  });
-
   logger = pino(
     {
       level: "info",
