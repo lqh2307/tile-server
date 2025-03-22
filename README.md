@@ -135,80 +135,285 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
     "thread": 8
   },
   "styles": {
-    "asia_vietnam": {
-      "style": "asia_vietnam/style.json",
+    "osm": {
+      "style": "osm/style.json",
       "rendered": {
         "compressionLevel": 9
       }
     },
-    "asia_cambodia": {
-      "style": "asia_cambodia",
+    "3d": {
+      "style": "3d/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "backdrop": {
+      "style": "backdrop/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "basic": {
+      "style": "basic/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "basic-v2": {
+      "style": "basic-v2/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "bright": {
+      "style": "bright/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "dark-matter": {
+      "style": "dark-matter/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "dataviz": {
+      "style": "dataviz/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "dataviz-dark": {
+      "style": "dataviz-dark/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "dataviz-light": {
+      "style": "dataviz-light/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "fiord": {
+      "style": "fiord/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "hybrid": {
+      "style": "hybrid/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "landscape": {
+      "style": "landscape/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "liberty": {
+      "style": "liberty/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "openstreetmap": {
+      "style": "openstreetmap/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "outdoor-v2": {
+      "style": "outdoor-v2/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "positron": {
+      "style": "positron/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "protomap": {
+      "style": "protomap/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "streets-v2": {
+      "style": "streets-v2/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "terrain": {
+      "style": "terrain/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "toner": {
+      "style": "toner/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "topo": {
+      "style": "topo/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "winter-v2": {
+      "style": "winter-v2/style.json",
+      "rendered": {
+        "compressionLevel": 9
+      }
+    },
+    "demotiles": {
+      "style": "demotiles_cache",
       "cache": {
         "forward": true,
         "store": true
       }
-    },
-    "zurich_switzerland": {
-      "style": "zurich_switzerland/style.json"
     }
   },
   "geojsons": {
-    "asia_vietnam_geojson": {
-      "asia_vietnam_geojson": {
-        "geojson": "asia_vietnam_geojson/geojson.geojson"
+    "test": {
+      "test": {
+        "geojson": "test/geojson.geojson"
       }
     },
-    "asia_cambodia_geojson": {
-      "asia_cambodia_geojson": {
-        "geojson": "asia_cambodia_geojson",
-        "cache": {
-          "forward": true,
-          "store": true
-        }
+    "U37AG001": {
+      "bridge": {
+        "geojson": "U37AG001/bridge.geojson"
+      },
+      "cblohd": {
+        "geojson": "U37AG001/cblohd.geojson"
+      },
+      "lokbsn": {
+        "geojson": "U37AG001/lokbsn.geojson"
+      },
+      "m_nsys": {
+        "geojson": "U37AG001/m_nsys.geojson"
+      },
+      "notmrk": {
+        "geojson": "U37AG001/notmrk.geojson"
       }
     }
   },
   "datas": {
-    "asia_china": {
+    "asia_vietnam": {
       "mbtiles": "asia_vietnam/asia_vietnam.mbtiles"
     },
-    "asia_korea": {
-      "pmtiles": "asia_korea/asia_korea.pmtiles"
-    },
-    "asia_myanmar": {
-      "pmtiles": "http://localhost:9999/datas/asia_myanmar.pmtiles"
-    },
-    "asia_japan": {
-      "mbtiles": "http://localhost:9999/datas/asia_japan.mbtiles"
-    },
-    "zurich_switzerland": {
-      "mbtiles": "zurich_switzerland_cache",
-      "cache": {
-        "forward": false,
-        "store": false
-      }
-    },
-    "asia_vietnam": {
-      "mbtiles": "asia_vietnam_cache",
+    "satellite": {
+      "mbtiles": "satellite",
       "cache": {
         "forward": true,
         "store": true
       }
     },
     "asia_cambodia": {
-      "xyz": "asia_cambodia_cache",
+      "mbtiles": "asia_cambodia/asia_cambodia.mbtiles"
+    },
+    "openstreetmap": {
+      "pmtiles": "https://data.source.coop/protomaps/openstreetmap/tiles/v3.pmtiles"
+    },
+    "building_footprints": {
+      "pmtiles": "https://data.source.coop/vida/google-microsoft-open-buildings/pmtiles/go_ms_building_footprints.pmtiles"
+    },
+    "ODbL_firenze": {
+      "pmtiles": "ODbL_firenze/ODbL_firenze.pmtiles"
+    },
+    "zurich_switzerland": {
+      "mbtiles": "https://github.com/acalcutt/tileserver-gl/releases/download/test_data/zurich_switzerland.mbtiles"
+    },
+    "osm": {
+      "mbtiles": "osm_cache",
       "cache": {
         "forward": true,
-        "store": false
+        "store": true
+      }
+    },
+    "planet": {
+      "mbtiles": "planet_cache",
+      "cache": {
+        "forward": true,
+        "store": true
+      }
+    },
+    "osm_pg": {
+      "pg": "osm_pg_cache",
+      "cache": {
+        "forward": true,
+        "store": true
+      }
+    },
+    "osm_pg_2": {
+      "pg": "osm_pg_2_cache",
+      "cache": {
+        "forward": true,
+        "store": true
       }
     }
   },
   "sprites": {
+    "basic-v2": {
+      "sprite": "basic-v2"
+    },
+    "bright": {
+      "sprite": "bright"
+    },
+    "dark-matter": {
+      "sprite": "dark-matter"
+    },
+    "dataviz": {
+      "sprite": "dataviz"
+    },
+    "dataviz-dark": {
+      "sprite": "dataviz-dark"
+    },
+    "dataviz-light": {
+      "sprite": "dataviz-light"
+    },
+    "fiord": {
+      "sprite": "fiord"
+    },
+    "hybrid": {
+      "sprite": "hybrid"
+    },
+    "landscape": {
+      "sprite": "landscape"
+    },
     "liberty": {
       "sprite": "liberty"
     },
-    "basic": {
-      "sprite": "basic"
+    "openstreetmap": {
+      "sprite": "openstreetmap"
+    },
+    "outdoor-v2": {
+      "sprite": "outdoor-v2"
+    },
+    "positron": {
+      "sprite": "positron"
+    },
+    "protomap": {
+      "sprite": "protomap"
+    },
+    "streets-v2": {
+      "sprite": "streets-v2"
+    },
+    "toner": {
+      "sprite": "toner"
+    },
+    "topo": {
+      "sprite": "topo"
+    },
+    "winter-v2": {
+      "sprite": "winter-v2"
     }
   },
   "fonts": {
@@ -217,6 +422,20 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
     },
     "Times New Roman": {
       "font": "Times New Roman"
+    },
+    "Roboto Medium": {
+      "font": "Roboto Medium",
+      "cache": {
+        "forward": true,
+        "store": true
+      }
+    },
+    "Noto Sans Regular": {
+      "font": "Noto Sans Regular",
+      "cache": {
+        "forward": true,
+        "store": true
+      }
     }
   }
 }
@@ -227,157 +446,267 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
 ```json
 {
   "styles": {
-    "asia_cambodia": {
+    "demotiles_cache": {
       "metadata": {
-        "name": "asia_cambodia",
-        "zoom": 10,
-        "center": [120, 20, 3]
+        "name": "demotiles"
       },
-      "url": "http://localhost:9999/styles/asia_cambodia/style.json",
+      "url": "https://demotiles.maplibre.org/style.json",
       "refreshBefore": {
-        "day": 2
+        "time": "2024-10-10T00:00:00"
       }
     }
   },
-  "geojsons": {
-    "asia_cambodia_geojson": {
-      "metadata": {
-        "name": "asia_cambodia"
-      },
-      "url": "http://localhost:9999/geojsons/asia_cambodia/geojson.geojson",
-      "refreshBefore": {
-        "day": 2
-      }
-    }
-  },
+  "geojsons": {},
   "datas": {
-    "asia_vietnam_cache": {
+    "osm_cache": {
       "metadata": {
-        "name": "asia_vietnam",
-        "description": "asia_vietnam",
+        "name": "osm",
+        "description": "osm",
         "format": "png",
-        "bounds": [96, 4, 120, 28],
-        "center": [108, 16, 10],
+        "bounds": [
+          96,
+          4,
+          120,
+          28
+        ],
+        "center": [
+          108,
+          16,
+          10
+        ],
         "minzoom": 0,
-        "maxzoom": 15
+        "maxzoom": 18
       },
-      "url": "http://localhost:9999/datas/asia_vietnam/{z}/{x}/{y}.png",
-      "coverages": [
-        {
-          "bboxs": [[96, 4, 120, 28]],
-          "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        }
-      ],
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
       },
-      "storeType": "mbtiles",
-      "storeTransparent": true,
-      "storeMD5": true,
+      "url": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+      "coverages": [
+        {
+          "bboxs": [
+            [
+              96,
+              4,
+              120,
+              28
+            ]
+          ],
+          "zooms": [
+            0,
+            5,
+            9
+          ]
+        }
+      ],
       "timeout": 60000,
-      "concurrency": 100,
-      "maxTry": 5
+      "concurrency": 50,
+      "maxTry": 5,
+      "storeType": "mbtiles",
+      "storeTransparent": false,
+      "storeMD5": true
     },
-    "asia_cambodia_cache": {
+    "planet_cache": {
       "metadata": {
-        "name": "asia_cambodia",
-        "description": "asia_cambodia",
+        "name": "planet",
+        "description": "planet",
         "format": "pbf",
-        "bounds": [96, 4, 120, 28],
-        "center": [108, 16, 10],
-        "minzoom": 0,
-        "maxzoom": 15,
+        "bounds": [
+          96,
+          4,
+          120,
+          28
+        ],
+        "center": [
+          108,
+          16,
+          10
+        ],
         "vector_layers": [
+          {
+            "id": "aerodrome_label"
+          },
+          {
+            "id": "aeroway"
+          },
+          {
+            "id": "boundary"
+          },
+          {
+            "id": "building"
+          },
+          {
+            "id": "housenumber"
+          },
+          {
+            "id": "landcover"
+          },
           {
             "id": "landuse"
           },
           {
+            "id": "mountain_peak"
+          },
+          {
+            "id": "park"
+          },
+          {
+            "id": "place"
+          },
+          {
+            "id": "poi"
+          },
+          {
+            "id": "transportation"
+          },
+          {
+            "id": "transportation_name"
+          },
+          {
+            "id": "water"
+          },
+          {
+            "id": "water_name"
+          },
+          {
             "id": "waterway"
           }
-        ]
+        ],
+        "minzoom": 0,
+        "maxzoom": 18
       },
-      "url": "http://localhost:9999/datas/asia_cambodia/{z}/{x}/{y}.pbf",
+      "refreshBefore": {
+        "time": "2024-10-10T00:00:00"
+      },
+      "url": "https://dwuxtsziek7cf.cloudfront.net/planet/{z}/{x}/{y}.pbf",
       "coverages": [
         {
-          "bboxs": [[96, 4, 120, 28]],
-          "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+          "bboxs": [
+            [
+              96,
+              8,
+              102,
+              16
+            ],
+            [
+              108,
+              20,
+              114,
+              28
+            ]
+          ],
+          "zooms": [
+            0,
+            5,
+            10
+          ]
+        },
+        {
+          "bboxs": [
+            [
+              96,
+              4,
+              120,
+              28
+            ]
+          ],
+          "zooms": [
+            10
+          ]
         }
       ],
-      "refreshBefore": {
-        "day": 2
-      },
-      "storeType": "xyz",
-      "storeTransparent": false,
-      "storeMD5": true,
       "timeout": 60000,
       "concurrency": 100,
       "maxTry": 5,
-      "skip": true
-    },
-    "zurich_switzerland_cache": {
-      "metadata": {
-        "name": "zurich_switzerland",
-        "description": "zurich_switzerland",
-        "format": "pbf",
-        "bounds": [96, 4, 120, 28],
-        "center": [108, 16, 10],
-        "minzoom": 0,
-        "maxzoom": 15,
-        "vector_layers": [
-          {
-            "id": "landuse"
-          },
-          {
-            "id": "waterway"
-          }
-        ]
-      },
-      "url": "http://localhost:9999/datas/zurich_switzerland/{z}/{x}/{y}.pbf",
-      "coverages": [
-        {
-          "bboxs": [[96, 4, 120, 28]],
-          "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        }
-      ],
-      "refreshBefore": {
-        "md5": true
-      },
       "storeType": "mbtiles",
       "storeTransparent": false,
       "storeMD5": true,
-      "timeout": 60000,
-      "concurrency": 100,
-      "maxTry": 5
-    }
-  },
-  "sprites": {
-    "liberty": {
-      "url": "http://localhost:9999/sprites/liberty/sprite",
-      "refreshBefore": {
-        "time": "2024-10-10T00:00:00"
-      }
+      "skip": true
     },
-    "basic": {
-      "url": "http://localhost:9999/sprites/basic/sprite",
+    "satellite": {
+      "metadata": {
+        "name": "satellite",
+        "description": "satellite",
+        "format": "jpeg",
+        "bounds": [
+          -180,
+          -90,
+          180,
+          90
+        ],
+        "center": [
+          108,
+          16,
+          10
+        ],
+        "minzoom": 0,
+        "maxzoom": 18
+      },
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
-      }
+      },
+      "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      "coverages": [
+        {
+          "bboxs": [
+            [
+              104.4,
+              8.55,
+              106.8,
+              10.42
+            ],
+            [
+              102.5,
+              20.5,
+              108,
+              21.5
+            ],
+            [
+              103.8,
+              20.15,
+              106.65,
+              20.5
+            ],
+            [
+              103.8,
+              19,
+              106.39,
+              20.15
+            ]
+          ],
+          "zooms": [
+            17,
+            18
+          ]
+        }
+      ],
+      "timeout": 180000,
+      "concurrency": 30,
+      "maxTry": 5,
+      "storeType": "mbtiles",
+      "storeTransparent": true,
+      "storeMD5": true,
+      "skip": true
     }
   },
+  "sprites": {},
   "fonts": {
-    "Open Sans Regular": {
-      "url": "http://localhost:9999/fonts/Open Sans Regular/{range}.pbf",
-      "concurrency": 100,
+    "Roboto Medium": {
+      "url": "https://api.maptiler.com/fonts/Roboto Medium/{range}.pbf?key=aXcjPEauI4sBZOUkbLlP&mtsid=d7a93ef3-ffe6-4930-aa29-e9533fa57b83",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
-      }
+      },
+      "timeout": 60000,
+      "concurrency": 50,
+      "maxTry": 5
     },
-    "Times New Roman": {
-      "url": "http://localhost:9999/fonts/Times New Roman/{range}.pbf",
-      "concurrency": 100,
+    "Noto Sans Regular": {
+      "url": "https://api.maptiler.com/fonts/Noto Sans Regular/{range}.pbf?key=aXcjPEauI4sBZOUkbLlP&mtsid=d7a93ef3-ffe6-4930-aa29-e9533fa57b83",
       "refreshBefore": {
         "time": "2024-10-10T00:00:00"
-      }
+      },
+      "timeout": 60000,
+      "concurrency": 50,
+      "maxTry": 5
     }
   }
 }
@@ -388,81 +717,46 @@ docker run --rm -it -p 8080:8080 --name tile-server -v path_to_data_folder:/tile
 ```json
 {
   "styles": {
-    "asia_vietnam": {
+    "demotiles_cache": {
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
       }
-    },
-    "asia_cambodia": {
-      "cleanUpBefore": {
-        "day": 2
-      },
-      "skip": true
-    },
-    "zurich_switzerland": {
-      "cleanUpBefore": {
-        "day": 3
-      }
     }
   },
-  "geojsons": {
-    "asia_cambodia_geojson": {
-      "cleanUpBefore": {
-        "day": 2
-      },
-      "skip": true
-    }
-  },
+  "geojsons": {},
   "datas": {
-    "asia_vietnam_cache": {
-      "cleanUpBefore": {
-        "time": "2024-10-10T00:00:00"
-      },
+    "osm_cache": {
       "coverages": [
         {
-          "bboxs": [[96, 4, 120, 28]],
-          "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+          "bboxs": [
+            [
+              96,
+              8,
+              102,
+              16
+            ],
+            [
+              108,
+              20,
+              114,
+              28
+            ]
+          ],
+          "zooms": [
+            0,
+            5,
+            10
+          ]
         }
-      ]
-    },
-    "asia_cambodia_cache": {
+      ],
       "cleanUpBefore": {
-        "day": 2
-      },
-      "zooms": [0, 1, 2, 3, 4, 5, 9, 10],
-      "bboxs": [[96, 4, 120, 28]]
-    },
-    "zurich_switzerland_cache": {
-      "cleanUpBefore": {
-        "day": 3
-      },
-      "coverages": [
-        {
-          "bboxs": [[96, 4, 120, 28]],
-          "zooms": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-        }
-      ]
-    }
-  },
-  "sprites": {
-    "liberty": {
-      "cleanUpBefore": {
-        "time": "2024-10-10T00:00:00"
-      }
-    },
-    "basic": {
-      "cleanUpBefore": {
-        "time": "2024-10-10T00:00:00"
+        "time": "2025-12-10T00:00:00"
       }
     }
   },
+  "sprites": {},
   "fonts": {
-    "Open Sans Regular": {
-      "cleanUpBefore": {
-        "time": "2024-10-10T00:00:00"
-      }
-    },
-    "Times New Roman": {
+    "Roboto Medium": {
       "cleanUpBefore": {
         "time": "2024-10-10T00:00:00"
       }

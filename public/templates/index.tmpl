@@ -711,7 +711,7 @@
       event.preventDefault();
 
       if (action === "all") {
-        fetch(`${baseURL}/tasks/start?seedStyles=true&cleanUpStyles=true&cleanUpDatas=true&seedDatas=true&seedGeoJSONs=true&cleanUpGeoJSONs=true&seedSprites=true&cleanUpSprites&seedFonts=true&cleanUpFonts=true=true&restart=true`, {
+        fetch(`${baseURL}/tasks/start?seedStyles=true&cleanUpStyles=true&cleanUpDatas=true&seedDatas=true&seedGeoJSONs=true&cleanUpGeoJSONs=true&seedSprites=true&cleanUpSprites=true&seedFonts=true&cleanUpFonts=true&restart=true`, {
           method: "GET",
         })
           .then((response) => {

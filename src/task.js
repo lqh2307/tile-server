@@ -82,8 +82,8 @@ export async function runTasks(opts) {
             try {
               await cleanUpSprite(
                 id,
-                cleanUpSpriteItem.refreshBefore?.time ||
-                  cleanUpSpriteItem.refreshBefore?.day
+                cleanUpSpriteItem.cleanUpBefore?.time ||
+                  cleanUpSpriteItem.cleanUpBefore?.day
               );
             } catch (error) {
               printLog(
@@ -131,8 +131,8 @@ export async function runTasks(opts) {
             try {
               await cleanUpFont(
                 id,
-                cleanUpFontItem.refreshBefore?.time ||
-                  cleanUpFontItem.refreshBefore?.day
+                cleanUpFontItem.cleanUpBefore?.time ||
+                  cleanUpFontItem.cleanUpBefore?.day
               );
             } catch (error) {
               printLog(
@@ -180,8 +180,8 @@ export async function runTasks(opts) {
             try {
               await cleanUpStyle(
                 id,
-                cleanUpStyleItem.refreshBefore?.time ||
-                  cleanUpStyleItem.refreshBefore?.day
+                cleanUpStyleItem.cleanUpBefore?.time ||
+                  cleanUpStyleItem.cleanUpBefore?.day
               );
             } catch (error) {
               printLog(
@@ -229,8 +229,8 @@ export async function runTasks(opts) {
             try {
               await cleanUpGeoJSON(
                 id,
-                cleanUpGeoJSONItem.refreshBefore?.time ||
-                  cleanUpGeoJSONItem.refreshBefore?.day
+                cleanUpGeoJSONItem.cleanUpBefore?.time ||
+                  cleanUpGeoJSONItem.cleanUpBefore?.day
               );
             } catch (error) {
               printLog(
