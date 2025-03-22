@@ -741,7 +741,7 @@ export const serve_data = {
      *         description: Internal server error
      */
     app.get(
-      `/:id/:z(\\d{1,2})/:x(\\{1,7})/:y(\\{1,7}).:format`,
+      `/:id/:z(\\d{1,2})/:x(\\d{1,7})/:y(\\d{1,7}).:format`,
       getDataTileHandler()
     );
 
