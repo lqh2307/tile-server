@@ -1030,27 +1030,25 @@
       document.getElementById("updateConfigForm").onsubmit = (event) => {
         event.preventDefault();
 
-        try {
-          fetch(`${baseURL}/config?type=config`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: document.getElementById("updateConfigInput").value
-          })
-            .then((response) => {
-              if (response.status === 200) {
-                alert("Updating config...");
+        fetch(`${baseURL}/config?type=config`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: document.getElementById("updateConfigInput").value
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Updating config...");
 
-                closeDialog("updateConfigDialog");
-              } else {
-                alert(`Failed to update config: Status code: ${response.status} - ${response.statusText}`);
-              }
-            })
-            .catch((error) => {
-              alert(`Failed to update config: ${error.message}`);
-            });
-        }
+              closeDialog("updateConfigDialog");
+            } else {
+              alert(`Failed to update config: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => {
+            alert(`Failed to update config: ${error.message}`);
+          });
       };
     }
 
@@ -1062,27 +1060,25 @@
       document.getElementById("updateSeedForm").onsubmit = (event) => {
         event.preventDefault();
 
-        try {
-          fetch(`${baseURL}/config?type=seed`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: document.getElementById("updateSeedInput").value
-          })
-            .then((response) => {
-              if (response.status === 200) {
-                alert("Updating seed...");
+        fetch(`${baseURL}/config?type=seed`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: document.getElementById("updateSeedInput").value
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Updating seed...");
 
-                closeDialog("updateSeedDialog");
-              } else {
-                alert(`Failed to update seed: Status code: ${response.status} - ${response.statusText}`);
-              }
-            })
-            .catch((error) => {
-              alert(`Failed to update seed: ${error.message}`);
-            });
-        }
+              closeDialog("updateSeedDialog");
+            } else {
+              alert(`Failed to update seed: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => {
+            alert(`Failed to update seed: ${error.message}`);
+          });
       };
     }
 
@@ -1094,27 +1090,25 @@
       document.getElementById("updateCleanUpForm").onsubmit = (event) => {
         event.preventDefault();
 
-        try {
-          fetch(`${baseURL}/config?type=cleanUp`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: document.getElementById("updateCleanUpInput").value
-          })
-            .then((response) => {
-              if (response.status === 200) {
-                alert("Updating clean up...");
+        fetch(`${baseURL}/config?type=cleanUp`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: document.getElementById("updateCleanUpInput").value
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Updating clean up...");
 
-                closeDialog("updateCleanUpDialog");
-              } else {
-                alert(`Failed to update clean up: Status code: ${response.status} - ${response.statusText}`);
-              }
-            })
-            .catch((error) => {
-              alert(`Failed to update clean up: ${error.message}`);
-            });
-        }
+              closeDialog("updateCleanUpDialog");
+            } else {
+              alert(`Failed to update clean up: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => {
+            alert(`Failed to update clean up: ${error.message}`);
+          });
       };
     }
 
@@ -1126,27 +1120,25 @@
       document.getElementById("deleteConfigForm").onsubmit = (event) => {
         event.preventDefault();
 
-        try {
-          fetch(`${baseURL}/config?type=config`, {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: document.getElementById("deleteConfigInput").value
-          })
-            .then((response) => {
-              if (response.status === 200) {
-                alert("Deleting config...");
+        fetch(`${baseURL}/config?type=config`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: document.getElementById("deleteConfigInput").value
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Deleting config...");
 
-                closeDialog("deleteConfigDialog");
-              } else {
-                alert(`Failed to delete config: Status code: ${response.status} - ${response.statusText}`);
-              }
-            })
-            .catch((error) => {
-              alert(`Failed to delete config: ${error.message}`);
-            });
-        }
+              closeDialog("deleteConfigDialog");
+            } else {
+              alert(`Failed to delete config: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => {
+            alert(`Failed to delete config: ${error.message}`);
+          });
       };
     }
 
@@ -1158,27 +1150,25 @@
       document.getElementById("deleteSeedForm").onsubmit = (event) => {
         event.preventDefault();
 
-        try {
-          fetch(`${baseURL}/config?type=seed`, {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: document.getElementById("deleteSeedInput").value
-          })
-            .then((response) => {
-              if (response.status === 200) {
-                alert("Deleting seed...");
+        fetch(`${baseURL}/config?type=seed`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: document.getElementById("deleteSeedInput").value
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Deleting seed...");
 
-                closeDialog("deleteSeedDialog");
-              } else {
-                alert(`Failed to delete seed: Status code: ${response.status} - ${response.statusText}`);
-              }
-            })
-            .catch((error) => {
-              alert(`Failed to delete seed: ${error.message}`);
-            });
-        }
+              closeDialog("deleteSeedDialog");
+            } else {
+              alert(`Failed to delete seed: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => {
+            alert(`Failed to delete seed: ${error.message}`);
+          });
       };
     }
 
@@ -1190,27 +1180,25 @@
       document.getElementById("deleteCleanUpForm").onsubmit = (event) => {
         event.preventDefault();
 
-        try {
-          fetch(`${baseURL}/config?type=cleanUp`, {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: document.getElementById("deleteCleanUpInput").value
-          })
-            .then((response) => {
-              if (response.status === 200) {
-                alert("Deleting clean up...");
+        fetch(`${baseURL}/config?type=cleanUp`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: document.getElementById("deleteCleanUpInput").value
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              alert("Deleting clean up...");
 
-                closeDialog("deleteCleanUpDialog");
-              } else {
-                alert(`Failed to delete clean up: Status code: ${response.status} - ${response.statusText}`);
-              }
-            })
-            .catch((error) => {
-              alert(`Failed to delete clean up: ${error.message}`);
-            });
-        }
+              closeDialog("deleteCleanUpDialog");
+            } else {
+              alert(`Failed to delete clean up: Status code: ${response.status} - ${response.statusText}`);
+            }
+          })
+          .catch((error) => {
+            alert(`Failed to delete clean up: ${error.message}`);
+          });
       };
     }
 
@@ -1222,27 +1210,25 @@
       document.getElementById("exportRenderForm").onsubmit = (event) => {
         event.preventDefault();
 
-        try {
-          fetch(`${baseURL}/styles/${styleID}/export/style.json`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: document.getElementById("exportRenderInput").value
-          })
-            .then((response) => {
-              if (response.status === 201) {
-                alert("Exporting render style...");
+      fetch(`${baseURL}/styles/${styleID}/export/style.json`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: document.getElementById("exportRenderInput").value
+      })
+        .then((response) => {
+          if (response.status === 201) {
+            alert("Exporting render style...");
 
-                closeDialog("exportRenderDialog");
-              } else {
-                alert(`Failed to export render style: Status code: ${response.status} - ${response.statusText}`);
-              }
-            })
-            .catch((error) => {
-              alert(`Failed to export render style: ${error.message}`);
-            });
-        }
+            closeDialog("exportRenderDialog");
+          } else {
+            alert(`Failed to export render style: Status code: ${response.status} - ${response.statusText}`);
+          }
+        })
+        .catch((error) => {
+          alert(`Failed to export render style: ${error.message}`);
+        });
       };
     }
 
