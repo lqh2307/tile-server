@@ -267,7 +267,7 @@ function renderStyleHandler() {
             "No render is currently running. Skipping cancel render..."
           );
 
-          return res.status(StatusCodes.OK).send("OK");
+          return res.status(StatusCodes.CREATED).send("OK");
         }
 
         ///////////////// Doing /////////////////
@@ -276,7 +276,7 @@ function renderStyleHandler() {
         if (item.rendered.export === true) {
           printLog("warn", "A render is already running. Skipping render...");
 
-          return res.status(StatusCodes.OK).send("OK");
+          return res.status(StatusCodes.CREATED).send("OK");
         }
 
         /* Render style */
@@ -357,7 +357,7 @@ function renderStyleHandler() {
           }
         }, 0);
 
-        return res.status(StatusCodes.OK).send("OK");
+        return res.status(StatusCodes.CREATED).send("OK");
       }
     } catch (error) {
       printLog("error", `Failed to render style "${id}": ${error}`);
