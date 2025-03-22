@@ -36,8 +36,8 @@ function serveGeoJSONGroupHandler() {
           .send("GeoJSON group does not exist");
       }
 
-      const compiled = await compileTemplate("geojson_group", {
-        id: id,
+      const compiled = await compileTemplate("geojson_data", {
+        group: id,
         base_url: getRequestHost(req),
       });
 
@@ -75,7 +75,7 @@ function serveGeoJSONHandler() {
           .send("GeoJSON layer does not exist");
       }
 
-      const compiled = await compileTemplate("geojson", {
+      const compiled = await compileTemplate("geojson_data", {
         group: id,
         layer: req.params.layer,
         base_url: getRequestHost(req),
